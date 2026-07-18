@@ -1,0 +1,43 @@
+{% extends 'school/base.html' %}
+{% block title %}صفحة الطالب{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h4>مرحباً {{ student.full_name }}</h4>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-4"><strong>رقم الهوية:</strong> {{ student.student_id }}</div>
+            <div class="col-md-4"><strong>الصف:</strong> {{ student.class_name }}</div>
+        </div>
+        <hr>
+        <h5 class="mb-3">📋 الملاحظات المسجلة عليك</h5>
+        {% if notes %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>#</th>
+                            <th>النوع</th>
+                            <th>الملاحظة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for note in notes %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
+                            <td>{{ note.content }}</td>
+                            <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-success">لا توجد ملاحظات مسجلة لك. تهانينا! 🎉</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

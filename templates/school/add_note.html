@@ -1,0 +1,48 @@
+{% extends 'school/base.html' %}
+{% block title %}إضافة ملاحظة{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-warning">
+        <h4>📝 إضافة ملاحظة جديدة</h4>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label">{{ form.student.label }}</label>
+                <select name="student" class="form-select" required>
+                    <option value="">اختر طالباً...</option>
+                    {% for s in form.student.field.queryset %}
+                    <option value="{{ s.id }}" {% if form.student.value|stringformat:"s" == s.id|stringformat:"s" %}selected{% endif %}>{{ s.full_name }} - {{ s.class_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.note_type.label }}</label>
+                <select name="note_type" class="form-select" required>
+                    {% for key, val in form.note_type.field.choices %}
+                    <option value="{{ key }}" {% if form.note_type.value == key %}selected{% endif %}>{{ val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.content.label }}</label>
+                <textarea name="content" class="form-control" rows="4" required>{{ form.content.value|default:'' }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-success">💾 حفظ الملاحظة</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">رجوع</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'school/base.html' %}
+{% block title %}لوحة تحكم المعلم{% endblock %}
+{% block content %}
+<h3 class="mb-4">مرحباً {{ user.username }} - لوحة تحكم المعلم</h3>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="number" style="font-size: 2.5rem; font-weight: bold; color: #0d6efd;">{{ students.count }}</div>
+                <div class="label text-muted">عدد الطلاب</div>
+                <a href="{% url 'student_list' %}" class="btn btn-primary mt-3 w-100">عرض جميع الطلاب</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <a href="{% url 'add_note' %}" class="btn btn-success btn-lg w-100">📝 إضافة ملاحظة</a>
+                <a href="{% url 'note_list' %}" class="btn btn-outline-primary mt-2 w-100">ملاحظاتي السابقة</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

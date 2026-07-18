@@ -1,0 +1,57 @@
+{% extends 'school/base.html' %}
+{% block title %}إضافة طالب جديد{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h4>➕ إضافة طالب جديد</h4>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">اسم المستخدم (للدخول)</label>
+                    <input type="text" name="username" class="form-control" value="{{ form.username.value|default:'' }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">كلمة المرور</label>
+                    <input type="text" name="password" class="form-control" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">رقم الهوية</label>
+                    <input type="text" name="student_id" class="form-control" value="{{ form.student_id.value|default:'' }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الكامل</label>
+                    <input type="text" name="full_name" class="form-control" value="{{ form.full_name.value|default:'' }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الصف</label>
+                    <input type="text" name="class_name" class="form-control" value="{{ form.class_name.value|default:'' }}" required placeholder="مثال: 5-أ">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">هاتف ولي الأمر (اختياري)</label>
+                    <input type="text" name="parent_phone" class="form-control" value="{{ form.parent_phone.value|default:'' }}">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">💾 حفظ الطالب</button>
+            <a href="{% url 'student_list' %}" class="btn btn-secondary">رجوع</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
