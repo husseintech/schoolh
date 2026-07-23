@@ -29,7 +29,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-)ti@p9qago*$54_z%qw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.pythonanywhere.com', '.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.pythonanywhere.com', '.onrender.com', '.vercel.app']
+if os.getenv('ALLOWED_HOSTS'):
+    ALLOWED_HOSTS += os.getenv('ALLOWED_HOSTS').split(',')
 
 
 # Application definition

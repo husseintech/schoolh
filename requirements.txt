@@ -2,7 +2,4 @@ django>=6.0,<7.0
 python-dotenv>=1.0
 requests>=2.31
 gunicorn>=22.0
-
-# Google Sheets App
-gspread>=6.0
-google-auth>=2.28
+openpyxl>=3.1.0
