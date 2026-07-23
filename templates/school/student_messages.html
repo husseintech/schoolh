@@ -1,0 +1,34 @@
+{% extends 'school/base.html' %}
+{% block title %}رسائلي{% endblock %}
+{% block page_heading %}الرسائل{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-envelope-fill"></i> الرسائل</div>
+    <div class="card-body">
+        {% if messages_qs %}
+        <div class="list-group">
+            {% for msg in messages_qs %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="mb-1">{{ msg.subject }}</h6>
+                        <p class="mb-1">{{ msg.content }}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ msg.sender.get_full_name|default:msg.sender.username }} |
+                            <i class="bi bi-clock"></i> {{ msg.created_at|date:"Y-m-d H:i" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-envelope-open"></i>
+            <h5>لا توجد رسائل</h5>
+            <p class="text-muted">لم تستلم أي رسائل بعد</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

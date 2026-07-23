@@ -1,59 +1,38 @@
 {% extends 'school/base.html' %}
 {% block title %}إعدادات واتساب{% endblock %}
+{% block page_heading %}إعدادات واتساب{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h4>📱 إعدادات إشعارات واتساب</h4>
-    </div>
-    <div class="card-body">
-        <div class="alert alert-info">
-            <strong>ملاحظة:</strong> عند تسجيل أي ملاحظة على طالب، سيتم إرسال رسالة واتساب إلى رقم ولي الأمر المسجل.
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-whatsapp"></i> إعدادات واتساب</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">مزود الخدمة</label>
+                        <select name="provider" class="form-select">
+                            <option value="log" {% if current_provider == 'log' %}selected{% endif %}>تجريبي (طباعة في السيرفر)</option>
+                            <option value="ultramsg" {% if current_provider == 'ultramsg' %}selected{% endif %}>UltraMsg</option>
+                        </select>
+                        <div class="form-text">اختر "تجريبي" لاختبار النظام دون إرسال رسائل فعلياً</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">UltraMsg Token</label>
+                        <input type="text" name="ultramsg_token" class="form-control" value="{{ ultramsg_token }}" placeholder="أدخل token من ultramsg">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">UltraMsg Instance ID</label>
+                        <input type="text" name="ultramsg_instance_id" class="form-control" value="{{ ultramsg_instance_id }}" placeholder="أدخل Instance ID">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ الإعدادات</button>
+                </form>
+                <hr>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> للحصول على token و instance ID، قم بإنشاء حساب على <a href="https://ultramsg.com" target="_blank">ultramsg.com</a>
+                </div>
+            </div>
         </div>
-
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-4">
-                <label class="form-label fw-bold">حالة الإشعارات</label>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="provider" value="log" id="mode_log" {% if current_provider == 'log' %}checked{% endif %}>
-                    <label class="form-check-label" for="mode_log">
-                        🧪 <strong>وضع تجريبي</strong> - يظهر في السجل فقط ولا يرسل رسائل فعلية
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="provider" value="ultramsg" id="mode_ultramsg" {% if current_provider == 'ultramsg' %}checked{% endif %}>
-                    <label class="form-check-label" for="mode_ultramsg">
-                        ✅ <strong>وضع فعلي</strong> - إرسال رسائل واتساب حقيقية عبر UltraMsg
-                    </label>
-                </div>
-            </div>
-
-            <hr>
-            <h5>🔧 إعدادات UltraMsg</h5>
-            <p class="text-muted">لتفعيل الإرسال الفعلي، سجل في <a href="https://ultramsg.com/" target="_blank">ultramsg.com</a> واحصل على Token و Instance ID مجاناً</p>
-
-            <div class="mb-3">
-                <label class="form-label">Token</label>
-                <input type="text" name="ultramsg_token" class="form-control" value="{{ ultramsg_token }}" placeholder="أدخل token من ultramsg">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Instance ID</label>
-                <input type="text" name="ultramsg_instance_id" class="form-control" value="{{ ultramsg_instance_id }}" placeholder="أدخل Instance ID">
-            </div>
-
-            <button type="submit" class="btn btn-success">💾 حفظ الإعدادات</button>
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">رجوع</a>
-        </form>
-
-        <hr class="mt-4">
-        <h6>💡 طريقة تفعيل الإرسال الفعلي:</h6>
-        <ol>
-            <li>اذهب إلى <a href="https://ultramsg.com/" target="_blank">ultramsg.com</a> وسجل حساباً مجانياً</li>
-            <li>أنشئ Instance جديدة من لوحة التحكم</li>
-            <li>امسح QR code لتوصيل الواتساب</li>
-            <li>انسخ Token و Instance ID والصقهما هنا</li>
-            <li>اختر "وضع فعلي" واحفظ</li>
-        </ol>
     </div>
 </div>
 {% endblock %}

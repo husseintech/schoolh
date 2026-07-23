@@ -1,0 +1,23 @@
+{% extends 'school/base.html' %}
+{% block title %}إضافة مادة{% endblock %}
+{% block page_heading %}إضافة مادة جديدة{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-circle"></i> إضافة مادة</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.name.label }}</label>
+                        {{ form.name }}
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+                    <a href="{% url 'subject_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'school/base.html' %}
+{% block title %}نظرة عامة{% endblock %}
+{% block page_heading %}نظرة عامة على النظام{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card stat-blue">
+            <div class="card-body">
+                <div class="number">{{ total_students }}</div>
+                <div class="label">إجمالي الطلاب</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-green">
+            <div class="card-body">
+                <div class="number">{{ total_teachers }}</div>
+                <div class="label">إجمالي المعلمين</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-purple">
+            <div class="card-body">
+                <div class="number">{{ total_classes }}</div>
+                <div class="label">إجمالي الصفوف</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card stat-orange">
+            <div class="card-body">
+                <div class="number">{{ total_notes }}</div>
+                <div class="label">الملاحظات</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card stat-red">
+            <div class="card-body">
+                <div class="number">{{ total_leaves }}</div>
+                <div class="label">أذونات المغادرة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card stat-teal">
+            <div class="card-body">
+                <div class="number">{{ total_exams }}</div>
+                <div class="label">تحليلات الامتحانات</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if class_stats %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-table"></i> إحصائيات الصفوف</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>الصف</th>
+                        <th>عدد الطلاب</th>
+                        <th>عدد الملاحظات</th>
+                        <th>تقرير</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in class_stats %}
+                    <tr>
+                        <td><strong>{{ stat.name }}</strong></td>
+                        <td><span class="badge bg-primary">{{ stat.students }}</span></td>
+                        <td><span class="badge bg-warning">{{ stat.notes }}</span></td>
+                        <td><a href="{% url 'class_report' stat.id %}" class="btn btn-outline-info btn-sm">عرض</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted">لا توجد بيانات</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

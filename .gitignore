@@ -9,3 +9,7 @@ dist/
 build/
 .DS_Store
 Thumbs.db
+db.sqlite3
+database.db
+media/
+staticfiles/

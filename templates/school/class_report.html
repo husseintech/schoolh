@@ -1,0 +1,73 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير الصف{% endblock %}
+{% block page_heading %}تقرير الصف: {{ class_obj.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-text-fill"></i> تقرير الصف: {{ class_obj.name }}</span>
+        <div>
+            <a href="{% url 'reports' %}" class="btn btn-outline-secondary btn-sm">جميع الصفوف</a>
+            <button onclick="window.print()" class="btn btn-outline-primary btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <h5 class="mb-3">الطلاب ({{ students.count }})</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم</th>
+                        <th>رقم الهوية</th>
+                        <th>ولي الأمر</th>
+                        <th>هاتف ولي الأمر</th>
+                        <th>عدد الملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><a href="{% url 'student_detail' s.id %}">{{ s.full_name }}</a></td>
+                        <td>{{ s.student_id }}</td>
+                        <td>{{ s.parent_name|default:"-" }}</td>
+                        <td>{{ s.parent_phone|default:"-" }}</td>
+                        <td>{{ s.notes.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted">لا يوجد طلاب في هذا الصف</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if levels %}
+        <h5 class="mt-4 mb-3">المستويات المسجلة</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>الطالب</th>
+                        <th>المادة</th>
+                        <th>المستوى</th>
+                        <th>بواسطة</th>
+                        <th>التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lvl in levels %}
+                    <tr>
+                        <td>{{ lvl.student.full_name }}</td>
+                        <td>{{ lvl.subject.name|default:"-" }}</td>
+                        <td><span class="badge bg-{% if lvl.level == 'excellent' %}success{% elif lvl.level == 'very_good' %}info{% elif lvl.level == 'good' %}primary{% elif lvl.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ lvl.get_level_display }}</span></td>
+                        <td>{{ lvl.created_by.get_full_name|default:lvl.created_by.username }}</td>
+                        <td>{{ lvl.created_at|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

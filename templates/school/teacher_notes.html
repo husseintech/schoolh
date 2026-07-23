@@ -1,0 +1,42 @@
+{% extends 'school/base.html' %}
+{% block title %}ملاحظات المعلم{% endblock %}
+{% block page_heading %}ملاحظات المعلم{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-badge-fill"></i> {{ teacher.full_name }}</span>
+        <a href="{% url 'add_teacher_note' teacher.id %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة ملاحظة</a>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-3"><strong>البريد:</strong> {{ teacher.email|default:"-" }}</div>
+            <div class="col-md-3"><strong>الهاتف:</strong> {{ teacher.phone|default:"-" }}</div>
+            <div class="col-md-3"><strong>تاريخ التعيين:</strong> {{ teacher.hire_date|date:"Y-m-d"|default:"-" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات</div>
+    <div class="card-body">
+        {% if notes %}
+        <div class="list-group">
+            {% for note in notes %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">{{ note.created_at|date:"Y-m-d H:i" }}</small>
+                    <small class="text-muted">بواسطة: {{ note.created_by.get_full_name|default:note.created_by.username }}</small>
+                </div>
+                <p class="mb-0 mt-1">{{ note.content }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">
+            <i class="bi bi-journal-text" style="font-size: 2rem;"></i><br>
+            لا توجد ملاحظات لهذا المعلم
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

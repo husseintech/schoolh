@@ -6,63 +6,472 @@
     <title>{% block title %}النظام المدرسي{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.rtl.min.css" rel="stylesheet" />
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar-brand { font-weight: bold; }
-        .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .card-header { font-weight: bold; }
-        .alert { margin-top: 10px; }
-        .stat-card { text-align: center; padding: 20px; }
-        .stat-card .number { font-size: 2.5rem; font-weight: bold; color: #0d6efd; }
-        .stat-card .label { font-size: 1rem; color: #6c757d; }
-        .footer { text-align: center; padding: 20px; color: #6c757d; margin-top: 40px; }
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #17a2b8;
+            --sidebar-width: 250px;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #f0f2f5;
+            overflow-x: hidden;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, #1a252f 100%);
+            color: #fff;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+        .sidebar .brand {
+            padding: 20px 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar .brand h4 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .sidebar .brand small {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+        }
+        .sidebar .nav-item {
+            width: 100%;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-right: 3px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-right-color: var(--secondary-color);
+        }
+        .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-right-color: var(--secondary-color);
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+        .sidebar .nav-section {
+            padding: 15px 20px 5px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+        }
+        .main-content {
+            margin-right: var(--sidebar-width);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        .top-bar {
+            background: #fff;
+            padding: 12px 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+        .top-bar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .top-bar .user-info .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .page-content {
+            padding: 25px;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .card-header {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
+            font-weight: 600;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 25px;
+            border-radius: 12px;
+            color: #fff;
+        }
+        .stat-card .number {
+            font-size: 2.8rem;
+            font-weight: 700;
+        }
+        .stat-card .label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        .stat-blue { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .stat-green { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .stat-orange { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .stat-red { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .stat-purple { background: linear-gradient(135deg, #9b59b6, #7d3c98); }
+        .stat-teal { background: linear-gradient(135deg, #17a2b8, #138496); }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 8px 20px;
+        }
+        .btn-sm {
+            padding: 4px 12px;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.15);
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                right: -280px;
+            }
+            .sidebar.show {
+                right: 0;
+            }
+            .main-content {
+                margin-right: 0;
+            }
+            .sidebar-toggle {
+                display: block;
+            }
+            .page-content {
+                padding: 15px;
+            }
+            .top-bar {
+                padding: 10px 15px;
+            }
+        }
+
+        @media print {
+            .sidebar, .top-bar, .no-print { display: none !important; }
+            .main-content { margin-right: 0 !important; }
+            .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+        }
+
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 42px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+        }
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'dashboard' %}">📚 النظام المدرسي</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if user.profile.role == 'admin' %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'student_list' %}">الطلاب</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'add_student' %}">إضافة طالب</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'note_list' %}">الملاحظات</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'add_note' %}">إضافة ملاحظة</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'whatsapp_settings' %}">📱 واتساب</a></li>
-                    {% elif user.profile.role == 'teacher' %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'student_list' %}">الطلاب</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'add_note' %}">إضافة ملاحظة</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'note_list' %}">ملاحظاتي</a></li>
-                    {% endif %}
-                    <li class="nav-item"><span class="nav-link text-white-50">{{ user.profile.get_role_display }}: {{ user.username }}</span></li>
-                    <li class="nav-item"><a class="nav-link text-danger" href="{% url 'logout' %}">تسجيل خروج</a></li>
-                </ul>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="brand">
+            <h4><i class="bi bi-mortarboard-fill"></i> النظام المدرسي</h4>
+            <small>نظام إدارة المدارس</small>
+        </div>
+
+        <div class="nav-section">القائمة الرئيسية</div>
+
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-house-door-fill"></i> لوحة التحكم
+        </a>
+        <a href="{% url 'reports_overview' %}" class="nav-link {% if 'reports' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-bar-chart-fill"></i> التقارير
+        </a>
+
+        <div class="nav-section">الطلاب</div>
+        <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name and 'add' not in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-people-fill"></i> جميع الطلاب
+        </a>
+        <a href="{% url 'add_student' %}" class="nav-link {% if request.resolver_match.url_name == 'add_student' %}active{% endif %}">
+            <i class="bi bi-person-plus-fill"></i> إضافة طالب
+        </a>
+        <a href="{% url 'note_list' %}" class="nav-link {% if 'note' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-sticky-fill"></i> الملاحظات
+        </a>
+        <a href="{% url 'student_level_list' %}" class="nav-link {% if 'level' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-graph-up-arrow"></i> مستويات الطلاب
+        </a>
+
+        <div class="nav-section">المعلمون</div>
+        <a href="{% url 'teacher_list' %}" class="nav-link {% if 'teacher' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-person-badge-fill"></i> جميع المعلمين
+        </a>
+        <a href="{% url 'add_teacher' %}" class="nav-link {% if request.resolver_match.url_name == 'add_teacher' %}active{% endif %}">
+            <i class="bi bi-person-plus-fill"></i> إضافة معلم
+        </a>
+
+        <div class="nav-section">الإدارة</div>
+        <a href="{% url 'class_list' %}" class="nav-link {% if 'class' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-building"></i> الصفوف الدراسية
+        </a>
+        <a href="{% url 'subject_list' %}" class="nav-link {% if 'subject' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-book-fill"></i> المواد الدراسية
+        </a>
+        <a href="{% url 'announcement_list' %}" class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-megaphone-fill"></i> الإعلانات
+        </a>
+        <a href="{% url 'agenda_list' %}" class="nav-link {% if 'agenda' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-calendar-check-fill"></i> الأجندة اليومية
+        </a>
+        <a href="{% url 'leave_list' %}" class="nav-link {% if 'leave' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-box-arrow-right"></i> أذونات المغادرة
+        </a>
+        <a href="{% url 'exam_analysis_list' %}" class="nav-link {% if 'exam' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-clipboard-data-fill"></i> تحليل الامتحانات
+        </a>
+
+        <div class="nav-section">الرسائل</div>
+        <a href="{% url 'message_list' %}" class="nav-link {% if request.resolver_match.url_name == 'message_list' %}active{% endif %}">
+            <i class="bi bi-envelope-fill"></i> رسائل أولياء الأمور
+        </a>
+        <a href="{% url 'send_message' %}" class="nav-link {% if request.resolver_match.url_name == 'send_message' %}active{% endif %}">
+            <i class="bi bi-send-fill"></i> إرسال رسالة
+        </a>
+        <a href="{% url 'sent_messages' %}" class="nav-link {% if request.resolver_match.url_name == 'sent_messages' %}active{% endif %}">
+            <i class="bi bi-send-check-fill"></i> الرسائل المرسلة
+        </a>
+
+        <div class="nav-section">الإعدادات</div>
+        <a href="{% url 'whatsapp_settings' %}" class="nav-link {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-whatsapp"></i> إعدادات واتساب
+        </a>
+
+        {% elif user.profile.role == 'teacher' %}
+        <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-house-door-fill"></i> لوحة التحكم
+        </a>
+        <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-people-fill"></i> الطلاب
+        </a>
+        <a href="{% url 'add_note' %}" class="nav-link {% if request.resolver_match.url_name == 'add_note' %}active{% endif %}">
+            <i class="bi bi-sticky-fill"></i> إضافة ملاحظة
+        </a>
+        <a href="{% url 'note_list' %}" class="nav-link {% if 'note' in request.resolver_match.url_name and request.resolver_match.url_name != 'add_note' %}active{% endif %}">
+            <i class="bi bi-journal-text"></i> ملاحظاتي
+        </a>
+        <a href="{% url 'add_student_level' %}" class="nav-link {% if request.resolver_match.url_name == 'add_student_level' %}active{% endif %}">
+            <i class="bi bi-graph-up-arrow"></i> إضافة مستوى
+        </a>
+        <a href="{% url 'student_level_list' %}" class="nav-link {% if 'level' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-list-check"></i> المستويات المسجلة
+        </a>
+        <a href="{% url 'add_exam_analysis' %}" class="nav-link {% if request.resolver_match.url_name == 'add_exam_analysis' %}active{% endif %}">
+            <i class="bi bi-clipboard-data-fill"></i> تحليل امتحان
+        </a>
+        <a href="{% url 'exam_analysis_list' %}" class="nav-link {% if 'exam' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-bar-chart-fill"></i> التحليلات السابقة
+        </a>
+        <a href="{% url 'add_leave' %}" class="nav-link">
+            <i class="bi bi-box-arrow-right"></i> تسجيل إذن مغادرة
+        </a>
+        <a href="{% url 'send_message' %}" class="nav-link">
+            <i class="bi bi-send-fill"></i> إرسال رسالة لطالب
+        </a>
+        <a href="{% url 'sent_messages' %}" class="nav-link">
+            <i class="bi bi-envelope-open-fill"></i> رسائلي المرسلة
+        </a>
+
+        {% elif user.profile.role == 'student' %}
+        <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-house-door-fill"></i> الرئيسية
+        </a>
+        <a href="{% url 'student_messages' %}" class="nav-link {% if request.resolver_match.url_name == 'student_messages' %}active{% endif %}">
+            <i class="bi bi-envelope-fill"></i> الرسائل
+        </a>
+        {% endif %}
+
+        <div class="nav-section" style="margin-top: 20px;">
+            <a href="{% url 'logout' %}" class="nav-link text-danger">
+                <i class="bi bi-box-arrow-left"></i> تسجيل خروج
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
+            </div>
+            <div class="user-info">
+                <span class="text-muted d-none d-sm-inline">
+                    <span class="badge bg-{% if user.profile.role == 'admin' %}danger{% elif user.profile.role == 'teacher' %}success{% else %}info{% endif %}">
+                        {{ user.profile.get_role_display }}
+                    </span>
+                    {{ user.first_name|default:user.username }}
+                </span>
+                <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
             </div>
         </div>
-    </nav>
-    {% endif %}
 
-    <div class="container mt-4">
+        <div class="page-content">
+            {% if messages %}
+            <div class="toast-container">
+                {% for message in messages %}
+                <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-auto m-2" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+        <div class="footer">
+            <p>جميع الحقوق محفوظة &copy; {% now "Y" %} - النظام المدرسي | تصميم وبرمجة خاص</p>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Non-authenticated layout -->
+    <div class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
         {% endif %}
-        {% block content %}{% endblock %}
+        {% block unauth_content %}{% endblock %}
     </div>
-
-    <div class="footer">
-        <p>جميع الحقوق محفوظة &copy; {% now "Y" %} - النظام المدرسي</p>
-    </div>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'اختر...',
+                width: '100%'
+            });
+            setTimeout(function() {
+                $('.toast').toast('hide');
+            }, 5000);
+        });
+        document.addEventListener('click', function(e) {
+            var sidebar = document.getElementById('sidebar');
+            var toggle = document.querySelector('.sidebar-toggle');
+            if (sidebar && toggle && !sidebar.contains(e.target) && !toggle.contains(e.target) && sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

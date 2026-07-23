@@ -1,24 +1,58 @@
 {% extends 'school/base.html' %}
 {% block title %}لوحة تحكم المعلم{% endblock %}
+{% block page_heading %}لوحة تحكم المعلم{% endblock %}
 {% block content %}
-<h3 class="mb-4">مرحباً {{ user.username }} - لوحة تحكم المعلم</h3>
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body text-center">
-                <div class="number" style="font-size: 2.5rem; font-weight: bold; color: #0d6efd;">{{ students.count }}</div>
-                <div class="label text-muted">عدد الطلاب</div>
-                <a href="{% url 'student_list' %}" class="btn btn-primary mt-3 w-100">عرض جميع الطلاب</a>
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="page-title mb-0">
+        <i class="bi bi-person-badge-fill"></i> مرحباً، {{ teacher.full_name }}
+    </h4>
+</div>
+
+{% if announcements %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <i class="bi bi-megaphone-fill"></i> آخر الإعلانات
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body text-center">
-                <a href="{% url 'add_note' %}" class="btn btn-success btn-lg w-100">📝 إضافة ملاحظة</a>
-                <a href="{% url 'note_list' %}" class="btn btn-outline-primary mt-2 w-100">ملاحظاتي السابقة</a>
-            </div>
+    <div class="card-body">
+        {% for a in announcements %}
+        <div class="mb-2 pb-2 border-bottom">
+            <strong>{{ a.title }}</strong>
+            <p class="mb-0 text-muted small">{{ a.content|truncatewords:40 }}</p>
+            <small class="text-muted">{{ a.created_at|date:"Y-m-d" }}</small>
         </div>
+        {% empty %}
+        <p class="text-muted mb-0">لا توجد إعلانات حالياً</p>
+        {% endfor %}
     </div>
 </div>
+{% endif %}
+
+{% if classes %}
+<div class="row g-4">
+    {% for class_obj in classes %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-building" style="font-size: 2.5rem; color: #3498db;"></i>
+                <h5 class="mt-3">{{ class_obj.name }}</h5>
+                <p class="text-muted small">
+                    عدد الطلاب: {{ class_obj.students.count }}
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'student_list' %}" class="btn btn-outline-primary btn-sm">عرض الطلاب</a>
+                    <a href="{% url 'add_note' %}" class="btn btn-outline-warning btn-sm">إضافة ملاحظة</a>
+                    <a href="{% url 'add_student_level' %}" class="btn btn-outline-success btn-sm">تسجيل مستوى</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-journal-text"></i>
+    <h5>لم يتم تحديد الصفوف لك بعد</h5>
+    <p class="text-muted">يرجى التواصل مع الإدارة لربطك بالصفوف</p>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,43 +1,96 @@
 {% extends 'school/base.html' %}
 {% block title %}صفحة الطالب{% endblock %}
+{% block page_heading %}الصفحة الشخصية{% endblock %}
 {% block content %}
 <div class="card">
     <div class="card-header bg-info text-white">
-        <h4>مرحباً {{ student.full_name }}</h4>
+        <h5><i class="bi bi-person-circle"></i> مرحباً، {{ student.full_name }}</h5>
     </div>
     <div class="card-body">
-        <div class="row mb-4">
-            <div class="col-md-4"><strong>رقم الهوية:</strong> {{ student.student_id }}</div>
-            <div class="col-md-4"><strong>الصف:</strong> {{ student.class_name }}</div>
-        </div>
-        <hr>
-        <h5 class="mb-3">📋 الملاحظات المسجلة عليك</h5>
-        {% if notes %}
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-primary">
-                        <tr>
-                            <th>#</th>
-                            <th>النوع</th>
-                            <th>الملاحظة</th>
-                            <th>التاريخ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for note in notes %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
-                            <td>{{ note.content }}</td>
-                            <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">رقم الهوية</small>
+                    <strong>{{ student.student_id }}</strong>
+                </div>
             </div>
-        {% else %}
-            <div class="alert alert-success">لا توجد ملاحظات مسجلة لك. تهانينا! 🎉</div>
-        {% endif %}
+            <div class="col-md-3 col-6">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">الصف</small>
+                    <strong>{{ student.student_class.name|default:"غير محدد" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">ولي الأمر</small>
+                    <strong>{{ student.parent_name|default:"غير مسجل" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">الرسائل</small>
+                    <strong>{{ unread_messages }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-sticky-fill"></i> آخر الملاحظات
+                    </div>
+                    <div class="card-body">
+                        {% if notes %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>النوع</th>
+                                        <th>المحتوى</th>
+                                        <th>التاريخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for note in notes|slice:":10" %}
+                                    <tr>
+                                        <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
+                                        <td>{{ note.content|truncatewords:10 }}</td>
+                                        <td>{{ note.created_at|date:"Y-m-d" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد ملاحظات. تهانينا!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-envelope-fill"></i> الرسائل
+                    </div>
+                    <div class="card-body text-center py-4">
+                        {% if unread_messages > 0 %}
+                        <div class="mb-3">
+                            <span class="badge bg-danger" style="font-size: 1rem;">{{ unread_messages }}</span>
+                            <p class="mt-2">رسالة غير مقروءة</p>
+                        </div>
+                        {% else %}
+                        <i class="bi bi-envelope-open text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">لا توجد رسائل جديدة</p>
+                        {% endif %}
+                        <a href="{% url 'student_messages' %}" class="btn btn-outline-primary">عرض الرسائل</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

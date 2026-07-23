@@ -1,0 +1,62 @@
+{% extends 'school/base.html' %}
+{% block title %}تحليل الامتحانات{% endblock %}
+{% block page_heading %}تحليل الامتحانات{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clipboard-data-fill"></i> التحليلات ({{ analyses.count }})</span>
+        <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة تحليل</a>
+    </div>
+    <div class="card-body">
+        {% if analyses %}
+        <div class="row g-4">
+            {% for a in analyses %}
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ a.exam_name }}</h5>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6"><small class="text-muted">المادة:</small> <strong>{{ a.subject.name|default:"-" }}</strong></div>
+                            <div class="col-6"><small class="text-muted">الصف:</small> <strong>{{ a.student_class.name|default:"-" }}</strong></div>
+                        </div>
+                        <div class="row g-2 text-center">
+                            <div class="col-4">
+                                <div class="border rounded p-2">
+                                    <div class="fw-bold text-primary">{{ a.total_students }}</div>
+                                    <small class="text-muted">العدد</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border rounded p-2">
+                                    <div class="fw-bold text-success">{{ a.pass_percentage }}%</div>
+                                    <small class="text-muted">نسبة النجاح</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border rounded p-2">
+                                    <div class="fw-bold text-danger">{{ a.fail_percentage }}%</div>
+                                    <small class="text-muted">نسبة الرسوب</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% if a.success_reasons or a.fail_reasons %}
+                        <hr>
+                        {% if a.success_reasons %}<p class="mb-1"><strong>أسباب النجاح:</strong> {{ a.success_reasons }}</p>{% endif %}
+                        {% if a.fail_reasons %}<p class="mb-0"><strong>أسباب الرسوب:</strong> {{ a.fail_reasons }}</p>{% endif %}
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">بواسطة: {{ a.created_by.get_full_name|default:a.created_by.username }} | {{ a.created_at|date:"Y-m-d" }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-clipboard-data"></i>
+            <h5>لا توجد تحليلات</h5>
+            <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary mt-2">إضافة أول تحليل</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

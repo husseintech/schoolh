@@ -1,0 +1,27 @@
+{% extends 'school/base.html' %}
+{% block title %}قراءة الرسالة{% endblock %}
+{% block page_heading %}قراءة الرسالة{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="bi bi-envelope-fill"></i> {{ msg.subject }}</span>
+                <small class="text-muted">{{ msg.created_at|date:"Y-m-d H:i" }}</small>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>من:</strong> {{ msg.sender.get_full_name|default:msg.sender.username }}
+                </div>
+                <div class="mb-3">
+                    <strong>إلى:</strong> {{ msg.recipient.get_full_name|default:msg.recipient.username }}
+                </div>
+                <hr>
+                <p>{{ msg.content|linebreaks }}</p>
+                <hr>
+                <a href="{% url 'message_list' %}" class="btn btn-outline-primary">العودة للرسائل</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

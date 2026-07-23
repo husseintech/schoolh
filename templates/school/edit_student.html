@@ -1,17 +1,32 @@
 {% extends 'school/base.html' %}
-{% block title %}تعديل بيانات الطالب{% endblock %}
+{% block title %}تعديل طالب{% endblock %}
+{% block page_heading %}تعديل بيانات الطالب{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header bg-warning">
-        <h4>✏️ تعديل بيانات الطالب: {{ student.full_name }}</h4>
-    </div>
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-warning">💾 حفظ التعديلات</button>
-            <a href="{% url 'student_list' %}" class="btn btn-secondary">رجوع</a>
-        </form>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pencil-fill"></i> تعديل: {{ student.full_name }}</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="col-md-6">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ التغييرات</button>
+                        <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

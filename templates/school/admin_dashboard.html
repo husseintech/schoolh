@@ -1,39 +1,93 @@
 {% extends 'school/base.html' %}
 {% block title %}لوحة تحكم المدير{% endblock %}
+{% block page_heading %}لوحة تحكم المدير{% endblock %}
 {% block content %}
-<h3 class="mb-4">مرحباً {{ user.username }} - لوحة تحكم المدير</h3>
-<div class="row">
-    <div class="col-md-6">
-        <div class="card stat-card">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="page-title mb-0">
+        <i class="bi bi-house-door-fill"></i> مرحباً، {{ user.first_name|default:user.username }}
+    </h4>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card stat-blue">
             <div class="card-body">
                 <div class="number">{{ students_count }}</div>
                 <div class="label">إجمالي الطلاب</div>
-                <a href="{% url 'student_list' %}" class="btn btn-primary mt-3">عرض الطلاب</a>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card stat-card">
+    <div class="col-md-4">
+        <div class="card stat-card stat-green">
+            <div class="card-body">
+                <div class="number">{{ teachers_count }}</div>
+                <div class="label">إجمالي المعلمين</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-orange">
             <div class="card-body">
                 <div class="number">{{ notes_count }}</div>
                 <div class="label">إجمالي الملاحظات</div>
-                <a href="{% url 'note_list' %}" class="btn btn-primary mt-3">عرض الملاحظات</a>
             </div>
         </div>
     </div>
 </div>
-<div class="row mt-3">
+
+<div class="row g-4 mb-4">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-body text-center">
-                <a href="{% url 'add_student' %}" class="btn btn-success btn-lg w-100">➕ إضافة طالب جديد</a>
+        <div class="card stat-card stat-purple">
+            <div class="card-body">
+                <div class="number">{{ unread_messages }}</div>
+                <div class="label">رسائل أولياء الأمور غير المقروءة</div>
             </div>
         </div>
     </div>
     <div class="col-md-6">
+        <div class="card stat-card stat-teal">
+            <div class="card-body">
+                <div class="number">{{ pending_agenda }}</div>
+                <div class="label">مهام الأجندة المعلقة</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
         <div class="card">
-            <div class="card-body text-center">
-                <a href="{% url 'add_note' %}" class="btn btn-warning btn-lg w-100">📝 إضافة ملاحظة جديدة</a>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-people-fill" style="font-size: 2rem; color: #3498db;"></i>
+                <h5 class="mt-2">إدارة الطلاب</h5>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'student_list' %}" class="btn btn-outline-primary">عرض الطلاب</a>
+                    <a href="{% url 'add_student' %}" class="btn btn-primary">إضافة طالب جديد</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-person-badge-fill" style="font-size: 2rem; color: #27ae60;"></i>
+                <h5 class="mt-2">إدارة المعلمين</h5>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'teacher_list' %}" class="btn btn-outline-success">عرض المعلمين</a>
+                    <a href="{% url 'add_teacher' %}" class="btn btn-success">إضافة معلم جديد</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-bar-chart-fill" style="font-size: 2rem; color: #e74c3c;"></i>
+                <h5 class="mt-2">التقارير</h5>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'reports_overview' %}" class="btn btn-outline-danger">نظرة عامة</a>
+                    <a href="{% url 'reports' %}" class="btn btn-danger">تقارير الصفوف</a>
+                </div>
             </div>
         </div>
     </div>

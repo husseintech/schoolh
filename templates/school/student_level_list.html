@@ -1,0 +1,54 @@
+{% extends 'school/base.html' %}
+{% block title %}مستويات الطلاب{% endblock %}
+{% block page_heading %}مستويات الطلاب{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up-arrow"></i> المستويات المسجلة ({{ levels.count }})</span>
+        <a href="{% url 'add_student_level' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة مستوى</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الطالب</th>
+                        <th>الصف</th>
+                        <th>المادة</th>
+                        <th>المستوى</th>
+                        <th>الملاحظات</th>
+                        <th>أضيف بواسطة</th>
+                        <th>التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for level in levels %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><a href="{% url 'student_detail' level.student.id %}">{{ level.student.full_name }}</a></td>
+                        <td>{{ level.student.student_class.name|default:"-" }}</td>
+                        <td>{{ level.subject.name|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">
+                                {{ level.get_level_display }}
+                            </span>
+                        </td>
+                        <td>{{ level.notes|truncatewords:10|default:"-" }}</td>
+                        <td>{{ level.created_by.get_full_name|default:level.created_by.username }}</td>
+                        <td>{{ level.created_at|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد مستويات مسجلة</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

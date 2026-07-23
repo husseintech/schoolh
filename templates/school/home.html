@@ -1,0 +1,52 @@
+{% extends 'school/base.html' %}
+{% block title %}الرئيسية - النظام المدرسي{% endblock %}
+{% block unauth_content %}
+<div class="row justify-content-center min-vh-100 align-items-center">
+    <div class="col-md-5">
+        <div class="text-center mb-4">
+            <i class="bi bi-mortarboard-fill" style="font-size: 4rem; color: #2c3e50;"></i>
+            <h2 class="mt-2 fw-bold">النظام المدرسي</h2>
+            <p class="text-muted">نظام إدارة متكامل للمدارس</p>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="text-center mb-4">تسجيل الدخول</h5>
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">اسم المستخدم</label>
+                        <input type="text" name="username" class="form-control" required placeholder="أدخل اسم المستخدم">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور</label>
+                        <input type="password" name="password" class="form-control" required placeholder="أدخل كلمة المرور">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2">دخول</button>
+                </form>
+                <hr class="my-4">
+                <div class="text-center">
+                    <p class="text-muted mb-2">للتواصل مع المدرسة</p>
+                    <a href="{% url 'parent_message' %}" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-chat-dots-fill"></i> إرسال رسالة للإدارة
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% if announcements %}
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-megaphone-fill"></i> الإعلانات
+            </div>
+            <div class="card-body">
+                {% for a in announcements %}
+                <div class="mb-2 pb-2 border-bottom">
+                    <strong>{{ a.title }}</strong>
+                    <p class="mb-0 text-muted small">{{ a.content|truncatewords:30 }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

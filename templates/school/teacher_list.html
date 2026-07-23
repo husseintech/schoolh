@@ -1,0 +1,64 @@
+{% extends 'school/base.html' %}
+{% block title %}المعلمون{% endblock %}
+{% block page_heading %}قائمة المعلمين{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-badge-fill"></i> جميع المعلمين ({{ teachers.count }})</span>
+        <a href="{% url 'add_teacher' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة معلم</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم الكامل</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>رقم الهاتف</th>
+                        <th>تاريخ التعيين</th>
+                        <th>الصفوف</th>
+                        <th>المواد</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ teacher.full_name }}</strong></td>
+                        <td>{{ teacher.email|default:"-" }}</td>
+                        <td>{{ teacher.phone|default:"-" }}</td>
+                        <td>{{ teacher.hire_date|date:"Y-m-d"|default:"-" }}</td>
+                        <td>
+                            {% for c in teacher.classes.all %}
+                            <span class="badge bg-info">{{ c.name }}</span>
+                            {% empty %}-{% endfor %}
+                        </td>
+                        <td>
+                            {% for s in teacher.subjects.all %}
+                            <span class="badge bg-success">{{ s.name }}</span>
+                            {% empty %}-{% endfor %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'teacher_notes' teacher.id %}" class="btn btn-outline-warning" title="ملاحظات"><i class="bi bi-sticky"></i></a>
+                                <a href="{% url 'edit_teacher' teacher.id %}" class="btn btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'delete_teacher' teacher.id %}" class="btn btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا يوجد معلمون مسجلون</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

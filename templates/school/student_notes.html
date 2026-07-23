@@ -1,20 +1,34 @@
 {% extends 'school/base.html' %}
 {% block title %}ملاحظات الطالب{% endblock %}
+{% block page_heading %}ملاحظات الطالب{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header bg-info text-white">
-        <h4>📝 ملاحظات الطالب: {{ student.full_name }} ({{ student.class_name }})</h4>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-circle"></i> {{ student.full_name }}</span>
+        <a href="{% url 'add_note' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة ملاحظة</a>
     </div>
     <div class="card-body">
-        {% if notes %}
+        <div class="row g-2 mb-3">
+            <div class="col-md-3"><strong>رقم الهوية:</strong> {{ student.student_id }}</div>
+            <div class="col-md-3"><strong>الصف:</strong> {{ student.student_class.name|default:"-" }}</div>
+            <div class="col-md-3"><strong>ولي الأمر:</strong> {{ student.parent_name|default:"-" }}</div>
+            <div class="col-md-3"><strong>الهاتف:</strong> {{ student.parent_phone|default:"-" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات ({{ notes.count }})</div>
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="table-primary">
+            <table class="table table-hover">
+                <thead>
                     <tr>
                         <th>#</th>
                         <th>النوع</th>
-                        <th>الملاحظة</th>
-                        <th>بواسطة</th>
+                        <th>المحتوى</th>
+                        <th>كاتبها</th>
+                        <th>خاصة</th>
                         <th>التاريخ</th>
                     </tr>
                 </thead>
@@ -22,19 +36,23 @@
                     {% for note in notes %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
+                        <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% elif note.note_type == 'تحصيل' %}primary{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
                         <td>{{ note.content }}</td>
-                        <td>{{ note.created_by.username }}</td>
+                        <td>{{ note.created_by.get_full_name|default:note.created_by.username }}</td>
+                        <td>{% if note.is_private %}<span class="badge bg-danger">خاص</span>{% else %}<span class="badge bg-success">عام</span>{% endif %}</td>
                         <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد ملاحظات لهذا الطالب</p>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div class="alert alert-success">لا توجد ملاحظات لهذا الطالب.</div>
-        {% endif %}
-        <a href="{% url 'student_list' %}" class="btn btn-secondary">رجوع إلى قائمة الطلاب</a>
     </div>
 </div>
 {% endblock %}

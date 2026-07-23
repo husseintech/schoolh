@@ -1,0 +1,21 @@
+{% extends 'school/base.html' %}
+{% block title %}حذف إعلان{% endblock %}
+{% block page_heading %}حذف إعلان{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white"><i class="bi bi-exclamation-triangle-fill"></i> تأكيد الحذف</div>
+            <div class="card-body text-center py-4">
+                <h5>هل أنت متأكد من حذف الإعلان؟</h5>
+                <p><strong>{{ announcement.title }}</strong></p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash-fill"></i> حذف</button>
+                    <a href="{% url 'announcement_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

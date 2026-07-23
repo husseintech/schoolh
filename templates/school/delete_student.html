@@ -1,18 +1,26 @@
 {% extends 'school/base.html' %}
-{% block title %}حذف الطالب{% endblock %}
+{% block title %}حذف طالب{% endblock %}
+{% block page_heading %}حذف طالب{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header bg-danger text-white">
-        <h4>⚠️ حذف الطالب</h4>
-    </div>
-    <div class="card-body text-center">
-        <p class="lead">هل أنت متأكد من حذف الطالب <strong>{{ student.full_name }}</strong> ({{ student.class_name }})؟</p>
-        <p class="text-danger">سيتم حذف جميع بيانات الطالب والملاحظات المرتبطة به.</p>
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">🗑️ نعم، احذف</button>
-            <a href="{% url 'student_list' %}" class="btn btn-secondary">إلغاء</a>
-        </form>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle-fill"></i> تأكيد الحذف
+            </div>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-person-x-fill text-danger" style="font-size: 4rem;"></i>
+                <h5 class="mt-3">هل أنت متأكد من حذف الطالب؟</h5>
+                <p class="mb-1"><strong>{{ student.full_name }}</strong></p>
+                <p class="text-muted">رقم الهوية: {{ student.student_id }} | الصف: {{ student.student_class.name|default:"-" }}</p>
+                <p class="text-danger small">هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات المرتبطة بالطالب.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash-fill"></i> تأكيد الحذف</button>
+                    <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

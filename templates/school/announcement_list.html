@@ -1,0 +1,40 @@
+{% extends 'school/base.html' %}
+{% block title %}الإعلانات{% endblock %}
+{% block page_heading %}الإعلانات{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-megaphone-fill"></i> الإعلانات ({{ announcements.count }})</span>
+        <a href="{% url 'add_announcement' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة إعلان</a>
+    </div>
+    <div class="card-body">
+        {% for a in announcements %}
+        <div class="card mb-3 border-{% if a.is_active %}primary{% else %}secondary{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="card-title mb-1">{{ a.title }}</h5>
+                        <p class="card-text">{{ a.content }}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ a.created_by.get_full_name|default:a.created_by.username }} |
+                            <i class="bi bi-calendar"></i> {{ a.created_at|date:"Y-m-d H:i" }} |
+                            {% if a.is_active %}<span class="badge bg-success">نشط</span>{% else %}<span class="badge bg-secondary">غير نشط</span>{% endif %}
+                        </small>
+                    </div>
+                    <form method="post" action="{% url 'delete_announcement' a.id %}" class="no-print">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('هل أنت متأكد؟')"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="bi bi-megaphone"></i>
+            <h5>لا توجد إعلانات</h5>
+            <a href="{% url 'add_announcement' %}" class="btn btn-primary mt-2">إضافة أول إعلان</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'school/base.html' %}
+{% block title %}حذف معلم{% endblock %}
+{% block page_heading %}حذف معلم{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle-fill"></i> تأكيد الحذف
+            </div>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-person-x-fill text-danger" style="font-size: 4rem;"></i>
+                <h5 class="mt-3">هل أنت متأكد من حذف المعلم؟</h5>
+                <p class="mb-1"><strong>{{ teacher.full_name }}</strong></p>
+                <p class="text-danger small">هذا الإجراء لا يمكن التراجع عنه.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash-fill"></i> تأكيد الحذف</button>
+                    <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
