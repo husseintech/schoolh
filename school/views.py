@@ -945,6 +945,7 @@ def reports_overview(request):
         student_count = Student.objects.filter(student_class=cls).count()
         notes_count = Note.objects.filter(student__student_class=cls).count()
         class_stats.append({
+            'id': cls.id,
             'name': cls.name,
             'students': student_count,
             'notes': notes_count,
