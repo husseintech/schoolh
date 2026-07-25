@@ -2,9 +2,25 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+def has_perm(user, module, action):
+    if user.profile.role == 'admin':
+        return True
+    try:
+        perms = user.custom_permissions
+        return action in perms.permissions.get(module, [])
+    except User.custom_permissions.RelatedObjectDoesNotExist:
+        return False
+
+
+def can_view(user, module):
+    return has_perm(user, module, 'view')
+
+
 class Profile(models.Model):
     ROLE_CHOICES = [
         ('admin', 'مدير'),
+        ('vice_principal', 'نائب مدير'),
+        ('secretary', 'سكرتير'),
         ('teacher', 'معلم'),
         ('student', 'طالب'),
     ]
@@ -14,6 +30,108 @@ class Profile(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.get_role_display()}'
+
+
+# Default permissions by role
+DEFAULT_PERMISSIONS = {
+    'admin': {
+        'students': ['view', 'add', 'edit', 'delete', 'import', 'export'],
+        'teachers': ['view', 'add', 'edit', 'delete', 'notes'],
+        'classes': ['view', 'add', 'delete'],
+        'subjects': ['view', 'add', 'delete'],
+        'announcements': ['view', 'add', 'delete'],
+        'agenda': ['view', 'add', 'complete', 'delete'],
+        'leaves': ['view', 'add', 'delete'],
+        'levels': ['view', 'add'],
+        'exams': ['view', 'add'],
+        'messages': ['view', 'send'],
+        'reports': ['view'],
+        'settings': ['whatsapp', 'accounts'],
+        'notes': ['view', 'add'],
+    },
+    'vice_principal': {
+        'students': ['view', 'add', 'edit', 'import', 'export'],
+        'teachers': ['view', 'notes'],
+        'classes': ['view'],
+        'subjects': ['view'],
+        'announcements': ['view', 'add', 'delete'],
+        'agenda': ['view', 'add', 'complete'],
+        'leaves': ['view', 'add'],
+        'levels': ['view', 'add'],
+        'exams': ['view', 'add'],
+        'messages': ['view', 'send'],
+        'reports': ['view'],
+        'settings': [],
+        'notes': ['view', 'add'],
+    },
+    'secretary': {
+        'students': ['view', 'add', 'edit', 'import', 'export'],
+        'teachers': ['view'],
+        'classes': ['view'],
+        'subjects': ['view'],
+        'announcements': ['view', 'add'],
+        'agenda': ['view'],
+        'leaves': ['view', 'add', 'delete'],
+        'levels': ['view'],
+        'exams': ['view'],
+        'messages': ['view'],
+        'reports': [],
+        'settings': [],
+        'notes': ['view', 'add'],
+    },
+    'teacher': {
+        'students': ['view'],
+        'teachers': [],
+        'classes': ['view'],
+        'subjects': ['view'],
+        'announcements': ['view'],
+        'agenda': [],
+        'leaves': ['add'],
+        'levels': ['view', 'add'],
+        'exams': ['view', 'add'],
+        'messages': ['send'],
+        'reports': [],
+        'settings': [],
+        'notes': ['view', 'add'],
+    },
+    'student': {
+        'students': [],
+        'teachers': [],
+        'classes': [],
+        'subjects': [],
+        'announcements': ['view'],
+        'agenda': [],
+        'leaves': [],
+        'levels': [],
+        'exams': [],
+        'messages': [],
+        'reports': [],
+        'settings': [],
+        'notes': ['view'],
+    },
+}
+
+
+class UserPermission(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='custom_permissions')
+    permissions = models.JSONField('الصلاحيات', default=dict, blank=True)
+
+    class Meta:
+        verbose_name = 'صلاحية'
+        verbose_name_plural = 'الصلاحيات'
+
+    def get_permissions(self, module):
+        return self.permissions.get(module, [])
+
+    def has_perm(self, module, action):
+        return action in self.permissions.get(module, [])
+
+    def __str__(self):
+        return f'{self.user.username} - صلاحيات'
+
+    @staticmethod
+    def get_defaults(role):
+        return DEFAULT_PERMISSIONS.get(role, {})
 
 
 class Class(models.Model):

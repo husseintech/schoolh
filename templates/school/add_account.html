@@ -1,0 +1,49 @@
+{% extends 'school/base.html' %}
+{% block title %}إضافة حساب{% endblock %}
+{% block page_heading %}إضافة حساب جديد{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-person-plus-fill"></i> إضافة حساب</div>
+            <div class="card-body">
+                <form method="post" id="accountForm">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">اسم المستخدم</label>
+                            <input type="text" name="username" class="form-control" required dir="ltr">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">كلمة المرور</label>
+                            <input type="text" name="password" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الاسم الكامل</label>
+                            <input type="text" name="full_name" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الدور</label>
+                            <select name="role" class="form-select" required id="roleSelect">
+                                {% for val, label in roles %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="text" name="phone" class="form-control" dir="ltr">
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> سيتم منح الحساب الصلاحيات الافتراضية للدور المختار. يمكنك تعديلها لاحقاً.
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+                    <a href="{% url 'account_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

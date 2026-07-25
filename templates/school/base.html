@@ -339,6 +339,9 @@
         <a href="{% url 'whatsapp_settings' %}" class="nav-link {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-whatsapp"></i> إعدادات واتساب
         </a>
+        <a href="{% url 'account_list' %}" class="nav-link {% if 'account' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-people-fill"></i> الحسابات والصلاحيات
+        </a>
 
         {% elif user.profile.role == 'teacher' %}
         <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">

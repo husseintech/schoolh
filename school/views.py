@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1001,6 +1001,116 @@ def reports_overview(request):
         'class_stats': class_stats,
     }
     return render(request, 'school/reports_overview.html', context)
+
+
+# ─── Account Management ───────────────────────────────────────────────────────
+
+@login_required
+def account_list(request):
+    if not has_perm(request.user, 'settings', 'accounts'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    users = User.objects.filter(is_superuser=False).select_related('profile').order_by('username')
+    return render(request, 'school/account_list.html', {'users': users, 'roles': Profile.ROLE_CHOICES})
+
+
+@login_required
+def add_account(request):
+    if not has_perm(request.user, 'settings', 'accounts'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        full_name = request.POST.get('full_name', '').strip()
+        role = request.POST.get('role', '')
+        phone = request.POST.get('phone', '').strip()
+
+        if not username or not password:
+            messages.error(request, 'اسم المستخدم وكلمة المرور مطلوبان')
+            return redirect('add_account')
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'اسم المستخدم موجود مسبقاً')
+            return redirect('add_account')
+
+        user = User.objects.create_user(username=username, password=password, first_name=full_name)
+        Profile.objects.create(user=user, role=role, phone=phone)
+        UserPermission.objects.create(user=user, permissions=UserPermission.get_defaults(role))
+        messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
+        return redirect('account_list')
+
+    MODULES = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
+    ACTIONS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    return render(request, 'school/add_account.html', {
+        'roles': Profile.ROLE_CHOICES,
+        'modules': MODULES,
+        'actions': ACTIONS,
+        'default_perms': DEFAULT_PERMISSIONS,
+    })
+
+
+@login_required
+def edit_account(request, user_id):
+    if not has_perm(request.user, 'settings', 'accounts'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    user = get_object_or_404(User, id=user_id)
+    profile = user.profile
+    perms, _ = UserPermission.objects.get_or_create(user=user, defaults={'permissions': UserPermission.get_defaults(profile.role)})
+
+    if request.method == 'POST':
+        profile.role = request.POST.get('role', profile.role)
+        profile.phone = request.POST.get('phone', '')
+        user.first_name = request.POST.get('full_name', '')
+        profile.save()
+        user.save()
+
+        new_password = request.POST.get('new_password', '').strip()
+        if new_password:
+            user.set_password(new_password)
+            user.save()
+
+        new_perms = {}
+        for key, val in request.POST.items():
+            if key.startswith('perm_'):
+                parts = key.replace('perm_', '', 1).rsplit('_', 1)
+                if len(parts) == 2:
+                    module, action = parts
+                    new_perms.setdefault(module, []).append(action)
+        perms.permissions = new_perms
+        perms.save()
+
+        messages.success(request, f'تم تحديث الحساب: {user.username}')
+        return redirect('account_list')
+
+    MODULES = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
+    ACTIONS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    return render(request, 'school/edit_account.html', {
+        'edit_user': user,
+        'profile': profile,
+        'perms': perms,
+        'roles': Profile.ROLE_CHOICES,
+        'modules': MODULES,
+        'actions': ACTIONS,
+        'default_perms': DEFAULT_PERMISSIONS,
+    })
+
+
+@login_required
+def delete_account(request, user_id):
+    if not has_perm(request.user, 'settings', 'accounts'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    user = get_object_or_404(User, id=user_id)
+    if user == request.user:
+        messages.error(request, 'لا يمكنك حذف حسابك الخاص')
+        return redirect('account_list')
+    if request.method == 'POST':
+        username = user.username
+        user.delete()
+        messages.success(request, f'تم حذف الحساب: {username}')
+        return redirect('account_list')
+    return render(request, 'school/delete_account.html', {'del_user': user})
 
 
 # ─── WhatsApp ─────────────────────────────────────────────────────────────────
