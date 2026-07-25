@@ -1035,7 +1035,18 @@ def add_account(request):
 
         user = User.objects.create_user(username=username, password=password, first_name=full_name)
         Profile.objects.create(user=user, role=role, phone=phone)
-        UserPermission.objects.create(user=user, permissions=UserPermission.get_defaults(role))
+
+        new_perms = {}
+        for key, val in request.POST.items():
+            if key.startswith('perm_'):
+                parts = key.replace('perm_', '', 1).rsplit('_', 1)
+                if len(parts) == 2:
+                    module, action = parts
+                    new_perms.setdefault(module, []).append(action)
+        if not new_perms:
+            new_perms = UserPermission.get_defaults(role)
+        UserPermission.objects.create(user=user, permissions=new_perms)
+
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
@@ -1085,10 +1096,16 @@ def edit_account(request, user_id):
 
     MODULES = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
     ACTIONS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+
+    allowed_set = set()
+    for module, actions in perms.permissions.items():
+        for action in actions:
+            allowed_set.add(f'{module}_{action}')
+
     return render(request, 'school/edit_account.html', {
         'edit_user': user,
         'profile': profile,
-        'perms': perms,
+        'allowed_set': allowed_set,
         'roles': Profile.ROLE_CHOICES,
         'modules': MODULES,
         'actions': ACTIONS,
