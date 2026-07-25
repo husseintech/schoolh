@@ -96,8 +96,12 @@ def add_student(request):
     if request.method == 'POST':
         form = StudentForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'تم إضافة الطالب بنجاح')
+            student = form.save()
+            username = form.cleaned_data['username']
+            password = form.cleaned_data.get('password')
+            if not password:
+                password = form.cleaned_data['student_id'][-6:] if len(form.cleaned_data['student_id']) >= 6 else form.cleaned_data['student_id']
+            messages.success(request, f'تم إضافة الطالب بنجاح\nاسم المستخدم: {username}\nكلمة المرور: {password}')
             return redirect('student_list')
     else:
         form = StudentForm()
@@ -320,8 +324,12 @@ def import_students(request):
             except Exception as e:
                 errors.append(f'الصف {i}: خطأ - {str(e)}')
 
-        if imported:
-            messages.success(request, f'تم استيراد {imported} طالب/طالب بنجاح')
+                if imported:
+            msg = f'تم استيراد {imported} طالب/طالب بنجاح'
+            if imported <= 5:
+                messages.success(request, f'{msg}\nاسم المستخدم لكل طالب: student_[رقم الهوية]\nكلمة المرور: آخر 6 أرقام من رقم الهوية')
+            else:
+                messages.success(request, f'{msg}\nاسم المستخدم: student_[رقم الهوية]\nكلمة المرور الافتراضية: آخر 6 أرقام من رقم الهوية')
         if errors:
             for err in errors[:10]:
                 messages.warning(request, err)
