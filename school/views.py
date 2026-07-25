@@ -324,7 +324,7 @@ def import_students(request):
             except Exception as e:
                 errors.append(f'الصف {i}: خطأ - {str(e)}')
 
-                if imported:
+        if imported:
             msg = f'تم استيراد {imported} طالب/طالب بنجاح'
             if imported <= 5:
                 messages.success(request, f'{msg}\nاسم المستخدم لكل طالب: student_[رقم الهوية]\nكلمة المرور: آخر 6 أرقام من رقم الهوية')
