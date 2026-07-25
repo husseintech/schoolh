@@ -35,6 +35,9 @@
                 <div class="border rounded p-3 text-center">
                     <small class="text-muted d-block">هاتف ولي الأمر</small>
                     <strong>{{ student.parent_phone|default:"-" }}</strong>
+                    {% if student.parent_phone %}
+                    <a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" class="btn btn-success btn-sm mt-1"><i class="bi bi-whatsapp"></i> واتساب</a>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-md-3">
@@ -64,7 +67,8 @@
             <div class="col-md-3">
                 <div class="border rounded p-3 text-center bg-light">
                     <small class="text-muted d-block">كلمة المرور</small>
-                    <a href="{% url 'reset_student_password' student.id %}" class="btn btn-info btn-sm mt-1"><i class="bi bi-key"></i> تغيير كلمة المرور</a>
+                    <strong dir="ltr" class="text-success">{{ student.plain_password|default:"-" }}</strong>
+                    <a href="{% url 'reset_student_password' student.id %}" class="d-block mt-1 small text-info">تغيير</a>
                 </div>
             </div>
         </div>

@@ -54,7 +54,12 @@
                     {% for student in students %}
                     <tr data-class="{{ student.student_class.name|default:'' }}">
                         <td>{{ forloop.counter }}</td>
-                        <td><a href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a></td>
+                        <td>
+                            <a href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a>
+                            {% if student.parent_phone %}
+                            <a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" class="text-success ms-1" title="واتساب"><i class="bi bi-whatsapp"></i></a>
+                            {% endif %}
+                        </td>
                         <td><small dir="ltr">{{ student.user.username }}</small></td>
                         <td>{{ student.student_id }}</td>
                         <td><span class="badge bg-info">{{ student.student_class.name|default:"-" }}</span></td>

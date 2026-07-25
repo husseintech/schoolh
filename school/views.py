@@ -201,6 +201,8 @@ def reset_student_password(request, student_id):
             return redirect('reset_student_password', student_id=student.id)
         student.user.set_password(new_password)
         student.user.save()
+        student.plain_password = new_password
+        student.save()
         messages.success(request, f'تم تغيير كلمة مرور الطالب {student.full_name} إلى: {new_password}')
         return redirect('student_detail', student_id=student.id)
     return render(request, 'school/reset_password.html', {'student': student})
@@ -319,6 +321,7 @@ def import_students(request):
                     parent_name=parent_name,
                     address=address,
                     birth_date=bd,
+                    plain_password=password,
                 )
                 imported += 1
             except Exception as e:

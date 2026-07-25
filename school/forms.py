@@ -34,6 +34,7 @@ class StudentForm(forms.ModelForm):
             user = User.objects.create_user(username=username, password=password)
             Profile.objects.create(user=user, role='student')
             student.user = user
+            student.plain_password = password
             student.save()
         return student
 
