@@ -1050,12 +1050,42 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULES = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
-    ACTIONS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
+    ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    MODULE_LABELS = {
+        'students': 'الطلاب',
+        'teachers': 'المعلمون',
+        'classes': 'الصفوف',
+        'subjects': 'المواد',
+        'announcements': 'الإعلانات',
+        'agenda': 'الأجندة',
+        'leaves': 'أذونات المغادرة',
+        'levels': 'مستويات الطلاب',
+        'exams': 'تحليل الامتحانات',
+        'messages': 'الرسائل',
+        'reports': 'التقارير',
+        'settings': 'الإعدادات',
+        'notes': 'الملاحظات',
+    }
+    ACTION_LABELS = {
+        'view': 'عرض',
+        'add': 'إضافة',
+        'edit': 'تعديل',
+        'delete': 'حذف',
+        'import': 'استيراد',
+        'export': 'تصدير',
+        'notes': 'ملاحظات',
+        'complete': 'إكمال',
+        'send': 'إرسال',
+        'whatsapp': 'واتساب',
+        'accounts': 'الحسابات',
+    }
+    modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
+    actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
     return render(request, 'school/add_account.html', {
         'roles': Profile.ROLE_CHOICES,
-        'modules': MODULES,
-        'actions': ACTIONS,
+        'modules': modules,
+        'actions': actions,
         'default_perms': DEFAULT_PERMISSIONS,
     })
 
@@ -1094,12 +1124,42 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULES = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
-    ACTIONS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
+    ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    MODULE_LABELS = {
+        'students': 'الطلاب',
+        'teachers': 'المعلمون',
+        'classes': 'الصفوف',
+        'subjects': 'المواد',
+        'announcements': 'الإعلانات',
+        'agenda': 'الأجندة',
+        'leaves': 'أذونات المغادرة',
+        'levels': 'مستويات الطلاب',
+        'exams': 'تحليل الامتحانات',
+        'messages': 'الرسائل',
+        'reports': 'التقارير',
+        'settings': 'الإعدادات',
+        'notes': 'الملاحظات',
+    }
+    ACTION_LABELS = {
+        'view': 'عرض',
+        'add': 'إضافة',
+        'edit': 'تعديل',
+        'delete': 'حذف',
+        'import': 'استيراد',
+        'export': 'تصدير',
+        'notes': 'ملاحظات',
+        'complete': 'إكمال',
+        'send': 'إرسال',
+        'whatsapp': 'واتساب',
+        'accounts': 'الحسابات',
+    }
+    modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
+    actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
 
     allowed_set = set()
-    for module, actions in perms.permissions.items():
-        for action in actions:
+    for module, actions_list in perms.permissions.items():
+        for action in actions_list:
             allowed_set.add(f'{module}_{action}')
 
     return render(request, 'school/edit_account.html', {
@@ -1107,8 +1167,8 @@ def edit_account(request, user_id):
         'profile': profile,
         'allowed_set': allowed_set,
         'roles': Profile.ROLE_CHOICES,
-        'modules': MODULES,
-        'actions': ACTIONS,
+        'modules': modules,
+        'actions': actions,
         'default_perms': DEFAULT_PERMISSIONS,
     })
 

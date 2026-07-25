@@ -59,18 +59,18 @@ window.onload = setDefaultPerms;
                             <thead>
                                 <tr>
                                     <th>القسم</th>
-                                    {% for action in actions %}
-                                    <th class="text-center small">{{ action }}</th>
+                                    {% for a in actions %}
+                                    <th class="text-center small">{{ a.label }}</th>
                                     {% endfor %}
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for module in modules %}
+                                {% for m in modules %}
                                 <tr>
-                                    <td><strong>{{ module }}</strong></td>
-                                    {% for action in actions %}
+                                    <td><strong>{{ m.label }}</strong></td>
+                                    {% for a in actions %}
                                     <td class="text-center">
-                                        <input type="checkbox" name="perm_{{ module }}_{{ action }}" class="form-check-input">
+                                        <input type="checkbox" name="perm_{{ m.key }}_{{ a.key }}" class="form-check-input">
                                     </td>
                                     {% endfor %}
                                 </tr>
