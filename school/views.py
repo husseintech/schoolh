@@ -184,6 +184,24 @@ def student_detail(request, student_id):
     })
 
 
+@login_required
+def reset_student_password(request, student_id):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    student = get_object_or_404(Student, id=student_id)
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        if len(new_password) < 4:
+            messages.error(request, 'كلمة المرور يجب أن تكون 4 أحرف على الأقل')
+            return redirect('reset_student_password', student_id=student.id)
+        student.user.set_password(new_password)
+        student.user.save()
+        messages.success(request, f'تم تغيير كلمة مرور الطالب {student.full_name} إلى: {new_password}')
+        return redirect('student_detail', student_id=student.id)
+    return render(request, 'school/reset_password.html', {'student': student})
+
+
 # ─── Excel Import/Export ──────────────────────────────────────────────────────
 
 @login_required
@@ -197,12 +215,13 @@ def download_student_template(request):
     ws = wb.active
     ws.title = 'نموذج استيراد الطلاب'
 
-    headers = ['الاسم الكامل', 'رقم الهوية', 'الصف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'العنوان', 'تاريخ الميلاد']
+    headers = ['الاسم الكامل', 'رقم الهوية', 'الصف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'العنوان', 'تاريخ الميلاد', 'كلمة المرور']
     ws.append(headers)
 
     for col in range(1, len(headers) + 1):
         cell = ws.cell(row=1, column=col)
-        cell.font = openpyxl.styles.Font(bold=True)
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+        cell.fill = openpyxl.styles.PatternFill(start_color="2c3e50", end_color="2c3e50", fill_type="solid")
         cell.alignment = openpyxl.styles.Alignment(horizontal='center')
 
     ws.column_dimensions['A'].width = 30
@@ -212,6 +231,11 @@ def download_student_template(request):
     ws.column_dimensions['E'].width = 20
     ws.column_dimensions['F'].width = 30
     ws.column_dimensions['G'].width = 15
+    ws.column_dimensions['H'].width = 18
+
+    ws.merge_cells('I1:J1')
+    note_cell = ws.cell(row=1, column=9, value='كلمة المرور اختيارية - اذا تركت فارغة سيتم إنشاءها تلقائياً من آخر 6 أرقام من رقم الهوية')
+    note_cell.font = openpyxl.styles.Font(size=9, color="e74c3c")
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=نموذج_استيراد_الطلاب.xlsx'
@@ -255,6 +279,7 @@ def import_students(request):
                 parent_name = str(row[4]).strip() if row[4] else ''
                 address = str(row[5]).strip() if row[5] else ''
                 birth_date = row[6]
+                password = str(row[7]).strip() if len(row) > 7 and row[7] else ''
 
                 if not full_name or not student_id:
                     errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
@@ -276,7 +301,8 @@ def import_students(request):
                     bd = None
 
                 username = f'student_{student_id}'
-                password = student_id[-6:] if len(student_id) >= 6 else student_id
+                if not password:
+                    password = student_id[-6:] if len(student_id) >= 6 else student_id
 
                 user = User.objects.create_user(username=username, password=password)
                 Profile.objects.create(user=user, role='student')

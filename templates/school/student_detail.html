@@ -6,8 +6,9 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-person-circle"></i> {{ student.full_name }}</span>
         <div>
-            <a href="{% url 'add_note' %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> إضافة ملاحظة</a>
+            <a href="{% url 'add_note' %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> ملاحظة</a>
             <a href="{% url 'edit_student' student.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> تعديل</a>
+            <a href="{% url 'reset_student_password' student.id %}" class="btn btn-info btn-sm"><i class="bi bi-key"></i> كلمة المرور</a>
         </div>
     </div>
     <div class="card-body">
@@ -52,6 +53,19 @@
                 <div class="border rounded p-3 text-center">
                     <small class="text-muted d-block">تاريخ التسجيل</small>
                     <strong>{{ student.created_at|date:"Y-m-d" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center bg-light">
+                    <small class="text-muted d-block">اسم المستخدم</small>
+                    <strong dir="ltr">{{ student.user.username }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center bg-light">
+                    <small class="text-muted d-block">كلمة المرور الافتراضية</small>
+                    <strong dir="ltr">{{ student.student_id|slice:"-6:" }}</strong>
+                    <a href="{% url 'reset_student_password' student.id %}" class="d-block mt-1 small text-info">تغيير</a>
                 </div>
             </div>
         </div>
