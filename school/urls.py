@@ -88,6 +88,9 @@ urlpatterns = [
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
     path('accounts/<int:user_id>/delete/', views.delete_account, name='delete_account'),
 
+    # My Account
+    path('my-account/', views.my_account, name='my_account'),
+
     # WhatsApp
     path('whatsapp-settings/', views.whatsapp_settings, name='whatsapp_settings'),
 ]

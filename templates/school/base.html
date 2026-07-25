@@ -404,13 +404,15 @@
                 <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
             </div>
             <div class="user-info">
-                <span class="text-muted d-none d-sm-inline">
-                    <span class="badge bg-{% if user.profile.role == 'admin' %}danger{% elif user.profile.role == 'teacher' %}success{% else %}info{% endif %}">
-                        {{ user.profile.get_role_display }}
+                <a href="{% url 'my_account' %}" class="text-decoration-none text-reset">
+                    <span class="text-muted d-none d-sm-inline">
+                        <span class="badge bg-{% if user.profile.role == 'admin' %}danger{% elif user.profile.role == 'teacher' %}success{% else %}info{% endif %}">
+                            {{ user.profile.get_role_display }}
+                        </span>
+                        {{ user.first_name|default:user.username }}
                     </span>
-                    {{ user.first_name|default:user.username }}
-                </span>
-                <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                    <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                </a>
             </div>
         </div>
 

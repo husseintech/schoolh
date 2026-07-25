@@ -1,0 +1,41 @@
+{% extends 'school/base.html' %}
+{% block title %}حسابي{% endblock %}
+{% block page_heading %}الإعدادات الشخصية{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-person-circle"></i> {{ user.username }}</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">اسم المستخدم</label>
+                        <input type="text" class="form-control" value="{{ user.username }}" disabled dir="ltr">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الدور</label>
+                        <input type="text" class="form-control" value="{{ profile.get_role_display }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الاسم الكامل</label>
+                        <input type="text" name="full_name" class="form-control" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="text" name="phone" class="form-control" value="{{ profile.phone }}" dir="ltr">
+                    </div>
+                    <hr>
+                    <h5><i class="bi bi-key-fill"></i> تغيير كلمة المرور</h5>
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور الجديدة</label>
+                        <input type="text" name="new_password" class="form-control" placeholder="اترك فارغاً إذا لا تريد التغيير">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">رجوع</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

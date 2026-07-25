@@ -1190,6 +1190,30 @@ def delete_account(request, user_id):
     return render(request, 'school/delete_account.html', {'del_user': user})
 
 
+@login_required
+def my_account(request):
+    user = request.user
+    profile = user.profile
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        if full_name:
+            user.first_name = full_name
+        if phone:
+            profile.phone = phone
+        if new_password:
+            user.set_password(new_password)
+        profile.save()
+        user.save()
+        if new_password:
+            messages.success(request, 'تم تغيير كلمة المرور. سجل دخول مرة أخرى')
+            return redirect('login')
+        messages.success(request, 'تم تحديث البيانات')
+        return redirect('my_account')
+    return render(request, 'school/my_account.html', {'profile': profile})
+
+
 # ─── WhatsApp ─────────────────────────────────────────────────────────────────
 
 @login_required
