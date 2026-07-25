@@ -23,6 +23,7 @@ urlpatterns = [
 
     # Notes
     path('notes/add/', views.add_note, name='add_note'),
+    path('notes/add/<int:student_id>/', views.add_note, name='add_note_with_student'),
     path('notes/', views.note_list, name='note_list'),
 
     # Teachers

@@ -371,7 +371,7 @@ def export_students(request):
 # ─── Notes ────────────────────────────────────────────────────────────────────
 
 @login_required
-def add_note(request):
+def add_note(request, student_id=None):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
@@ -394,7 +394,10 @@ def add_note(request):
                 messages.success(request, 'تم إضافة الملاحظة بنجاح (لا يوجد رقم هاتف مسجل لولي الأمر)')
             return redirect('note_list')
     else:
-        form = NoteForm()
+        initial = {}
+        if student_id:
+            initial['student'] = get_object_or_404(Student, id=student_id)
+        form = NoteForm(initial=initial)
         if request.user.profile.role == 'teacher':
             try:
                 teacher = request.user.teacher_profile
