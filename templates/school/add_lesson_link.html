@@ -1,0 +1,39 @@
+{% extends 'school/base.html' %}
+{% block title %}إضافة رابط حصة{% endblock %}
+{% block page_heading %}إضافة رابط حصة إلكترونية{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-link-45deg"></i> إضافة رابط</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">عنوان الحصة</label>
+                        <input type="text" name="title" class="form-control" required placeholder="مثال: حصة رياضيات - الصف الخامس">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الرابط</label>
+                        <input type="url" name="url" class="form-control" required dir="ltr" placeholder="https://meet.google.com/xxx">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">تاريخ الحصة</label>
+                            <input type="date" name="lesson_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">وقت الحصة</label>
+                            <input type="time" name="lesson_time" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+                        <a href="{% url 'lesson_link_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

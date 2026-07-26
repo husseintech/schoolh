@@ -355,3 +355,19 @@ class Message(models.Model):
 
     def __str__(self):
         return f'{self.subject} - {self.sender.username if self.sender else self.parent_name or "مجهول"}'
+
+
+class LessonLink(models.Model):
+    title = models.CharField('العنوان', max_length=200)
+    url = models.URLField('الرابط')
+    lesson_datetime = models.DateTimeField('تاريخ ووقت الحصة', null=True, blank=True)
+    is_active = models.BooleanField('نشط', default=True)
+    created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'رابط حصة'
+        verbose_name_plural = 'روابط الحصص'
+        ordering = ['lesson_datetime', 'created_at']
+
+    def __str__(self):
+        return self.title

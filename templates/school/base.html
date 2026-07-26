@@ -336,6 +336,9 @@
         </a>
 
         <div class="nav-section">الإعدادات</div>
+        <a href="{% url 'lesson_link_list' %}" class="nav-link {% if 'lesson_link' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-camera-video-fill"></i> روابط الحصص
+        </a>
         <a href="{% url 'whatsapp_settings' %}" class="nav-link {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-whatsapp"></i> إعدادات واتساب
         </a>

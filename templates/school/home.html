@@ -1,52 +1,189 @@
 {% extends 'school/base.html' %}
-{% block title %}الرئيسية - النظام المدرسي{% endblock %}
+{% block title %}النظام المدرسي - {% endblock %}
 {% block unauth_content %}
-<div class="row justify-content-center min-vh-100 align-items-center">
-    <div class="col-md-5">
-        <div class="text-center mb-4">
-            <i class="bi bi-mortarboard-fill" style="font-size: 4rem; color: #2c3e50;"></i>
-            <h2 class="mt-2 fw-bold">النظام المدرسي</h2>
-            <p class="text-muted">نظام إدارة متكامل للمدارس</p>
-        </div>
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h5 class="text-center mb-4">تسجيل الدخول</h5>
-                <form method="post" action="{% url 'login' %}">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">اسم المستخدم</label>
-                        <input type="text" name="username" class="form-control" required placeholder="أدخل اسم المستخدم">
+<style>
+    .login-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+    }
+    .login-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+    .login-header {
+        background: linear-gradient(135deg, #2c3e50, #3498db);
+        color: #fff;
+        padding: 30px;
+        text-align: center;
+    }
+    .login-header h2 { margin: 0; font-weight: 700; }
+    .login-header p { margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem; }
+    .login-body { padding: 30px; }
+    .side-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    .side-card .card-header {
+        font-weight: 600;
+        padding: 12px 18px;
+        border-bottom: none;
+    }
+    .announce-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .announce-item:last-child { border-bottom: none; }
+    .announce-item .title { font-weight: 600; font-size: 0.95rem; }
+    .announce-item .date { font-size: 0.75rem; color: #999; }
+    .announce-item .content { font-size: 0.85rem; color: #555; margin-top: 4px; }
+    .link-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+    }
+    .link-item:hover { background: #f8f9fa; padding-right: 8px; border-radius: 8px; }
+    .link-item:last-child { border-bottom: none; }
+    .link-item .icon {
+        width: 40px; height: 40px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        margin-left: 12px; flex-shrink: 0;
+    }
+    .link-item .info { flex: 1; }
+    .link-item .info .title { font-weight: 600; font-size: 0.9rem; }
+    .link-item .info .time { font-size: 0.75rem; color: #999; }
+    .link-item .arrow { color: #667eea; font-size: 1.2rem; }
+    .empty-placeholder {
+        text-align: center; padding: 30px 20px; color: #aaa;
+    }
+    .empty-placeholder i { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .btn-login {
+        background: linear-gradient(135deg, #2c3e50, #3498db);
+        border: none; color: #fff; padding: 12px; border-radius: 8px;
+        font-weight: 600; transition: all 0.3s;
+    }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(52,152,219,0.4); }
+    .btn-outline-login {
+        border: 2px solid #3498db; color: #3498db; padding: 10px; border-radius: 8px;
+        font-weight: 500; transition: all 0.3s; text-decoration: none; display: block;
+    }
+    .btn-outline-login:hover { background: #3498db; color: #fff; }
+    .contact-info {
+        text-align: center; margin-top: 20px; padding: 15px;
+        background: #f8f9fa; border-radius: 10px;
+    }
+    .contact-info small { color: #999; }
+    .badge-live { background: #e74c3c; color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; }
+    @media (max-width: 768px) {
+        .side-card { margin-bottom: 15px; }
+        .login-page { padding: 20px 0; }
+    }
+</style>
+
+<div class="login-page">
+    <div class="container">
+        <div class="row g-4 align-items-stretch">
+            <!-- Right: Announcements -->
+            <div class="col-lg-4 order-lg-3">
+                <div class="side-card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-megaphone-fill"></i> الإعلانات
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">كلمة المرور</label>
-                        <input type="password" name="password" class="form-control" required placeholder="أدخل كلمة المرور">
+                    <div class="card-body p-3">
+                        {% if announcements %}
+                            {% for a in announcements %}
+                            <div class="announce-item">
+                                <div class="title">{{ a.title }}</div>
+                                <div class="date"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
+                                <div class="content">{{ a.content|truncatewords:25 }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-placeholder">
+                                <i class="bi bi-megaphone"></i>
+                                لا توجد إعلانات حالياً
+                            </div>
+                        {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2">دخول</button>
-                </form>
-                <hr class="my-4">
-                <div class="text-center">
-                    <p class="text-muted mb-2">للتواصل مع المدرسة</p>
-                    <a href="{% url 'parent_message' %}" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-chat-dots-fill"></i> إرسال رسالة للإدارة
-                    </a>
+                </div>
+            </div>
+
+            <!-- Center: Login Form -->
+            <div class="col-lg-4 order-lg-2 d-flex">
+                <div class="login-card w-100">
+                    <div class="login-header">
+                        <i class="bi bi-mortarboard-fill" style="font-size: 3rem;"></i>
+                        <h2>النظام المدرسي</h2>
+                        <p>نظام إدارة متكامل للمدارس</p>
+                    </div>
+                    <div class="login-body">
+                        <form method="post" action="{% url 'login' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label small">اسم المستخدم</label>
+                                <input type="text" name="username" class="form-control" required placeholder="أدخل اسم المستخدم">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">كلمة المرور</label>
+                                <input type="password" name="password" class="form-control" required placeholder="أدخل كلمة المرور">
+                            </div>
+                            <button type="submit" class="btn btn-login w-100">دخول <i class="bi bi-box-arrow-in-left"></i></button>
+                        </form>
+                        <div class="contact-info">
+                            <small class="d-block mb-2">للتواصل مع المدرسة</small>
+                            <a href="{% url 'parent_message' %}" class="btn-outline-login">
+                                <i class="bi bi-chat-dots-fill"></i> إرسال رسالة للإدارة
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Left: Online Lesson Links -->
+            <div class="col-lg-4 order-lg-1">
+                <div class="side-card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية
+                    </div>
+                    <div class="card-body p-3">
+                        {% if lesson_links %}
+                            {% for link in lesson_links %}
+                            <a href="{{ link.url }}" target="_blank" class="link-item">
+                                <div class="icon"><i class="bi bi-play-fill"></i></div>
+                                <div class="info">
+                                    <div class="title">{{ link.title }}
+                                        {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span class="badge-live">مباشر</span>{% endif %}
+                                    </div>
+                                    {% if link.lesson_datetime %}
+                                    <div class="time"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="arrow"><i class="bi bi-chevron-left"></i></div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-placeholder">
+                                <i class="bi bi-camera-video"></i>
+                                لا توجد حصص إلكترونية حالياً
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        {% if announcements %}
-        <div class="card shadow-sm mt-3">
-            <div class="card-header bg-primary text-white">
-                <i class="bi bi-megaphone-fill"></i> الإعلانات
-            </div>
-            <div class="card-body">
-                {% for a in announcements %}
-                <div class="mb-2 pb-2 border-bottom">
-                    <strong>{{ a.title }}</strong>
-                    <p class="mb-0 text-muted small">{{ a.content|truncatewords:30 }}</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

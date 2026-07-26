@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -37,8 +37,17 @@ def logout_view(request):
 
 
 def home(request):
+    from datetime import datetime, timedelta
     announcements = Announcement.objects.filter(is_active=True)[:5]
-    return render(request, 'school/home.html', {'announcements': announcements})
+    lesson_links = LessonLink.objects.filter(is_active=True)[:10]
+    now = datetime.now()
+    now_ago = now - timedelta(hours=1)
+    return render(request, 'school/home.html', {
+        'announcements': announcements,
+        'lesson_links': lesson_links,
+        'now': now,
+        'now_ago': now_ago,
+    })
 
 
 @login_required
@@ -1231,6 +1240,57 @@ def my_account(request):
         messages.success(request, 'تم تحديث البيانات')
         return redirect('my_account')
     return render(request, 'school/my_account.html', {'profile': profile})
+
+
+# ─── Lesson Links (Online Classes) ──────────────────────────────────────────
+
+@login_required
+def lesson_link_list(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    links = LessonLink.objects.all().order_by('-lesson_datetime', '-created_at')
+    return render(request, 'school/lesson_link_list.html', {'links': links})
+
+
+@login_required
+def add_lesson_link(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        url = request.POST.get('url', '').strip()
+        lesson_date = request.POST.get('lesson_date', '').strip()
+        lesson_time = request.POST.get('lesson_time', '').strip()
+        if not title or not url:
+            messages.error(request, 'العنوان والرابط مطلوبان')
+            return redirect('add_lesson_link')
+        dt = None
+        if lesson_date and lesson_time:
+            from datetime import datetime as dt_mod
+            try:
+                dt = dt_mod.strptime(f'{lesson_date} {lesson_time}', '%Y-%m-%d %H:%M')
+            except ValueError:
+                pass
+        LessonLink.objects.create(title=title, url=url, lesson_datetime=dt)
+        messages.success(request, f'تم إضافة الرابط: {title}')
+        return redirect('lesson_link_list')
+    return render(request, 'school/add_lesson_link.html')
+
+
+@login_required
+def delete_lesson_link(request, link_id):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    link = get_object_or_404(LessonLink, id=link_id)
+    if request.method == 'POST':
+        title = link.title
+        link.delete()
+        messages.success(request, f'تم حذف الرابط: {title}')
+        return redirect('lesson_link_list')
+    return render(request, 'school/delete_lesson_link.html', {'link': link})
 
 
 # ─── WhatsApp ─────────────────────────────────────────────────────────────────

@@ -94,4 +94,9 @@ urlpatterns = [
 
     # WhatsApp
     path('whatsapp-settings/', views.whatsapp_settings, name='whatsapp_settings'),
+
+    # Lesson Links
+    path('lesson-links/', views.lesson_link_list, name='lesson_link_list'),
+    path('lesson-links/add/', views.add_lesson_link, name='add_lesson_link'),
+    path('lesson-links/<int:link_id>/delete/', views.delete_lesson_link, name='delete_lesson_link'),
 ]

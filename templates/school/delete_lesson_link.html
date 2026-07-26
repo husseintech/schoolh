@@ -1,0 +1,22 @@
+{% extends 'school/base.html' %}
+{% block title %}حذف رابط{% endblock %}
+{% block page_heading %}حذف رابط{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white"><i class="bi bi-exclamation-triangle-fill"></i> تأكيد الحذف</div>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-link-45deg text-danger" style="font-size: 4rem;"></i>
+                <h5 class="mt-3">هل أنت متأكد من حذف الرابط؟</h5>
+                <p><strong>{{ link.title }}</strong></p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash-fill"></i> حذف</button>
+                    <a href="{% url 'lesson_link_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
