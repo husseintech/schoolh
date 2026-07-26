@@ -1,0 +1,133 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير الطالب{% endblock %}
+{% block page_heading %}تقرير الطالب{% endblock %}
+{% block content %}
+<style>
+@media print {
+    body { font-size: 12pt; }
+    .sidebar, .top-bar, .no-print, .footer, .btn { display: none !important; }
+    .main-content { margin-right: 0 !important; padding: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+    .page-break { page-break-before: always; }
+    .print-header { text-align: center; margin-bottom: 20px; }
+    .print-header h2 { margin: 0; }
+    .print-header small { color: #666; }
+    .report-footer { margin-top: 40px; text-align: center; border-top: 2px solid #333; padding-top: 10px; }
+}
+.print-header { display: none; }
+@media print {
+    .print-header { display: block; }
+    .no-print { display: none !important; }
+}
+</style>
+<div class="no-print mb-3">
+    <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer-fill"></i> طباعة التقرير</button>
+    <a href="{% url 'student_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> العودة للقائمة</a>
+</div>
+
+<div class="print-header">
+    <h2><i class="bi bi-mortarboard-fill"></i> {{ principal_name }}</h2>
+    <small>تقرير الطالب</small>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-person-fill"></i> بيانات الطالب</div>
+    <div class="card-body">
+        <table class="table table-bordered table-sm">
+            <tr>
+                <th style="width:25%">الاسم الكامل</th>
+                <td style="width:25%">{{ student.full_name }}</td>
+                <th style="width:25%">رقم الهوية</th>
+                <td style="width:25%">{{ student.student_id }}</td>
+            </tr>
+            <tr>
+                <th>الصف</th>
+                <td>{{ student.student_class.name|default:"-" }}</td>
+                <th>تاريخ الميلاد</th>
+                <td>{{ student.birth_date|date:"Y-m-d"|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>ولي الأمر</th>
+                <td>{{ student.parent_name|default:"-" }}</td>
+                <th>هاتف ولي الأمر</th>
+                <td dir="ltr">{{ student.parent_phone|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>العنوان</th>
+                <td colspan="3">{{ student.address|default:"-" }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header"><i class="bi bi-box-arrow-right"></i> أذونات المغادرة ({{ leaves.count }})</div>
+    <div class="card-body">
+        {% if leaves %}
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>وقت المغادرة</th>
+                    <th>وقت العودة</th>
+                    <th>السبب</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in leaves %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ l.created_at|date:"Y-m-d" }}</td>
+                    <td>{{ l.leave_time|time:"H:i" }}</td>
+                    <td>{{ l.return_time|time:"H:i"|default:"-" }}</td>
+                    <td>{{ l.reason }}</td>
+                    <td><span class="badge bg-{% if l.status == 'approved' %}success{% elif l.status == 'rejected' %}danger{% else %}warning{% endif %}">{{ l.get_status_display }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-3">لا توجد أذونات مغادرة لهذا الطالب</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات ({{ notes.count }})</div>
+    <div class="card-body">
+        {% if notes %}
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>النوع</th>
+                    <th>المحتوى</th>
+                    <th>بواسطة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in notes %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ n.created_at|date:"Y-m-d" }}</td>
+                    <td><span class="badge bg-info">{{ n.note_type }}</span></td>
+                    <td>{{ n.content }}</td>
+                    <td>{{ n.created_by.first_name|default:n.created_by.username }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-3">لا توجد ملاحظات لهذا الطالب</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="report-footer" style="margin-top:40px;text-align:center;border-top:2px solid #333;padding-top:10px;">
+    <p><strong>{{ principal_name }}</strong> &nbsp;|&nbsp; <strong>{{ principal_phone }}</strong></p>
+    <small class="text-muted">مدير المدرسة</small>
+</div>
+{% endblock %}

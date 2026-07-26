@@ -208,6 +208,25 @@ def reset_student_password(request, student_id):
     return render(request, 'school/reset_password.html', {'student': student})
 
 
+@login_required
+def student_report(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    leaves = StudentLeave.objects.filter(student=student).order_by('-created_at')
+    notes = Note.objects.filter(student=student).select_related('created_by').order_by('-created_at')
+    principal_name = ''
+    principal_phone = ''
+    if request.user.profile.role == 'admin':
+        principal_name = request.user.first_name or request.user.username
+        principal_phone = request.user.profile.phone
+    return render(request, 'school/student_report.html', {
+        'student': student,
+        'leaves': leaves,
+        'notes': notes,
+        'principal_name': principal_name,
+        'principal_phone': principal_phone,
+    })
+
+
 # ─── Excel Import/Export ──────────────────────────────────────────────────────
 
 @login_required

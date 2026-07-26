@@ -14,6 +14,7 @@ urlpatterns = [
     path('students/<int:student_id>/delete/', views.delete_student, name='delete_student'),
     path('students/<int:student_id>/notes/', views.student_notes, name='student_notes'),
     path('students/<int:student_id>/detail/', views.student_detail, name='student_detail'),
+    path('students/<int:student_id>/report/', views.student_report, name='student_report'),
     path('students/<int:student_id>/reset-password/', views.reset_student_password, name='reset_student_password'),
 
     # Excel Import/Export
