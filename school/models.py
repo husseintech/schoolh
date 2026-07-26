@@ -359,7 +359,7 @@ class Message(models.Model):
 
 class LessonLink(models.Model):
     title = models.CharField('العنوان', max_length=200)
-    url = models.URLField('الرابط', max_length=500)
+    url = models.TextField('الرابط')
     lesson_datetime = models.DateTimeField('تاريخ ووقت الحصة', null=True, blank=True)
     is_active = models.BooleanField('نشط', default=True)
     created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
