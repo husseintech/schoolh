@@ -4,92 +4,112 @@
 <style>
     .login-page {
         min-height: 100vh;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #e8f4f8 0%, #f0f7fe 50%, #f8faff 100%);
         display: flex;
         align-items: center;
+        padding: 40px 0;
     }
     .login-card {
         border: none;
-        border-radius: 15px;
-        box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(45, 156, 219, 0.15);
         overflow: hidden;
+        background: #fff;
     }
     .login-header {
-        background: linear-gradient(135deg, #2c3e50, #3498db);
+        background: linear-gradient(135deg, #2d9cdb 0%, #4fc3f7 100%);
         color: #fff;
-        padding: 30px;
+        padding: 35px 30px;
         text-align: center;
     }
-    .login-header h2 { margin: 0; font-weight: 700; }
-    .login-header p { margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem; }
-    .login-body { padding: 30px; }
+    .login-header h2 { margin: 10px 0 0; font-weight: 700; font-size: 1.5rem; }
+    .login-header p { margin: 5px 0 0; opacity: 0.85; font-size: 0.9rem; }
+    .login-header .icon-wrap {
+        width: 70px; height: 70px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto;
+    }
+    .login-header .icon-wrap i { font-size: 2.2rem; }
+    .login-body { padding: 35px; }
     .side-card {
         border: none;
         border-radius: 12px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 25px rgba(0,0,0,0.06);
         margin-bottom: 20px;
         overflow: hidden;
+        background: #fff;
     }
     .side-card .card-header {
         font-weight: 600;
-        padding: 12px 18px;
+        padding: 14px 20px;
         border-bottom: none;
+        font-size: 0.95rem;
     }
     .announce-item {
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f4f8;
     }
     .announce-item:last-child { border-bottom: none; }
-    .announce-item .title { font-weight: 600; font-size: 0.95rem; }
-    .announce-item .date { font-size: 0.75rem; color: #999; }
-    .announce-item .content { font-size: 0.85rem; color: #555; margin-top: 4px; }
+    .announce-item .title { font-weight: 600; font-size: 0.95rem; color: #1a2744; }
+    .announce-item .date { font-size: 0.75rem; color: #94a3b8; }
+    .announce-item .content { font-size: 0.85rem; color: #64748b; margin-top: 4px; line-height: 1.5; }
     .link-item {
         display: flex;
         align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f4f8;
         text-decoration: none;
         color: inherit;
         transition: all 0.2s;
     }
-    .link-item:hover { background: #f8f9fa; padding-right: 8px; border-radius: 8px; }
+    .link-item:hover { background: #f8faff; padding-right: 8px; border-radius: 8px; }
     .link-item:last-child { border-bottom: none; }
     .link-item .icon {
-        width: 40px; height: 40px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        width: 42px; height: 42px;
+        background: linear-gradient(135deg, #2d9cdb, #4fc3f7);
         color: #fff;
         border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
-        margin-left: 12px; flex-shrink: 0;
+        margin-left: 14px; flex-shrink: 0;
     }
     .link-item .info { flex: 1; }
-    .link-item .info .title { font-weight: 600; font-size: 0.9rem; }
-    .link-item .info .time { font-size: 0.75rem; color: #999; }
-    .link-item .arrow { color: #667eea; font-size: 1.2rem; }
+    .link-item .info .title { font-weight: 600; font-size: 0.9rem; color: #1a2744; }
+    .link-item .info .time { font-size: 0.75rem; color: #94a3b8; }
+    .link-item .arrow { color: #2d9cdb; font-size: 1.2rem; }
     .empty-placeholder {
-        text-align: center; padding: 30px 20px; color: #aaa;
+        text-align: center; padding: 30px 20px; color: #94a3b8;
     }
-    .empty-placeholder i { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .empty-placeholder i { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5; }
     .btn-login {
-        background: linear-gradient(135deg, #2c3e50, #3498db);
+        background: linear-gradient(135deg, #2d9cdb, #4fc3f7);
         border: none; color: #fff; padding: 12px; border-radius: 8px;
         font-weight: 600; transition: all 0.3s;
     }
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(52,152,219,0.4); }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(45,156,219,0.35); color: #fff; }
     .btn-outline-login {
-        border: 2px solid #3498db; color: #3498db; padding: 10px; border-radius: 8px;
+        border: 2px solid #2d9cdb; color: #2d9cdb; padding: 10px; border-radius: 8px;
         font-weight: 500; transition: all 0.3s; text-decoration: none; display: block;
     }
-    .btn-outline-login:hover { background: #3498db; color: #fff; }
+    .btn-outline-login:hover { background: #2d9cdb; color: #fff; }
     .contact-info {
         text-align: center; margin-top: 20px; padding: 15px;
-        background: #f8f9fa; border-radius: 10px;
+        background: #f8faff; border-radius: 10px;
     }
-    .contact-info small { color: #999; }
-    .badge-live { background: #e74c3c; color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; }
+    .contact-info small { color: #94a3b8; }
+    .badge-live {
+        background: #10b981; color: #fff; font-size: 0.6rem;
+        padding: 2px 8px; border-radius: 10px; margin-right: 5px;
+    }
+    .form-control:focus {
+        border-color: #4fc3f7;
+        box-shadow: 0 0 0 3px rgba(45,156,219,0.12);
+    }
     @media (max-width: 768px) {
         .side-card { margin-bottom: 15px; }
         .login-page { padding: 20px 0; }
+        .login-body { padding: 20px; }
     }
 </style>
 
@@ -99,7 +119,7 @@
             <!-- Right: Announcements -->
             <div class="col-lg-4 order-lg-3">
                 <div class="side-card">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
                         <i class="bi bi-megaphone-fill"></i> الإعلانات
                     </div>
                     <div class="card-body p-3">
@@ -125,7 +145,7 @@
             <div class="col-lg-4 order-lg-2 d-flex">
                 <div class="login-card w-100">
                     <div class="login-header">
-                        <i class="bi bi-mortarboard-fill" style="font-size: 3rem;"></i>
+                        <div class="icon-wrap"><i class="bi bi-mortarboard-fill"></i></div>
                         <h2>النظام المدرسي</h2>
                         <p>نظام إدارة متكامل للمدارس</p>
                     </div>
@@ -133,11 +153,11 @@
                         <form method="post" action="{% url 'login' %}">
                             {% csrf_token %}
                             <div class="mb-3">
-                                <label class="form-label small">اسم المستخدم</label>
+                                <label class="form-label small fw-medium">اسم المستخدم</label>
                                 <input type="text" name="username" class="form-control" required placeholder="أدخل اسم المستخدم">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small">كلمة المرور</label>
+                                <label class="form-label small fw-medium">كلمة المرور</label>
                                 <input type="password" name="password" class="form-control" required placeholder="أدخل كلمة المرور">
                             </div>
                             <button type="submit" class="btn btn-login w-100">دخول <i class="bi bi-box-arrow-in-left"></i></button>
@@ -155,7 +175,7 @@
             <!-- Left: Online Lesson Links -->
             <div class="col-lg-4 order-lg-1">
                 <div class="side-card">
-                    <div class="card-header bg-success text-white">
+                    <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
                         <i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية
                     </div>
                     <div class="card-body p-3">
