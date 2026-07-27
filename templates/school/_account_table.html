@@ -1,7 +1,7 @@
 {% if users %}
-<div class="mb-4">
+<div class="account-section mb-4" data-role="{{ role }}">
     <h6 class="border-bottom pb-2 mb-3">
-        <i class="{{ icon }} text-{{ color }}"></i> {{ title }}
+        <i class="bi bi-shield-fill-exclamation text-{{ color }}"></i> {{ title }}
         <span class="badge bg-{{ color }} ms-2">{{ users|length }}</span>
     </h6>
     <div class="table-responsive">

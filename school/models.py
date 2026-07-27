@@ -46,7 +46,7 @@ DEFAULT_PERMISSIONS = {
         'exams': ['view', 'add'],
         'messages': ['view', 'send'],
         'reports': ['view'],
-        'settings': ['whatsapp', 'accounts'],
+        'settings': ['whatsapp', 'accounts', 'links'],
         'notes': ['view', 'add'],
     },
     'vice_principal': {

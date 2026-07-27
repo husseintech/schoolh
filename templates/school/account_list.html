@@ -1,18 +1,37 @@
 {% extends 'school/base.html' %}
 {% block title %}إدارة الحسابات{% endblock %}
 {% block page_heading %}إدارة الحسابات{% endblock %}
+{% block extra_js %}
+<script>
+function filterRole(role) {
+    document.querySelectorAll('.account-section').forEach(function(s) {
+        s.style.display = (role === 'all' || s.dataset.role === role) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}
 {% block content %}
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="bi bi-people-fill"></i> الحسابات والصلاحيات</span>
-        <a href="{% url 'add_account' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة حساب</a>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm" style="width:auto" onchange="filterRole(this.value)">
+                <option value="all">كل الأدوار</option>
+                <option value="admin">المديرون</option>
+                <option value="vice_principal">نواب المدير</option>
+                <option value="secretary">السكرتارية</option>
+                <option value="teacher">المعلمون</option>
+                <option value="student">الطلاب</option>
+            </select>
+            <a href="{% url 'add_account' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة حساب</a>
+        </div>
     </div>
     <div class="card-body">
-        {% include 'school/_account_table.html' with users=admins title='المديرون' color='danger' icon='bi-shield-fill-exclamation' %}
-        {% include 'school/_account_table.html' with users=vice_principals title='نواب المدير' color='warning' icon='bi-shield-fill' %}
-        {% include 'school/_account_table.html' with users=secretaries title='السكرتارية' color='info' icon='bi-person-badge-fill' %}
-        {% include 'school/_account_table.html' with users=teachers title='المعلمون' color='success' icon='bi-person-video3' %}
-        {% include 'school/_account_table.html' with users=students title='الطلاب' color='secondary' icon='bi-mortarboard-fill' %}
+        {% include 'school/_account_table.html' with users=admins title='المديرون' color='danger' role='admin' %}
+        {% include 'school/_account_table.html' with users=vice_principals title='نواب المدير' color='warning' role='vice_principal' %}
+        {% include 'school/_account_table.html' with users=secretaries title='السكرتارية' color='info' role='secretary' %}
+        {% include 'school/_account_table.html' with users=teachers title='المعلمون' color='success' role='teacher' %}
+        {% include 'school/_account_table.html' with users=students title='الطلاب' color='secondary' role='student' %}
     </div>
 </div>
 {% endblock %}
