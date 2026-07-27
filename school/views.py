@@ -99,8 +99,8 @@ def dashboard(request):
 
 @login_required
 def add_student(request):
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'students', 'add'):
+        messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     if request.method == 'POST':
         form = StudentForm(request.POST)
@@ -468,8 +468,8 @@ def note_list(request):
 
 @login_required
 def add_teacher(request):
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'teachers', 'add'):
+        messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     if request.method == 'POST':
         form = TeacherForm(request.POST)
@@ -484,8 +484,8 @@ def add_teacher(request):
 
 @login_required
 def teacher_list(request):
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'teachers', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     teachers = Teacher.objects.all().order_by('full_name')
     return render(request, 'school/teacher_list.html', {'teachers': teachers})
@@ -493,8 +493,8 @@ def teacher_list(request):
 
 @login_required
 def edit_teacher(request, teacher_id):
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'teachers', 'edit'):
+        messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     teacher = get_object_or_404(Teacher, id=teacher_id)
     if request.method == 'POST':
@@ -510,8 +510,8 @@ def edit_teacher(request, teacher_id):
 
 @login_required
 def delete_teacher(request, teacher_id):
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'teachers', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     teacher = get_object_or_404(Teacher, id=teacher_id)
     if request.method == 'POST':
@@ -535,7 +535,7 @@ def teacher_notes(request, teacher_id):
 
 @login_required
 def add_teacher_note(request, teacher_id):
-    if request.user.profile.role != 'admin':
+    if not has_perm(request.user, 'teachers', 'notes'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     teacher = get_object_or_404(Teacher, id=teacher_id)
@@ -1038,8 +1038,18 @@ def account_list(request):
     if not has_perm(request.user, 'settings', 'accounts'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    users = User.objects.filter(is_superuser=False).select_related('profile').order_by('username')
-    return render(request, 'school/account_list.html', {'users': users, 'roles': Profile.ROLE_CHOICES})
+    admins = User.objects.filter(is_superuser=False, profile__role='admin').select_related('profile')
+    vice_principals = User.objects.filter(is_superuser=False, profile__role='vice_principal').select_related('profile')
+    secretaries = User.objects.filter(is_superuser=False, profile__role='secretary').select_related('profile')
+    teachers = User.objects.filter(is_superuser=False, profile__role='teacher').select_related('profile')
+    students = User.objects.filter(is_superuser=False, profile__role='student').select_related('profile')
+    return render(request, 'school/account_list.html', {
+        'admins': admins,
+        'vice_principals': vice_principals,
+        'secretaries': secretaries,
+        'teachers': teachers,
+        'students': students,
+    })
 
 
 @login_required
@@ -1319,3 +1329,4 @@ def whatsapp_settings(request):
         'ultramsg_instance_id': os.getenv('ULTRAMSG_INSTANCE_ID', ''),
     }
     return render(request, 'school/whatsapp_settings.html', context)
+

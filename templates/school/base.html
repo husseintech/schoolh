@@ -274,21 +274,25 @@
 
         <div class="nav-section">القائمة الرئيسية</div>
 
-        {% if user.profile.role == 'admin' %}
+        {% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' or user.profile.role == 'secretary' %}
         <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
             <i class="bi bi-house-door-fill"></i> لوحة التحكم
         </a>
+        {% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
         <a href="{% url 'reports_overview' %}" class="nav-link {% if 'reports' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-bar-chart-fill"></i> التقارير
         </a>
+        {% endif %}
 
         <div class="nav-section">الطلاب</div>
         <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name and 'add' not in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-people-fill"></i> جميع الطلاب
         </a>
+        {% if user.profile.role == 'admin' or user.profile.role == 'secretary' %}
         <a href="{% url 'add_student' %}" class="nav-link {% if request.resolver_match.url_name == 'add_student' %}active{% endif %}">
             <i class="bi bi-person-plus-fill"></i> إضافة طالب
         </a>
+        {% endif %}
         <a href="{% url 'note_list' %}" class="nav-link {% if 'note' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-sticky-fill"></i> الملاحظات
         </a>
@@ -297,12 +301,16 @@
         </a>
 
         <div class="nav-section">المعلمون</div>
+        {% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
         <a href="{% url 'teacher_list' %}" class="nav-link {% if 'teacher' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-person-badge-fill"></i> جميع المعلمين
         </a>
+        {% endif %}
+        {% if user.profile.role == 'admin' %}
         <a href="{% url 'add_teacher' %}" class="nav-link {% if request.resolver_match.url_name == 'add_teacher' %}active{% endif %}">
             <i class="bi bi-person-plus-fill"></i> إضافة معلم
         </a>
+        {% endif %}
 
         <div class="nav-section">الإدارة</div>
         <a href="{% url 'class_list' %}" class="nav-link {% if 'class' in request.resolver_match.url_name %}active{% endif %}">
@@ -314,15 +322,19 @@
         <a href="{% url 'announcement_list' %}" class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-megaphone-fill"></i> الإعلانات
         </a>
+        {% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
         <a href="{% url 'agenda_list' %}" class="nav-link {% if 'agenda' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-calendar-check-fill"></i> الأجندة اليومية
         </a>
+        {% endif %}
         <a href="{% url 'leave_list' %}" class="nav-link {% if 'leave' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-box-arrow-right"></i> أذونات المغادرة
         </a>
+        {% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
         <a href="{% url 'exam_analysis_list' %}" class="nav-link {% if 'exam' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-clipboard-data-fill"></i> تحليل الامتحانات
         </a>
+        {% endif %}
 
         <div class="nav-section">الرسائل</div>
         <a href="{% url 'message_list' %}" class="nav-link {% if request.resolver_match.url_name == 'message_list' %}active{% endif %}">
@@ -335,6 +347,7 @@
             <i class="bi bi-send-check-fill"></i> الرسائل المرسلة
         </a>
 
+        {% if user.profile.role == 'admin' %}
         <div class="nav-section">الإعدادات</div>
         <a href="{% url 'lesson_link_list' %}" class="nav-link {% if 'lesson_link' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-camera-video-fill"></i> روابط الحصص
@@ -345,6 +358,7 @@
         <a href="{% url 'account_list' %}" class="nav-link {% if 'account' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-people-fill"></i> الحسابات والصلاحيات
         </a>
+        {% endif %}
 
         {% elif user.profile.role == 'teacher' %}
         <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">

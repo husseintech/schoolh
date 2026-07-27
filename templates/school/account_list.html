@@ -4,43 +4,15 @@
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-people-fill"></i> الحسابات ({{ users.count }})</span>
+        <span><i class="bi bi-people-fill"></i> الحسابات والصلاحيات</span>
         <a href="{% url 'add_account' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة حساب</a>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>اسم المستخدم</th>
-                        <th>الاسم الكامل</th>
-                        <th>الدور</th>
-                        <th>رقم الهاتف</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in users %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><strong dir="ltr">{{ u.username }}</strong></td>
-                        <td>{{ u.first_name }}</td>
-                        <td><span class="badge bg-{% if u.profile.role == 'admin' %}danger{% elif u.profile.role == 'vice_principal' %}warning{% elif u.profile.role == 'secretary' %}info{% elif u.profile.role == 'teacher' %}success{% else %}secondary{% endif %}">{{ u.profile.get_role_display }}</span></td>
-                        <td>{{ u.profile.phone|default:"-" }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'edit_account' u.id %}" class="btn btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                <a href="{% url 'delete_account' u.id %}" class="btn btn-outline-danger"><i class="bi bi-trash"></i></a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="6" class="text-center py-4 text-muted">لا توجد حسابات</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% include 'school/_account_table.html' with users=admins title='المديرون' color='danger' icon='bi-shield-fill-exclamation' %}
+        {% include 'school/_account_table.html' with users=vice_principals title='نواب المدير' color='warning' icon='bi-shield-fill' %}
+        {% include 'school/_account_table.html' with users=secretaries title='السكرتارية' color='info' icon='bi-person-badge-fill' %}
+        {% include 'school/_account_table.html' with users=teachers title='المعلمون' color='success' icon='bi-person-video3' %}
+        {% include 'school/_account_table.html' with users=students title='الطلاب' color='secondary' icon='bi-mortarboard-fill' %}
     </div>
 </div>
 {% endblock %}

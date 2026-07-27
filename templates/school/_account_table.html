@@ -1,0 +1,37 @@
+{% if users %}
+<div class="mb-4">
+    <h6 class="border-bottom pb-2 mb-3">
+        <i class="{{ icon }} text-{{ color }}"></i> {{ title }}
+        <span class="badge bg-{{ color }} ms-2">{{ users|length }}</span>
+    </h6>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>اسم المستخدم</th>
+                    <th>الاسم الكامل</th>
+                    <th>رقم الهاتف</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong dir="ltr">{{ u.username }}</strong></td>
+                    <td>{{ u.first_name }}</td>
+                    <td>{{ u.profile.phone|default:"-" }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'edit_account' u.id %}" class="btn btn-outline-{{ color }}" title="تعديل"><i class="bi bi-pencil"></i></a>
+                            <a href="{% url 'delete_account' u.id %}" class="btn btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
