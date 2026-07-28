@@ -18,14 +18,14 @@ from .services import send_whatsapp_message
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('home')
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
-            return redirect('dashboard')
+            return redirect('home')
         messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
         return redirect('home')
     return redirect('home')
