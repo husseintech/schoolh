@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import date
 
 
 def has_perm(user, module, action):
@@ -48,6 +49,7 @@ DEFAULT_PERMISSIONS = {
         'reports': ['view'],
         'settings': ['whatsapp', 'accounts', 'links'],
         'notes': ['view', 'add'],
+        'lateness': ['view', 'add'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -78,6 +80,7 @@ DEFAULT_PERMISSIONS = {
         'reports': [],
         'settings': [],
         'notes': ['view', 'add'],
+        'lateness': ['view', 'add'],
     },
     'teacher': {
         'students': ['view'],
@@ -371,3 +374,22 @@ class LessonLink(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class StudentLateness(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='lateness', verbose_name='الطالب')
+    date = models.DateField('تاريخ التأخير', default=date.today)
+    notes = models.TextField('ملاحظات', blank=True, help_text='سبب التأخير والإجراء المتبع')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='سجل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'تأخير طالب'
+        verbose_name_plural = 'تأخيرات الطلاب'
+        ordering = ['-date', '-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['student', 'date'], name='unique_lateness_per_day')
+        ]
+
+    def __str__(self):
+        return f'{self.student.full_name} - {self.date}'

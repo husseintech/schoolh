@@ -1459,3 +1459,71 @@ def whatsapp_settings(request):
     }
     return render(request, 'school/whatsapp_settings.html', context)
 
+
+# ─── Student Lateness ─────────────────────────────────────────────────────────
+
+@login_required
+def lateness_list(request):
+    if not has_perm(request.user, 'lateness', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    classes = Class.objects.all().order_by('name')
+    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+    search_query = request.GET.get('q', '')
+    if search_query:
+        students = students.filter(full_name__icontains=search_query)
+    today_lateness = StudentLateness.objects.filter(date=date.today()).values_list('student_id', flat=True)
+    if request.method == 'POST':
+        if not has_perm(request.user, 'lateness', 'add'):
+            messages.error(request, 'ليس لديك صلاحية للإضافة')
+            return redirect('lateness_list')
+        student_ids = request.POST.getlist('student_id')
+        notes_list = request.POST.getlist('notes')
+        lateness_date = request.POST.get('lateness_date', date.today())
+        count = 0
+        for i, sid in enumerate(student_ids):
+            note = notes_list[i] if i < len(notes_list) else ''
+            StudentLateness.objects.update_or_create(
+                student_id=sid,
+                date=lateness_date,
+                defaults={'notes': note, 'created_by': request.user}
+            )
+            count += 1
+        messages.success(request, f'تم تسجيل تأخير {count} طالب/طلاب')
+        return redirect('lateness_list')
+    return render(request, 'school/lateness_list.html', {
+        'students': students,
+        'classes': classes,
+        'search_query': search_query,
+        'today_lateness': today_lateness,
+        'today': date.today(),
+    })
+
+
+@login_required
+def lateness_report(request):
+    if not has_perm(request.user, 'lateness', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    month = request.GET.get('month', '')
+    year = request.GET.get('year', '')
+    lateness_qs = StudentLateness.objects.all().select_related('student', 'created_by')
+    if month:
+        lateness_qs = lateness_qs.filter(date__month=month)
+    if year:
+        lateness_qs = lateness_qs.filter(date__year=year)
+    else:
+        lateness_qs = lateness_qs.filter(date__year=date.today().year)
+    lateness_qs = lateness_qs.order_by('-date', 'student__full_name')
+    months = [
+        ('1', 'يناير'), ('2', 'فبراير'), ('3', 'مارس'), ('4', 'إبريل'),
+        ('5', 'مايو'), ('6', 'يونيو'), ('7', 'يوليو'), ('8', 'أغسطس'),
+        ('9', 'سبتمبر'), ('10', 'أكتوبر'), ('11', 'نوفمبر'), ('12', 'ديسمبر'),
+    ]
+    return render(request, 'school/lateness_report.html', {
+        'lateness_list': lateness_qs,
+        'months': months,
+        'selected_month': month,
+        'selected_year': year or str(date.today().year),
+    })
+

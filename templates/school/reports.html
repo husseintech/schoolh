@@ -39,4 +39,14 @@
         <a href="{% url 'student_levels_report' %}" class="btn btn-success"><i class="bi bi-printer"></i> طباعة مستويات الطلاب</a>
     </div>
 </div>
+
+<div class="card mt-4">
+    <div class="card-header"><i class="bi bi-clock-history"></i> تقارير التأخيرات</div>
+    <div class="card-body text-center py-4">
+        <i class="bi bi-clock" style="font-size: 2.5rem; color: #e74c3c;"></i>
+        <h5 class="mt-3">تقرير تأخيرات الطلاب</h5>
+        <p class="text-muted">عرض وطباعة تأخيرات الطلاب حسب الشهر</p>
+        <a href="{% url 'lateness_report' %}" class="btn btn-danger"><i class="bi bi-file-text"></i> عرض تقرير التأخيرات</a>
+    </div>
+</div>
 {% endblock %}

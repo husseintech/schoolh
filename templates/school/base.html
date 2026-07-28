@@ -346,6 +346,11 @@
             <i class="bi bi-box-arrow-right"></i> أذونات المغادرة
         </a>
         {% endif %}
+        {% if 'lateness_view' in user_perms %}
+        <a href="{% url 'lateness_list' %}" class="nav-link {% if 'lateness' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-clock-history"></i> تأخيرات الطلاب
+        </a>
+        {% endif %}
         {% if 'exams_view' in user_perms %}
         <a href="{% url 'exam_analysis_list' %}" class="nav-link {% if 'exam' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-clipboard-data-fill"></i> تحليل الامتحانات
