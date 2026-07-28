@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
 from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness
@@ -1472,6 +1472,7 @@ def lateness_list(request):
     search_query = request.GET.get('q', '')
     if search_query:
         students = students.filter(full_name__icontains=search_query)
+    students = students.annotate(lateness_count=Count('lateness'))
     today_lateness = list(StudentLateness.objects.filter(date=date.today()).values_list('student_id', flat=True))
     today_notes = {
         l.student_id: l.notes
@@ -1530,5 +1531,18 @@ def lateness_report(request):
         'months': months,
         'selected_month': month,
         'selected_year': year or str(date.today().year),
+    })
+
+
+@login_required
+def student_lateness_detail(request, student_id):
+    if not has_perm(request.user, 'lateness', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    student = get_object_or_404(Student, id=student_id)
+    lateness_records = StudentLateness.objects.filter(student=student).select_related('created_by').order_by('-date')
+    return render(request, 'school/student_lateness_detail.html', {
+        'student': student,
+        'lateness_records': lateness_records,
     })
 

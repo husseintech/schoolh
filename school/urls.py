@@ -105,4 +105,5 @@ urlpatterns = [
     # Student Lateness
     path('lateness/', views.lateness_list, name='lateness_list'),
     path('lateness/report/', views.lateness_report, name='lateness_report'),
+    path('lateness/student/<int:student_id>/', views.student_lateness_detail, name='student_lateness_detail'),
 ]

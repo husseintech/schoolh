@@ -37,6 +37,7 @@
                             <th>الطالب</th>
                             <th>الصف</th>
                             <th>رقم الهوية</th>
+                            <th>التأخيرات</th>
                             <th>ملاحظات (سبب التأخير والإجراء)</th>
                         </tr>
                     </thead>
@@ -51,12 +52,18 @@
                             <td>{{ s.student_class.name|default:"-" }}</td>
                             <td>{{ s.student_id }}</td>
                             <td>
+                                <span class="badge bg-{% if s.lateness_count == 0 %}secondary{% elif s.lateness_count < 3 %}warning{% else %}danger{% endif %}">{{ s.lateness_count }}</span>
+                                {% if s.lateness_count > 0 %}
+                                <a href="{% url 'student_lateness_detail' s.id %}" class="btn btn-sm btn-outline-info ms-1" title="عرض التفاصيل"><i class="bi bi-eye"></i></a>
+                                {% endif %}
+                            </td>
+                            <td>
                                 <input type="text" name="notes_{{ s.id }}" class="form-control form-control-sm" placeholder="سبب التأخير والإجراء المتبع" value="{{ s.lateness_notes }}">
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 <i class="bi bi-people" style="font-size: 2rem;"></i>
                                 <p class="mt-2">لا يوجد طلاب</p>
                             </td>
