@@ -65,6 +65,7 @@ urlpatterns = [
     # Student Levels
     path('levels/', views.student_level_list, name='student_level_list'),
     path('levels/add/', views.add_student_level, name='add_student_level'),
+    path('levels/bulk-add/', views.bulk_add_student_level, name='bulk_add_student_level'),
 
     # Exam Analysis
     path('exam-analysis/', views.exam_analysis_list, name='exam_analysis_list'),
@@ -82,6 +83,7 @@ urlpatterns = [
     path('reports/', views.reports, name='reports'),
     path('reports/overview/', views.reports_overview, name='reports_overview'),
     path('reports/class/<int:class_id>/', views.class_report, name='class_report'),
+    path('reports/student-levels/', views.student_levels_report, name='student_levels_report'),
 
     # Account Management
     path('accounts/', views.account_list, name='account_list'),

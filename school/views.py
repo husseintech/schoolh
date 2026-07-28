@@ -1073,8 +1073,36 @@ def class_report(request, class_id):
         'students': students,
         'notes_count': notes.count(),
         'levels': levels,
-    }
+}
     return render(request, 'school/class_report.html', context)
+
+
+@login_required
+def student_levels_report(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    classes = Class.objects.all().order_by('name')
+    subjects = Subject.objects.all().order_by('name')
+    selected_class = None
+    selected_subject = None
+    levels = []
+    class_id = request.GET.get('class_id')
+    subject_id = request.GET.get('subject_id')
+    if class_id and subject_id:
+        selected_class = get_object_or_404(Class, id=class_id)
+        selected_subject = get_object_or_404(Subject, id=subject_id)
+        levels = StudentLevel.objects.filter(
+            student__student_class=selected_class,
+            subject=selected_subject
+        ).select_related('student', 'created_by').order_by('student__full_name')
+    return render(request, 'school/student_levels_report.html', {
+        'classes': classes,
+        'subjects': subjects,
+        'selected_class': selected_class,
+        'selected_subject': selected_subject,
+        'levels': levels,
+    })
 
 
 @login_required

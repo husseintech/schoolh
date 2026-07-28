@@ -1,0 +1,98 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير مستويات الطلاب{% endblock %}
+{% block page_heading %}تقرير مستويات الطلاب{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-graph-up-arrow"></i> تقرير مستويات الطلاب</div>
+    <div class="card-body">
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">اختر الصف</label>
+                <select name="class_id" class="form-select" required>
+                    <option value="">-- اختر الصف --</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">اختر المادة</label>
+                <select name="subject_id" class="form-select" required>
+                    <option value="">-- اختر المادة --</option>
+                    {% for s in subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject and selected_subject.id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> عرض التقرير</button>
+            </div>
+        </form>
+
+        {% if levels is not None %}
+        <div class="text-center mb-3 no-print">
+            <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        </div>
+
+        <div class="table-responsive" id="print-area">
+            {% if selected_class and selected_subject %}
+            <div class="text-center mb-3 d-none d-print-block">
+                <h4>تقرير مستويات الطلاب</h4>
+                <h5>{{ selected_class.name }} - {{ selected_subject.name }}</h5>
+                <hr>
+            </div>
+            {% endif %}
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الطالب</th>
+                        <th>رقم الهوية</th>
+                        <th>المستوى</th>
+                        <th>الملاحظات</th>
+                        <th>تاريخ التسجيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for level in levels %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ level.student.full_name }}</td>
+                        <td>{{ level.student.student_id }}</td>
+                        <td>
+                            <span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">
+                                {{ level.get_level_display }}
+                            </span>
+                        </td>
+                        <td>{{ level.notes|default:"-" }}</td>
+                        <td>{{ level.created_at|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد مستويات مسجلة لهذا الصف والمادة</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <style>
+            @media print {
+                .sidebar, .top-bar, .no-print, .card-header, .card-body form { display: none !important; }
+                .main-content { margin-right: 0 !important; }
+                .card { border: none !important; box-shadow: none !important; }
+                #print-area { display: block !important; }
+                .d-print-block { display: block !important; }
+                body { font-size: 12pt; }
+                .table { border-collapse: collapse; width: 100%; }
+                .table th, .table td { border: 1px solid #000; padding: 8px; }
+                .badge { border: 1px solid #000; padding: 3px 8px; }
+            }
+        </style>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
