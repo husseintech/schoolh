@@ -22,6 +22,7 @@ def user_permissions(request):
             ('settings', 'whatsapp'), ('settings', 'accounts'),
             ('settings', 'links'),
             ('notes', 'view'), ('notes', 'add'),
+            ('lateness', 'view'), ('lateness', 'add'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
