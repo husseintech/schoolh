@@ -855,25 +855,54 @@ def add_student_level(request):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    if request.method == 'POST':
-        form = StudentLevelForm(request.POST)
-        if form.is_valid():
-            level = form.save(commit=False)
-            level.created_by = request.user
-            level.save()
-            messages.success(request, 'تم إضافة مستوى الطالب بنجاح')
-            return redirect('student_level_list')
+    try:
+        teacher = request.user.teacher_profile
+    except Teacher.DoesNotExist:
+        if request.user.profile.role != 'admin':
+            messages.error(request, 'يجب أن تكون معلماً لتسجيل المستويات')
+            return redirect('dashboard')
+        teacher = None
+    if teacher:
+        classes = teacher.classes.all().order_by('name')
+        subjects_qs = teacher.subjects.all()
     else:
-        form = StudentLevelForm()
-        if request.user.profile.role == 'teacher':
-            try:
-                teacher = request.user.teacher_profile
-                form.fields['student'].queryset = Student.objects.filter(student_class__in=teacher.classes.all())
-                form.fields['subject'].queryset = teacher.subjects.all()
-            except Teacher.DoesNotExist:
-                form.fields['student'].queryset = Student.objects.none()
-                form.fields['subject'].queryset = Subject.objects.none()
-    return render(request, 'school/add_student_level.html', {'form': form})
+        classes = Class.objects.all().order_by('name')
+        subjects_qs = Subject.objects.all()
+    if request.method == 'POST':
+        students_ids = request.POST.getlist('student_id')
+        levels = request.POST.getlist('level')
+        notes_list = request.POST.getlist('notes')
+        subject_id = request.POST.get('subject')
+        class_id = request.POST.get('class_id')
+        subject = Subject.objects.get(id=subject_id) if subject_id else None
+        count = 0
+        for i, student_id in enumerate(students_ids):
+            if levels[i]:
+                StudentLevel.objects.create(
+                    student_id=student_id,
+                    subject=subject,
+                    level=levels[i],
+                    notes=notes_list[i] if i < len(notes_list) else '',
+                    created_by=request.user
+                )
+                count += 1
+        messages.success(request, f'تم تسجيل {count} مستوى بنجاح')
+        return redirect('student_level_list')
+    class_id = request.GET.get('class_id')
+    selected_class = None
+    students = []
+    if class_id:
+        selected_class = get_object_or_404(Class, id=class_id)
+        if teacher and selected_class not in teacher.classes.all():
+            messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا الصف')
+            return redirect('add_student_level')
+        students = Student.objects.filter(student_class=selected_class).order_by('full_name')
+    return render(request, 'school/add_student_level.html', {
+        'students': students,
+        'subjects': subjects_qs,
+        'classes': classes,
+        'selected_class': selected_class,
+    })
 
 
 @login_required
