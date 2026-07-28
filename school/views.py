@@ -908,19 +908,38 @@ def add_student_level(request):
 @login_required
 def student_level_list(request):
     if request.user.profile.role == 'admin':
-        levels = StudentLevel.objects.all().select_related('student', 'subject', 'created_by').order_by('-created_at')
+        levels_qs = StudentLevel.objects.all().select_related('student', 'subject', 'created_by').order_by('-created_at')
     elif request.user.profile.role == 'teacher':
         try:
             teacher = request.user.teacher_profile
-            levels = StudentLevel.objects.filter(
+            levels_qs = StudentLevel.objects.filter(
                 created_by=request.user
             ).select_related('student', 'subject').order_by('-created_at')
         except Teacher.DoesNotExist:
-            levels = StudentLevel.objects.none()
+            levels_qs = StudentLevel.objects.none()
     else:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    return render(request, 'school/student_level_list.html', {'levels': levels})
+    classes = Class.objects.all().order_by('name')
+    subjects = Subject.objects.all().order_by('name')
+    selected_class = None
+    selected_subject = None
+    class_id = request.GET.get('class_id')
+    subject_id = request.GET.get('subject_id')
+    if class_id and subject_id:
+        selected_class = get_object_or_404(Class, id=class_id)
+        selected_subject = get_object_or_404(Subject, id=subject_id)
+        levels_qs = levels_qs.filter(student__student_class=selected_class, subject=selected_subject)
+    elif class_id:
+        selected_class = get_object_or_404(Class, id=class_id)
+        levels_qs = levels_qs.filter(student__student_class=selected_class)
+    return render(request, 'school/student_level_list.html', {
+        'levels': levels_qs,
+        'classes': classes,
+        'subjects': subjects,
+        'selected_class': selected_class,
+        'selected_subject': selected_subject,
+    })
 
 
 # ─── Exam Analysis ────────────────────────────────────────────────────────────

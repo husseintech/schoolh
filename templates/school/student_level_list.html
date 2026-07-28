@@ -5,9 +5,42 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-graph-up-arrow"></i> المستويات المسجلة ({{ levels.count }})</span>
-        <a href="{% url 'add_student_level' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة مستوى</a>
+        <div>
+            <button onclick="window.print()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+            <a href="{% url 'add_student_level' %}" class="btn btn-primary btn-sm no-print"><i class="bi bi-plus-lg"></i> إضافة مستوى</a>
+        </div>
     </div>
     <div class="card-body">
+        <form method="get" class="row g-3 mb-4 no-print">
+            <div class="col-md-4">
+                <label class="form-label">الصف</label>
+                <select name="class_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل الصفوف</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">المادة</label>
+                <select name="subject_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل المواد</option>
+                    {% for s in subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject and selected_subject.id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <a href="{% url 'student_level_list' %}" class="btn btn-outline-secondary w-100">إعادة تعيين</a>
+            </div>
+        </form>
+
+        <div class="d-none d-print-block text-center mb-3">
+            <h4>مستويات الطلاب</h4>
+            {% if selected_class %}<h5>{{ selected_class.name }}{% if selected_subject %} - {{ selected_subject.name }}{% endif %}</h5>{% endif %}
+            <hr>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
@@ -51,4 +84,16 @@
         </div>
     </div>
 </div>
+
+<style>
+    @media print {
+        .sidebar, .top-bar, .no-print { display: none !important; }
+        .main-content { margin-right: 0 !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        body { font-size: 12pt; }
+        .table th, .table td { border: 1px solid #000; padding: 6px; }
+        .badge { border: 1px solid #000; }
+        .d-print-block { display: block !important; }
+    }
+</style>
 {% endblock %}
