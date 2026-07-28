@@ -798,6 +798,59 @@ def delete_leave(request, leave_id):
 # ─── Student Levels ───────────────────────────────────────────────────────────
 
 @login_required
+def bulk_add_student_level(request):
+    if request.user.profile.role not in ['admin', 'teacher']:
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    try:
+        teacher = request.user.teacher_profile
+    except Teacher.DoesNotExist:
+        if request.user.profile.role != 'admin':
+            messages.error(request, 'يجب أن تكون معلماً لتسجيل المستويات')
+            return redirect('dashboard')
+        teacher = None
+    if teacher:
+        classes = teacher.classes.all().order_by('name')
+        subjects_qs = teacher.subjects.all()
+    else:
+        classes = Class.objects.all().order_by('name')
+        subjects_qs = Subject.objects.all()
+    if request.method == 'POST':
+        students_ids = request.POST.getlist('student_id')
+        levels = request.POST.getlist('level')
+        notes_list = request.POST.getlist('notes')
+        subject_id = request.POST.get('subject')
+        class_id = request.POST.get('class_id')
+        subject = Subject.objects.get(id=subject_id) if subject_id else None
+        count = 0
+        for i, student_id in enumerate(students_ids):
+            if levels[i]:
+                StudentLevel.objects.create(
+                    student_id=student_id,
+                    subject=subject,
+                    level=levels[i],
+                    notes=notes_list[i] if i < len(notes_list) else '',
+                    created_by=request.user
+                )
+                count += 1
+        messages.success(request, f'تم تسجيل {count} مستوى بنجاح')
+        return redirect('student_level_list')
+    class_id = request.GET.get('class_id')
+    selected_class = None
+    students = []
+    if class_id:
+        selected_class = get_object_or_404(Class, id=class_id)
+        if teacher and selected_class not in teacher.classes.all():
+            messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا الصف')
+            return redirect('bulk_add_student_level')
+        students = Student.objects.filter(student_class=selected_class).order_by('full_name')
+    return render(request, 'school/bulk_add_student_level.html', {
+        'students': students,
+        'subjects': subjects_qs,
+        'classes': classes,
+        'selected_class': selected_class,
+    })
+
 def add_student_level(request):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')

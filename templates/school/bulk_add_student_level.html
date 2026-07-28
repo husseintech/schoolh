@@ -1,0 +1,91 @@
+{% extends 'school/base.html' %}
+{% block title %}تسجيل مستويات{% endblock %}
+{% block page_heading %}تسجيل المستويات{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up-arrow"></i> تسجيل مستويات الطلاب</span>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row mb-4">
+            <div class="col-md-4">
+                <label class="form-label">اختر الصف</label>
+                <select name="class_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- اختر الصف --</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        {% if selected_class %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="class_id" value="{{ selected_class.id }}">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">المادة</label>
+                    <select name="subject" class="form-select" required>
+                        <option value="">اختر المادة</option>
+                        {% for s in subjects %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الطالب</th>
+                            <th style="width:160px">المستوى</th>
+                            <th>ملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ s.full_name }}</td>
+                            <td>
+                                <input type="hidden" name="student_id" value="{{ s.id }}">
+                                <select name="level" class="form-select form-select-sm">
+                                    <option value="">--</option>
+                                    <option value="excellent">ممتاز</option>
+                                    <option value="very_good">جيد جداً</option>
+                                    <option value="good">جيد</option>
+                                    <option value="acceptable">مقبول</option>
+                                    <option value="weak">ضعيف</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="notes" class="form-control form-control-sm" placeholder="ملاحظة اختيارية"></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                <p class="mt-2">لا يوجد طلاب في هذا الصف</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if students %}
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ الكل</button>
+                <a href="{% url 'student_level_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+            </div>
+            {% endif %}
+        </form>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-hand-index" style="font-size: 3rem;"></i>
+            <p class="mt-3">اختر الصف من القائمة أعلاه لعرض الطلاب</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
