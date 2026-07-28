@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1472,17 +1472,22 @@ def lateness_list(request):
     search_query = request.GET.get('q', '')
     if search_query:
         students = students.filter(full_name__icontains=search_query)
-    today_lateness = StudentLateness.objects.filter(date=date.today()).values_list('student_id', flat=True)
+    today_lateness = list(StudentLateness.objects.filter(date=date.today()).values_list('student_id', flat=True))
+    today_notes = {
+        l.student_id: l.notes
+        for l in StudentLateness.objects.filter(date=date.today())
+    }
+    for s in students:
+        s.lateness_notes = today_notes.get(s.id, '')
     if request.method == 'POST':
         if not has_perm(request.user, 'lateness', 'add'):
             messages.error(request, 'ليس لديك صلاحية للإضافة')
             return redirect('lateness_list')
         student_ids = request.POST.getlist('student_id')
-        notes_list = request.POST.getlist('notes')
-        lateness_date = request.POST.get('lateness_date', date.today())
+        lateness_date = request.POST.get('lateness_date', str(date.today()))
         count = 0
-        for i, sid in enumerate(student_ids):
-            note = notes_list[i] if i < len(notes_list) else ''
+        for sid in student_ids:
+            note = request.POST.get(f'notes_{sid}', '')
             StudentLateness.objects.update_or_create(
                 student_id=sid,
                 date=lateness_date,
