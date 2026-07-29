@@ -1217,7 +1217,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1232,7 +1232,8 @@ def add_account(request):
         'messages': 'الرسائل',
         'reports': 'التقارير',
         'settings': 'الإعدادات',
-        'notes': 'الملاحظات',
+'notes': 'الملاحظات',
+        'lateness': 'تأخيرات الطلاب',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1291,7 +1292,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1306,7 +1307,8 @@ def edit_account(request, user_id):
         'messages': 'الرسائل',
         'reports': 'التقارير',
         'settings': 'الإعدادات',
-        'notes': 'الملاحظات',
+'notes': 'الملاحظات',
+        'lateness': 'تأخيرات الطلاب',
     }
     ACTION_LABELS = {
         'view': 'عرض',
