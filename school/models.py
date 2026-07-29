@@ -403,8 +403,8 @@ class SchoolInfo(models.Model):
     national_number = models.CharField('رقم المدرسة الوطني', max_length=50)
     latitude = models.FloatField('خط العرض', blank=True, null=True)
     longitude = models.FloatField('خط الطول', blank=True, null=True)
-    school_logo = models.ImageField('شعار المدرسة', upload_to='logos/', blank=True, null=True)
-    ministry_logo = models.ImageField('شعار الوزارة', upload_to='logos/', blank=True, null=True)
+    school_logo = models.URLField('رابط شعار المدرسة', blank=True, null=True, default='', help_text='رابط مباشر للصورة (مثال: من Google Drive أو ImgBB)')
+    ministry_logo = models.URLField('رابط شعار الوزارة', blank=True, null=True, default='', help_text='رابط مباشر للصورة')
 
     class Meta:
         verbose_name = 'بيانات المدرسة'

@@ -581,18 +581,16 @@ def school_info_view(request):
             info.national_number = national_number
             info.latitude = lat_val
             info.longitude = lon_val
-            if request.FILES.get('school_logo'):
-                info.school_logo = request.FILES['school_logo']
-            if request.FILES.get('ministry_logo'):
-                info.ministry_logo = request.FILES['ministry_logo']
+            info.school_logo = request.POST.get('school_logo', '')
+            info.ministry_logo = request.POST.get('ministry_logo', '')
             info.save()
         else:
             info = SchoolInfo.objects.create(
                 name_ar=name_ar, name_en=name_en,
                 principal_name=principal_name, national_number=national_number,
                 latitude=lat_val, longitude=lon_val,
-                school_logo=request.FILES.get('school_logo'),
-                ministry_logo=request.FILES.get('ministry_logo'),
+                school_logo=request.POST.get('school_logo', ''),
+                ministry_logo=request.POST.get('ministry_logo', ''),
             )
         messages.success(request, 'تم حفظ بيانات المدرسة')
         return redirect('school_info')
