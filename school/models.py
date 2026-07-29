@@ -401,6 +401,8 @@ class SchoolInfo(models.Model):
     name_en = models.CharField('اسم المدرسة (إنجليزي)', max_length=200)
     principal_name = models.CharField('اسم المدير', max_length=200)
     national_number = models.CharField('رقم المدرسة الوطني', max_length=50)
+    latitude = models.FloatField('خط العرض', blank=True, null=True)
+    longitude = models.FloatField('خط الطول', blank=True, null=True)
 
     class Meta:
         verbose_name = 'بيانات المدرسة'

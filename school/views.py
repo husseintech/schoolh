@@ -562,14 +562,21 @@ def school_info_view(request):
         name_en = request.POST.get('name_en', '')
         principal_name = request.POST.get('principal_name', '')
         national_number = request.POST.get('national_number', '')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
         if info:
             info.name_ar = name_ar
             info.name_en = name_en
             info.principal_name = principal_name
             info.national_number = national_number
+            info.latitude = float(latitude) if latitude else None
+            info.longitude = float(longitude) if longitude else None
             info.save()
         else:
-            SchoolInfo.objects.create(name_ar=name_ar, name_en=name_en, principal_name=principal_name, national_number=national_number)
+            SchoolInfo.objects.create(name_ar=name_ar, name_en=name_en,
+                principal_name=principal_name, national_number=national_number,
+                latitude=float(latitude) if latitude else None,
+                longitude=float(longitude) if longitude else None)
         messages.success(request, 'تم حفظ بيانات المدرسة')
         return redirect('dashboard')
     return render(request, 'school/school_info.html', {'info': info})

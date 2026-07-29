@@ -26,6 +26,14 @@
                             <label class="form-label">رقم المدرسة الوطني</label>
                             <input type="text" name="national_number" class="form-control" value="{{ info.national_number|default:'' }}" required dir="ltr">
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label">خط العرض (Latitude)</label>
+                            <input type="text" name="latitude" class="form-control" value="{{ info.latitude|default:'' }}" dir="ltr" placeholder="مثال: 31.4477">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">خط الطول (Longitude)</label>
+                            <input type="text" name="longitude" class="form-control" value="{{ info.longitude|default:'' }}" dir="ltr" placeholder="مثال: 35.0938">
+                        </div>
                     </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
