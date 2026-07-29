@@ -1,12 +1,75 @@
 {% extends 'school/base.html' %}
-{% block title %}النظام المدرسي - {% endblock %}
+{% block title %}النظام المدرسي{% endblock %}
+{% block page_heading %}الرئيسية{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
+                <i class="bi bi-megaphone-fill"></i> الإعلانات
+            </div>
+            <div class="card-body p-3">
+                {% if announcements %}
+                    {% for a in announcements %}
+                    <div class="mb-3 pb-2 border-bottom">
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #1a2744;">{{ a.title }}</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
+                        <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ a.content|truncatewords:25 }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-megaphone" style="font-size: 2rem;"></i>
+                    <p class="mt-2">لا توجد إعلانات حالياً</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
+                <i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية
+            </div>
+            <div class="card-body p-3">
+                {% if lesson_links %}
+                    {% for link in lesson_links %}
+                    <a href="{{ link.url }}" target="_blank" class="text-decoration-none" style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f4f8; color: inherit;">
+                        <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-left: 14px; flex-shrink: 0;">
+                            <i class="bi bi-play-fill"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 0.9rem; color: #1a2744;">{{ link.title }}
+                                {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span style="background: #10b981; color: #fff; font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; margin-right: 5px;">مباشر</span>{% endif %}
+                            </div>
+                            {% if link.lesson_datetime %}
+                            <div style="font-size: 0.75rem; color: #94a3b8;"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>
+                            {% endif %}
+                        </div>
+                        <div style="color: #2d9cdb; font-size: 1.2rem;"><i class="bi bi-chevron-left"></i></div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-camera-video" style="font-size: 2rem;"></i>
+                    <p class="mt-2">لا توجد حصص إلكترونية حالياً</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block unauth_content %}
 <style>
     .home-page {
         min-height: 100vh;
         background: linear-gradient(135deg, #e8f4f8 0%, #f0f7fe 50%, #f8faff 100%);
     }
-    /* Top Bar */
     .home-topbar {
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
@@ -38,29 +101,6 @@
         font-weight: 600; font-size: 0.85rem; transition: all 0.3s; white-space: nowrap;
     }
     .login-inline .btn-login-sm:hover { box-shadow: 0 4px 12px rgba(45,156,219,0.3); color: #fff; }
-    .user-info-bar {
-        display: flex; align-items: center; gap: 12px;
-    }
-    .user-info-bar .avatar {
-        width: 36px; height: 36px; border-radius: 50%;
-        background: linear-gradient(135deg, #2d9cdb, #4fc3f7);
-        color: #fff; display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 0.9rem;
-    }
-    .user-info-bar .user-name { font-weight: 600; color: #1a2744; font-size: 0.9rem; }
-    .user-info-bar .user-role { font-size: 0.75rem; color: #94a3b8; }
-    .btn-dashboard {
-        background: linear-gradient(135deg, #2d9cdb, #4fc3f7);
-        border: none; color: #fff; padding: 6px 16px; border-radius: 8px;
-        font-weight: 600; font-size: 0.8rem; transition: all 0.3s; text-decoration: none;
-    }
-    .btn-dashboard:hover { box-shadow: 0 4px 12px rgba(45,156,219,0.3); color: #fff; }
-    .btn-logout-top {
-        color: #94a3b8; font-size: 0.8rem; text-decoration: none; transition: color 0.2s;
-    }
-    .btn-logout-top:hover { color: #e74c3c; }
-    /* Main Content */
-    .home-content { padding: 40px 0; }
     .side-card {
         border: none; border-radius: 12px;
         box-shadow: 0 5px 25px rgba(0,0,0,0.06);
@@ -104,13 +144,10 @@
     }
     @media (max-width: 768px) {
         .home-topbar .brand small { display: none; }
-        .home-content { padding: 20px 0; }
         .login-inline .form-control { font-size: 0.8rem; padding: 5px 10px; }
     }
 </style>
-
 <div class="home-page">
-    <!-- Top Bar -->
     <div class="home-topbar">
         <div class="container">
             <div class="row align-items-center">
@@ -124,91 +161,64 @@
                     </div>
                 </div>
                 <div class="col-md-6 text-start text-md-left mt-2 mt-md-0">
-                    {% if user.is_authenticated %}
-                    <div class="user-info-bar justify-content-end">
-                        <div class="avatar">{{ user.first_name|default:user.username|first }}</div>
-                        <div>
-                            <div class="user-name">{{ user.first_name|default:user.username }}</div>
-                            <div class="user-role">{{ user.profile.get_role_display }}</div>
-                        </div>
-                        <a href="{% url 'dashboard' %}" class="btn-dashboard">
-                            <i class="bi bi-grid-fill"></i> لوحة التحكم
-                        </a>
-                        <a href="{% url 'logout' %}" class="btn-logout-top">
-                            <i class="bi bi-box-arrow-left"></i> خروج
-                        </a>
-                    </div>
-                    {% else %}
                     <form method="post" action="{% url 'login' %}" class="login-inline d-flex align-items-center gap-2 justify-content-end flex-wrap">
                         {% csrf_token %}
                         <input type="text" name="username" class="form-control" required placeholder="اسم المستخدم" style="width:140px">
                         <input type="password" name="password" class="form-control" required placeholder="كلمة المرور" style="width:140px">
                         <button type="submit" class="btn-login-sm">دخول <i class="bi bi-box-arrow-in-left"></i></button>
                     </form>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Main Content -->
-    <div class="home-content">
-        <div class="container">
-            <div class="row g-4">
-                <!-- Right: Announcements -->
-                <div class="col-lg-6">
-                    <div class="side-card">
-                        <div class="card-header">
-                            <i class="bi bi-megaphone-fill"></i> الإعلانات
-                        </div>
-                        <div class="card-body p-3">
-                            {% if announcements %}
-                                {% for a in announcements %}
-                                <div class="announce-item">
-                                    <div class="title">{{ a.title }}</div>
-                                    <div class="date"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
-                                    <div class="content">{{ a.content|truncatewords:25 }}</div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="empty-placeholder">
-                                    <i class="bi bi-megaphone"></i>
-                                    لا توجد إعلانات حالياً
-                                </div>
-                            {% endif %}
-                        </div>
+    <div class="container" style="padding: 40px 0;">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="side-card">
+                    <div class="card-header"><i class="bi bi-megaphone-fill"></i> الإعلانات</div>
+                    <div class="card-body p-3">
+                        {% if announcements %}
+                            {% for a in announcements %}
+                            <div class="announce-item">
+                                <div class="title">{{ a.title }}</div>
+                                <div class="date"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
+                                <div class="content">{{ a.content|truncatewords:25 }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-placeholder">
+                                <i class="bi bi-megaphone"></i>
+                                لا توجد إعلانات حالياً
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
-
-                <!-- Left: Online Lesson Links -->
-                <div class="col-lg-6">
-                    <div class="side-card">
-                        <div class="card-header">
-                            <i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية
-                        </div>
-                        <div class="card-body p-3">
-                            {% if lesson_links %}
-                                {% for link in lesson_links %}
-                                <a href="{{ link.url }}" target="_blank" class="link-item">
-                                    <div class="icon"><i class="bi bi-play-fill"></i></div>
-                                    <div class="info">
-                                        <div class="title">{{ link.title }}
-                                            {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span class="badge-live">مباشر</span>{% endif %}
-                                        </div>
-                                        {% if link.lesson_datetime %}
-                                        <div class="time"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>
-                                        {% endif %}
+            </div>
+            <div class="col-lg-6">
+                <div class="side-card">
+                    <div class="card-header"><i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية</div>
+                    <div class="card-body p-3">
+                        {% if lesson_links %}
+                            {% for link in lesson_links %}
+                            <a href="{{ link.url }}" target="_blank" class="link-item">
+                                <div class="icon"><i class="bi bi-play-fill"></i></div>
+                                <div class="info">
+                                    <div class="title">{{ link.title }}
+                                        {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span class="badge-live">مباشر</span>{% endif %}
                                     </div>
-                                    <div class="arrow"><i class="bi bi-chevron-left"></i></div>
-                                </a>
-                                {% endfor %}
-                            {% else %}
-                                <div class="empty-placeholder">
-                                    <i class="bi bi-camera-video"></i>
-                                    لا توجد حصص إلكترونية حالياً
+                                    {% if link.lesson_datetime %}
+                                    <div class="time"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                        </div>
+                                <div class="arrow"><i class="bi bi-chevron-left"></i></div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-placeholder">
+                                <i class="bi bi-camera-video"></i>
+                                لا توجد حصص إلكترونية حالياً
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
