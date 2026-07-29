@@ -194,6 +194,12 @@ class StudentLeaveForm(forms.ModelForm):
             'reason': forms.Textarea(attrs={'rows': 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk and 'leave_time' not in self.data:
+            from datetime import datetime
+            self.initial['leave_time'] = datetime.now().strftime('%H:%M')
+
 
 class StudentLevelForm(forms.ModelForm):
     class Meta:
