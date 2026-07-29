@@ -269,7 +269,8 @@ if (mapEl) {
         attribution: '&copy; ESRI'
     });
     var map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 18);
-    streets.addTo(map);
+    satellite.addTo(map);
+    satellite.on('tileerror', function() { if (!map.hasLayer(streets)) { streets.addTo(map); } });
     L.control.layers({'القمر الصناعي': satellite, 'خريطة عادية': streets}).addTo(map);
     var marker = L.marker([lat, lng]).addTo(map);
     marker.bindPopup('<span style="color:red;font-weight:bold;font-size:16px;">' + (name || 'موقع المدرسة') + '</span>').openPopup();
