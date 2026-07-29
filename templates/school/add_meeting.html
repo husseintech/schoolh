@@ -1,0 +1,92 @@
+{% extends 'school/base.html' %}
+{% block title %}تسجيل اجتماع{% endblock %}
+{% block page_heading %}تسجيل اجتماع معلمين{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-people-fill"></i> تسجيل اجتماع معلمين</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">رقم الاجتماع</label>
+                            <input type="text" name="meeting_number" class="form-control" required dir="ltr" placeholder="مثال: 1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">نوع الاجتماع</label>
+                            <select name="meeting_type" class="form-select" required>
+                                <option value="الجميع">الجميع</option>
+                                <option value="زمري">زمري</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">مكان الاجتماع</label>
+                            <select name="place" class="form-select" required>
+                                <option value="غرفة المعلمين">غرفة المعلمين</option>
+                                <option value="غرفة الإدارة">غرفة الإدارة</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">التاريخ</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">اليوم</label>
+                            <select name="day" class="form-select" required>
+                                <option value="السبت">السبت</option>
+                                <option value="الأحد">الأحد</option>
+                                <option value="الإثنين">الإثنين</option>
+                                <option value="الثلاثاء">الثلاثاء</option>
+                                <option value="الأربعاء">الأربعاء</option>
+                                <option value="الخميس">الخميس</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">الساعة</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">أهداف الاجتماع</label>
+                            <textarea name="goals" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">محضر الاجتماع</label>
+                            <textarea name="minutes" class="form-control" rows="5" required></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="all_teachers" class="form-check-input" id="allTeachers" onchange="toggleAttendees(this)">
+                                <label class="form-check-label" for="allTeachers">جميع المعلمين</label>
+                            </div>
+                            <label class="form-label">اختيار معلمين محددين</label>
+                            <div class="row g-2" id="attendeesList">
+                                {% for t in teachers %}
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="attendees" value="{{ t.id }}" class="form-check-input" id="t{{ t.id }}">
+                                        <label class="form-check-label" for="t{{ t.id }}">{{ t.full_name }}</label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ الاجتماع</button>
+                        <a href="{% url 'meeting_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function toggleAttendees(cb) {
+    document.querySelectorAll('[name="attendees"]').forEach(function(chk) {
+        chk.disabled = cb.checked;
+    });
+}
+</script>
+{% endblock %}

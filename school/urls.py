@@ -109,4 +109,12 @@ urlpatterns = [
     path('lateness/', views.lateness_list, name='lateness_list'),
     path('lateness/report/', views.lateness_report, name='lateness_report'),
     path('lateness/student/<int:student_id>/', views.student_lateness_detail, name='student_lateness_detail'),
+
+    # School Info
+    path('school-info/', views.school_info_view, name='school_info'),
+
+    # Meetings
+    path('meetings/', views.meeting_list, name='meeting_list'),
+    path('meetings/add/', views.add_meeting, name='add_meeting'),
+    path('meetings/<int:meeting_id>/report/', views.meeting_report, name='meeting_report'),
 ]

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -549,6 +549,81 @@ def notes_report(request):
         return redirect('dashboard')
     notes = Note.objects.all().select_related('student__student_class', 'created_by').order_by('-created_at')
     return render(request, 'school/notes_report.html', {'notes': notes})
+
+
+@login_required
+def school_info_view(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    info = SchoolInfo.objects.first()
+    if request.method == 'POST':
+        name_ar = request.POST.get('name_ar', '')
+        name_en = request.POST.get('name_en', '')
+        principal_name = request.POST.get('principal_name', '')
+        national_number = request.POST.get('national_number', '')
+        if info:
+            info.name_ar = name_ar
+            info.name_en = name_en
+            info.principal_name = principal_name
+            info.national_number = national_number
+            info.save()
+        else:
+            SchoolInfo.objects.create(name_ar=name_ar, name_en=name_en, principal_name=principal_name, national_number=national_number)
+        messages.success(request, 'تم حفظ بيانات المدرسة')
+        return redirect('dashboard')
+    return render(request, 'school/school_info.html', {'info': info})
+
+
+@login_required
+def add_meeting(request):
+    if not has_perm(request.user, 'meetings', 'add'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().order_by('full_name')
+    if request.method == 'POST':
+        meeting_type = request.POST.get('meeting_type')
+        date_val = request.POST.get('date')
+        day = request.POST.get('day')
+        time_val = request.POST.get('time')
+        place = request.POST.get('place')
+        goals = request.POST.get('goals', '')
+        minutes = request.POST.get('minutes', '')
+        meeting_number = request.POST.get('meeting_number')
+        all_teachers = request.POST.get('all_teachers') == 'on'
+        attendee_ids = request.POST.getlist('attendees')
+        meeting = Meeting.objects.create(
+            meeting_type=meeting_type, date=date_val, day=day, time=time_val,
+            place=place, goals=goals, minutes=minutes,
+            meeting_number=meeting_number, all_teachers=all_teachers,
+            created_by=request.user
+        )
+        if all_teachers:
+            meeting.attendees.set(Teacher.objects.all())
+        elif attendee_ids:
+            meeting.attendees.set(attendee_ids)
+        messages.success(request, f'تم تسجيل الاجتماع رقم {meeting_number}')
+        return redirect('meeting_list')
+    return render(request, 'school/add_meeting.html', {'teachers': teachers})
+
+
+@login_required
+def meeting_list(request):
+    if not has_perm(request.user, 'meetings', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    meetings = Meeting.objects.all().order_by('-date')
+    return render(request, 'school/meeting_list.html', {'meetings': meetings})
+
+
+@login_required
+def meeting_report(request, meeting_id):
+    if not has_perm(request.user, 'meetings', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    meeting = get_object_or_404(Meeting.objects.prefetch_related('attendees'), id=meeting_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/meeting_report.html', {'meeting': meeting, 'info': info})
 
 
 @login_required

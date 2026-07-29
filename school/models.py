@@ -50,6 +50,7 @@ DEFAULT_PERMISSIONS = {
         'settings': ['whatsapp', 'accounts', 'links'],
         'notes': ['view', 'add'],
         'lateness': ['view', 'add'],
+        'meetings': ['view', 'add'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -393,3 +394,43 @@ class StudentLateness(models.Model):
 
     def __str__(self):
         return f'{self.student.full_name} - {self.date}'
+
+
+class SchoolInfo(models.Model):
+    name_ar = models.CharField('اسم المدرسة (عربي)', max_length=200)
+    name_en = models.CharField('اسم المدرسة (إنجليزي)', max_length=200)
+    principal_name = models.CharField('اسم المدير', max_length=200)
+    national_number = models.CharField('رقم المدرسة الوطني', max_length=50)
+
+    class Meta:
+        verbose_name = 'بيانات المدرسة'
+        verbose_name_plural = 'بيانات المدرسة'
+
+    def __str__(self):
+        return self.name_ar
+
+
+class Meeting(models.Model):
+    MEETING_TYPES = [('الجميع', 'الجميع'), ('زمري', 'زمري')]
+    PLACES = [('غرفة المعلمين', 'غرفة المعلمين'), ('غرفة الإدارة', 'غرفة الإدارة')]
+
+    meeting_type = models.CharField('نوع الاجتماع', max_length=50, choices=MEETING_TYPES)
+    date = models.DateField('التاريخ')
+    day = models.CharField('اليوم', max_length=50)
+    time = models.TimeField('الساعة')
+    place = models.CharField('مكان الاجتماع', max_length=100, choices=PLACES)
+    goals = models.TextField('أهداف الاجتماع')
+    minutes = models.TextField('محضر الاجتماع')
+    meeting_number = models.CharField('رقم الاجتماع', max_length=20, unique=True)
+    attendees = models.ManyToManyField('Teacher', verbose_name='المعلمون الحاضرون', blank=True)
+    all_teachers = models.BooleanField('جميع المعلمين', default=False)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'اجتماع'
+        verbose_name_plural = 'الاجتماعات'
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return f'اجتماع {self.meeting_type} - {self.date}'

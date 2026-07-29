@@ -1,0 +1,39 @@
+{% extends 'school/base.html' %}
+{% block title %}بيانات المدرسة{% endblock %}
+{% block page_heading %}بيانات المدرسة{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-building"></i> بيانات المدرسة</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">اسم المدرسة (عربي)</label>
+                            <input type="text" name="name_ar" class="form-control" value="{{ info.name_ar|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">اسم المدرسة (English)</label>
+                            <input type="text" name="name_en" class="form-control" value="{{ info.name_en|default:'' }}" required dir="ltr">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">اسم المدير</label>
+                            <input type="text" name="principal_name" class="form-control" value="{{ info.principal_name|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">رقم المدرسة الوطني</label>
+                            <input type="text" name="national_number" class="form-control" value="{{ info.national_number|default:'' }}" required dir="ltr">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

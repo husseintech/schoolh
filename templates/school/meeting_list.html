@@ -1,0 +1,50 @@
+{% extends 'school/base.html' %}
+{% block title %}الاجتماعات{% endblock %}
+{% block page_heading %}الاجتماعات{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill"></i> اجتماعات المعلمين ({{ meetings.count }})</span>
+        <a href="{% url 'add_meeting' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> تسجيل اجتماع</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الاجتماع</th>
+                        <th>النوع</th>
+                        <th>التاريخ</th>
+                        <th>اليوم</th>
+                        <th>المكان</th>
+                        <th>الحضور</th>
+                        <th>تقرير</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in meetings %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ m.meeting_number }}</strong></td>
+                        <td>{{ m.meeting_type }}</td>
+                        <td>{{ m.date|date:"Y-m-d" }}</td>
+                        <td>{{ m.day }}</td>
+                        <td>{{ m.place }}</td>
+                        <td>{% if m.all_teachers %}الجميع{% else %}{{ m.attendees.count }}{% endif %}</td>
+                        <td><a href="{% url 'meeting_report' m.id %}" class="btn btn-info btn-sm"><i class="bi bi-file-text"></i> التقرير</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد اجتماعات</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
