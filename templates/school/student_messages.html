@@ -14,7 +14,7 @@
                         <h6 class="mb-1">{{ msg.subject }}</h6>
                         <p class="mb-1">{{ msg.content }}</p>
                         <small class="text-muted">
-                            <i class="bi bi-person"></i> {{ msg.sender.get_full_name|default:msg.sender.username }} |
+                            <i class="bi bi-person"></i> {% if msg.sender %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% else %}مجهول{% endif %} |
                             <i class="bi bi-clock"></i> {{ msg.created_at|date:"Y-m-d H:i" }}
                         </small>
                     </div>

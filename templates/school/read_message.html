@@ -11,10 +11,10 @@
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <strong>من:</strong> {{ msg.sender.get_full_name|default:msg.sender.username }}
+                    <strong>من:</strong> {% if msg.sender %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% else %}مجهول{% endif %}
                 </div>
-                <div class="mb-3">
-                    <strong>إلى:</strong> {{ msg.recipient.get_full_name|default:msg.recipient.username }}
+                <div class="col-md-6 text-md-start">
+                    <strong>إلى:</strong> {% if msg.recipient %}{{ msg.recipient.get_full_name|default:msg.recipient.username }}{% else %}الكل{% endif %}
                 </div>
                 <hr>
                 <p>{{ msg.content|linebreaks }}</p>

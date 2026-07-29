@@ -25,7 +25,7 @@
                     {% for msg in messages_qs %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ msg.recipient.get_full_name|default:msg.recipient.username|default:"ولي أمر" }}</td>
+                        <td>{% if msg.recipient %}{{ msg.recipient.get_full_name|default:msg.recipient.username }}{% else %}ولي أمر{% endif %}</td>
                         <td>{{ msg.subject }}</td>
                         <td>{{ msg.content|truncatewords:15 }}</td>
                         <td>{% if msg.is_read %}<span class="badge bg-success">مقروء</span>{% else %}<span class="badge bg-warning">لم يقرأ</span>{% endif %}</td>

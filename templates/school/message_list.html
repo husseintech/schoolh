@@ -16,7 +16,7 @@
                         <h6 class="mb-1">{{ msg.subject }}</h6>
                         <p class="mb-1">{{ msg.content|truncatewords:20 }}</p>
                         <small class="text-muted">
-                            <i class="bi bi-person"></i> {{ msg.parent_name|default:msg.sender.username }} |
+                            <i class="bi bi-person"></i> {% if msg.sender %}{{ msg.sender.username }}{% else %}{{ msg.parent_name }}{% endif %} |
                             {% if msg.parent_phone %}<i class="bi bi-phone"></i> {{ msg.parent_phone }} |{% endif %}
                             <i class="bi bi-clock"></i> {{ msg.created_at|date:"Y-m-d H:i" }}
                             {% if not msg.is_read %}<span class="badge bg-danger">جديد</span>{% endif %}
