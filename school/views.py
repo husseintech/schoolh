@@ -42,11 +42,13 @@ def home(request):
     lesson_links = LessonLink.objects.filter(is_active=True)[:10]
     now = datetime.now()
     now_ago = now - timedelta(hours=1)
+    school_info = SchoolInfo.objects.first()
     return render(request, 'school/home.html', {
         'announcements': announcements,
         'lesson_links': lesson_links,
         'now': now,
         'now_ago': now_ago,
+        'school_info': school_info,
     })
 
 
