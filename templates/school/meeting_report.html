@@ -21,7 +21,11 @@
                 <h6 style="line-height: 1.8;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم العالي - يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
             </div>
             <div class="col-2 text-center">
+                {% if info.ministry_logo %}
+                <img src="{{ info.ministry_logo.url }}" alt="شعار الوزارة" style="height: 80px; width: auto;">
+                {% else %}
                 <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 80px; width: auto;">
+                {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
                 <h6 style="line-height: 1.8;">State of Palestine<br>Ministry Of Education & Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6>

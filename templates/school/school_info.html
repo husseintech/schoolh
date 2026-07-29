@@ -7,7 +7,7 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-building"></i> بيانات المدرسة</div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -33,6 +33,26 @@
                         <div class="col-md-6">
                             <label class="form-label">خط الطول (Longitude)</label>
                             <input type="text" name="longitude" class="form-control" value="{{ info.longitude|default:'' }}" dir="ltr" placeholder="مثال: 35.0938">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شعار المدرسة</label>
+                            <input type="file" name="school_logo" class="form-control" accept="image/*">
+                            {% if info.school_logo %}
+                            <div class="mt-2">
+                                <img src="{{ info.school_logo.url }}" style="height: 50px;" alt="شعار المدرسة">
+                                <small class="text-muted d-block">الشعار الحالي</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شعار الوزارة</label>
+                            <input type="file" name="ministry_logo" class="form-control" accept="image/*">
+                            {% if info.ministry_logo %}
+                            <div class="mt-2">
+                                <img src="{{ info.ministry_logo.url }}" style="height: 50px;" alt="شعار الوزارة">
+                                <small class="text-muted d-block">الشعار الحالي</small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="mt-4">
