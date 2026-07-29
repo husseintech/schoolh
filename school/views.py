@@ -487,7 +487,7 @@ def teacher_list(request):
     if not has_perm(request.user, 'teachers', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    teachers = Teacher.objects.all().order_by('full_name')
+    teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
     return render(request, 'school/teacher_list.html', {'teachers': teachers})
 
 
@@ -531,6 +531,15 @@ def teacher_notes(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
     notes = TeacherNote.objects.filter(teacher=teacher).select_related('created_by').order_by('-created_at')
     return render(request, 'school/teacher_notes.html', {'teacher': teacher, 'notes': notes})
+
+
+@login_required
+def teachers_report(request):
+    if not has_perm(request.user, 'teachers', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
+    return render(request, 'school/teachers_report.html', {'teachers': teachers})
 
 
 @login_required

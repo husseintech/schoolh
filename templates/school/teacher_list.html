@@ -6,6 +6,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-person-badge-fill"></i> جميع المعلمين ({{ teachers.count }})</span>
         <a href="{% url 'add_teacher' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة معلم</a>
+            <a href="{% url 'teachers_report' %}" class="btn btn-success btn-sm"><i class="bi bi-printer"></i> طباعة التقرير</a>
     </div>
     <div class="card-body">
         <div class="table-responsive">
