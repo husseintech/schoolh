@@ -543,6 +543,15 @@ def teachers_report(request):
 
 
 @login_required
+def notes_report(request):
+    if not has_perm(request.user, 'notes', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    notes = Note.objects.all().select_related('student__student_class', 'created_by').order_by('-created_at')
+    return render(request, 'school/notes_report.html', {'notes': notes})
+
+
+@login_required
 def add_teacher_note(request, teacher_id):
     if not has_perm(request.user, 'teachers', 'notes'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')

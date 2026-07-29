@@ -35,6 +35,7 @@ urlpatterns = [
     path('teachers/<int:teacher_id>/notes/', views.teacher_notes, name='teacher_notes'),
     path('teachers/<int:teacher_id>/notes/add/', views.add_teacher_note, name='add_teacher_note'),
     path('teachers/report/', views.teachers_report, name='teachers_report'),
+    path('notes/report/', views.notes_report, name='notes_report'),
 
     # Classes
     path('classes/', views.class_list, name='class_list'),
