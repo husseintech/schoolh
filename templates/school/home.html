@@ -257,8 +257,8 @@
 <script>
 var mapEl = document.getElementById('school-map');
 if (mapEl) {
-    var lat = parseFloat(mapEl.dataset.lat);
-    var lng = parseFloat(mapEl.dataset.lng);
+    var lat = parseFloat(mapEl.dataset.lat.replace(',', '.'));
+    var lng = parseFloat(mapEl.dataset.lng.replace(',', '.'));
     var name = mapEl.dataset.name;
     var streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
