@@ -565,16 +565,22 @@ def school_info_view(request):
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
         if latitude:
-            latitude = latitude.replace(',', '.')
+            latitude = latitude.replace(',', '.').replace('،', '.').strip()
         if longitude:
-            longitude = longitude.replace(',', '.')
+            longitude = longitude.replace(',', '.').replace('،', '.').strip()
+        try:
+            lat_val = float(latitude) if latitude else None
+            lon_val = float(longitude) if longitude else None
+        except ValueError:
+            messages.error(request, 'خطأ في تنسيق الإحداثيات، استخدم النقطة (.) كفاصل عشري')
+            return redirect('school_info')
         if info:
             info.name_ar = name_ar
             info.name_en = name_en
             info.principal_name = principal_name
             info.national_number = national_number
-            info.latitude = float(latitude) if latitude else None
-            info.longitude = float(longitude) if longitude else None
+            info.latitude = lat_val
+            info.longitude = lon_val
             if request.FILES.get('school_logo'):
                 info.school_logo = request.FILES['school_logo']
             if request.FILES.get('ministry_logo'):
@@ -584,8 +590,7 @@ def school_info_view(request):
             info = SchoolInfo.objects.create(
                 name_ar=name_ar, name_en=name_en,
                 principal_name=principal_name, national_number=national_number,
-                latitude=float(latitude) if latitude else None,
-                longitude=float(longitude) if longitude else None,
+                latitude=lat_val, longitude=lon_val,
                 school_logo=request.FILES.get('school_logo'),
                 ministry_logo=request.FILES.get('ministry_logo'),
             )
