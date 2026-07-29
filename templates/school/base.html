@@ -282,7 +282,7 @@
         </a>
 
         {% if 'reports_view' in user_perms %}
-        <a href="{% url 'reports_overview' %}" class="nav-link {% if 'reports' in request.resolver_match.url_name %}active{% endif %}">
+        <a href="{% url 'reports' %}" class="nav-link {% if request.resolver_match.url_name == 'reports' or 'report' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-bar-chart-fill"></i> التقارير
         </a>
         {% endif %}
