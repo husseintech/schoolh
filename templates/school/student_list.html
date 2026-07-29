@@ -69,6 +69,7 @@
                                 <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-info" title="عرض"><i class="bi bi-eye"></i></a>
                                 <a href="{% url 'student_report' student.id %}" class="btn btn-outline-success" title="تقرير"><i class="bi bi-file-text"></i></a>
                                 <a href="{% url 'add_note_with_student' student.id %}" class="btn btn-outline-warning" title="إضافة ملاحظة"><i class="bi bi-sticky"></i></a>
+                                <a href="{% url 'add_leave_with_student' student.id %}" class="btn btn-outline-info" title="إذن مغادرة"><i class="bi bi-box-arrow-right"></i></a>
                                 {% if user.profile.role == 'admin' %}
                                 <a href="{% url 'edit_student' student.id %}" class="btn btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
                                 <a href="{% url 'reset_student_password' student.id %}" class="btn btn-outline-info" title="كلمة المرور"><i class="bi bi-key"></i></a>

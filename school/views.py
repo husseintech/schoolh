@@ -771,7 +771,7 @@ def leave_list(request):
 
 
 @login_required
-def add_leave(request):
+def add_leave(request, student_id=None):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
@@ -784,7 +784,10 @@ def add_leave(request):
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
             return redirect('leave_list')
     else:
-        form = StudentLeaveForm()
+        initial = {}
+        if student_id:
+            initial['student'] = get_object_or_404(Student, id=student_id)
+        form = StudentLeaveForm(initial=initial)
         if request.user.profile.role == 'teacher':
             try:
                 teacher = request.user.teacher_profile

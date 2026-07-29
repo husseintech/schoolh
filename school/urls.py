@@ -60,6 +60,7 @@ urlpatterns = [
     # Student Leave
     path('leaves/', views.leave_list, name='leave_list'),
     path('leaves/add/', views.add_leave, name='add_leave'),
+    path('leaves/add/<int:student_id>/', views.add_leave, name='add_leave_with_student'),
     path('leaves/<int:leave_id>/delete/', views.delete_leave, name='delete_leave'),
 
     # Student Levels
