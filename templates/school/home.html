@@ -261,9 +261,12 @@ if (mapEl) {
     var lng = parseFloat(mapEl.dataset.lng);
     var name = mapEl.dataset.name;
     var map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 19);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 22,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution: '&copy; <a href="https://www.esri.com/">ESRI</a>'
+    }).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 22
     }).addTo(map);
     L.marker([lat, lng]).addTo(map).bindPopup(name || 'موقع المدرسة');
     mapEl.addEventListener('click', function() { map.scrollWheelZoom.enable(); });
