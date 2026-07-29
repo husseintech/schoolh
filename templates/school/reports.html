@@ -2,71 +2,66 @@
 {% block title %}التقارير{% endblock %}
 {% block page_heading %}التقارير{% endblock %}
 {% block content %}
-<div class="card mb-4">
-    <div class="card-header"><i class="bi bi-bar-chart-fill"></i> تقارير الصفوف</div>
-    <div class="card-body">
-        <div class="row g-4">
-            {% for class_obj in classes %}
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body text-center py-4">
-                        <i class="bi bi-building" style="font-size: 2.5rem; color: #3498db;"></i>
-                        <h5 class="mt-3">{{ class_obj.name }}</h5>
-                        <p class="text-muted">عدد الطلاب: {{ class_obj.students.count }}</p>
-                        <a href="{% url 'class_report' class_obj.id %}" class="btn btn-primary"><i class="bi bi-file-text"></i> عرض التقرير</a>
-                    </div>
-                </div>
+<div class="row g-3 mb-4">
+    {% for class_obj in classes %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-building" style="font-size: 1.8rem; color: #3498db;"></i>
+                <h6 class="mt-2 mb-1">{{ class_obj.name }}</h6>
+                <small class="text-muted d-block mb-2">طلاب: {{ class_obj.students.count }}</small>
+                <a href="{% url 'class_report' class_obj.id %}" class="btn btn-primary btn-sm w-100"><i class="bi bi-file-text"></i> التقرير</a>
             </div>
-            {% empty %}
-            <div class="col-12">
-                <div class="empty-state">
-                    <i class="bi bi-bar-chart"></i>
-                    <h5>لا توجد صفوف</h5>
-                    <p>قم بإضافة الصفوف أولاً</p>
-                </div>
-            </div>
-            {% endfor %}
         </div>
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header"><i class="bi bi-graph-up-arrow"></i> تقارير المستويات</div>
-    <div class="card-body text-center py-4">
-        <i class="bi bi-graph-up" style="font-size: 2.5rem; color: #27ae60;"></i>
-        <h5 class="mt-3">تقرير مستويات الطلاب</h5>
-        <p class="text-muted">عرض وطباعة مستويات الطلاب حسب الصف والمادة</p>
-        <a href="{% url 'student_levels_report' %}" class="btn btn-success"><i class="bi bi-printer"></i> طباعة مستويات الطلاب</a>
+    {% empty %}
+    <div class="col-12 text-center text-muted py-4">
+        <i class="bi bi-bar-chart" style="font-size: 2rem;"></i>
+        <p class="mt-2">لا توجد صفوف</p>
     </div>
+    {% endfor %}
 </div>
 
-<div class="card mt-4">
-    <div class="card-header"><i class="bi bi-clock-history"></i> تقارير التأخيرات</div>
-    <div class="card-body text-center py-4">
-        <i class="bi bi-clock" style="font-size: 2.5rem; color: #e74c3c;"></i>
-        <h5 class="mt-3">تقرير تأخيرات الطلاب</h5>
-        <p class="text-muted">عرض وطباعة تأخيرات الطلاب حسب الشهر</p>
-        <a href="{% url 'lateness_report' %}" class="btn btn-danger"><i class="bi bi-file-text"></i> عرض تقرير التأخيرات</a>
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-graph-up" style="font-size: 1.8rem; color: #27ae60;"></i>
+                <h6 class="mt-2 mb-1">مستويات الطلاب</h6>
+                <small class="text-muted d-block mb-2">عرض وطباعة المستويات</small>
+                <a href="{% url 'student_levels_report' %}" class="btn btn-success btn-sm w-100"><i class="bi bi-printer"></i> طباعة</a>
+            </div>
+        </div>
     </div>
-</div>
-
-<div class="card mt-4">
-    <div class="card-header"><i class="bi bi-box-arrow-right"></i> تقارير أذونات المغادرة</div>
-    <div class="card-body text-center py-4">
-        <i class="bi bi-box-arrow-right" style="font-size: 2.5rem; color: #3498db;"></i>
-        <h5 class="mt-3">تقرير أذونات المغادرة</h5>
-        <p class="text-muted">عرض وطباعة أذونات المغادرة مع إمكانية البحث</p>
-        <a href="{% url 'leave_list' %}" class="btn btn-info"><i class="bi bi-file-text"></i> عرض أذونات المغادرة</a>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-clock" style="font-size: 1.8rem; color: #e74c3c;"></i>
+                <h6 class="mt-2 mb-1">تأخيرات الطلاب</h6>
+                <small class="text-muted d-block mb-2">حسب الشهر والسنة</small>
+                <a href="{% url 'lateness_report' %}" class="btn btn-danger btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
+            </div>
+        </div>
     </div>
-</div>
-
-<div class="card mt-4">
-    <div class="card-header"><i class="bi bi-person-badge-fill"></i> تقارير المعلمين</div>
-    <div class="card-body text-center py-4">
-        <i class="bi bi-person-badge" style="font-size: 2.5rem; color: #8e44ad;"></i>
-        <h5 class="mt-3">تقرير المعلمين</h5>
-        <p class="text-muted">عرض وطباعة جميع المعلمين مع المواد والصفوف</p>
-        <a href="{% url 'teachers_report' %}" class="btn btn-info"><i class="bi bi-printer"></i> طباعة تقرير المعلمين</a>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-box-arrow-right" style="font-size: 1.8rem; color: #3498db;"></i>
+                <h6 class="mt-2 mb-1">أذونات المغادرة</h6>
+                <small class="text-muted d-block mb-2">بحث وطباعة</small>
+                <a href="{% url 'leave_list' %}" class="btn btn-info btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-person-badge" style="font-size: 1.8rem; color: #8e44ad;"></i>
+                <h6 class="mt-2 mb-1">المعلمين</h6>
+                <small class="text-muted d-block mb-2">جميع المعلمين والمواد</small>
+                <a href="{% url 'teachers_report' %}" class="btn btn-info btn-sm w-100"><i class="bi bi-printer"></i> طباعة</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
