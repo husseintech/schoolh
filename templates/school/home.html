@@ -69,7 +69,7 @@
                 <i class="bi bi-geo-alt-fill"></i> موقع المدرسة
             </div>
             <div class="card-body p-2">
-                <div id="school-map" class="map-container" style="width:100%;aspect-ratio:1/1;max-height:500px;border-radius:8px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div>
+                <div id="school-map" class="map-container" style="width:100%;aspect-ratio:1/1;max-height:500px;min-height:300px;border-radius:8px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div>
             </div>
         </div>
     </div>
@@ -243,7 +243,7 @@
                 <div class="side-card">
                     <div class="card-header"><i class="bi bi-geo-alt-fill"></i> موقع المدرسة</div>
                     <div class="card-body p-2">
-                        <div id="school-map" class="map-container" style="width:100%;aspect-ratio:1/1;max-height:500px;border-radius:8px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div>
+                        <div id="school-map" class="map-container" style="width:100%;aspect-ratio:1/1;max-height:500px;min-height:300px;border-radius:8px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div>
                     </div>
                 </div>
             </div>
@@ -260,16 +260,16 @@ if (mapEl) {
     var lat = parseFloat(mapEl.dataset.lat);
     var lng = parseFloat(mapEl.dataset.lng);
     var name = mapEl.dataset.name;
-    var map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 19);
-    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg', {
-        maxZoom: 20,
-        attribution: '&copy; ESRI'
-    });
     var streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap'
     });
-    satellite.addTo(map);
+    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        attribution: '&copy; ESRI'
+    });
+    var map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 18);
+    streets.addTo(map);
     L.control.layers({'القمر الصناعي': satellite, 'خريطة عادية': streets}).addTo(map);
     L.marker([lat, lng]).addTo(map).bindPopup(name || 'موقع المدرسة');
     mapEl.addEventListener('click', function() { map.scrollWheelZoom.enable(); });
