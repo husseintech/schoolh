@@ -60,13 +60,16 @@
         <!-- الحضور -->
         <div class="mb-3">
             <h6>المعلمون الحاضرون:</h6>
-            <ol>
+            <div style="column-count: 2; column-gap: 40px;">
                 {% for teacher in meeting.attendees.all %}
-                <li>{{ teacher.full_name }}</li>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; break-inside: avoid;">
+                    <span style="white-space: nowrap;">{{ teacher.full_name }}</span>
+                    <span style="flex: 1; border-bottom: 2px solid #333; height: 1.2em;"></span>
+                </div>
                 {% empty %}
-                <li class="text-muted">لا يوجد</li>
+                <p class="text-muted">لا يوجد</p>
                 {% endfor %}
-            </ol>
+            </div>
         </div>
         {% if info %}
         <div class="mt-4 pt-3 border-top">

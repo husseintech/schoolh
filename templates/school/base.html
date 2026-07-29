@@ -400,6 +400,11 @@
             <i class="bi bi-people-fill"></i> الحسابات والصلاحيات
         </a>
         {% endif %}
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'school_info' %}" class="nav-link {% if request.resolver_match.url_name == 'school_info' %}active{% endif %}">
+            <i class="bi bi-building"></i> بيانات المدرسة
+        </a>
+        {% endif %}
 
         <div class="nav-section">الحساب</div>
         <a href="{% url 'my_account' %}" class="nav-link {% if request.resolver_match.url_name == 'my_account' %}active{% endif %}">
