@@ -766,6 +766,7 @@ def leave_list(request):
         'leaves': leaves,
         'students': students,
         'selected_student': student_id,
+        'search_query': search_query,
     })
 
 

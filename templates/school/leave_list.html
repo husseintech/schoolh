@@ -14,7 +14,7 @@
         <form method="get" class="row mb-4 no-print">
             <div class="col-md-4">
                 <label class="form-label">بحث عن طالب</label>
-                <input type="text" name="q" class="form-control" placeholder="ابحث باسم الطالب..." value="{{ request.GET.q }}">
+                <input type="text" name="q" class="form-control" placeholder="ابحث باسم الطالب..." value="{{ search_query }}">
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> بحث</button>
