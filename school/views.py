@@ -564,6 +564,10 @@ def school_info_view(request):
         national_number = request.POST.get('national_number', '')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
+        if latitude:
+            latitude = latitude.replace(',', '.')
+        if longitude:
+            longitude = longitude.replace(',', '.')
         if info:
             info.name_ar = name_ar
             info.name_en = name_en
