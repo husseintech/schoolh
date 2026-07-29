@@ -754,8 +754,16 @@ def leave_list(request):
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    leaves = StudentLeave.objects.all().select_related('student').order_by('-created_at')
-    return render(request, 'school/leave_list.html', {'leaves': leaves})
+    leaves = StudentLeave.objects.all().select_related('student__student_class').order_by('-created_at')
+    student_id = request.GET.get('student_id', '')
+    if student_id:
+        leaves = leaves.filter(student_id=student_id)
+    students = Student.objects.all().order_by('full_name')
+    return render(request, 'school/leave_list.html', {
+        'leaves': leaves,
+        'students': students,
+        'selected_student': student_id,
+    })
 
 
 @login_required
