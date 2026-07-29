@@ -13,13 +13,11 @@
     <div class="card-body">
         <form method="get" class="row mb-4 no-print">
             <div class="col-md-4">
-                <label class="form-label">تصفية حسب الطالب</label>
-                <select name="student_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">جميع الطلاب</option>
-                    {% for s in students %}
-                    <option value="{{ s.id }}" {% if selected_student == s.id|stringformat:"s" %}selected{% endif %}>{{ s.full_name }} - {{ s.student_id }}</option>
-                    {% endfor %}
-                </select>
+                <label class="form-label">بحث عن طالب</label>
+                <input type="text" name="q" class="form-control" placeholder="ابحث باسم الطالب..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> بحث</button>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <a href="{% url 'leave_list' %}" class="btn btn-outline-secondary w-100">إعادة تعيين</a>

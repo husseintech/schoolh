@@ -756,8 +756,11 @@ def leave_list(request):
         return redirect('dashboard')
     leaves = StudentLeave.objects.all().select_related('student__student_class').order_by('-created_at')
     student_id = request.GET.get('student_id', '')
+    search_query = request.GET.get('q', '')
     if student_id:
         leaves = leaves.filter(student_id=student_id)
+    elif search_query:
+        leaves = leaves.filter(student__full_name__icontains=search_query)
     students = Student.objects.all().order_by('full_name')
     return render(request, 'school/leave_list.html', {
         'leaves': leaves,
