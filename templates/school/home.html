@@ -271,7 +271,7 @@ if (mapEl) {
     var map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 18);
     streets.addTo(map);
     L.control.layers({'القمر الصناعي': satellite, 'خريطة عادية': streets}).addTo(map);
-    L.marker([lat, lng]).addTo(map).bindPopup(name || 'موقع المدرسة');
+    L.marker([lat, lng]).addTo(map).bindPopup('<span style="color:red;font-weight:bold;font-size:16px;">' + name + '</span>');
     mapEl.addEventListener('click', function() { map.scrollWheelZoom.enable(); });
 }
 </script>
