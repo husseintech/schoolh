@@ -79,19 +79,22 @@ class TeacherForm(forms.ModelForm):
 
     class Meta:
         model = Teacher
-        fields = ['username', 'password', 'full_name', 'email', 'phone', 'hire_date', 'birth_date', 'classes', 'subjects']
+        fields = ['username', 'password', 'full_name', 'email', 'phone', 'hire_date', 'birth_date', 'qualification', 'specialization', 'classes', 'subjects']
         labels = {
             'full_name': 'الاسم الكامل',
             'email': 'البريد الإلكتروني',
             'phone': 'رقم الهاتف',
             'hire_date': 'تاريخ التعيين',
             'birth_date': 'تاريخ الميلاد',
+            'qualification': 'المؤهل العلمي',
+            'specialization': 'التخصص',
             'classes': 'الصفوف التي يدرسها',
             'subjects': 'المواد',
         }
         widgets = {
             'hire_date': forms.DateInput(attrs={'type': 'date'}),
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'qualification': forms.Select(choices=[('', 'اختر...'), ('دبلوم', 'دبلوم'), ('بكالوريوس', 'بكالوريوس'), ('ماجستير', 'ماجستير'), ('دكتوراه', 'دكتوراه')]),
             'classes': forms.SelectMultiple(attrs={'class': 'select2'}),
             'subjects': forms.SelectMultiple(attrs={'class': 'select2'}),
         }
@@ -112,7 +115,7 @@ class TeacherForm(forms.ModelForm):
 class TeacherEditForm(forms.ModelForm):
     class Meta:
         model = Teacher
-        fields = ['full_name', 'email', 'phone', 'hire_date', 'birth_date', 'classes', 'subjects']
+        fields = ['full_name', 'email', 'phone', 'hire_date', 'birth_date', 'qualification', 'specialization', 'classes', 'subjects']
         labels = {
             'full_name': 'الاسم الكامل',
             'email': 'البريد الإلكتروني',

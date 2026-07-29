@@ -11,6 +11,8 @@
         <div class="row g-2">
             <div class="col-md-3"><strong>البريد:</strong> {{ teacher.email|default:"-" }}</div>
             <div class="col-md-3"><strong>الهاتف:</strong> {{ teacher.phone|default:"-" }}</div>
+            <div class="col-md-3"><strong>المؤهل:</strong> {{ teacher.qualification|default:"-" }}</div>
+            <div class="col-md-3"><strong>التخصص:</strong> {{ teacher.specialization|default:"-" }}</div>
             <div class="col-md-3"><strong>تاريخ التعيين:</strong> {{ teacher.hire_date|date:"Y-m-d"|default:"-" }}</div>
         </div>
     </div>

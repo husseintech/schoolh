@@ -167,6 +167,8 @@ class Teacher(models.Model):
     phone = models.CharField('رقم الهاتف', max_length=20, blank=True)
     hire_date = models.DateField('تاريخ التعيين', null=True, blank=True)
     birth_date = models.DateField('تاريخ الميلاد', null=True, blank=True)
+    qualification = models.CharField('المؤهل العلمي', max_length=200, blank=True, help_text='مثال: بكالوريوس، ماجستير، دكتوراه')
+    specialization = models.CharField('التخصص', max_length=200, blank=True, help_text='مثال: رياضيات، فيزياء، لغة عربية')
     classes = models.ManyToManyField(Class, verbose_name='الصفوف', blank=True, related_name='teachers')
     subjects = models.ManyToManyField(Subject, verbose_name='المواد', blank=True, related_name='teachers')
     created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
