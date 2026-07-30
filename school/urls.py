@@ -117,4 +117,9 @@ urlpatterns = [
     path('meetings/', views.meeting_list, name='meeting_list'),
     path('meetings/add/', views.add_meeting, name='add_meeting'),
     path('meetings/<int:meeting_id>/report/', views.meeting_report, name='meeting_report'),
+
+    # Supervisor Visits
+    path('supervisor-visits/', views.supervisor_visit_list, name='supervisor_visit_list'),
+    path('supervisor-visits/<int:visit_id>/report/', views.supervisor_visit_report, name='supervisor_visit_report'),
+    path('supervisor-visits/all-report/', views.supervisor_visits_report, name='supervisor_visits_report'),
 ]

@@ -165,6 +165,7 @@ class Teacher(models.Model):
     full_name = models.CharField('الاسم الكامل', max_length=200)
     email = models.EmailField('البريد الإلكتروني', blank=True)
     phone = models.CharField('رقم الهاتف', max_length=20, blank=True)
+    id_number = models.CharField('رقم الهوية', max_length=50, blank=True, help_text='رقم هوية المعلم الوطني')
     hire_date = models.DateField('تاريخ التعيين', null=True, blank=True)
     birth_date = models.DateField('تاريخ الميلاد', null=True, blank=True)
     qualification = models.CharField('المؤهل العلمي', max_length=200, blank=True, help_text='مثال: بكالوريوس، ماجستير، دكتوراه')
@@ -440,3 +441,26 @@ class Meeting(models.Model):
 
     def __str__(self):
         return f'اجتماع {self.meeting_type} - {self.date}'
+
+
+class SupervisorVisit(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name='المعلم', related_name='supervisor_visits')
+    visit_number = models.CharField('رقم الزيارة', max_length=50, blank=True)
+    visit_date = models.DateField('تاريخ الزيارة')
+    subject_area = models.CharField('المبحث', max_length=200, blank=True)
+    lesson_topic = models.CharField('موضوع الدرس', max_length=300, blank=True)
+    class_name = models.CharField('الصف', max_length=100, blank=True)
+    section = models.CharField('الشعبة', max_length=50, blank=True)
+    supervisor_name = models.CharField('اسم المشرف', max_length=200, blank=True)
+    recommendations = models.TextField('توصيات المشرف', blank=True)
+    admin_followup = models.TextField('متابعة الإدارة', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'زيارة مشرف'
+        verbose_name_plural = 'زيارات المشرفين'
+        ordering = ['-visit_date', '-created_at']
+
+    def __str__(self):
+        return f'زيارة {self.supervisor_name} - {self.teacher.full_name} - {self.visit_date}'

@@ -1,0 +1,171 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}زيارات المشرفين{% endblock %}
+{% block page_heading %}زيارات المشرفين{% endblock %}
+{% block content %}
+
+{% if 'supervisor_visits_view' in user_perms %}
+<a href="{% url 'supervisor_visits_report' %}" class="btn btn-success mb-3">
+    <i class="bi bi-file-earmark-bar-graph"></i> التقرير الشامل لجميع الزيارات
+</a>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">اختيار معلم</label>
+                <select name="teacher_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- اختر معلماً --</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if selected_teacher and selected_teacher.id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if selected_teacher %}
+            <div class="col-md-2">
+                <a href="{% url 'supervisor_visit_list' %}" class="btn btn-outline-secondary w-100">إلغاء التحديد</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% if selected_teacher %}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">بيانات المعلم</h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col">
+                <strong>اسم المعلم</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.full_name }}</p>
+            </div>
+            <div class="col">
+                <strong>رقم الهوية</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.id_number|default:'---' }}</p>
+            </div>
+            <div class="col">
+                <strong>تاريخ التعيين</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.hire_date|date:'Y-m-d'|default:'---' }}</p>
+            </div>
+            <div class="col">
+                <strong>التخصص</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.specialization|default:'---' }}</p>
+            </div>
+            <div class="col">
+                <strong>المؤهل العلمي</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.qualification|default:'---' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if 'supervisor_visits_add' in user_perms %}
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">تسجيل زيارة جديدة</h5></div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">تاريخ الزيارة</label>
+                    <input type="date" name="visit_date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">رقم الزيارة</label>
+                    <input type="text" name="visit_number" class="form-control" placeholder="اختياري">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">المبحث</label>
+                    <input type="text" name="subject_area" class="form-control" placeholder="مثال: رياضيات">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">موضوع الدرس</label>
+                    <input type="text" name="lesson_topic" class="form-control" placeholder="مثال: المعادلات الخطية">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الصف</label>
+                    <input type="text" name="class_name" class="form-control" placeholder="مثال: الخامس">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الشعبة</label>
+                    <input type="text" name="section" class="form-control" placeholder="مثال: أ">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">اسم المشرف</label>
+                    <input type="text" name="supervisor_name" class="form-control" placeholder="اسم المشرف الزائر">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">توصيات المشرف</label>
+                    <textarea name="recommendations" class="form-control" rows="4" placeholder="توصيات المشرف..."></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">متابعة الإدارة</label>
+                    <textarea name="admin_followup" class="form-control" rows="4" placeholder="متابعة الإدارة..."></textarea>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> حفظ الزيارة</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">الزيارات السابقة للمعلم</h5></div>
+    <div class="card-body">
+        {% if visits %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>رقم الزيارة</th>
+                        <th>المبحث</th>
+                        <th>موضوع الدرس</th>
+                        <th>الصف</th>
+                        <th>الشعبة</th>
+                        <th>المشرف</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in visits %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ v.visit_date|date:'Y-m-d' }}</td>
+                        <td>{{ v.visit_number|default:'---' }}</td>
+                        <td>{{ v.subject_area|default:'---' }}</td>
+                        <td>{{ v.lesson_topic|default:'---' }}</td>
+                        <td>{{ v.class_name|default:'---' }}</td>
+                        <td>{{ v.section|default:'---' }}</td>
+                        <td>{{ v.supervisor_name|default:'---' }}</td>
+                        <td>
+                            <a href="{% url 'supervisor_visit_report' v.id %}" class="btn btn-info btn-sm">
+                                <i class="bi bi-file-text"></i> التقرير
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">لا توجد زيارات مسجلة لهذا المعلم</p>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-arrow-up-circle" style="font-size: 3rem;"></i>
+        <p class="mt-2">اختر معلماً من القائمة أعلاه لعرض بياناته وإدارة زيارات المشرفين</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -24,6 +24,7 @@ def user_permissions(request):
             ('notes', 'view'), ('notes', 'add'),
             ('lateness', 'view'), ('lateness', 'add'),
             ('meetings', 'view'), ('meetings', 'add'),
+            ('supervisor_visits', 'view'), ('supervisor_visits', 'add'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
