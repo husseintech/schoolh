@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile, Student, Note, Teacher, TeacherNote, Class, Subject, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, UserPermission, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit
+from .models import Profile, Student, Note, Teacher, TeacherNote, Class, Subject, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, UserPermission, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification
 
 
 admin.site.register(Profile)
@@ -21,3 +21,4 @@ admin.site.register(StudentLateness)
 admin.site.register(SchoolInfo)
 admin.site.register(Meeting)
 admin.site.register(SupervisorVisit)
+admin.site.register(Notification)

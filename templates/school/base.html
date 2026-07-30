@@ -372,7 +372,7 @@
         {% endif %}
 
         {% if 'messages_view' in user_perms or 'messages_send' in user_perms %}
-        <div class="nav-section">الرسائل</div>
+        <div class="nav-section">الرسائل والإشعارات</div>
         {% endif %}
         {% if 'messages_view' in user_perms %}
         <a href="{% url 'message_list' %}" class="nav-link {% if request.resolver_match.url_name == 'message_list' %}active{% endif %}">
@@ -387,6 +387,12 @@
             <i class="bi bi-send-check-fill"></i> الرسائل المرسلة
         </a>
         {% endif %}
+        <a href="{% url 'notification_list' %}" class="nav-link {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}">
+            <i class="bi bi-bell-fill"></i> الإشعارات
+            {% if unread_notifications_count > 0 %}
+            <span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>
+            {% endif %}
+        </a>
 
         {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms %}
         <div class="nav-section">الإعدادات</div>
@@ -433,6 +439,33 @@
                 <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
             </div>
             <div class="user-info">
+                <div class="dropdown d-inline-block mx-2" id="notificationBell">
+                    <button class="btn btn-link text-reset position-relative p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.3rem;">
+                        <i class="bi bi-bell-fill"></i>
+                        {% if unread_notifications_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                            {{ unread_notifications_count }}
+                        </span>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                        {% if recent_notifications %}
+                        {% for n in recent_notifications %}
+                        <li>
+                            <a class="dropdown-item {% if not n.is_read %}fw-bold{% endif %}" href="{% url 'notification_read' n.id %}" style="white-space: normal;">
+                                <small class="text-muted d-block">{{ n.created_at|date:'Y-m-d H:i' }}</small>
+                                <span>{{ n.title }}</span>
+                            </a>
+                        </li>
+                        {% if not forloop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center text-primary" href="{% url 'notification_list' %}">عرض كل الإشعارات</a></li>
+                        {% else %}
+                        <li><span class="dropdown-item text-muted text-center">لا توجد إشعارات</span></li>
+                        {% endif %}
+                    </ul>
+                </div>
                 <a href="{% url 'my_account' %}" class="text-decoration-none text-reset">
                     <span class="text-muted d-none d-sm-inline">
                         <span class="badge bg-{% if user.profile.role == 'admin' %}danger{% elif user.profile.role == 'teacher' %}success{% else %}info{% endif %}">

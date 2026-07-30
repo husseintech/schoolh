@@ -1,9 +1,11 @@
-from .models import has_perm
+from .models import has_perm, Notification
 
 
 def user_permissions(request):
-    """Add user permissions to template context for sidebar display."""
+    """Add user permissions and notification count to template context."""
     perms = set()
+    unread_count = 0
+    recent_notifications = []
     if request.user.is_authenticated:
         modules_actions = [
             ('students', 'view'), ('students', 'add'), ('students', 'edit'),
@@ -29,4 +31,10 @@ def user_permissions(request):
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
                 perms.add(f'{module}_{action}')
-    return {'user_perms': perms}
+        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        recent_notifications = Notification.objects.filter(user=request.user)[:5]
+    return {
+        'user_perms': perms,
+        'unread_notifications_count': unread_count,
+        'recent_notifications': recent_notifications,
+    }

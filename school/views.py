@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1703,7 +1703,7 @@ def supervisor_visit_list(request):
         teacher_id = request.POST.get('teacher_id')
         selected_teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
         if selected_teacher:
-            SupervisorVisit.objects.create(
+            visit = SupervisorVisit.objects.create(
                 teacher=selected_teacher,
                 visit_number=request.POST.get('visit_number', ''),
                 visit_date=request.POST.get('visit_date', ''),
@@ -1716,6 +1716,18 @@ def supervisor_visit_list(request):
                 admin_followup=request.POST.get('admin_followup', ''),
                 created_by=request.user,
             )
+            # Send notification to the teacher
+            if selected_teacher.user:
+                recs = request.POST.get('recommendations', '').strip()
+                msg = f'تم تسجيل زيارة مشرف بتاريخ {visit.visit_date}'
+                if recs:
+                    msg += f'\nتوصيات المشرف: {recs[:500]}'
+                Notification.objects.create(
+                    user=selected_teacher.user,
+                    title='زيارة مشرف جديدة',
+                    message=msg,
+                    link=f'/supervisor-visits/{visit.id}/report/',
+                )
             messages.success(request, 'تم إضافة الزيارة بنجاح')
             return redirect(f'{request.path}?teacher_id={teacher_id}')
         messages.error(request, 'الرجاء اختيار معلم')
@@ -1750,4 +1762,25 @@ def supervisor_visits_report(request):
         'visits': visits,
         'info': info,
     })
+
+
+# ─── Notifications ─────────────────────────────────────────────────────────────
+
+@login_required
+def notification_list(request):
+    notifications = Notification.objects.filter(user=request.user)
+    notifications.filter(is_read=False).update(is_read=True)
+    return render(request, 'school/notification_list.html', {
+        'notifications': notifications,
+    })
+
+
+@login_required
+def notification_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    if notification.link:
+        return redirect(notification.link)
+    return redirect('notification_list')
 

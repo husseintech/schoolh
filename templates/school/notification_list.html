@@ -1,0 +1,20 @@
+{% extends 'school/base.html' %}
+{% block title %}الإشعارات{% endblock %}
+{% block page_heading %}الإشعارات{% endblock %}
+{% block content %}
+{% if notifications %}
+<div class="list-group">
+    {% for n in notifications %}
+    <a href="{% url 'notification_read' n.id %}" class="list-group-item list-group-item-action {% if not n.is_read %}list-group-item-info{% endif %}">
+        <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ n.title }}</h6>
+            <small class="text-muted">{{ n.created_at|date:'Y-m-d H:i' }}</small>
+        </div>
+        <p class="mb-1" style="white-space: pre-line;">{{ n.message }}</p>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted text-center py-5">لا توجد إشعارات</p>
+{% endif %}
+{% endblock %}
