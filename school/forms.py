@@ -113,24 +113,38 @@ class TeacherForm(forms.ModelForm):
 
 
 class TeacherEditForm(forms.ModelForm):
+    username = forms.CharField(label='اسم المستخدم', required=False, disabled=True,
+                               help_text='لا يمكن تعديل اسم المستخدم')
+    password = forms.CharField(label='كلمة المرور الجديدة', widget=forms.PasswordInput,
+                               required=False, help_text='اتركه فارغاً إذا لم ترد التغيير')
+
     class Meta:
         model = Teacher
-        fields = ['full_name', 'email', 'phone', 'hire_date', 'birth_date', 'qualification', 'specialization', 'classes', 'subjects']
+        fields = ['username', 'password', 'full_name', 'email', 'phone', 'id_number', 'hire_date', 'birth_date', 'qualification', 'specialization', 'classes', 'subjects']
         labels = {
             'full_name': 'الاسم الكامل',
             'email': 'البريد الإلكتروني',
             'phone': 'رقم الهاتف',
+            'id_number': 'رقم الهوية',
             'hire_date': 'تاريخ التعيين',
             'birth_date': 'تاريخ الميلاد',
+            'qualification': 'المؤهل العلمي',
+            'specialization': 'التخصص',
             'classes': 'الصفوف التي يدرسها',
             'subjects': 'المواد',
         }
         widgets = {
             'hire_date': forms.DateInput(attrs={'type': 'date'}),
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'qualification': forms.Select(choices=[('', 'اختر...'), ('دبلوم', 'دبلوم'), ('بكالوريوس', 'بكالوريوس'), ('ماجستير', 'ماجستير'), ('دكتوراه', 'دكتوراه')]),
             'classes': forms.SelectMultiple(attrs={'class': 'select2'}),
             'subjects': forms.SelectMultiple(attrs={'class': 'select2'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.user_id:
+            self.fields['username'].initial = self.instance.user.username
 
 
 class TeacherNoteForm(forms.ModelForm):

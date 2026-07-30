@@ -502,7 +502,11 @@ def edit_teacher(request, teacher_id):
     if request.method == 'POST':
         form = TeacherEditForm(request.POST, instance=teacher)
         if form.is_valid():
-            form.save()
+            teacher = form.save()
+            password = form.cleaned_data.get('password')
+            if password and teacher.user:
+                teacher.user.set_password(password)
+                teacher.user.save()
             messages.success(request, 'تم تحديث بيانات المعلم بنجاح')
             return redirect('teacher_list')
     else:
