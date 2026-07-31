@@ -1,0 +1,108 @@
+{% extends 'school/base.html' %}
+{% block title %}برنامج الزيارات{% endblock %}
+{% block page_heading %}برنامج الزيارات{% endblock %}
+{% block content %}
+
+<div class="mb-3">
+    <a href="{% url 'visit_program_report' %}" class="btn btn-success">
+        <i class="bi bi-printer"></i> طباعة البرنامج كاملاً
+    </a>
+    <a href="{% url 'visit_program_missing_notes_report' %}" class="btn btn-warning">
+        <i class="bi bi-file-earmark-text"></i> تقرير المعلمين بدون ملاحظات
+    </a>
+</div>
+
+{% if 'visit_program_add' in user_perms %}
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">إدخال سجل جديد</h5></div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">اسم المعلم</label>
+                    <select name="teacher_id" class="form-select" required>
+                        <option value="">-- اختر معلماً --</option>
+                        {% for t in teachers %}
+                        <option value="{{ t.id }}">{{ t.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">تاريخ الحضور</label>
+                    <input type="date" name="visit_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">الحصة</label>
+                    <input type="text" name="lesson" class="form-control" placeholder="مثال: الحصة الأولى">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الملاحظات</label>
+                    <input type="text" name="notes" class="form-control" placeholder="تم / لم يتم / ملاحظة أخرى">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> إضافة السجل</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">سجل برنامج الزيارات ({{ entries.count }})</h5></div>
+    <div class="card-body">
+        {% if entries %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم المتسلسل</th>
+                        <th>اسم المعلم</th>
+                        <th>تاريخ الحضور</th>
+                        <th>اليوم</th>
+                        <th>الأيام المتبقية</th>
+                        <th>الحصة</th>
+                        <th>الملاحظات</th>
+                        {% if 'visit_program_delete' in user_perms %}
+                        <th>الإجراءات</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in entries %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ e.teacher.full_name }}</td>
+                        <td>{{ e.visit_date|date:'Y-m-d' }}</td>
+                        <td>{{ e.day_name }}</td>
+                        <td>
+                            {% if e.days_remaining > 0 %}
+                            <span class="badge bg-info">{{ e.remaining_display }}</span>
+                            {% elif e.days_remaining == 0 %}
+                            <span class="badge bg-warning">{{ e.remaining_display }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ e.remaining_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ e.lesson|default:'---' }}</td>
+                        <td>{{ e.notes|default:'<span class="text-danger">لم تُكتب</span>'|safe }}</td>
+                        {% if 'visit_program_delete' in user_perms %}
+                        <td>
+                            <form method="post" action="{% url 'visit_program_delete' e.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذا السجل؟')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">لا توجد سجلات بعد — ابدأ بإدخال معلم جديد</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

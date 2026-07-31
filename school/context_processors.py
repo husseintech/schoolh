@@ -1,4 +1,5 @@
 from .models import has_perm, Notification, Message
+from .services import send_visit_reminders
 
 
 def user_permissions(request):
@@ -9,6 +10,7 @@ def user_permissions(request):
     unread_messages_count = 0
     recent_messages = []
     if request.user.is_authenticated:
+        send_visit_reminders()
         modules_actions = [
             ('students', 'view'), ('students', 'add'), ('students', 'edit'),
             ('students', 'delete'), ('students', 'import'), ('students', 'export'),
@@ -30,6 +32,7 @@ def user_permissions(request):
             ('meetings', 'view'), ('meetings', 'add'),
             ('supervisor_visits', 'view'), ('supervisor_visits', 'add'),
             ('inspection_visits', 'view'), ('inspection_visits', 'add'),
+            ('visit_program', 'view'), ('visit_program', 'add'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):

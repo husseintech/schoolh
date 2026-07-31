@@ -134,6 +134,12 @@ urlpatterns = [
     path('inspection-visits/<int:visit_id>/report/', views.inspection_visit_report, name='inspection_visit_report'),
     path('inspection-visits/all-report/', views.inspection_visits_all_report, name='inspection_visits_all_report'),
 
+    # Visit Program
+    path('visit-program/', views.visit_program_list, name='visit_program_list'),
+    path('visit-program/<int:entry_id>/delete/', views.visit_program_delete, name='visit_program_delete'),
+    path('visit-program/report/', views.visit_program_report, name='visit_program_report'),
+    path('visit-program/report/missing-notes/', views.visit_program_missing_notes_report, name='visit_program_missing_notes_report'),
+
     # Notifications
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:notification_id>/read/', views.notification_read, name='notification_read'),

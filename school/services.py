@@ -1,8 +1,41 @@
 import requests
 import logging
+from datetime import date, timedelta
 from django.conf import settings
+from django.contrib.auth.models import User
+from .models import Notification, VisitProgram
 
 logger = logging.getLogger(__name__)
+
+
+def send_visit_reminders():
+    """Create reminders exactly one day before a teacher's scheduled visit (runs lazily with every request)."""
+    try:
+        tomorrow = date.today() + timedelta(days=1)
+        due = VisitProgram.objects.filter(visit_date=tomorrow, reminder_sent=False).select_related('teacher')
+        if not due.exists():
+            return
+        manager_users = User.objects.filter(profile__role='admin')
+        for entry in due:
+            text = f'غداً موعد حضور المعلم {entry.teacher.full_name} للحصة'
+            if entry.lesson:
+                text += f' ({entry.lesson})'
+            teacher_user = entry.teacher.user
+            if teacher_user:
+                Notification.objects.get_or_create(
+                    user=teacher_user,
+                    link=f'/visit-program/{entry.id}/',
+                    defaults={'title': 'تذكير بموعد حضور الحصة', 'message': text},
+                )
+            for manager in manager_users:
+                Notification.objects.get_or_create(
+                    user=manager,
+                    link=f'/visit-program/{entry.id}/',
+                    defaults={'title': 'قرب موعد حضور معلم', 'message': text},
+                )
+            VisitProgram.objects.filter(id=entry.id).update(reminder_sent=True)
+    except Exception as e:
+        logger.error(f'خطأ في إرسال تذكيرات الزيارات: {e}')
 
 
 def send_whatsapp_message(phone_number, message):

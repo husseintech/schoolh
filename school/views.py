@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1426,7 +1426,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1446,6 +1446,7 @@ def add_account(request):
         'meetings': 'اجتماعات المعلمين',
         'supervisor_visits': 'زيارات المشرفين',
         'inspection_visits': 'الزيارات الإشرافية',
+        'visit_program': 'برنامج الزيارات',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1504,7 +1505,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1524,6 +1525,7 @@ def edit_account(request, user_id):
         'meetings': 'اجتماعات المعلمين',
         'supervisor_visits': 'زيارات المشرفين',
         'inspection_visits': 'الزيارات الإشرافية',
+        'visit_program': 'برنامج الزيارات',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1840,6 +1842,74 @@ def supervisor_visits_report(request):
     return render(request, 'school/supervisor_visits_report.html', {
         'visits': visits,
         'info': info,
+    })
+
+
+# ─── Visit Program ─────────────────────────────────────────────────────────────
+
+@login_required
+def visit_program_list(request):
+    if not has_perm(request.user, 'visit_program', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().order_by('full_name')
+    entries = VisitProgram.objects.select_related('teacher')
+    if request.method == 'POST' and has_perm(request.user, 'visit_program', 'add'):
+        teacher_id = request.POST.get('teacher_id')
+        teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
+        if teacher:
+            VisitProgram.objects.create(
+                teacher=teacher,
+                visit_date=request.POST.get('visit_date') or date.today(),
+                lesson=request.POST.get('lesson', ''),
+                notes=request.POST.get('notes', ''),
+                created_by=request.user,
+            )
+            messages.success(request, 'تم إضافة السجل بنجاح')
+            return redirect('visit_program_list')
+        messages.error(request, 'الرجاء اختيار معلم')
+    return render(request, 'school/visit_program_list.html', {
+        'teachers': teachers,
+        'entries': entries,
+        'today': date.today(),
+    })
+
+
+@login_required
+def visit_program_delete(request, entry_id):
+    if not has_perm(request.user, 'visit_program', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    entry = get_object_or_404(VisitProgram, id=entry_id)
+    entry.delete()
+    messages.success(request, 'تم حذف السجل بنجاح')
+    return redirect('visit_program_list')
+
+
+@login_required
+def visit_program_report(request):
+    if not has_perm(request.user, 'visit_program', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    entries = VisitProgram.objects.select_related('teacher').order_by('-visit_date', 'teacher__full_name')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/visit_program_report.html', {
+        'entries': entries,
+        'info': info,
+    })
+
+
+@login_required
+def visit_program_missing_notes_report(request):
+    if not has_perm(request.user, 'visit_program', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    entries = VisitProgram.objects.filter(Q(notes__isnull=True) | Q(notes='')).select_related('teacher').order_by('-visit_date', 'teacher__full_name')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/visit_program_report.html', {
+        'entries': entries,
+        'info': info,
+        'missing_only': True,
     })
 
 

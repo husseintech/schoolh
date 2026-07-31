@@ -483,6 +483,42 @@ class Notification(models.Model):
         return self.title
 
 
+class VisitProgram(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name='المعلم', related_name='visit_program_entries')
+    visit_date = models.DateField('تاريخ الحضور')
+    lesson = models.CharField('الحصة', max_length=200, blank=True)
+    notes = models.TextField('الملاحظات', blank=True, help_text='مثال: تم، لم يتم، أو أي ملاحظة أخرى')
+    reminder_sent = models.BooleanField('تم إرسال التذكير', default=False)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'برنامج زيارة'
+        verbose_name_plural = 'برنامج الزيارات'
+        ordering = ['-visit_date', 'teacher__full_name']
+
+    def __str__(self):
+        return f'{self.teacher.full_name} - {self.visit_date}'
+
+    @property
+    def day_name(self):
+        days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+        return days[self.visit_date.weekday()]
+
+    @property
+    def days_remaining(self):
+        return (self.visit_date - date.today()).days
+
+    @property
+    def remaining_display(self):
+        d = self.days_remaining
+        if d > 0:
+            return f'باقي {d} يوم'
+        if d == 0:
+            return 'اليوم'
+        return f'مضى {-d} يوم'
+
+
 class InspectionVisit(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name='المعلم', related_name='inspection_visits')
     visit_date = models.DateField('تاريخ الزيارة')
