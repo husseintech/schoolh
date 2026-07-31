@@ -5,21 +5,59 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header d-flex justify-content-between">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-envelope-fill"></i> {{ msg.subject }}</span>
-                <small class="text-muted">{{ msg.created_at|date:"Y-m-d H:i" }}</small>
+                {% if msg.is_read %}
+                <span class="badge bg-success"><i class="bi bi-check2-all"></i> مقروءة</span>
+                {% else %}
+                <span class="badge bg-danger">غير مقروءة</span>
+                {% endif %}
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <strong>من:</strong> {% if msg.sender %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% else %}مجهول{% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>من:</strong>
+                        {% if msg.sender %}
+                        {{ msg.sender.first_name|default:msg.sender.username }}
+                        <span class="badge bg-{% if msg.sender.profile.role == 'admin' %}danger{% elif msg.sender.profile.role == 'teacher' %}success{% else %}info{% endif %}">
+                            {{ msg.sender.profile.get_role_display }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">مجهول</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 text-md-start">
+                        <strong>إلى:</strong>
+                        {% if msg.recipient %}
+                        {{ msg.recipient.first_name|default:msg.recipient.username }}
+                        {% else %}
+                        <span class="text-muted">الكل</span>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="col-md-6 text-md-start">
-                    <strong>إلى:</strong> {% if msg.recipient %}{{ msg.recipient.get_full_name|default:msg.recipient.username }}{% else %}الكل{% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>تاريخ الإرسال:</strong> {{ msg.created_at|date:"Y-m-d H:i" }}
+                    </div>
+                    <div class="col-md-6 text-md-start">
+                        <strong>الموضوع:</strong> {{ msg.subject }}
+                    </div>
                 </div>
                 <hr>
-                <p>{{ msg.content|linebreaks }}</p>
+                <div class="border rounded p-3 bg-light" style="line-height: 1.9;">
+                    {{ msg.content|linebreaks }}
+                </div>
                 <hr>
-                <a href="{% url 'message_list' %}" class="btn btn-outline-primary">العودة للرسائل</a>
+                <div class="d-flex gap-2">
+                    {% if user.profile.role == 'student' %}
+                    <a href="{% url 'student_messages' %}" class="btn btn-outline-primary"><i class="bi bi-arrow-right"></i> العودة للرسائل</a>
+                    {% else %}
+                    <a href="{% url 'sent_messages' %}" class="btn btn-outline-primary"><i class="bi bi-arrow-right"></i> العودة للرسائل المرسلة</a>
+                    {% if msg.sender %}
+                    <a href="{% url 'send_message_to' msg.sender_id %}" class="btn btn-primary"><i class="bi bi-reply-fill"></i> رد على الرسالة</a>
+                    {% endif %}
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

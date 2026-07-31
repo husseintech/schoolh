@@ -3,23 +3,26 @@
 {% block page_heading %}الرسائل{% endblock %}
 {% block content %}
 <div class="card">
-    <div class="card-header"><i class="bi bi-envelope-fill"></i> الرسائل</div>
-    <div class="card-body">
+    <div class="card-header"><i class="bi bi-envelope-fill"></i> الرسائل ({{ messages_qs|length }})</div>
+    <div class="card-body p-0">
         {% if messages_qs %}
-        <div class="list-group">
+        <div class="list-group list-group-flush">
             {% for msg in messages_qs %}
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between">
+            <a href="{% url 'read_message' msg.id %}" class="list-group-item list-group-item-action {% if not msg.is_read %}list-group-item-info{% endif %}">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-1">{{ msg.subject }}</h6>
-                        <p class="mb-1">{{ msg.content }}</p>
+                        <h6 class="mb-1 {% if not msg.is_read %}fw-bold{% endif %}">{{ msg.subject }}</h6>
+                        <p class="mb-1 text-muted" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 600px;">{{ msg.content|truncatechars:100 }}</p>
                         <small class="text-muted">
-                            <i class="bi bi-person"></i> {% if msg.sender %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% else %}مجهول{% endif %} |
+                            <i class="bi bi-person"></i> {% if msg.sender %}{{ msg.sender.first_name|default:msg.sender.username }}{% else %}مجهول{% endif %} |
                             <i class="bi bi-clock"></i> {{ msg.created_at|date:"Y-m-d H:i" }}
                         </small>
                     </div>
+                    {% if not msg.is_read %}
+                    <span class="badge bg-danger rounded-pill">جديد</span>
+                    {% endif %}
                 </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
         {% else %}

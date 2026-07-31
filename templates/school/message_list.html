@@ -22,6 +22,7 @@
                             {% if not msg.is_read %}<span class="badge bg-danger">جديد</span>{% endif %}
                         </small>
                     </div>
+                    <a href="{% url 'read_message' msg.id %}" class="btn btn-info btn-sm align-self-center"><i class="bi bi-eye"></i> عرض</a>
                 </div>
             </div>
             {% endfor %}

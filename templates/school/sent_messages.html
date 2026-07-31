@@ -19,6 +19,7 @@
                         <th>الرسالة</th>
                         <th>مقروء</th>
                         <th>التاريخ</th>
+                        <th>الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -30,10 +31,13 @@
                         <td>{{ msg.content|truncatewords:15 }}</td>
                         <td>{% if msg.is_read %}<span class="badge bg-success">مقروء</span>{% else %}<span class="badge bg-warning">لم يقرأ</span>{% endif %}</td>
                         <td>{{ msg.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'read_message' msg.id %}" class="btn btn-info btn-sm"><i class="bi bi-eye"></i> عرض</a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">لا توجد رسائل مرسلة</td>
+                        <td colspan="7" class="text-center text-muted py-4">لا توجد رسائل مرسلة</td>
                     </tr>
                     {% endfor %}
                 </tbody>

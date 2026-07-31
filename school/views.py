@@ -1163,7 +1163,13 @@ def send_message(request, user_id=None):
             messages.error(request, 'الموضوع والرسالة مطلوبان')
             return redirect('send_message_to', user_id=recipient_id or 0)
         recipient = get_object_or_404(User, id=recipient_id)
-        Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
+        msg = Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
+        Notification.objects.create(
+            user=recipient,
+            title='رسالة جديدة',
+            message=f'من: {request.user.first_name or request.user.username}\nالموضوع: {subject}\n{content[:500]}',
+            link=f'/messages/{msg.id}/read/',
+        )
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
     students = Student.objects.all().select_related('student_class').order_by('full_name')
@@ -1203,11 +1209,12 @@ def sent_messages(request):
 
 @login_required
 def read_message(request, message_id):
-    if request.user.profile.role not in ['admin', 'teacher']:
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
-        return redirect('dashboard')
     msg = get_object_or_404(Message, id=message_id)
-    if msg.recipient and msg.recipient != request.user:
+    if msg.recipient is None and msg.sender is None:
+        if request.user.profile.role != 'admin':
+            messages.error(request, 'لا يمكنك قراءة هذه الرسالة')
+            return redirect('dashboard')
+    elif msg.sender != request.user and msg.recipient != request.user:
         messages.error(request, 'لا يمكنك قراءة هذه الرسالة')
         return redirect('dashboard')
     msg.is_read = True
@@ -1221,7 +1228,6 @@ def student_messages(request):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     msgs = Message.objects.filter(recipient=request.user).order_by('-created_at')
-    msgs.update(is_read=True)
     return render(request, 'school/student_messages.html', {'messages_qs': msgs})
 
 
