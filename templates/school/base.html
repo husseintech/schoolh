@@ -449,6 +449,40 @@
                 <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
             </div>
             <div class="user-info">
+                <div class="dropdown d-inline-block mx-2" id="messageBell">
+                    <button class="btn btn-link text-reset position-relative p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.3rem;">
+                        <i class="bi bi-envelope-fill"></i>
+                        {% if unread_messages_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning" style="font-size: 0.6rem; color: #000;">
+                            {{ unread_messages_count }}
+                        </span>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                        {% if recent_messages %}
+                        {% for m in recent_messages %}
+                        <li>
+                            <a class="dropdown-item {% if not m.is_read %}fw-bold{% endif %}" href="{% url 'read_message' m.id %}" style="white-space: normal;">
+                                <small class="text-muted d-block">{{ m.created_at|date:'Y-m-d H:i' }} - {% if m.sender %}{{ m.sender.first_name|default:m.sender.username }}{% else %}مجهول{% endif %}</small>
+                                <span>{{ m.subject }}</span>
+                                {% if not m.is_read %}<span class="badge bg-danger rounded-pill ms-1">جديد</span>{% endif %}
+                            </a>
+                        </li>
+                        {% if not forloop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            {% if user.profile.role == 'student' %}
+                            <a class="dropdown-item text-center text-primary" href="{% url 'student_messages' %}">عرض كل الرسائل</a>
+                            {% else %}
+                            <a class="dropdown-item text-center text-primary" href="{% url 'sent_messages' %}">عرض كل الرسائل</a>
+                            {% endif %}
+                        </li>
+                        {% else %}
+                        <li><span class="dropdown-item text-muted text-center">لا توجد رسائل</span></li>
+                        {% endif %}
+                    </ul>
+                </div>
                 <div class="dropdown d-inline-block mx-2" id="notificationBell">
                     <button class="btn btn-link text-reset position-relative p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.3rem;">
                         <i class="bi bi-bell-fill"></i>
