@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1353,7 +1353,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1372,6 +1372,7 @@ def add_account(request):
         'lateness': 'تأخيرات الطلاب',
         'meetings': 'اجتماعات المعلمين',
         'supervisor_visits': 'زيارات المشرفين',
+        'inspection_visits': 'الزيارات الإشرافية',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1430,7 +1431,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1449,6 +1450,7 @@ def edit_account(request, user_id):
         'lateness': 'تأخيرات الطلاب',
         'meetings': 'اجتماعات المعلمين',
         'supervisor_visits': 'زيارات المشرفين',
+        'inspection_visits': 'الزيارات الإشرافية',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1787,4 +1789,74 @@ def notification_read(request, notification_id):
     if notification.link:
         return redirect(notification.link)
     return redirect('notification_list')
+
+
+# ─── Inspection Visits (Principal) ─────────────────────────────────────────────
+
+@login_required
+def inspection_visit_list(request):
+    if not has_perm(request.user, 'inspection_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().order_by('full_name')
+    selected_teacher = None
+    visits = InspectionVisit.objects.none()
+    teacher_id = request.GET.get('teacher_id', '')
+    if teacher_id:
+        selected_teacher = get_object_or_404(Teacher, id=teacher_id)
+        visits = InspectionVisit.objects.filter(teacher=selected_teacher).order_by('-visit_date')
+    if request.method == 'POST' and has_perm(request.user, 'inspection_visits', 'add'):
+        teacher_id = request.POST.get('teacher_id')
+        selected_teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
+        if selected_teacher:
+            visit = InspectionVisit.objects.create(
+                teacher=selected_teacher,
+                visit_date=request.POST.get('visit_date') or date.today(),
+                visit_number=request.POST.get('visit_number', ''),
+                subject_area=request.POST.get('subject_area', ''),
+                lesson_topic=request.POST.get('lesson_topic', ''),
+                class_name=request.POST.get('class_name', ''),
+                section=request.POST.get('section', ''),
+                content_teaching=request.POST.get('content_teaching', ''),
+                teaching_strategies=request.POST.get('teaching_strategies', ''),
+                evaluation_strategies=request.POST.get('evaluation_strategies', ''),
+                other_matters=request.POST.get('other_matters', ''),
+                plans_followup=request.POST.get('plans_followup', ''),
+                attendance_followup=request.POST.get('attendance_followup', ''),
+                committees_followup=request.POST.get('committees_followup', ''),
+                violence_policy=request.POST.get('violence_policy', ''),
+                recommendations=request.POST.get('recommendations', ''),
+                principal_sign_date=request.POST.get('principal_sign_date') or date.today(),
+                teacher_receipt_date=request.POST.get('teacher_receipt_date') or date.today(),
+                created_by=request.user,
+            )
+            if selected_teacher.user:
+                Notification.objects.create(
+                    user=selected_teacher.user,
+                    title='زيارة إشرافية جديدة',
+                    message=f'تم تسجيل زيارة إشرافية بتاريخ {visit.visit_date}',
+                    link=f'/inspection-visits/{visit.id}/report/',
+                )
+            messages.success(request, 'تم إضافة الزيارة الإشرافية بنجاح')
+            return redirect(f'{request.path}?teacher_id={teacher_id}')
+        messages.error(request, 'الرجاء اختيار معلم')
+    return render(request, 'school/inspection_visit_list.html', {
+        'teachers': teachers,
+        'selected_teacher': selected_teacher,
+        'visits': visits,
+        'today': date.today(),
+    })
+
+
+@login_required
+def inspection_visit_report(request, visit_id):
+    if not has_perm(request.user, 'inspection_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    visit = get_object_or_404(InspectionVisit, id=visit_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/inspection_visit_report.html', {
+        'visit': visit,
+        'info': info,
+    })
 

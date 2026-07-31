@@ -481,3 +481,36 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class InspectionVisit(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name='المعلم', related_name='inspection_visits')
+    visit_date = models.DateField('تاريخ الزيارة')
+    visit_number = models.CharField('رقم الزيارة', max_length=50, blank=True)
+    subject_area = models.CharField('المبحث', max_length=200, blank=True)
+    lesson_topic = models.CharField('موضوع الدرس', max_length=300, blank=True)
+    class_name = models.CharField('الصف', max_length=100, blank=True)
+    section = models.CharField('الشعبة', max_length=50, blank=True)
+
+    content_teaching = models.TextField('المحتوى التعليمي', blank=True)
+    teaching_strategies = models.TextField('استراتيجيات التدريس', blank=True)
+    evaluation_strategies = models.TextField('استراتيجيات التقويم', blank=True)
+    other_matters = models.TextField('أمور أخرى', blank=True)
+    plans_followup = models.TextField('متابعة الخطط وتنفيذها', blank=True)
+    attendance_followup = models.TextField('متابعة الدوام المدرسي', blank=True)
+    committees_followup = models.TextField('متابعة تفعيل اللجان المدرسية', blank=True)
+    violence_policy = models.TextField('الالتزام بسياسة الحد من العنف', blank=True)
+    recommendations = models.TextField('التوصيات للمعلم', blank=True)
+
+    principal_sign_date = models.DateField('تاريخ توقيع المدير', blank=True, null=True)
+    teacher_receipt_date = models.DateField('تاريخ استلام المعلم', blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'زيارة إشرافية'
+        verbose_name_plural = 'الزيارات الإشرافية'
+        ordering = ['-visit_date', '-created_at']
+
+    def __str__(self):
+        return f'زيارة إشرافية - {self.teacher.full_name} - {self.visit_date}'

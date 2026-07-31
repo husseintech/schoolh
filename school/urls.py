@@ -123,6 +123,10 @@ urlpatterns = [
     path('supervisor-visits/<int:visit_id>/report/', views.supervisor_visit_report, name='supervisor_visit_report'),
     path('supervisor-visits/all-report/', views.supervisor_visits_report, name='supervisor_visits_report'),
 
+    # Inspection Visits (Principal)
+    path('inspection-visits/', views.inspection_visit_list, name='inspection_visit_list'),
+    path('inspection-visits/<int:visit_id>/report/', views.inspection_visit_report, name='inspection_visit_report'),
+
     # Notifications
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:notification_id>/read/', views.notification_read, name='notification_read'),

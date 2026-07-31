@@ -1,0 +1,207 @@
+{% extends 'school/base.html' %}
+{% block title %}الزيارات الإشرافية{% endblock %}
+{% block page_heading %}الزيارات الإشرافية (خاص بمدير المدرسة){% endblock %}
+{% block content %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">اختيار معلم</label>
+                <select name="teacher_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- اختر معلماً --</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if selected_teacher and selected_teacher.id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if selected_teacher %}
+            <div class="col-md-2">
+                <a href="{% url 'inspection_visit_list' %}" class="btn btn-outline-secondary w-100">إلغاء التحديد</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% if selected_teacher %}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">بيانات المعلم</h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col">
+                <strong>اسم المعلم</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.full_name }}</p>
+            </div>
+            <div class="col">
+                <strong>رقم الهوية</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.id_number|default:'---' }}</p>
+            </div>
+            <div class="col">
+                <strong>المؤهل العلمي</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.qualification|default:'---' }}</p>
+            </div>
+            <div class="col">
+                <strong>التخصص</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.specialization|default:'---' }}</p>
+            </div>
+            <div class="col">
+                <strong>تاريخ التعيين</strong>
+                <p class="mb-0 mt-1 fs-5">{{ selected_teacher.hire_date|date:'Y-m-d'|default:'---' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if 'inspection_visits_add' in user_perms %}
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">تسجيل زيارة إشرافية جديدة</h5></div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">تاريخ الزيارة</label>
+                    <input type="date" name="visit_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">رقم الزيارة</label>
+                    <input type="text" name="visit_number" class="form-control" placeholder="اختياري">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">المبحث</label>
+                    <input type="text" name="subject_area" class="form-control" placeholder="رياضيات">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">الصف</label>
+                    <input type="text" name="class_name" class="form-control" placeholder="الخامس">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">الشعبة</label>
+                    <input type="text" name="section" class="form-control" placeholder="أ">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">موضوع الدرس</label>
+                    <input type="text" name="lesson_topic" class="form-control" placeholder="موضوع الدرس">
+                </div>
+            </div>
+
+            <h6 class="mt-4 text-primary">الجزء الأول: الجانب الفني</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">المحتوى التعليمي: (التمكن العلمي، عرض المادة، التمهيد للدرس، طرائق التدريس)</label>
+                    <textarea name="content_teaching" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">استراتيجيات التدريس: (إدارة الموقف التعليمي، الوسائل التعليمية، ربط المادة بخبرات الطلبة والمواقف الحياتية)</label>
+                    <textarea name="teaching_strategies" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">استراتيجيات التقويم: (تحصيل الطلبة، الاتجاهات والقيم، تنويع أدوات التقويم، تقويم قبلي، بنائي، ختامي...)</label>
+                    <textarea name="evaluation_strategies" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">أمور أخرى: (الأعمال الكتابية، المبادرات الإبداعية، النمو المهني)</label>
+                    <textarea name="other_matters" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+            <h6 class="mt-4 text-primary">الجزء الثاني: الجانب الإداري</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">متابعة الخطط وتنفيذها:</label>
+                    <textarea name="plans_followup" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">متابعة الدوام المدرسي:</label>
+                    <textarea name="attendance_followup" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">متابعة تفعيل اللجان المدرسية:</label>
+                    <textarea name="committees_followup" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">الالتزام بالتعليمات والقوانين الواردة في سياسة الحد من العنف: (مخالفات العاملين في المدرسة):</label>
+                    <textarea name="violence_policy" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">التوصيات للمعلم: (تحديد نقاط التحسين مع خطوات إجرائية-عملية- لمعالجتها، تحديد احتياجات تدريبية إن وجدت....)</label>
+                    <textarea name="recommendations" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+            <h6 class="mt-4 text-primary">التذييل</h6>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">تاريخ توقيع المدير</label>
+                    <input type="date" name="principal_sign_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">تاريخ استلام المعلم للتقرير</label>
+                    <input type="date" name="teacher_receipt_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> حفظ الزيارة</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">الزيارات الإشرافية السابقة</h5></div>
+    <div class="card-body">
+        {% if visits %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>رقم الزيارة</th>
+                        <th>المبحث</th>
+                        <th>موضوع الدرس</th>
+                        <th>الصف</th>
+                        <th>الشعبة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in visits %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ v.visit_date|date:'Y-m-d' }}</td>
+                        <td>{{ v.visit_number|default:'---' }}</td>
+                        <td>{{ v.subject_area|default:'---' }}</td>
+                        <td>{{ v.lesson_topic|default:'---' }}</td>
+                        <td>{{ v.class_name|default:'---' }}</td>
+                        <td>{{ v.section|default:'---' }}</td>
+                        <td>
+                            <a href="{% url 'inspection_visit_report' v.id %}" class="btn btn-info btn-sm">
+                                <i class="bi bi-file-text"></i> التقرير
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">لا توجد زيارات إشرافية مسجلة لهذا المعلم</p>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-arrow-up-circle" style="font-size: 3rem;"></i>
+        <p class="mt-2">اختر معلماً من القائمة أعلاه لتسجيل زيارة إشرافية وعرض التقرير</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
