@@ -1151,22 +1151,45 @@ def message_list(request):
 
 
 @login_required
-def send_message(request):
+def send_message(request, user_id=None):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     if request.method == 'POST':
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            msg = form.save(commit=False)
-            msg.sender = request.user
-            msg.save()
-            messages.success(request, 'تم إرسال الرسالة بنجاح')
-            return redirect('sent_messages')
-    else:
-        form = MessageForm()
-        form.fields['recipient'].queryset = User.objects.filter(profile__role='student')
-    return render(request, 'school/send_message.html', {'form': form})
+        recipient_id = request.POST.get('recipient_id')
+        subject = request.POST.get('subject', '').strip()
+        content = request.POST.get('content', '').strip()
+        if not recipient_id or not subject or not content:
+            messages.error(request, 'الموضوع والرسالة مطلوبان')
+            return redirect('send_message_to', user_id=recipient_id or 0)
+        recipient = get_object_or_404(User, id=recipient_id)
+        Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
+        messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
+        return redirect('send_message')
+    students = Student.objects.all().select_related('student_class').order_by('full_name')
+    teachers = Teacher.objects.all().order_by('full_name')
+    admins = User.objects.filter(profile__role__in=['admin', 'vice_principal', 'secretary']).select_related('profile').order_by('first_name')
+    if user_id:
+        recipient = get_object_or_404(User, id=user_id)
+        return render(request, 'school/send_message_form.html', {'recipient': recipient})
+    return render(request, 'school/send_message.html', {
+        'students': students,
+        'teachers': teachers,
+        'admins': admins,
+    })
+
+
+@login_required
+def messages_report(request):
+    if not has_perm(request.user, 'messages', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    msgs = Message.objects.filter(recipient__profile__role='student').select_related('sender', 'recipient').order_by('-created_at')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/messages_report.html', {
+        'messages_qs': msgs,
+        'info': info,
+    })
 
 
 @login_required

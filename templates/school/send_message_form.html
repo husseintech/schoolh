@@ -1,0 +1,35 @@
+{% extends 'school/base.html' %}
+{% block title %}إرسال رسالة{% endblock %}
+{% block page_heading %}إرسال رسالة{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-envelope-fill"></i>
+                إرسال رسالة إلى:
+                <strong>{{ recipient.first_name|default:recipient.username }}</strong>
+                <span class="badge bg-{% if recipient.profile.role == 'admin' %}danger{% elif recipient.profile.role == 'teacher' %}success{% else %}info{% endif %} ms-1">
+                    {{ recipient.profile.get_role_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">الموضوع</label>
+                        <input type="text" name="subject" class="form-control" required placeholder="موضوع الرسالة">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الرسالة</label>
+                        <textarea name="content" class="form-control" rows="6" required placeholder="نص الرسالة..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send-fill"></i> إرسال</button>
+                    <a href="{% url 'send_message' %}" class="btn btn-outline-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

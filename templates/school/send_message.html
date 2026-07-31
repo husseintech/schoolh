@@ -2,25 +2,170 @@
 {% block title %}إرسال رسالة{% endblock %}
 {% block page_heading %}إرسال رسالة{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
+<ul class="nav nav-tabs mb-3" id="msgTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-pane" type="button" role="tab" aria-controls="students-pane" aria-selected="true">
+            <i class="bi bi-people-fill"></i> الطلاب ({{ students|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers-pane" type="button" role="tab" aria-controls="teachers-pane" aria-selected="false">
+            <i class="bi bi-person-video3"></i> المعلمون ({{ teachers|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="admins-tab" data-bs-toggle="tab" data-bs-target="#admins-pane" type="button" role="tab" aria-controls="admins-pane" aria-selected="false">
+            <i class="bi bi-person-gear"></i> الإدارة ({{ admins|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="msgTabsContent">
+    <!-- Students -->
+    <div class="tab-pane fade show active" id="students-pane" role="tabpanel" aria-labelledby="students-tab">
         <div class="card">
-            <div class="card-header"><i class="bi bi-send-fill"></i> إرسال رسالة</div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    {% for field in form %}
-                    <div class="mb-3">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
-                    </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-send-fill"></i> إرسال</button>
-                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">إلغاء</a>
-                </form>
+            <div class="card-header">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="studentSearch" class="form-control" placeholder="اكتب اسم الطالب للبحث الفوري...">
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="studentsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>اسم الطالب</th>
+                                <th>الصف</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in students %}
+                            <tr class="student-row">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ s.full_name }}</td>
+                                <td>{{ s.student_class.name|default:'---' }}</td>
+                                <td>
+                                    <a href="{% url 'send_message_to' s.user_id %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-envelope-plus"></i> إرسال رسالة
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">لا يوجد طلاب</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers -->
+    <div class="tab-pane fade" id="teachers-pane" role="tabpanel" aria-labelledby="teachers-tab">
+        <div class="card">
+            <div class="card-header">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="teacherSearch" class="form-control" placeholder="اكتب اسم المعلم للبحث الفوري...">
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="teachersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>اسم المعلم</th>
+                                <th>التخصص</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in teachers %}
+                            <tr class="teacher-row">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ t.full_name }}</td>
+                                <td>{{ t.specialization|default:'---' }}</td>
+                                <td>
+                                    <a href="{% url 'send_message_to' t.user_id %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-envelope-plus"></i> إرسال رسالة
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">لا يوجد معلمون</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Administration -->
+    <div class="tab-pane fade" id="admins-pane" role="tabpanel" aria-labelledby="admins-tab">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>الاسم</th>
+                                <th>الدور</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in admins %}
+                            {% if a.id != user.id %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ a.first_name|default:a.username }}</td>
+                                <td>{{ a.profile.get_role_display }}</td>
+                                <td>
+                                    <a href="{% url 'send_message_to' a.id %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-envelope-plus"></i> إرسال رسالة
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">لا يوجد أعضاء إدارة</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#studentSearch').on('input', function() {
+            var q = $(this).val().toLowerCase();
+            $('#studentsTable .student-row').each(function() {
+                $(this).toggle($(this).find('td:eq(1)').text().toLowerCase().includes(q));
+            });
+        });
+        $('#teacherSearch').on('input', function() {
+            var q = $(this).val().toLowerCase();
+            $('#teachersTable .teacher-row').each(function() {
+                $(this).toggle($(this).find('td:eq(1)').text().toLowerCase().includes(q));
+            });
+        });
+    });
+</script>
 {% endblock %}

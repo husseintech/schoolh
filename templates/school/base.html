@@ -385,11 +385,16 @@
         </a>
         {% endif %}
         {% if 'messages_send' in user_perms %}
-        <a href="{% url 'send_message' %}" class="nav-link {% if request.resolver_match.url_name == 'send_message' %}active{% endif %}">
+        <a href="{% url 'send_message' %}" class="nav-link {% if request.resolver_match.url_name == 'send_message' or request.resolver_match.url_name == 'send_message_to' %}active{% endif %}">
             <i class="bi bi-send-fill"></i> إرسال رسالة
         </a>
         <a href="{% url 'sent_messages' %}" class="nav-link {% if request.resolver_match.url_name == 'sent_messages' %}active{% endif %}">
             <i class="bi bi-send-check-fill"></i> الرسائل المرسلة
+        </a>
+        {% endif %}
+        {% if 'messages_view' in user_perms %}
+        <a href="{% url 'messages_report' %}" class="nav-link {% if request.resolver_match.url_name == 'messages_report' %}active{% endif %}">
+            <i class="bi bi-file-text"></i> تقرير الرسائل
         </a>
         {% endif %}
         <a href="{% url 'notification_list' %}" class="nav-link {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}">
