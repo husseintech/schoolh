@@ -8,7 +8,7 @@
         <i class="bi bi-printer"></i> طباعة البرنامج كاملاً
     </a>
     <a href="{% url 'visit_program_missing_notes_report' %}" class="btn btn-warning">
-        <i class="bi bi-file-earmark-text"></i> تقرير المعلمين بدون ملاحظات
+        <i class="bi bi-file-earmark-text"></i> تقرير من لم تتم زيارتهم بعد (بدون ملاحظات)
     </a>
 </div>
 
@@ -64,7 +64,7 @@
                         <th>الأيام المتبقية</th>
                         <th>الحصة</th>
                         <th>الملاحظات</th>
-                        {% if 'visit_program_delete' in user_perms %}
+                        {% if 'visit_program_add' in user_perms or 'visit_program_delete' in user_perms %}
                         <th>الإجراءات</th>
                         {% endif %}
                     </tr>
@@ -86,13 +86,25 @@
                             {% endif %}
                         </td>
                         <td>{{ e.lesson|default:'---' }}</td>
-                        <td>{{ e.notes|default:'<span class="text-danger">لم تُكتب</span>'|safe }}</td>
-                        {% if 'visit_program_delete' in user_perms %}
                         <td>
+                            {% if 'visit_program_add' in user_perms %}
+                            <form method="post" action="{% url 'visit_program_update' e.id %}" class="d-flex gap-1">
+                                {% csrf_token %}
+                                <input type="text" name="notes" class="form-control form-control-sm" value="{{ e.notes }}" placeholder="تم / لم يتم / ملاحظة">
+                                <button type="submit" class="btn btn-success btn-sm" title="حفظ الملاحظة"><i class="bi bi-check-lg"></i></button>
+                            </form>
+                            {% else %}
+                            {{ e.notes|default:'<span class="text-danger">لم تُكتب</span>'|safe }}
+                            {% endif %}
+                        </td>
+                        {% if 'visit_program_add' in user_perms or 'visit_program_delete' in user_perms %}
+                        <td>
+                            {% if 'visit_program_delete' in user_perms %}
                             <form method="post" action="{% url 'visit_program_delete' e.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذا السجل؟')">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
                             </form>
+                            {% endif %}
                         </td>
                         {% endif %}
                     </tr>

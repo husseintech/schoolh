@@ -1887,6 +1887,24 @@ def visit_program_delete(request, entry_id):
 
 
 @login_required
+def visit_program_update(request, entry_id):
+    if not has_perm(request.user, 'visit_program', 'add'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    entry = get_object_or_404(VisitProgram, id=entry_id)
+    if request.method == 'POST':
+        entry.notes = request.POST.get('notes', '')
+        visit_date = request.POST.get('visit_date', '')
+        lesson = request.POST.get('lesson', '')
+        if visit_date:
+            entry.visit_date = visit_date
+        entry.lesson = lesson
+        entry.save()
+        messages.success(request, 'تم حفظ التعديل بنجاح')
+    return redirect('visit_program_list')
+
+
+@login_required
 def visit_program_report(request):
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
@@ -1904,7 +1922,7 @@ def visit_program_missing_notes_report(request):
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    entries = VisitProgram.objects.filter(Q(notes__isnull=True) | Q(notes='')).select_related('teacher').order_by('-visit_date', 'teacher__full_name')
+    entries = VisitProgram.objects.filter(Q(notes__isnull=True) | Q(notes='')).filter(visit_date__gte=date.today()).select_related('teacher').order_by('visit_date', 'teacher__full_name')
     info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
         'entries': entries,

@@ -1,7 +1,7 @@
 {% extends 'school/base.html' %}
 {% load static %}
-{% block title %}{% if missing_only %}تقرير المعلمين بدون ملاحظات{% else %}تقرير برنامج الزيارات{% endif %}{% endblock %}
-{% block page_heading %}{% if missing_only %}تقرير المعلمين بدون ملاحظات{% else %}تقرير برنامج الزيارات{% endif %}{% endblock %}
+{% block title %}{% if missing_only %}تقرير المعلمين الذين لم تتم زيارتهم بعد{% else %}تقرير برنامج الزيارات{% endif %}{% endblock %}
+{% block page_heading %}{% if missing_only %}تقرير المعلمين الذين لم تتم زيارتهم بعد{% else %}تقرير برنامج الزيارات{% endif %}{% endblock %}
 {% block content %}
 <div class="card" id="reportCard">
     <div class="card-body">
@@ -25,7 +25,8 @@
         {% endif %}
         <div class="text-center mb-4">
             {% if missing_only %}
-            <h5>تقرير المعلمين الذين لم تُكتب لهم ملاحظات</h5>
+            <h5>تقرير المعلمين الذين لم تتم زيارتهم بعد</h5>
+            <p class="text-muted">المعلمون الذين لم تُكتب لهم ملاحظات بعد ولم يحضر موعد زيارتهم</p>
             {% else %}
             <h5>برنامج الزيارات</h5>
             {% endif %}
