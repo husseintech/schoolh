@@ -1163,13 +1163,7 @@ def send_message(request, user_id=None):
             messages.error(request, 'الموضوع والرسالة مطلوبان')
             return redirect('send_message_to', user_id=recipient_id or 0)
         recipient = get_object_or_404(User, id=recipient_id)
-        msg = Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
-        Notification.objects.create(
-            user=recipient,
-            title='رسالة جديدة',
-            message=f'من: {request.user.first_name or request.user.username}\nالموضوع: {subject}\n{content[:500]}',
-            link=f'/messages/{msg.id}/read/',
-        )
+        Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
     students = Student.objects.all().select_related('student_class').order_by('full_name')
@@ -1239,6 +1233,8 @@ def delete_message(request, message_id):
     if msg.sender != request.user and msg.recipient != request.user:
         messages.error(request, 'لا يمكنك حذف هذه الرسالة')
         return redirect('sent_messages')
+    link = f'/messages/{msg.id}/read/'
+    Notification.objects.filter(link=link).delete()
     msg.delete()
     messages.success(request, 'تم حذف الرسالة بنجاح')
     if request.user.profile.role == 'student':
@@ -1250,6 +1246,7 @@ def delete_message(request, message_id):
 def delete_all_sent_messages(request):
     count = Message.objects.filter(sender=request.user).count()
     Message.objects.filter(sender=request.user).delete()
+    Notification.objects.filter(user=request.user, link__startswith='/messages/').delete()
     messages.success(request, f'تم حذف {count} رسالة مرسلة')
     return redirect('sent_messages')
 
@@ -1258,6 +1255,7 @@ def delete_all_sent_messages(request):
 def delete_all_received_messages(request):
     count = Message.objects.filter(recipient=request.user).count()
     Message.objects.filter(recipient=request.user).delete()
+    Notification.objects.filter(user=request.user, link__startswith='/messages/').delete()
     messages.success(request, f'تم حذف {count} رسالة مستلمة')
     if request.user.profile.role == 'student':
         return redirect('student_messages')
@@ -1270,6 +1268,7 @@ def delete_all_messages(request):
     received = Message.objects.filter(recipient=request.user).count()
     Message.objects.filter(sender=request.user).delete()
     Message.objects.filter(recipient=request.user).delete()
+    Notification.objects.filter(user=request.user, link__startswith='/messages/').delete()
     messages.success(request, f'تم مسح جميع الرسائل: {sent} مرسلة و {received} مستلمة')
     if request.user.profile.role == 'student':
         return redirect('student_messages')
@@ -1861,6 +1860,10 @@ def notification_read(request, notification_id):
     notification.is_read = True
     notification.save()
     if notification.link:
+        if notification.link.startswith('/messages/') and not Message.objects.filter(id=notification.link.rstrip('/').rsplit('/', 1)[-1]).exists():
+            notification.delete()
+            messages.error(request, 'هذه الرسالة لم تعد موجودة')
+            return redirect('notification_list')
         return redirect(notification.link)
     return redirect('notification_list')
 
