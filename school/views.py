@@ -1860,3 +1860,16 @@ def inspection_visit_report(request, visit_id):
         'info': info,
     })
 
+
+@login_required
+def inspection_visits_all_report(request):
+    if not has_perm(request.user, 'inspection_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    visits = InspectionVisit.objects.all().select_related('teacher').order_by('-visit_date')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/inspection_visits_all_report.html', {
+        'visits': visits,
+        'info': info,
+    })
+

@@ -126,6 +126,7 @@ urlpatterns = [
     # Inspection Visits (Principal)
     path('inspection-visits/', views.inspection_visit_list, name='inspection_visit_list'),
     path('inspection-visits/<int:visit_id>/report/', views.inspection_visit_report, name='inspection_visit_report'),
+    path('inspection-visits/all-report/', views.inspection_visits_all_report, name='inspection_visits_all_report'),
 
     # Notifications
     path('notifications/', views.notification_list, name='notification_list'),
