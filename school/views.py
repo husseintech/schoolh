@@ -1231,6 +1231,51 @@ def student_messages(request):
     return render(request, 'school/student_messages.html', {'messages_qs': msgs})
 
 
+# ─── Message Deletion ──────────────────────────────────────────────────────────
+
+@login_required
+def delete_message(request, message_id):
+    msg = get_object_or_404(Message, id=message_id)
+    if msg.sender != request.user and msg.recipient != request.user:
+        messages.error(request, 'لا يمكنك حذف هذه الرسالة')
+        return redirect('sent_messages')
+    msg.delete()
+    messages.success(request, 'تم حذف الرسالة بنجاح')
+    if request.user.profile.role == 'student':
+        return redirect('student_messages')
+    return redirect('sent_messages')
+
+
+@login_required
+def delete_all_sent_messages(request):
+    count = Message.objects.filter(sender=request.user).count()
+    Message.objects.filter(sender=request.user).delete()
+    messages.success(request, f'تم حذف {count} رسالة مرسلة')
+    return redirect('sent_messages')
+
+
+@login_required
+def delete_all_received_messages(request):
+    count = Message.objects.filter(recipient=request.user).count()
+    Message.objects.filter(recipient=request.user).delete()
+    messages.success(request, f'تم حذف {count} رسالة مستلمة')
+    if request.user.profile.role == 'student':
+        return redirect('student_messages')
+    return redirect('sent_messages')
+
+
+@login_required
+def delete_all_messages(request):
+    sent = Message.objects.filter(sender=request.user).count()
+    received = Message.objects.filter(recipient=request.user).count()
+    Message.objects.filter(sender=request.user).delete()
+    Message.objects.filter(recipient=request.user).delete()
+    messages.success(request, f'تم مسح جميع الرسائل: {sent} مرسلة و {received} مستلمة')
+    if request.user.profile.role == 'student':
+        return redirect('student_messages')
+    return redirect('sent_messages')
+
+
 # ─── Reports ──────────────────────────────────────────────────────────────────
 
 @login_required
