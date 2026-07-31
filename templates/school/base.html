@@ -84,6 +84,37 @@
             color: rgba(255,255,255,0.4);
             letter-spacing: 1px;
         }
+        .sidebar .nav-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 12px 20px 5px;
+            cursor: pointer;
+            text-align: right;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+            transition: color 0.2s ease;
+        }
+        .sidebar .nav-toggle:hover {
+            color: #fff;
+        }
+        .sidebar .nav-toggle .bi-chevron-down {
+            transition: transform 0.3s ease;
+        }
+        .sidebar .nav-toggle.open .bi-chevron-down {
+            transform: rotate(180deg);
+        }
+        .sidebar .nav-collapse {
+            display: none;
+        }
+        .sidebar .nav-collapse .nav-link {
+            padding-right: 35px;
+        }
         .main-content {
             margin-right: var(--sidebar-width);
             min-height: 100vh;
@@ -274,7 +305,10 @@
         </div>
 
         {% if user.is_authenticated %}
-        <div class="nav-section">القائمة الرئيسية</div>
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-main" aria-expanded="false">
+            <span>القائمة الرئيسية</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-main">
         <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <i class="bi bi-house-door-fill"></i> الصفحة الرئيسية
         </a>
@@ -287,9 +321,15 @@
             <i class="bi bi-bar-chart-fill"></i> التقارير
         </a>
         {% endif %}
+        </div>
 
+        {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms %}
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-students" aria-expanded="false">
+            <span>الطلاب</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-students">
+        {% endif %}
         {% if 'students_view' in user_perms %}
-        <div class="nav-section">الطلاب</div>
         <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name and 'add' not in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-people-fill"></i> جميع الطلاب
         </a>
@@ -309,9 +349,17 @@
             <i class="bi bi-graph-up-arrow"></i> مستويات الطلاب
         </a>
         {% endif %}
+        {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms %}
+        </div>
+        {% endif %}
 
+        {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms %}
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-teachers" aria-expanded="false">
+            <span>المعلمون</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-teachers">
+        {% endif %}
         {% if 'teachers_view' in user_perms %}
-        <div class="nav-section">المعلمون</div>
         <a href="{% url 'teacher_list' %}" class="nav-link {% if 'teacher' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-person-badge-fill"></i> جميع المعلمين
         </a>
@@ -321,9 +369,15 @@
             <i class="bi bi-person-plus-fill"></i> إضافة معلم
         </a>
         {% endif %}
+        {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms %}
+        </div>
+        {% endif %}
 
-        {% if 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'exams_view' in user_perms %}
-        <div class="nav-section">الإدارة</div>
+        {% if 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'exams_view' in user_perms %}
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-admin" aria-expanded="false">
+            <span>الإدارة</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-admin">
         {% endif %}
         {% if 'classes_view' in user_perms %}
         <a href="{% url 'class_list' %}" class="nav-link {% if 'class' in request.resolver_match.url_name %}active{% endif %}">
@@ -375,9 +429,15 @@
             <i class="bi bi-clipboard-data-fill"></i> تحليل الامتحانات
         </a>
         {% endif %}
+        {% if 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'exams_view' in user_perms %}
+        </div>
+        {% endif %}
 
         {% if 'messages_view' in user_perms or 'messages_send' in user_perms %}
-        <div class="nav-section">الرسائل والإشعارات</div>
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-messages" aria-expanded="false">
+            <span>الرسائل والإشعارات</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-messages">
         {% endif %}
         {% if 'messages_view' in user_perms %}
         <a href="{% url 'message_list' %}" class="nav-link {% if request.resolver_match.url_name == 'message_list' %}active{% endif %}">
@@ -403,9 +463,15 @@
             <span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>
             {% endif %}
         </a>
+        {% if 'messages_view' in user_perms or 'messages_send' in user_perms %}
+        </div>
+        {% endif %}
 
-        {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms %}
-        <div class="nav-section">الإعدادات</div>
+        {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms or user.profile.role == 'admin' %}
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-settings" aria-expanded="false">
+            <span>الإعدادات</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-settings">
         {% endif %}
         {% if 'settings_links' in user_perms or user.profile.role == 'admin' %}
         <a href="{% url 'lesson_link_list' %}" class="nav-link {% if 'lesson_link' in request.resolver_match.url_name %}active{% endif %}">
@@ -427,14 +493,21 @@
             <i class="bi bi-building"></i> بيانات المدرسة
         </a>
         {% endif %}
+        {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms or user.profile.role == 'admin' %}
+        </div>
+        {% endif %}
 
-        <div class="nav-section">الحساب</div>
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-account" aria-expanded="false">
+            <span>الحساب</span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse" id="collapse-account">
         <a href="{% url 'my_account' %}" class="nav-link {% if request.resolver_match.url_name == 'my_account' %}active{% endif %}">
             <i class="bi bi-person-circle"></i> حسابي
         </a>
         <a href="{% url 'logout' %}" class="nav-link text-danger">
             <i class="bi bi-box-arrow-left"></i> تسجيل خروج
         </a>
+        </div>
         {% endif %}
 
     </div>
@@ -567,6 +640,18 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         $(document).ready(function() {
+            $('.nav-toggle').on('click', function() {
+                var target = $('#' + $(this).data('target'));
+                target.slideToggle(200);
+                $(this).toggleClass('open');
+                $(this).attr('aria-expanded', $(this).hasClass('open'));
+            });
+            $('.nav-collapse').each(function() {
+                if ($(this).find('.nav-link.active').length > 0) {
+                    $(this).show();
+                    $('.nav-toggle[data-target="' + this.id + '"]').addClass('open').attr('aria-expanded', 'true');
+                }
+            });
             $('.select2').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'اختر...',
