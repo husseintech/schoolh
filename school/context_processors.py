@@ -35,7 +35,7 @@ def user_permissions(request):
             if has_perm(request.user, module, action):
                 perms.add(f'{module}_{action}')
         unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
-        recent_notifications = Notification.objects.filter(user=request.user)[:5]
+        recent_notifications = Notification.objects.filter(user=request.user).exclude(link__startswith='/messages/')[:5]
         unread_messages_count = Message.objects.filter(recipient=request.user, is_read=False).count()
         recent_messages = Message.objects.filter(recipient=request.user)[:5]
     return {

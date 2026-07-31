@@ -1,4 +1,4 @@
-import os, io, csv
+import os, io, csv, re
 from datetime import date, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
@@ -1847,7 +1847,7 @@ def supervisor_visits_report(request):
 
 @login_required
 def notification_list(request):
-    notifications = Notification.objects.filter(user=request.user)
+    notifications = Notification.objects.filter(user=request.user).exclude(link__startswith='/messages/')
     notifications.filter(is_read=False).update(is_read=True)
     return render(request, 'school/notification_list.html', {
         'notifications': notifications,
@@ -1860,11 +1860,14 @@ def notification_read(request, notification_id):
     notification.is_read = True
     notification.save()
     if notification.link:
-        if notification.link.startswith('/messages/') and not Message.objects.filter(id=notification.link.rstrip('/').rsplit('/', 1)[-1]).exists():
-            notification.delete()
-            messages.error(request, 'هذه الرسالة لم تعد موجودة')
-            return redirect('notification_list')
-        return redirect(notification.link)
+        link = notification.link
+        if link.startswith('/messages/'):
+            match = re.match(r'^/messages/(\d+)/', link)
+            if not match or not Message.objects.filter(id=int(match.group(1))).exists():
+                notification.delete()
+                messages.error(request, 'هذه الرسالة لم تعد موجودة')
+                return redirect('notification_list')
+        return redirect(link)
     return redirect('notification_list')
 
 
