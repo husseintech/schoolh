@@ -1730,15 +1730,11 @@ def lateness_report(request):
     if not has_perm(request.user, 'lateness', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    month = request.GET.get('month', '')
-    year = request.GET.get('year', '')
-    lateness_qs = StudentLateness.objects.all().select_related('student', 'created_by')
+    current_year = date.today().year
+    month = request.GET.get('month', str(date.today().month))
+    lateness_qs = StudentLateness.objects.filter(date__year=current_year).select_related('student', 'created_by')
     if month:
         lateness_qs = lateness_qs.filter(date__month=month)
-    if year:
-        lateness_qs = lateness_qs.filter(date__year=year)
-    else:
-        lateness_qs = lateness_qs.filter(date__year=date.today().year)
     lateness_qs = lateness_qs.order_by('-date', 'student__full_name')
     months = [
         ('1', 'يناير'), ('2', 'فبراير'), ('3', 'مارس'), ('4', 'إبريل'),
@@ -1749,7 +1745,7 @@ def lateness_report(request):
         'lateness_list': lateness_qs,
         'months': months,
         'selected_month': month,
-        'selected_year': year or str(date.today().year),
+        'current_year': current_year,
     })
 
 

@@ -6,24 +6,16 @@
     <div class="card-header"><i class="bi bi-clock-history"></i> تقرير تأخيرات الطلاب</div>
     <div class="card-body">
         <form method="get" class="row g-3 mb-4 no-print">
-            <div class="col-md-4">
-                <label class="form-label">الشهر</label>
+            <div class="col-md-6">
+                <label class="form-label">الشهر ({{ current_year }})</label>
                 <select name="month" class="form-select">
-                    <option value="">كل الشهور</option>
+                    <option value="">كل شهور {{ current_year }}</option>
                     {% for m_id, m_name in months %}
                     <option value="{{ m_id }}" {% if selected_month == m_id %}selected{% endif %}>{{ m_name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">السنة</label>
-                <select name="year" class="form-select">
-                    {% for y in "2024 2025 2026 2027" %}
-                    <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
+            <div class="col-md-6 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> عرض</button>
             </div>
         </form>
@@ -34,7 +26,7 @@
 
         <div class="d-none d-print-block text-center mb-3">
             <h4>تقرير تأخيرات الطلاب</h4>
-            <h5>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %} {% endif %}{{ selected_year }}</h5>
+            <h5>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %} {% endif %}{{ current_year }}</h5>
             <hr>
         </div>
 
