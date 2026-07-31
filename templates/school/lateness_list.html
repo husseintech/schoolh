@@ -9,8 +9,8 @@
     <div class="card-body">
         <form method="get" class="row mb-4 no-print">
             <div class="col-md-6">
-                <label class="form-label">بحث عن طالب</label>
-                <input type="text" name="q" class="form-control" placeholder="ابحث باسم الطالب..." value="{{ search_query }}">
+                <label class="form-label">بحث عن طالب (تصفية فورية)</label>
+                <input type="text" name="q" id="studentSearch" class="form-control" placeholder="ابدأ بكتابة اسم الطالب لتصفية الجدول..." value="{{ search_query }}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> بحث</button>
@@ -41,9 +41,9 @@
                             <th>ملاحظات (سبب التأخير والإجراء)</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="latenessTbody">
                         {% for s in students %}
-                        <tr class="{% if s.id in today_lateness %}table-warning{% endif %}">
+                        <tr class="{% if s.id in today_lateness %}table-warning{% endif %}" data-search="{{ s.full_name }} {{ s.student_id }} {{ s.student_class.name|default:'' }}">
                             <td>
                                 <input type="checkbox" name="student_id" value="{{ s.id }}" class="form-check-input" {% if s.id in today_lateness %}checked{% endif %}>
                             </td>
@@ -81,4 +81,26 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('studentSearch');
+    if (!input) return;
+    var tbody = document.getElementById('latenessTbody');
+    if (!tbody) return;
+    var rows = tbody.querySelectorAll('tr');
+    input.addEventListener('input', function() {
+        var q = this.value.trim().toLowerCase();
+        rows.forEach(function(row) {
+            var match = !q || (row.getAttribute('data-search') || '').toLowerCase().indexOf(q) !== -1;
+            row.style.display = match ? '' : 'none';
+            row.querySelectorAll('input').forEach(function(inp) {
+                inp.disabled = !match;
+            });
+        });
+    });
+});
+</script>
 {% endblock %}
