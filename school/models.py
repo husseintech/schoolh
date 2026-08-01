@@ -586,3 +586,18 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f'شهادة {self.student_name} - {self.class_name}'
+
+
+class PushSubscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions', verbose_name='المستخدم')
+    endpoint = models.TextField('نقطة الاشتراك', unique=True)
+    p256dh = models.TextField('مفتاح p256dh')
+    auth = models.TextField('مفتاح auth')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'اشتراك إشعارات'
+        verbose_name_plural = 'اشتراكات الإشعارات'
+
+    def __str__(self):
+        return f'اشتراك {self.user.username}'

@@ -3,9 +3,45 @@ import logging
 from datetime import date, timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
-from .models import Notification, VisitProgram
+from .models import Notification, VisitProgram, PushSubscription
 
 logger = logging.getLogger(__name__)
+
+
+def send_push(user, title, body='', url='/'):
+    """Send a web push notification to all devices subscribed by the user."""
+    if not (settings.VAPID_PRIVATE_KEY and settings.VAPID_PUBLIC_KEY):
+        return False
+    from pywebpush import webpush, WebPushException
+    subs = PushSubscription.objects.filter(user=user)
+    if not subs.exists():
+        return False
+    payload = {'title': title, 'body': body, 'url': url}
+    sent = False
+    dead = []
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={
+                    'endpoint': sub.endpoint,
+                    'keys': {'p256dh': sub.p256dh, 'auth': sub.auth},
+                },
+                data=payload,
+                vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                vapid_claims={'sub': settings.VAPID_SUBJECT},
+                ttl=86400,
+            )
+            sent = True
+        except WebPushException as e:
+            if e.response is not None and e.response.status_code in (404, 410):
+                dead.append(sub.id)
+            else:
+                logger.error(f'فشل إرسال إشعار: {e}')
+        except Exception as e:
+            logger.error(f'خطأ في إرسال الإشعار: {e}')
+    if dead:
+        PushSubscription.objects.filter(id__in=dead).delete()
+    return sent
 
 
 def send_visit_reminders():
@@ -27,12 +63,14 @@ def send_visit_reminders():
                     link=f'/visit-program/{entry.id}/',
                     defaults={'title': 'تذكير بموعد حضور الحصة', 'message': text},
                 )
+                send_push(teacher_user, 'تذكير بموعد حضور الحصة', text, f'/visit-program/{entry.id}/')
             for manager in manager_users:
                 Notification.objects.get_or_create(
                     user=manager,
                     link=f'/visit-program/{entry.id}/',
                     defaults={'title': 'قرب موعد حضور معلم', 'message': text},
                 )
+                send_push(manager, 'قرب موعد حضور معلم', text, f'/visit-program/{entry.id}/')
             VisitProgram.objects.filter(id=entry.id).update(reminder_sent=True)
     except Exception as e:
         logger.error(f'خطأ في إرسال تذكيرات الزيارات: {e}')

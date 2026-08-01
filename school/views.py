@@ -9,11 +9,12 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
     ParentMessageForm, ClassForm, SubjectForm)
+from .services import send_push
 from .services import send_whatsapp_message
 
 
@@ -2180,6 +2181,80 @@ def certificates_export(request):
     response['Content-Disposition'] = 'attachment; filename=المتفوقون.xlsx'
     wb.save(response)
     return response
+
+
+# ─── PWA & Web Push ───────────────────────────────────────────────────────────
+
+import json as json_lib
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+
+@login_required
+def push_subscribe(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST فقط'}, status=405)
+    try:
+        data = json_lib.loads(request.body.decode('utf-8'))
+        endpoint = data.get('endpoint', '')
+        p256dh = data.get('keys', {}).get('p256dh', '')
+        auth = data.get('keys', {}).get('auth', '')
+        if not (endpoint and p256dh and auth):
+            return JsonResponse({'ok': False, 'error': 'بيانات ناقصة'}, status=400)
+        PushSubscription.objects.update_or_create(
+            endpoint=endpoint,
+            defaults={'user': request.user, 'p256dh': p256dh, 'auth': auth},
+        )
+        return JsonResponse({'ok': True})
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def push_unsubscribe(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST فقط'}, status=405)
+    try:
+        data = json_lib.loads(request.body.decode('utf-8'))
+        PushSubscription.objects.filter(user=request.user, endpoint=data.get('endpoint', '')).delete()
+        return JsonResponse({'ok': True})
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def push_test(request):
+    sent = send_push(request.user, 'اختبار الإشعارات', 'إشعارات النظام تعمل بنجاح', '/dashboard/')
+    if sent:
+        messages.success(request, 'تم إرسال إشعار تجريبي لجهازك')
+    else:
+        messages.error(request, 'لا يوجد اشتراك مفعّل لهذا الحساب، أو لم تُضبط مفاتيح VAPID')
+    return redirect('dashboard')
+
+
+def service_worker(request):
+    response = render(request, 'school/sw.js', content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response
+
+
+def manifest_view(request):
+    info = SchoolInfo.objects.first()
+    return JsonResponse({
+        'name': info.name_ar if info else 'النظام المدرسي',
+        'short_name': 'النظام المدرسي',
+        'start_url': '/dashboard/',
+        'display': 'standalone',
+        'dir': 'rtl',
+        'lang': 'ar',
+        'background_color': '#0d1b2a',
+        'theme_color': '#0d1b2a',
+        'icons': [
+            {'src': '/static/pwa/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any maskable'},
+            {'src': '/static/pwa/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any maskable'},
+        ],
+    })
 
 
 # ─── Notifications ─────────────────────────────────────────────────────────────

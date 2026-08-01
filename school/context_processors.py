@@ -1,3 +1,4 @@
+from django.conf import settings
 from .models import has_perm, Notification, Message
 from .services import send_visit_reminders
 
@@ -50,4 +51,5 @@ def user_permissions(request):
         'recent_notifications': recent_notifications,
         'unread_messages_count': unread_messages_count,
         'recent_messages': recent_messages,
+        'vapid_public_key': settings.VAPID_PUBLIC_KEY,
     }

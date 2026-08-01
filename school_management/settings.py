@@ -161,3 +161,8 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 WHATSAPP_PROVIDER = os.getenv('WHATSAPP_PROVIDER', 'log')
 ULTRAMSG_TOKEN = os.getenv('ULTRAMSG_TOKEN', '')
 ULTRAMSG_INSTANCE_ID = os.getenv('ULTRAMSG_INSTANCE_ID', '')
+
+# Web Push (PWA)
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', 'mailto:admin@school.local')
