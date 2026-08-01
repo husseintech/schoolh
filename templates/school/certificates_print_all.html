@@ -2,16 +2,21 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>شهادة تقدير</title>
+<title>طباعة جميع الشهادات</title>
 <style>
 @page { size: A4 landscape; margin: 0; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     font-family: 'Amiri', 'Traditional Arabic', serif;
-    width: 297mm; height: 210mm;
-    display: flex; align-items: center; justify-content: center;
     overflow: hidden;
 }
+.sheet {
+    width: 297mm; height: 210mm;
+    display: flex; align-items: center; justify-content: center;
+    page-break-after: always;
+    overflow: hidden;
+}
+.sheet:last-child { page-break-after: auto; }
 .bg-1 { background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 50%, #ffcc80 100%); color: #5d3a00; }
 .bg-2 { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%); color: #1b3a1b; }
 .bg-3 { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%); color: #0d2f4f; }
@@ -58,45 +63,49 @@ footer { display: flex; justify-content: space-between; align-items: flex-end; }
 @media print { .toolbar { display: none; } }
 </style>
 </head>
-<body class="bg-{{ bg }}">
-<div class="frame">
-    <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
-    <span class="corner corner-bl"></span><span class="corner corner-br"></span>
-    <header>
-        <div class="logo">
-            {% if info and info.ministry_logo %}
-            <img src="{{ info.ministry_logo }}" alt="logo">
-            {% else %}
-            <div class="logo-placeholder">الشعار</div>
-            {% endif %}
+<body>
+{% for cert in certs %}
+<div class="sheet bg-{{ bg }}">
+    <div class="frame">
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <header>
+            <div class="logo">
+                {% if info and info.ministry_logo %}
+                <img src="{{ info.ministry_logo }}" alt="logo">
+                {% else %}
+                <div class="logo-placeholder">الشعار</div>
+                {% endif %}
+            </div>
+            <div class="school-name">
+                {% if info %}{{ info.name_ar }}{% endif %}
+                <div style="font-size: 11pt; font-weight: normal; margin-top: 2mm;">وزارة التربية والتعليم</div>
+            </div>
+            <div class="logo" style="width: 30mm;"></div>
+        </header>
+        <div class="mid">
+            <div class="deco">✦ ✦ ✦</div>
+            <div class="title">شهادة شكر وتقدير</div>
+            <div class="deco">✦ ✦ ✦</div>
+            <div class="phrase">يسرّ إدارة مدرسة <strong>{{ cert.class_name }}</strong> أن تمنح الطالب</div>
+            <div class="student-name">{{ cert.student_name }}</div>
+            <div class="phrase">هذه الشهادة تقديراً لتفوقه الدراسي وتميزه خلال العام الدراسي <strong>{{ cert.cert_year }}</strong>، متمنين له دوام النجاح والتوفيق.</div>
         </div>
-        <div class="school-name">
-            {% if info %}{{ info.name_ar }}{% endif %}
-            <div style="font-size: 11pt; font-weight: normal; margin-top: 2mm;">وزارة التربية والتعليم</div>
-        </div>
-        <div class="logo" style="width: 30mm;"></div>
-    </header>
-    <div class="mid">
-        <div class="deco">✦ ✦ ✦</div>
-        <div class="title">شهادة شكر وتقدير</div>
-        <div class="deco">✦ ✦ ✦</div>
-        <div class="phrase">
-            يسرّ إدارة مدرسة <strong>{{ cert.class_name }}</strong> أن تمنح الطالب
-        </div>
-        <div class="student-name">{{ cert.student_name }}</div>
-        <div class="phrase">هذه الشهادة تقديراً لتفوقه الدراسي وتميزه خلال العام الدراسي <strong>{{ cert.cert_year }}</strong>، متمنين له دوام النجاح والتوفيق.</div>
+        <footer>
+            <div class="footer-item">
+                <div class="line"></div>
+                <div class="role">مربي الصف: {{ cert.guardian_name }}</div>
+            </div>
+            <div class="footer-item">
+                <div class="line"></div>
+                <div class="role">مدير المدرسة: {{ cert.principal_name }}</div>
+            </div>
+        </footer>
     </div>
-    <footer>
-        <div class="footer-item">
-            <div class="line"></div>
-            <div class="role">مربي الصف: {{ cert.guardian_name }}</div>
-        </div>
-        <div class="footer-item">
-            <div class="line"></div>
-            <div class="role">مدير المدرسة: {{ cert.principal_name }}</div>
-        </div>
-    </footer>
 </div>
-<div class="toolbar"><a href="javascript:window.print()">طباعة</a></div>
+{% empty %}
+<div class="sheet" style="font-size: 20pt; color: #666;">لا توجد شهادات للطباعة</div>
+{% endfor %}
+<div class="toolbar"><a href="javascript:window.print()">طباعة الكل</a></div>
 </body>
 </html>

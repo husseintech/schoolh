@@ -97,6 +97,7 @@ DEFAULT_PERMISSIONS = {
         'reports': [],
         'settings': [],
         'notes': ['view', 'add'],
+        'nominations': ['view', 'add'],
     },
     'student': {
         'students': [],
@@ -140,6 +141,7 @@ class UserPermission(models.Model):
 
 class Class(models.Model):
     name = models.CharField('اسم الصف', max_length=100, unique=True)
+    guardian = models.OneToOneField('Teacher', on_delete=models.SET_NULL, null=True, blank=True, related_name='guardian_class', verbose_name='مربي الصف')
 
     class Meta:
         verbose_name = 'صف'
@@ -552,27 +554,35 @@ class InspectionVisit(models.Model):
         return f'زيارة إشرافية - {self.teacher.full_name} - {self.visit_date}'
 
 
+class Nomination(models.Model):
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, verbose_name='الطالب', related_name='nomination')
+    student_class = models.ForeignKey(Class, on_delete=models.CASCADE, verbose_name='الصف', related_name='nominations')
+    nominated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='رشّحه')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'ترشيح متفوق'
+        verbose_name_plural = 'ترشيحات المتفوقين'
+        ordering = ['student_class__name', 'student__full_name']
+
+    def __str__(self):
+        return f'{self.student.full_name} - {self.student_class.name}'
+
+
 class Certificate(models.Model):
-    CERTIFICATE_TYPES = [
-        ('تفوق دراسي', 'تفوق دراسي'),
-        ('اجتهاد ومثابرة', 'اجتهاد ومثابرة'),
-        ('سلوك ممتاز', 'سلوك ممتاز'),
-        ('حضور مميز', 'حضور مميز'),
-        ('مشاركة فعالة', 'مشاركة فعالة'),
-        ('موهبة وإبداع', 'موهبة وإبداع'),
-        ('أخرى', 'أخرى'),
-    ]
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='الطالب', related_name='certificates')
-    cert_type = models.CharField('نوع الشهادة', max_length=50, choices=CERTIFICATE_TYPES, default='تفوق دراسي')
-    custom_text = models.CharField('نص إضافي', max_length=300, blank=True, help_text='سطر يظهر في الشهادة تحت سبب التقدير')
-    cert_date = models.DateField('تاريخ الإصدار', default=date.today)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أصدرها')
+    nomination = models.OneToOneField(Nomination, on_delete=models.CASCADE, null=True, verbose_name='الترشيح', related_name='certificate')
+    student_name = models.CharField('اسم الطالب', max_length=200, default='')
+    class_name = models.CharField('الصف', max_length=100, default='')
+    guardian_name = models.CharField('اسم مربي الصف', max_length=200, blank=True)
+    principal_name = models.CharField('اسم مدير المدرسة', max_length=200, blank=True)
+    cert_year = models.CharField('سنة التدريس', max_length=20, default='')
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أصدرها')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'شهادة تقدير'
         verbose_name_plural = 'شهادات التقدير'
-        ordering = ['-cert_date', '-created_at']
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f'شهادة {self.cert_type} - {self.student.full_name}'
+        return f'شهادة {self.student_name} - {self.class_name}'

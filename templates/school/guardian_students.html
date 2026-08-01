@@ -1,0 +1,61 @@
+{% extends 'school/base.html' %}
+{% block title %}ترشيح المتفوقين{% endblock %}
+{% block page_heading %}ترشيح طلاب الصف المتفوقين — {{ guardian_class.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">مربي الصف: <span class="text-primary">{{ request.user.teacher_profile.full_name }}</span>
+            <span class="badge bg-info ms-2">الصف: {{ guardian_class.name }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">اختر الطلاب المتفوقين من صفك ليتم ترشيحهم لنيل شهادة شكر وتقدير، ثم اضغط حفظ.</p>
+        <form method="post" id="nominateForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">ترشيح</th>
+                            <th>#</th>
+                            <th>اسم الطالب</th>
+                            <th>رقم الطالب</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" name="student_id" value="{{ s.id }}"
+                                       class="form-check-input nom-check"
+                                       {% if s.id in nominated_ids %}checked{% endif %}>
+                            </td>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ s.full_name }}</strong></td>
+                            <td>{{ s.student_number }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">لا يوجد طلاب في هذا الصف</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex align-items-center gap-3 mt-3">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> حفظ الترشيحات</button>
+                <span class="text-muted">عدد المختارين: <span id="count">0</span></span>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const checks = document.querySelectorAll('.nom-check');
+    const count = document.getElementById('count');
+    const update = () => count.textContent = document.querySelectorAll('.nom-check:checked').length;
+    checks.forEach(c => c.addEventListener('change', update));
+    update();
+});
+</script>
+{% endblock %}

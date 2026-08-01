@@ -1,0 +1,53 @@
+{% extends 'school/base.html' %}
+{% block title %}مربو الصفوف{% endblock %}
+{% block page_heading %}تخصيص مربي الصفوف{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">تخصيص مربي الصف لكل معلم</h5></div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>اسم المعلم</th>
+                            <th>التخصص</th>
+                            <th>الصف المعين (مربي صف)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in teachers %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ t.full_name }}</strong></td>
+                            <td>{{ t.specialization|default:'---' }}</td>
+                            <td style="min-width: 220px;">
+                                <select name="guardian_{{ t.id }}" class="form-select">
+                                    <option value="">-- بدون تخصيص --</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}" {% if t.guardian_class and t.guardian_class.id == c.id %}selected{% endif %}>
+                                        {{ c.name }}{% if c.guardian and c.guardian.id != t.id %} (مربيه: {{ c.guardian.full_name }}){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">لا يوجد معلمون</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if teachers %}
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ التخصيصات</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

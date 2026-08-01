@@ -1,6 +1,7 @@
 import os, io, csv, re
 from datetime import date, datetime
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,7 +9,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Certificate
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1448,7 +1449,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1470,6 +1471,8 @@ def add_account(request):
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
         'certificates': 'شهادات التقدير',
+        'guardians': 'مربو الصفوف',
+        'nominations': 'ترشيح المتفوقين',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1528,7 +1531,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1550,6 +1553,8 @@ def edit_account(request, user_id):
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
         'certificates': 'شهادات التقدير',
+        'guardians': 'مربو الصفوف',
+        'nominations': 'ترشيح المتفوقين',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1951,59 +1956,212 @@ def visit_program_missing_notes_report(request):
     })
 
 
-# ─── Certificates ──────────────────────────────────────────────────────────────
+# ─── Guardians / Nominations / Certificates ───────────────────────────────────
+
+def current_teaching_year():
+    today = date.today()
+    y = today.year
+    return f'{y}/{y + 1}' if today.month >= 9 else f'{y - 1}/{y}'
+
+
+def issue_certificates(nominations, user):
+    info = SchoolInfo.objects.first()
+    year = current_teaching_year()
+    count = 0
+    for n in nominations:
+        if Certificate.objects.filter(nomination=n).exists():
+            continue
+        Certificate.objects.create(
+            nomination=n,
+            student_name=n.student.full_name,
+            class_name=n.student_class.name,
+            guardian_name=n.student_class.guardian.full_name if n.student_class.guardian else '',
+            principal_name=info.principal_name if info else '',
+            cert_year=year,
+            issued_by=user,
+        )
+        count += 1
+    return count
+
 
 @login_required
-def certificate_list(request):
-    if not has_perm(request.user, 'certificates', 'view'):
+def guardian_assign(request):
+    if not has_perm(request.user, 'guardians', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
-    certificates = Certificate.objects.select_related('student', 'created_by')
-    if request.method == 'POST' and has_perm(request.user, 'certificates', 'add'):
-        student_id = request.POST.get('student_id')
-        student = get_object_or_404(Student, id=student_id) if student_id else None
-        if student:
-            Certificate.objects.create(
-                student=student,
-                cert_type=request.POST.get('cert_type', 'تفوق دراسي'),
-                custom_text=request.POST.get('custom_text', ''),
-                cert_date=request.POST.get('cert_date') or date.today(),
-                created_by=request.user,
-            )
-            messages.success(request, 'تم إصدار الشهادة بنجاح')
-            return redirect('certificate_list')
-        messages.error(request, 'الرجاء اختيار طالب')
-    return render(request, 'school/certificate_list.html', {
-        'students': students,
-        'certificates': certificates,
-        'today': date.today(),
-        'cert_types': Certificate.CERTIFICATE_TYPES,
+    teachers = Teacher.objects.all().select_related('guardian_class').order_by('full_name')
+    classes = Class.objects.all().order_by('name')
+    if request.method == 'POST' and has_perm(request.user, 'guardians', 'add'):
+        for t in teachers:
+            cid = request.POST.get(f'guardian_{t.id}', '')
+            current = Class.objects.filter(guardian=t).first()
+            if cid:
+                cls = get_object_or_404(Class, id=cid)
+                if current and current.id != cls.id:
+                    current.guardian = None
+                    current.save()
+                cls.guardian = t
+                cls.save()
+            elif current:
+                current.guardian = None
+                current.save()
+        messages.success(request, 'تم حفظ مربي الصفوف بنجاح')
+        return redirect('guardian_assign')
+    return render(request, 'school/guardian_assign.html', {
+        'teachers': teachers,
+        'classes': classes,
     })
 
 
 @login_required
-def certificate_print(request, cert_id):
+def guardian_students(request):
+    if request.user.profile.role not in ('admin', 'teacher', 'vice_principal', 'secretary'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teacher = getattr(request.user, 'teacher_profile', None)
+    guardian_class = teacher.guardian_class if teacher else None
+    if not guardian_class:
+        messages.error(request, 'لم يتم تخصيص صف لك كمربي صف بعد')
+        return redirect('dashboard')
+    students = Student.objects.filter(student_class=guardian_class).order_by('full_name')
+    nominated_ids = set(Nomination.objects.filter(student_class=guardian_class).values_list('student_id', flat=True))
+    if request.method == 'POST' and has_perm(request.user, 'nominations', 'add'):
+        selected = set()
+        for sid in request.POST.getlist('student_id'):
+            try:
+                selected.add(int(sid))
+            except ValueError:
+                continue
+        Nomination.objects.filter(student_class=guardian_class).delete()
+        for sid in selected:
+            st = Student.objects.filter(id=sid, student_class=guardian_class).first()
+            if st:
+                Nomination.objects.create(student=st, student_class=guardian_class, nominated_by=request.user)
+        messages.success(request, f'تم حفظ ترشيحات {len(selected)} طالب كمتفوقين')
+        return redirect('guardian_students')
+    return render(request, 'school/guardian_students.html', {
+        'students': students,
+        'guardian_class': guardian_class,
+        'nominated_ids': nominated_ids,
+        'today': date.today(),
+    })
+
+
+@login_required
+def certificates_manage(request):
     if not has_perm(request.user, 'certificates', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    cert = get_object_or_404(Certificate, id=cert_id)
+    classes = Class.objects.all().order_by('name')
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'add' and has_perm(request.user, 'certificates', 'add'):
+            student_id = request.POST.get('student_id')
+            student = get_object_or_404(Student, id=student_id) if student_id else None
+            if student and student.student_class:
+                if Nomination.objects.filter(student=student).exists():
+                    messages.error(request, 'هذا الطالب مرشح مسبقاً')
+                else:
+                    Nomination.objects.create(student=student, student_class=student.student_class, nominated_by=request.user)
+                    messages.success(request, 'تمت إضافة الطالب يدوياً')
+            else:
+                messages.error(request, 'الرجاء اختيار طالب له صف')
+        elif action == 'delete' and has_perm(request.user, 'certificates', 'delete'):
+            Nomination.objects.filter(id=request.POST.get('nomination_id', '')).delete()
+            messages.success(request, 'تم حذف الترشيح')
+        elif action == 'issue' and has_perm(request.user, 'certificates', 'add'):
+            nominations = Nomination.objects.select_related('student', 'student_class__guardian')
+            class_id = request.POST.get('class_id', '')
+            if class_id:
+                nominations = nominations.filter(student_class_id=class_id)
+            count = issue_certificates(nominations, request.user)
+            messages.success(request, f'تم إصدار {count} شهادة')
+        return redirect('certificates_manage')
+    class_id = request.GET.get('class_id', '')
+    nominations = Nomination.objects.select_related('student', 'student_class__guardian', 'nominated_by')
+    if class_id:
+        nominations = nominations.filter(student_class_id=class_id)
+    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+    nominated_classes = Class.objects.filter(nominations__isnull=False).distinct().order_by('name')
+    classes_without = Class.objects.exclude(id__in=nominated_classes.values('id')).order_by('name')
+    return render(request, 'school/certificates_manage.html', {
+        'nominations': nominations,
+        'classes': classes,
+        'nominated_classes': nominated_classes,
+        'classes_without': classes_without,
+        'students': students,
+        'selected_class_id': class_id,
+        'year': current_teaching_year(),
+    })
+
+
+@login_required
+def certificate_print(request, nomination_id):
+    if not has_perm(request.user, 'certificates', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    nomination = get_object_or_404(Nomination, id=nomination_id)
+    issue_certificates(Nomination.objects.filter(id=nomination.id), request.user)
+    cert = Certificate.objects.get(nomination=nomination)
     info = SchoolInfo.objects.first()
+    bg = request.GET.get('bg', '1')
     return render(request, 'school/certificate_print.html', {
         'cert': cert,
         'info': info,
+        'bg': bg,
     })
 
 
 @login_required
-def certificate_delete(request, cert_id):
-    if not has_perm(request.user, 'certificates', 'delete'):
+def certificates_print_all(request):
+    if not has_perm(request.user, 'certificates', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    cert = get_object_or_404(Certificate, id=cert_id)
-    cert.delete()
-    messages.success(request, 'تم حذف الشهادة بنجاح')
-    return redirect('certificate_list')
+    nominations = Nomination.objects.select_related('student', 'student_class__guardian')
+    class_id = request.GET.get('class_id', '')
+    if class_id:
+        nominations = nominations.filter(student_class_id=class_id)
+    issue_certificates(nominations, request.user)
+    certs = [Certificate.objects.get(nomination=n) for n in nominations]
+    info = SchoolInfo.objects.first()
+    bg = request.GET.get('bg', '1')
+    return render(request, 'school/certificates_print_all.html', {
+        'certs': certs,
+        'info': info,
+        'bg': bg,
+    })
+
+
+@login_required
+def certificates_export(request):
+    if not has_perm(request.user, 'certificates', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    import openpyxl
+    nominations = Nomination.objects.select_related('student', 'student_class__guardian')
+    class_id = request.GET.get('class_id', '')
+    if class_id:
+        nominations = nominations.filter(student_class_id=class_id)
+    info = SchoolInfo.objects.first()
+    principal = info.principal_name if info else ''
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'المتفوقون'
+    headers = ['اسم الطالب', 'الصف', 'اسم مدير المدرسة', 'اسم مربي الصف']
+    ws.append(headers)
+    for col in range(1, len(headers) + 1):
+        ws.cell(row=1, column=col).font = openpyxl.styles.Font(bold=True)
+    for n in nominations:
+        ws.append([
+            n.student.full_name,
+            n.student_class.name,
+            principal,
+            n.student_class.guardian.full_name if n.student_class.guardian else '',
+        ])
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=المتفوقون.xlsx'
+    wb.save(response)
+    return response
 
 
 # ─── Notifications ─────────────────────────────────────────────────────────────

@@ -1,0 +1,150 @@
+{% extends 'school/base.html' %}
+{% block title %}شهادات التقدير{% endblock %}
+{% block page_heading %}إدارة شهادات التقدير للمتفوقين{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">صفوف لديها ترشيحات</label>
+                <select name="class_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- جميع الصفوف المرشحة --</option>
+                    {% for c in nominated_classes %}
+                    <option value="{{ c.id }}" {% if selected_class_id == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">صفوف بدون ترشيحات (للمتابعة)</label>
+                <select class="form-select">
+                    <option value="">-- {{ classes_without|length }} صف لم يرشح طلابه --</option>
+                    {% for c in classes_without %}
+                    <option value="{{ c.id }}">{{ c.name }} — المربي: {{ c.guardian.full_name|default:'غير معين' }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">خلفية الشهادة</label>
+                <select id="bg" class="form-select">
+                    <option value="1">التصميم 1</option>
+                    <option value="2">التصميم 2</option>
+                    <option value="3">التصميم 3</option>
+                    <option value="4">التصميم 4</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <a id="printAll" href="{% url 'certificates_print_all' %}?bg=1" class="btn btn-success"><i class="bi bi-printer"></i> طباعة الكل</a>
+                <a id="exportLink" href="{% url 'certificates_export' %}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
+                <button type="submit" class="btn btn-outline-secondary">عرض</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">الطلاب المرشحون ({{ nominations|length }})</h5>
+        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#addStudentModal"><i class="bi bi-person-plus"></i> إضافة طالب ناقص</button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الطالب</th>
+                        <th>الصف</th>
+                        <th>مربي الصف</th>
+                        <th>المُرشح بواسطة</th>
+                        <th>تاريخ الترشيح</th>
+                        <th>الشهادة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in nominations %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ n.student.full_name }}</strong></td>
+                        <td>{{ n.student_class.name }}</td>
+                        <td>{{ n.student_class.guardian.full_name|default:'---' }}</td>
+                        <td>{{ n.nominated_by.get_full_name|default:n.nominated_by.username }}</td>
+                        <td>{{ n.created_at|date:'Y-m-d' }}</td>
+                        <td>
+                            {% if n.certificate %}
+                            <span class="badge bg-success">صدرت</span>
+                            {% else %}
+                            <span class="badge bg-secondary">لم تصدر</span>
+                            {% endif %}
+                        </td>
+                        <td class="d-flex gap-2">
+                            <a href="{% url 'certificate_print' n.id %}?bg=1" class="btn btn-sm btn-outline-success"><i class="bi bi-printer"></i> طباعة</a>
+                            {% if perms.certificates_delete %}
+                            <form method="post" onsubmit="return confirm('حذف هذا الترشيح؟')">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="nomination_id" value="{{ n.id }}">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">لا توجد ترشيحات بعد</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if nominations and perms.certificates_add %}
+        <form method="post" onsubmit="return confirm('إصدار شهادات لجميع {{ nominations|length }} مرشحاً؟')">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="issue">
+            <input type="hidden" name="class_id" value="{{ selected_class_id }}">
+            <button class="btn btn-primary"><i class="bi bi-award"></i> إصدار شهادات لجميع المعروضين</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة طالب ناقص</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <select name="student_id" class="form-select" required>
+                        <option value="">-- اختر طالباً --</option>
+                        {% for s in students %}
+                        <option value="{{ s.id }}">{{ s.student_class.name }} — {{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button class="btn btn-primary">إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const bg = document.getElementById('bg');
+    const qs = new URLSearchParams(location.search);
+    bg.value = qs.get('bg') || '1';
+    bg.addEventListener('change', function () {
+        const cid = qs.get('class_id') || '';
+        const base = cid ? '?class_id=' + cid + '&bg=' + bg.value : '?bg=' + bg.value;
+        document.getElementById('printAll').href = '{% url 'certificates_print_all' %}' + base;
+        document.getElementById('exportLink').href = '{% url 'certificates_export' %}' + (cid ? '?class_id=' + cid : '');
+    });
+});
+</script>
+{% endblock %}
