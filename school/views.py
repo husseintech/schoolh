@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Certificate
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1448,7 +1448,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1469,6 +1469,7 @@ def add_account(request):
         'supervisor_visits': 'زيارات المشرفين',
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
+        'certificates': 'شهادات التقدير',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1527,7 +1528,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1548,6 +1549,7 @@ def edit_account(request, user_id):
         'supervisor_visits': 'زيارات المشرفين',
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
+        'certificates': 'شهادات التقدير',
     }
     ACTION_LABELS = {
         'view': 'عرض',
@@ -1947,6 +1949,61 @@ def visit_program_missing_notes_report(request):
         'info': info,
         'missing_only': True,
     })
+
+
+# ─── Certificates ──────────────────────────────────────────────────────────────
+
+@login_required
+def certificate_list(request):
+    if not has_perm(request.user, 'certificates', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+    certificates = Certificate.objects.select_related('student', 'created_by')
+    if request.method == 'POST' and has_perm(request.user, 'certificates', 'add'):
+        student_id = request.POST.get('student_id')
+        student = get_object_or_404(Student, id=student_id) if student_id else None
+        if student:
+            Certificate.objects.create(
+                student=student,
+                cert_type=request.POST.get('cert_type', 'تفوق دراسي'),
+                custom_text=request.POST.get('custom_text', ''),
+                cert_date=request.POST.get('cert_date') or date.today(),
+                created_by=request.user,
+            )
+            messages.success(request, 'تم إصدار الشهادة بنجاح')
+            return redirect('certificate_list')
+        messages.error(request, 'الرجاء اختيار طالب')
+    return render(request, 'school/certificate_list.html', {
+        'students': students,
+        'certificates': certificates,
+        'today': date.today(),
+        'cert_types': Certificate.CERTIFICATE_TYPES,
+    })
+
+
+@login_required
+def certificate_print(request, cert_id):
+    if not has_perm(request.user, 'certificates', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    cert = get_object_or_404(Certificate, id=cert_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/certificate_print.html', {
+        'cert': cert,
+        'info': info,
+    })
+
+
+@login_required
+def certificate_delete(request, cert_id):
+    if not has_perm(request.user, 'certificates', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    cert = get_object_or_404(Certificate, id=cert_id)
+    cert.delete()
+    messages.success(request, 'تم حذف الشهادة بنجاح')
+    return redirect('certificate_list')
 
 
 # ─── Notifications ─────────────────────────────────────────────────────────────

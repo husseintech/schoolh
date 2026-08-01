@@ -1,0 +1,256 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}شهادة تقدير - {{ cert.student.full_name }}{% endblock %}
+{% block page_heading %}شهادة تقدير{% endblock %}
+{% block content %}
+
+<div class="certificate-wrap no-print text-center mb-3">
+    <button onclick="window.print()" class="btn btn-success btn-lg"><i class="bi bi-printer"></i> طباعة الشهادة</button>
+    <a href="{% url 'certificate_list' %}" class="btn btn-outline-secondary btn-lg">العودة للشهادات</a>
+</div>
+
+<div class="certificate" id="certificate">
+    <div class="cert-border">
+        <span class="corner corner-tl">✦</span>
+        <span class="corner corner-tr">✦</span>
+        <span class="corner corner-bl">✦</span>
+        <span class="corner corner-br">✦</span>
+        <div class="cert-inner">
+            <div class="cert-header">
+                <div class="cert-header-side">
+                    <p class="mb-1">دولة فلسطين</p>
+                    <p class="mb-1">وزارة التربية والتعليم العالي</p>
+                    <p class="mb-1">مديرية التربية والتعليم - يطا</p>
+                    {% if info %}<p class="mb-0 fw-bold">{{ info.name_ar }}</p>{% endif %}
+                </div>
+                <div class="cert-logo">
+                    {% if info and info.ministry_logo %}
+                    <img src="{{ info.ministry_logo }}" alt="شعار الوزارة">
+                    {% else %}
+                    <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين">
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="cert-title-wrap">
+                <div class="cert-line"></div>
+                <h1 class="cert-title">شهادة تقدير</h1>
+                <div class="cert-line"></div>
+            </div>
+
+            <div class="cert-serial">رقم الشهادة: ({{ cert.id }})</div>
+
+            <div class="cert-body">
+                <p class="cert-opening">تشهد إدارة المدرسة بأن الطالب/ة:</p>
+                <div class="cert-student-name">{{ cert.student.full_name }}</div>
+                {% if cert.student.student_class %}
+                <p class="cert-class">من الصف: {{ cert.student.student_class.name }}</p>
+                {% endif %}
+                <p class="cert-opening mt-3">قد حصل على شهادة تقدير عن:</p>
+                <div class="cert-reason">{{ cert.cert_type }}</div>
+                {% if cert.custom_text %}
+                <p class="cert-custom">{{ cert.custom_text }}</p>
+                {% endif %}
+            </div>
+
+            <div class="cert-date">بتاريخ: {{ cert.cert_date|date:'Y / m / d' }}</div>
+
+            <div class="cert-footer">
+                <div class="cert-sign">
+                    <p class="mb-0">توقيع مدير المدرسة</p>
+                    <div class="sign-space"></div>
+                    {% if info %}<p class="mb-0 fw-bold">{{ info.principal_name }}</p>{% endif %}
+                </div>
+                <div class="cert-seal">
+                    <div class="seal-circle">
+                        <p class="seal-text">ختم المدرسة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+    .certificate {
+        width: 794px;
+        max-width: 100%;
+        margin: 0 auto;
+        background: #fffdf6;
+        padding: 26px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        font-family: 'Amiri', 'Segoe UI', serif;
+        color: #3a2f1c;
+    }
+    .cert-border {
+        position: relative;
+        border: 5px solid #c9a227;
+        padding: 12px;
+    }
+    .cert-border::after {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        border: 1.5px solid #c9a227;
+        pointer-events: none;
+    }
+    .cert-inner {
+        border: 1.5px solid #c9a227;
+        padding: 32px 38px;
+        min-height: 1040px;
+        display: flex;
+        flex-direction: column;
+    }
+    .corner {
+        position: absolute;
+        font-size: 26px;
+        color: #c9a227;
+        z-index: 2;
+        line-height: 1;
+    }
+    .corner-tl { top: 0; right: 8px; }
+    .corner-tr { top: 0; left: 8px; }
+    .corner-bl { bottom: 0; right: 8px; }
+    .corner-br { bottom: 0; left: 8px; }
+    .cert-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #c9a227;
+        padding-bottom: 14px;
+    }
+    .cert-header-side {
+        font-size: 17px;
+        line-height: 1.7;
+        color: #4a3d22;
+    }
+    .cert-logo img {
+        height: 95px;
+        width: auto;
+    }
+    .cert-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 34px;
+    }
+    .cert-line {
+        flex: 1;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #c9a227, transparent);
+    }
+    .cert-title {
+        font-size: 52px;
+        font-weight: 700;
+        color: #b8860b;
+        margin: 0;
+        letter-spacing: 3px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.08);
+    }
+    .cert-serial {
+        text-align: center;
+        font-size: 15px;
+        color: #8a7130;
+        margin-top: 10px;
+    }
+    .cert-body {
+        flex: 1;
+        text-align: center;
+        margin-top: 26px;
+    }
+    .cert-opening {
+        font-size: 23px;
+        margin-bottom: 8px;
+        color: #3a2f1c;
+    }
+    .cert-student-name {
+        font-size: 38px;
+        font-weight: 700;
+        color: #1f3a5f;
+        border-bottom: 2px solid #c9a227;
+        display: inline-block;
+        padding: 4px 40px;
+        margin: 14px 0 10px;
+    }
+    .cert-class {
+        font-size: 20px;
+        color: #3a2f1c;
+        margin: 4px 0 0;
+    }
+    .cert-reason {
+        display: inline-block;
+        font-size: 30px;
+        font-weight: 700;
+        color: #b8860b;
+        background: #faf3d9;
+        border: 2px solid #c9a227;
+        border-radius: 50px;
+        padding: 6px 46px;
+        margin: 16px 0 8px;
+    }
+    .cert-custom {
+        font-size: 21px;
+        color: #4a3d22;
+        margin-top: 18px;
+        font-style: italic;
+    }
+    .cert-date {
+        text-align: center;
+        font-size: 20px;
+        color: #3a2f1c;
+        margin-top: 30px;
+    }
+    .cert-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 46px;
+        padding-top: 18px;
+        border-top: 2px solid #c9a227;
+    }
+    .cert-sign {
+        text-align: center;
+        font-size: 18px;
+        color: #3a2f1c;
+    }
+    .sign-space {
+        height: 62px;
+    }
+    .cert-seal {
+        text-align: center;
+    }
+    .seal-circle {
+        width: 108px;
+        height: 108px;
+        border: 3px dashed #b8860b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #b8860b;
+        font-size: 15px;
+        background: rgba(201,162,39,0.08);
+    }
+    .seal-text {
+        margin: 0;
+        line-height: 1.5;
+        text-align: center;
+    }
+    @media print {
+        .certificate {
+            width: 210mm;
+            max-width: none;
+            box-shadow: none;
+            padding: 8mm;
+            margin: 0;
+            background: #fff;
+        }
+        .cert-inner { min-height: 0; height: 281mm; }
+        @page { size: A4 portrait; margin: 0; }
+    }
+</style>
+{% endblock %}

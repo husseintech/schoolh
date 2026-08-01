@@ -550,3 +550,29 @@ class InspectionVisit(models.Model):
 
     def __str__(self):
         return f'زيارة إشرافية - {self.teacher.full_name} - {self.visit_date}'
+
+
+class Certificate(models.Model):
+    CERTIFICATE_TYPES = [
+        ('تفوق دراسي', 'تفوق دراسي'),
+        ('اجتهاد ومثابرة', 'اجتهاد ومثابرة'),
+        ('سلوك ممتاز', 'سلوك ممتاز'),
+        ('حضور مميز', 'حضور مميز'),
+        ('مشاركة فعالة', 'مشاركة فعالة'),
+        ('موهبة وإبداع', 'موهبة وإبداع'),
+        ('أخرى', 'أخرى'),
+    ]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='الطالب', related_name='certificates')
+    cert_type = models.CharField('نوع الشهادة', max_length=50, choices=CERTIFICATE_TYPES, default='تفوق دراسي')
+    custom_text = models.CharField('نص إضافي', max_length=300, blank=True, help_text='سطر يظهر في الشهادة تحت سبب التقدير')
+    cert_date = models.DateField('تاريخ الإصدار', default=date.today)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أصدرها')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'شهادة تقدير'
+        verbose_name_plural = 'شهادات التقدير'
+        ordering = ['-cert_date', '-created_at']
+
+    def __str__(self):
+        return f'شهادة {self.cert_type} - {self.student.full_name}'

@@ -33,6 +33,7 @@ def user_permissions(request):
             ('supervisor_visits', 'view'), ('supervisor_visits', 'add'),
             ('inspection_visits', 'view'), ('inspection_visits', 'add'),
             ('visit_program', 'view'), ('visit_program', 'add'), ('visit_program', 'delete'),
+            ('certificates', 'view'), ('certificates', 'add'), ('certificates', 'delete'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
