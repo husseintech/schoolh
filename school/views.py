@@ -553,9 +553,21 @@ def teacher_cards_report(request):
     if not has_perm(request.user, 'teachers', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    teachers = Teacher.objects.all().prefetch_related('classes', 'subjects', 'inspection_visits', 'supervisor_visits').order_by('full_name')
+    all_teachers = Teacher.objects.all().order_by('full_name')
+    teacher_id = request.GET.get('teacher_id', '')
+    selected_teacher = None
+    if teacher_id:
+        selected_teacher = get_object_or_404(Teacher, id=teacher_id)
+        teachers = Teacher.objects.filter(id=selected_teacher.id).prefetch_related('classes', 'subjects', 'inspection_visits', 'supervisor_visits')
+    else:
+        teachers = all_teachers.prefetch_related('classes', 'subjects', 'inspection_visits', 'supervisor_visits')
     info = SchoolInfo.objects.first()
-    return render(request, 'school/teacher_cards_report.html', {'teachers': teachers, 'info': info})
+    return render(request, 'school/teacher_cards_report.html', {
+        'teachers': teachers,
+        'all_teachers': all_teachers,
+        'selected_teacher': selected_teacher,
+        'info': info,
+    })
 
 
 @login_required

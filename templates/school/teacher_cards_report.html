@@ -4,18 +4,39 @@
 {% block page_heading %}بطاقات المعلمين{% endblock %}
 {% block content %}
 
+<div class="card mb-3 no-print">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">اختيار معلم لعرض بطاقته</label>
+                <select name="teacher_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- جميع المعلمين --</option>
+                    {% for t in all_teachers %}
+                    <option value="{{ t.id }}" {% if selected_teacher and selected_teacher.id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if selected_teacher %}
+            <div class="col-md-3">
+                <a href="{% url 'teacher_cards_report' %}" class="btn btn-outline-secondary w-100">إلغاء التحديد (عرض الكل)</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
 <div class="mb-3 no-print">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة جميع البطاقات</button>
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> {% if selected_teacher %}طباعة البطاقة{% else %}طباعة جميع البطاقات{% endif %}</button>
     <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">العودة للمعلمين</a>
 </div>
 
 <div class="d-none d-print-block text-center mb-3">
     {% if info %}
     <h4>{{ info.name_ar|default:'المدرسة' }}</h4>
-    <p>بطاقات المعلمين — تاريخ الطباعة: {% now 'Y-m-d' %}</p>
     {% else %}
-    <h4>بطاقات المعلمين</h4>
+    <h4>بطاقة معلم</h4>
     {% endif %}
+    <p>{% if selected_teacher %}بطاقة المعلم: {{ selected_teacher.full_name }}{% else %}بطاقات المعلمين{% endif %} — تاريخ الطباعة: {% now 'Y-m-d' %}</p>
     <hr>
 </div>
 
