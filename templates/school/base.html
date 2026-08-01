@@ -627,7 +627,7 @@
             {% if messages %}
             <div class="toast-container">
                 {% for message in messages %}
-                <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert">
+                <div class="toast align-items-center text-white bg-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} border-0 show" role="alert">
                     <div class="d-flex">
                         <div class="toast-body">
                             {{ message }}
@@ -652,7 +652,7 @@
     <div class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mt-3" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
