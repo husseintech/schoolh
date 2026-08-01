@@ -2024,16 +2024,18 @@ def absence_report(request):
     classes = Class.objects.all().order_by('name')
     rows = []
     for i, cls in enumerate(classes, start=1):
-        absent = StudentAbsence.objects.filter(
+        absent = list(StudentAbsence.objects.filter(
             absence_date=absence_date, student__student_class=cls,
-        ).select_related('student').order_by('student__full_name')
-        if absent.exists():
-            rows.append({
-                'num': i,
-                'class_name': cls.name,
-                'count': absent.count(),
-                'names': ', '.join(a.student.full_name for a in absent),
-            })
+        ).select_related('student').order_by('student__full_name'))
+        class_students = Student.objects.filter(student_class=cls).count()
+        rows.append({
+            'num': i,
+            'class_name': cls.name,
+            'students_count': class_students,
+            'present': class_students - len(absent),
+            'count': len(absent),
+            'names': ', '.join(a.student.full_name for a in absent) if absent else 'لا يوجد غياب',
+        })
     total_students = Student.objects.count()
     total_absent = sum(r['count'] for r in rows)
     total_present = total_students - total_absent
