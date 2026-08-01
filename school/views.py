@@ -2015,33 +2015,51 @@ def guardian_assign(request):
 
 @login_required
 def guardian_students(request):
-    if request.user.profile.role not in ('admin', 'teacher', 'vice_principal', 'secretary'):
+    is_admin = request.user.profile.role == 'admin'
+    if not is_admin and request.user.profile.role not in ('teacher', 'vice_principal', 'secretary'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     teacher = getattr(request.user, 'teacher_profile', None)
-    guardian_class = teacher.guardian_class if teacher else None
-    if not guardian_class:
-        messages.error(request, 'لم يتم تخصيص صف لك كمربي صف بعد')
-        return redirect('dashboard')
+    if is_admin:
+        classes = Class.objects.all().order_by('name')
+        class_id = request.POST.get('class_id') or request.GET.get('class_id', '')
+        guardian_class = Class.objects.filter(id=class_id).first() if class_id else classes.first()
+        if not guardian_class:
+            messages.error(request, 'لا توجد صفوف دراسية بعد')
+            return redirect('dashboard')
+    else:
+        classes = []
+        guardian_class = teacher.guardian_class if teacher else None
+        if not guardian_class:
+            messages.error(request, 'لم يتم تخصيص صف لك كمربي صف بعد')
+            return redirect('dashboard')
     students = Student.objects.filter(student_class=guardian_class).order_by('full_name')
     nominated_ids = set(Nomination.objects.filter(student_class=guardian_class).values_list('student_id', flat=True))
-    if request.method == 'POST' and has_perm(request.user, 'nominations', 'add'):
-        selected = set()
-        for sid in request.POST.getlist('student_id'):
-            try:
-                selected.add(int(sid))
-            except ValueError:
-                continue
-        Nomination.objects.filter(student_class=guardian_class).delete()
-        for sid in selected:
-            st = Student.objects.filter(id=sid, student_class=guardian_class).first()
-            if st:
-                Nomination.objects.create(student=st, student_class=guardian_class, nominated_by=request.user)
-        messages.success(request, f'تم حفظ ترشيحات {len(selected)} طالب كمتفوقين')
+    can_nominate = has_perm(request.user, 'nominations', 'add') or is_admin
+    if request.method == 'POST':
+        if not can_nominate:
+            messages.error(request, 'ليس لديك صلاحية الترشيح')
+        else:
+            selected = set()
+            for sid in request.POST.getlist('student_id'):
+                try:
+                    selected.add(int(sid))
+                except ValueError:
+                    continue
+            Nomination.objects.filter(student_class=guardian_class).delete()
+            for sid in selected:
+                st = Student.objects.filter(id=sid, student_class=guardian_class).first()
+                if st:
+                    Nomination.objects.create(student=st, student_class=guardian_class, nominated_by=request.user)
+            messages.success(request, f'تم حفظ ترشيحات {len(selected)} طالب كمتفوقين')
+        if is_admin:
+            return redirect(f'/guardians/students/?class_id={guardian_class.id}')
         return redirect('guardian_students')
     return render(request, 'school/guardian_students.html', {
         'students': students,
         'guardian_class': guardian_class,
+        'classes': classes,
+        'is_admin': is_admin,
         'nominated_ids': nominated_ids,
         'today': date.today(),
     })

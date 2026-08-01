@@ -15,8 +15,8 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">صفوف بدون ترشيحات (للمتابعة)</label>
-                <select class="form-select">
+                <label class="form-label">صفوف بدون ترشيحات (متابعة المربي)</label>
+                <select class="form-select" onchange="if(this.value) location='/guardians/students/?class_id=' + this.value;">
                     <option value="">-- {{ classes_without|length }} صف لم يرشح طلابه --</option>
                     {% for c in classes_without %}
                     <option value="{{ c.id }}">{{ c.name }} — المربي: {{ c.guardian.full_name|default:'غير معين' }}</option>

@@ -1,17 +1,38 @@
 {% extends 'school/base.html' %}
 {% block title %}ترشيح المتفوقين{% endblock %}
-{% block page_heading %}ترشيح طلاب الصف المتفوقين — {{ guardian_class.name }}{% endblock %}
+{% block page_heading %}ترشيح طلاب الصف المتفوقين{% endblock %}
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">مربي الصف: <span class="text-primary">{{ request.user.teacher_profile.full_name }}</span>
+        <h5 class="mb-0">
+            {% if is_admin %}
+            <span class="badge bg-danger">مدير المدرسة</span>
+            {% else %}
+            مربي الصف: <span class="text-primary">{{ request.user.teacher_profile.full_name }}</span>
+            {% endif %}
             <span class="badge bg-info ms-2">الصف: {{ guardian_class.name }}</span>
         </h5>
     </div>
     <div class="card-body">
-        <p class="text-muted">اختر الطلاب المتفوقين من صفك ليتم ترشيحهم لنيل شهادة شكر وتقدير، ثم اضغط حفظ.</p>
+        {% if is_admin %}
+        <form method="get" class="row g-2 align-items-center mb-3">
+            <div class="col-md-4">
+                <select name="class_id" class="form-select" onchange="this.form.submit()">
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if c.id == guardian_class.id %}selected{% endif %}>
+                        {{ c.name }}{% if c.guardian %} — المربي: {{ c.guardian.full_name }}{% else %} — بدون مربي{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+        {% endif %}
+        <p class="text-muted">اختر الطلاب المتفوقين من الصف ليتم ترشيحهم لنيل شهادة شكر وتقدير، ثم اضغط حفظ.</p>
         <form method="post" id="nominateForm">
             {% csrf_token %}
+            {% if is_admin %}
+            <input type="hidden" name="class_id" value="{{ guardian_class.id }}">
+            {% endif %}
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
@@ -32,7 +53,7 @@
                             </td>
                             <td>{{ forloop.counter }}</td>
                             <td><strong>{{ s.full_name }}</strong></td>
-                            <td>{{ s.student_number }}</td>
+                            <td>{{ s.student_id }}</td>
                         </tr>
                         {% empty %}
                         <tr>
