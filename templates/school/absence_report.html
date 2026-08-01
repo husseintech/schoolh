@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير غياب الطلاب</title>
+<style>
+@page { size: A4 portrait; margin: 8mm 10mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Amiri', 'Traditional Arabic', serif; font-size: 11pt; color: #000; }
+.center { text-align: center; }
+.bismillah { font-size: 18pt; font-weight: bold; text-align: center; margin-bottom: 5mm; }
+.title-frame {
+    border: 2.5px solid #000;
+    border-radius: 8px;
+    padding: 3mm 10mm;
+    display: inline-block;
+    margin: 0 auto 5mm auto;
+}
+.title-frame h1 { font-size: 16pt; font-weight: bold; }
+table { width: 100%; border-collapse: collapse; }
+table th, table td { border: 1px solid #000; padding: 1.6mm 2mm; font-size: 10.5pt; }
+table th { background: #eee; }
+td.num { width: 12mm; text-align: center; }
+td.cls { width: 35mm; text-align: center; font-weight: bold; }
+td.cnt { width: 20mm; text-align: center; }
+.footer {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-top: 8mm;
+}
+.stats { display: flex; gap: 5mm; }
+.stat { border: 1.5px solid #000; border-radius: 6px; padding: 2.5mm 5mm; text-align: center; min-width: 45mm; }
+.stat .label { font-size: 10pt; }
+.stat .value { font-size: 14pt; font-weight: bold; }
+.sign { text-align: center; font-size: 12pt; }
+.sign .name { margin-top: 12mm; }
+.toolbar { position: fixed; top: 10px; left: 10px; z-index: 10; }
+.toolbar a {
+    display: inline-block; background: #2563eb; color: #fff;
+    padding: 8px 18px; border-radius: 8px; text-decoration: none;
+    font-family: Arial, sans-serif; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+@media print { .toolbar { display: none; } }
+</style>
+</head>
+<body>
+<div class="bismillah">بسم الله الرحمن الرحيم</div>
+<div class="center">
+    <div class="title-frame">
+        <h1>غياب الطلاب بتاريخ {{ absence_date }}</h1>
+    </div>
+</div>
+<table>
+    <thead>
+        <tr>
+            <th class="num">الرقم</th>
+            <th class="cls">الصف</th>
+            <th class="cnt">عدد الغائبين</th>
+            <th>أسماء الطلبة الغائبين</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td class="num">{{ r.num }}</td>
+            <td class="cls">{{ r.class_name }}</td>
+            <td class="cnt">{{ r.count }}</td>
+            <td>{{ r.names }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="center" style="padding: 8mm;">لا يوجد غياب مسجل في هذا التاريخ</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="footer">
+    <div class="stats">
+        <div class="stat">
+            <div class="label">عدد طلاب المدرسة</div>
+            <div class="value">{{ total_students }}</div>
+        </div>
+        <div class="stat">
+            <div class="label">عدد الغائبين اليوم</div>
+            <div class="value">{{ total_absent }}</div>
+        </div>
+        <div class="stat">
+            <div class="label">عدد الحضور اليوم</div>
+            <div class="value">{{ total_present }}</div>
+        </div>
+    </div>
+    <div class="sign">
+        <div>مدير المدرسة</div>
+        <div class="name">{% if info %}{{ info.principal_name }}{% endif %}</div>
+    </div>
+</div>
+<div class="toolbar"><a href="javascript:window.print()">طباعة التقرير</a></div>
+</body>
+</html>

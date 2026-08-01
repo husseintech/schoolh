@@ -51,6 +51,7 @@ DEFAULT_PERMISSIONS = {
         'notes': ['view', 'add'],
         'lateness': ['view', 'add'],
         'meetings': ['view', 'add'],
+        'absence': ['view', 'add'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -297,6 +298,24 @@ class StudentLeave(models.Model):
 
     def __str__(self):
         return f'{self.student.full_name} - {self.leave_time}'
+
+
+class StudentAbsence(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='absences', verbose_name='الطالب')
+    absence_date = models.DateField('تاريخ الغياب')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='سجل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'غياب طالب'
+        verbose_name_plural = 'غياب الطلاب'
+        ordering = ['-absence_date', 'student__full_name']
+        constraints = [
+            models.UniqueConstraint(fields=['student', 'absence_date'], name='unique_student_absence_day'),
+        ]
+
+    def __str__(self):
+        return f'{self.student.full_name} - {self.absence_date}'
 
 
 class StudentLevel(models.Model):

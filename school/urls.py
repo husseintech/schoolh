@@ -146,6 +146,10 @@ urlpatterns = [
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:notification_id>/read/', views.notification_read, name='notification_read'),
 
+    # Absence
+    path('absence/', views.absence_list, name='absence_list'),
+    path('absence/report/', views.absence_report, name='absence_report'),
+
     # PWA
     path('sw.js', views.service_worker, name='service_worker'),
     path('manifest.json', views.manifest_view, name='manifest'),

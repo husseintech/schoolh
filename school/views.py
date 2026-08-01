@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1456,7 +1456,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1477,6 +1477,7 @@ def add_account(request):
         'supervisor_visits': 'زيارات المشرفين',
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
+        'absence': 'غياب الطلاب',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -1538,7 +1539,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1559,6 +1560,7 @@ def edit_account(request, user_id):
         'supervisor_visits': 'زيارات المشرفين',
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
+        'absence': 'غياب الطلاب',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -1961,6 +1963,89 @@ def visit_program_missing_notes_report(request):
         'entries': entries,
         'info': info,
         'missing_only': True,
+    })
+
+
+# ─── Absence (غياب الطلاب) ─────────────────────────────────────────────────────
+
+@login_required
+def absence_list(request):
+    if not has_perm(request.user, 'absence', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    classes = Class.objects.all().order_by('name')
+    absence_date = request.GET.get('date') or date.today().isoformat()
+    class_id = request.GET.get('class_id', '')
+    selected_class = Class.objects.filter(id=class_id).first() if class_id else None
+    if request.method == 'POST' and has_perm(request.user, 'absence', 'add'):
+        absence_date = request.POST.get('absence_date') or date.today().isoformat()
+        selected_class = Class.objects.filter(id=request.POST.get('class_id', '')).first()
+        if selected_class:
+            selected_ids = set()
+            for sid in request.POST.getlist('student_id'):
+                try:
+                    selected_ids.add(int(sid))
+                except ValueError:
+                    continue
+            StudentAbsence.objects.filter(
+                student__student_class=selected_class, absence_date=absence_date,
+            ).delete()
+            students = Student.objects.filter(student_class=selected_class)
+            to_create = [StudentAbsence(student=s, absence_date=absence_date, created_by=request.user)
+                         for s in students if s.id in selected_ids]
+            StudentAbsence.objects.bulk_create(to_create)
+            messages.success(request, f'تم حفظ غياب {len(to_create)} طالب بتاريخ {absence_date}')
+        else:
+            messages.error(request, 'الرجاء اختيار صف')
+        return redirect(f'{request.path}?class_id={selected_class.id if selected_class else ""}&date={absence_date}')
+    absent_ids = set()
+    if selected_class:
+        absent_ids = set(StudentAbsence.objects.filter(
+            absence_date=absence_date, student__student_class=selected_class,
+        ).values_list('student_id', flat=True))
+    students = Student.objects.filter(student_class=selected_class).order_by('full_name') if selected_class else Student.objects.none()
+    today = date.today()
+    return render(request, 'school/absence_list.html', {
+        'classes': classes,
+        'selected_class': selected_class,
+        'absence_date': absence_date,
+        'absent_ids': absent_ids,
+        'students': students,
+        'today': today,
+    })
+
+
+@login_required
+def absence_report(request):
+    if not has_perm(request.user, 'absence', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    absence_date = request.GET.get('date') or date.today().isoformat()
+    classes = Class.objects.all().order_by('name')
+    rows = []
+    for i, cls in enumerate(classes, start=1):
+        absent = StudentAbsence.objects.filter(
+            absence_date=absence_date, student__student_class=cls,
+        ).select_related('student').order_by('student__full_name')
+        if absent.exists():
+            rows.append({
+                'num': i,
+                'class_name': cls.name,
+                'count': absent.count(),
+                'names': ', '.join(a.student.full_name for a in absent),
+            })
+    total_students = Student.objects.count()
+    total_absent = sum(r['count'] for r in rows)
+    total_present = total_students - total_absent
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/absence_report.html', {
+        'rows': rows,
+        'total_students': total_students,
+        'total_absent': total_absent,
+        'total_present': total_present,
+        'absence_date': absence_date,
+        'info': info,
+        'today': date.today(),
     })
 
 

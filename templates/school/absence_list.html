@@ -1,0 +1,89 @@
+{% extends 'school/base.html' %}
+{% block title %}غياب الطلاب{% endblock %}
+{% block page_heading %}تسجيل غياب الطلاب{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">الصف</label>
+                <select name="class_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- اختر الصف --</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if selected_class and c.id == selected_class.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">التاريخ</label>
+                <input type="date" name="date" class="form-control" value="{{ absence_date }}" onchange="this.form.submit()">
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <a href="{% url 'absence_report' %}?date={{ absence_date }}" class="btn btn-success"><i class="bi bi-printer"></i> طباعة تقرير الغياب</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_class %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="mb-0">طلاب الصف: <span class="badge bg-primary">{{ selected_class.name }}</span>
+            <span class="badge bg-info">التاريخ: {{ absence_date }}</span></h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">علّم على الطلاب الغائبين ثم اضغط حفظ.</p>
+        <form method="post" id="absenceForm">
+            {% csrf_token %}
+            <input type="hidden" name="class_id" value="{{ selected_class.id }}">
+            <input type="hidden" name="absence_date" value="{{ absence_date }}">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60px;">غائب</th>
+                            <th>#</th>
+                            <th>اسم الطالب</th>
+                            <th>رقم الطالب</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" name="student_id" value="{{ s.id }}"
+                                       class="form-check-input absent-check"
+                                       {% if s.id in absent_ids %}checked{% endif %}>
+                            </td>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ s.full_name }}</strong></td>
+                            <td>{{ s.student_id }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">لا يوجد طلاب في هذا الصف</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex align-items-center gap-3 mt-3">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ الغياب</button>
+                <span class="text-muted">عدد الغائبين: <span id="count" class="fw-bold text-danger">0</span></span>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const checks = document.querySelectorAll('.absent-check');
+    const count = document.getElementById('count');
+    if (!count) return;
+    const update = () => count.textContent = document.querySelectorAll('.absent-check:checked').length;
+    checks.forEach(c => c.addEventListener('change', update));
+    update();
+});
+</script>
+{% endblock %}
