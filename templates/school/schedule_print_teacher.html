@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>برنامج المعلم</title>
+<style>
+@page { size: A4 portrait; margin: 8mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Amiri', 'Traditional Arabic', serif; font-size: 10pt; }
+.head { text-align: center; margin-bottom: 4mm; }
+.head .school { font-size: 14pt; font-weight: bold; }
+.head .title { font-size: 13pt; font-weight: bold; margin-top: 1mm; }
+table { width: 100%; border-collapse: collapse; }
+table th, table td { border: 1px solid #000; padding: 2mm; text-align: center; }
+table th { background: #eee; }
+td.day { font-weight: bold; width: 20mm; }
+.footer { margin-top: 6mm; display: flex; justify-content: space-between; }
+.toolbar { position: fixed; top: 10px; left: 10px; z-index: 10; }
+.toolbar a {
+    display: inline-block; background: #2563eb; color: #fff;
+    padding: 8px 18px; border-radius: 8px; text-decoration: none;
+    font-family: Arial, sans-serif; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+@media print { .toolbar { display: none; } }
+</style>
+</head>
+<body>
+<div class="head">
+    <div class="school">{% if info %}{{ info.name_ar }}{% endif %}</div>
+    <div class="title">البرنامج الأسبوعي للمعلم: {{ teacher.full_name }}</div>
+</div>
+<table>
+    <thead>
+        <tr>
+            <th class="day">اليوم</th>
+            {% for p in periods %}
+            <th>ح{{ p.num }}<br><small>{{ p.start }} - {{ p.end }}</small></th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for d, row in days_rows %}
+        <tr>
+            <td class="day">{{ d }}</td>
+            {% for entry in row %}
+            <td>
+                {% if entry %}
+                <strong>{{ entry.student_class.name }}</strong><br>
+                <small>{{ entry.subject.name|default:'' }}</small>
+                {% else %}
+                —
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="footer">
+    <span>مدير المدرسة: {% if info %}{{ info.principal_name }}{% endif %}</span>
+    <span>المعلم: {{ teacher.full_name }}</span>
+</div>
+<div class="toolbar"><a href="javascript:window.print()">طباعة</a></div>
+</body>
+</html>

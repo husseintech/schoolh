@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from datetime import date
+from datetime import date, time, datetime, timedelta
 
 
 def has_perm(user, module, action):
@@ -52,6 +52,7 @@ DEFAULT_PERMISSIONS = {
         'lateness': ['view', 'add'],
         'meetings': ['view', 'add'],
         'absence': ['view', 'add'],
+        'schedule': ['view', 'add'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -69,8 +70,7 @@ DEFAULT_PERMISSIONS = {
         'notes': ['view', 'add'],
         'absence': ['view', 'add'],
     },
-    'secretary': {
-        'students': ['view', 'add', 'edit', 'import', 'export'],
+    'secretary': {        'students': ['view', 'add', 'edit', 'import', 'export'],
         'teachers': ['view'],
         'classes': ['view'],
         'subjects': ['view'],
@@ -85,9 +85,9 @@ DEFAULT_PERMISSIONS = {
         'notes': ['view', 'add'],
         'lateness': ['view', 'add'],
         'absence': ['view', 'add'],
+        'schedule': ['view', 'add'],
     },
-    'teacher': {
-        'students': ['view'],
+    'teacher': {        'students': ['view'],
         'teachers': [],
         'classes': ['view'],
         'subjects': ['view'],
@@ -318,6 +318,52 @@ class StudentAbsence(models.Model):
 
     def __str__(self):
         return f'{self.student.full_name} - {self.absence_date}'
+
+
+class ScheduleSettings(models.Model):
+    periods_count = models.PositiveIntegerField('عدد الحصص', default=6)
+    start_time = models.TimeField('بداية الحصة الأولى', default=time(8, 0))
+    period_minutes = models.PositiveIntegerField('مدة الحصة (دقيقة)', default=45)
+    break_minutes = models.PositiveIntegerField('مدة الاستراحة (دقيقة)', default=10)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'إعدادات البرنامج'
+        verbose_name_plural = 'إعدادات البرنامج'
+
+    @staticmethod
+    def get():
+        return ScheduleSettings.objects.first() or ScheduleSettings.objects.create()
+
+    def period_times(self):
+        times = []
+        start = datetime.combine(date.today(), self.start_time)
+        for i in range(self.periods_count):
+            p_start = start + timedelta(minutes=i * (self.period_minutes + self.break_minutes))
+            p_end = p_start + timedelta(minutes=self.period_minutes)
+            times.append((p_start.strftime('%H:%M'), p_end.strftime('%H:%M')))
+        return times
+
+
+class ScheduleEntry(models.Model):
+    day = models.CharField('اليوم', max_length=20)
+    period = models.PositiveIntegerField('رقم الحصة')
+    student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='schedule_entries', verbose_name='الصف')
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name='schedule_entries', verbose_name='المعلم')
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='schedule_entries', verbose_name='المادة')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='عدل بواسطة')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'حصة في البرنامج'
+        verbose_name_plural = 'البرنامج اليومي'
+        ordering = ['day', 'period', 'student_class__name']
+        constraints = [
+            models.UniqueConstraint(fields=['day', 'period', 'student_class'], name='unique_schedule_cell'),
+        ]
+
+    def __str__(self):
+        return f'{self.day} ح{self.period} - {self.student_class.name}'
 
 
 class StudentLevel(models.Model):

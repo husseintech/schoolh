@@ -1,5 +1,5 @@
 import os, io, csv, re
-from datetime import date, datetime
+from datetime import date, datetime, time
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, ScheduleSettings, ScheduleEntry
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1456,7 +1456,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1478,6 +1478,7 @@ def add_account(request):
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
         'absence': 'غياب الطلاب',
+        'schedule': 'البرنامج اليومي',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -1539,7 +1540,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1561,6 +1562,7 @@ def edit_account(request, user_id):
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
         'absence': 'غياب الطلاب',
+        'schedule': 'البرنامج اليومي',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -2050,6 +2052,141 @@ def absence_report(request):
         'absence_date': absence_date,
         'info': info,
         'today': date.today(),
+    })
+
+
+# ─── Daily Schedule (البرنامج اليومي) ──────────────────────────────────────────
+
+DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
+
+
+def current_schedule_day():
+    idx = (date.today().weekday() + 1) % 7
+    return DAYS[idx] if idx < len(DAYS) else DAYS[0]
+
+
+@login_required
+def schedule_grid(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    settings_obj = ScheduleSettings.get()
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'settings' and has_perm(request.user, 'schedule', 'add'):
+            try:
+                settings_obj.periods_count = max(1, min(12, int(request.POST.get('periods_count', 6))))
+                settings_obj.period_minutes = max(10, min(120, int(request.POST.get('period_minutes', 45))))
+                settings_obj.break_minutes = max(0, min(60, int(request.POST.get('break_minutes', 10))))
+                h, m = map(int, request.POST.get('start_time', '08:00').split(':'))
+                settings_obj.start_time = time(h, m)
+                settings_obj.save()
+                messages.success(request, 'تم حفظ إعدادات البرنامج')
+            except ValueError:
+                messages.error(request, 'قيم غير صحيحة في الإعدادات')
+            return redirect('schedule_grid')
+        if action == 'cell' and has_perm(request.user, 'schedule', 'add'):
+            day = request.POST.get('day', '')
+            try:
+                period = int(request.POST.get('period', 0))
+                cls = Class.objects.filter(id=request.POST.get('class_id', '')).first()
+            except ValueError:
+                cls = None
+            if day in DAYS and period >= 1 and cls:
+                teacher_id = request.POST.get('teacher_id', '')
+                subject_id = request.POST.get('subject_id', '')
+                if teacher_id:
+                    ScheduleEntry.objects.update_or_create(
+                        day=day, period=period, student_class=cls,
+                        defaults={
+                            'teacher_id': teacher_id,
+                            'subject_id': subject_id or None,
+                            'updated_by': request.user,
+                        },
+                    )
+                else:
+                    ScheduleEntry.objects.filter(day=day, period=period, student_class=cls).delete()
+            return redirect(f'{request.path}?day={request.POST.get("day", "")}')
+    day = request.GET.get('day') or current_schedule_day()
+    if day not in DAYS:
+        day = DAYS[0]
+    classes = list(Class.objects.all().order_by('name'))
+    entries = ScheduleEntry.objects.filter(day=day).select_related('teacher', 'subject', 'student_class')
+    cell_map = {(e.student_class_id, e.period): e for e in entries}
+    times = settings_obj.period_times()
+    periods = [{'num': i, 'start': times[i - 1][0], 'end': times[i - 1][1]} for i in range(1, settings_obj.periods_count + 1)]
+    grid = []
+    for p in periods:
+        row = [{'cls': c, 'entry': cell_map.get((c.id, p['num']))} for c in classes]
+        grid.append(row)
+    teachers = Teacher.objects.all().order_by('full_name')
+    subjects = Subject.objects.all().order_by('name')
+    return render(request, 'school/schedule_grid.html', {
+        'days': DAYS,
+        'day': day,
+        'classes': classes,
+        'periods': periods,
+        'grid': grid,
+        'teachers': teachers,
+        'subjects': subjects,
+        'settings_obj': settings_obj,
+    })
+
+
+@login_required
+def schedule_print_day(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    day = request.GET.get('day') or current_schedule_day()
+    if day not in DAYS:
+        day = DAYS[0]
+    settings_obj = ScheduleSettings.get()
+    classes = list(Class.objects.all().order_by('name'))
+    entries = ScheduleEntry.objects.filter(day=day).select_related('teacher', 'subject', 'student_class')
+    cell_map = {(e.student_class_id, e.period): e for e in entries}
+    times = settings_obj.period_times()
+    periods = [{'num': i, 'start': times[i - 1][0], 'end': times[i - 1][1]} for i in range(1, settings_obj.periods_count + 1)]
+    grid = []
+    for p in periods:
+        row = [cell_map.get((c.id, p['num'])) for c in classes]
+        grid.append(row)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/schedule_print_day.html', {
+        'day': day,
+        'classes': classes,
+        'periods': periods,
+        'grid': grid,
+        'info': info,
+        'today': date.today(),
+    })
+
+
+@login_required
+def schedule_print_teacher(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teacher = Teacher.objects.filter(id=request.GET.get('teacher_id', '')).first()
+    if not teacher:
+        messages.error(request, 'الرجاء اختيار معلم')
+        return redirect('schedule_grid')
+    settings_obj = ScheduleSettings.get()
+    entries = ScheduleEntry.objects.filter(teacher=teacher).select_related('student_class', 'subject')
+    cell_map = {(e.day, e.period): e for e in entries}
+    times = settings_obj.period_times()
+    periods = [{'num': i, 'start': times[i - 1][0], 'end': times[i - 1][1]} for i in range(1, settings_obj.periods_count + 1)]
+    grid = []
+    for d in DAYS:
+        row = [cell_map.get((d, p['num'])) for p in periods]
+        grid.append(row)
+    days_rows = list(zip(DAYS, grid))
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/schedule_print_teacher.html', {
+        'days_rows': days_rows,
+        'teacher': teacher,
+        'periods': periods,
+        'info': info,
     })
 
 
