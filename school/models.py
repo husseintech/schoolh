@@ -67,6 +67,7 @@ DEFAULT_PERMISSIONS = {
         'reports': ['view'],
         'settings': [],
         'notes': ['view', 'add'],
+        'absence': ['view', 'add'],
     },
     'secretary': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -83,6 +84,7 @@ DEFAULT_PERMISSIONS = {
         'settings': [],
         'notes': ['view', 'add'],
         'lateness': ['view', 'add'],
+        'absence': ['view', 'add'],
     },
     'teacher': {
         'students': ['view'],
