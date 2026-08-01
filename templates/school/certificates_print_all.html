@@ -43,12 +43,12 @@ header { display: flex; justify-content: space-between; align-items: center; }
     display: flex; align-items: center; justify-content: center;
     color: #999; font-size: 9pt; background: rgba(255,255,255,.5); border-radius: 4mm;
 }
-.school-name { text-align: center; font-size: 16pt; font-weight: bold; flex: 1; }
+.school-name { text-align: center; font-size: 24pt; font-weight: bold; flex: 1; }
 .mid { text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6mm; }
-.title { font-size: 40pt; font-weight: bold; letter-spacing: 1px; }
+.title { font-size: 38pt; font-weight: bold; letter-spacing: 1px; }
 .deco { font-size: 18pt; }
-.student-name { font-size: 28pt; font-weight: bold; }
-.phrase { font-size: 15pt; line-height: 2; }
+.student-name { font-size: 32pt; font-weight: bold; }
+.phrase { font-size: 16pt; line-height: 2; }
 .phrase strong { font-size: 20pt; }
 footer { display: flex; justify-content: space-between; align-items: flex-end; }
 .footer-item { text-align: center; font-size: 15pt; }
@@ -77,19 +77,19 @@ footer { display: flex; justify-content: space-between; align-items: flex-end; }
                 <div class="logo-placeholder">الشعار</div>
                 {% endif %}
             </div>
-            <div class="school-name">
-                {% if info %}{{ info.name_ar }}{% endif %}
-                <div style="font-size: 11pt; font-weight: normal; margin-top: 2mm;">وزارة التربية والتعليم</div>
-            </div>
+            <div class="school-name">بسم الله الرحمن الرحيم</div>
             <div class="logo" style="width: 30mm;"></div>
         </header>
         <div class="mid">
-            <div class="deco">✦ ✦ ✦</div>
             <div class="title">شهادة شكر وتقدير</div>
             <div class="deco">✦ ✦ ✦</div>
-            <div class="phrase">يسرّ إدارة مدرسة <strong>{{ cert.class_name }}</strong> أن تمنح الطالب</div>
+            <div class="phrase">
+                يسرّ إدارة مدرسة <strong>{% if info %}{{ info.name_ar }}{% endif %}</strong> أن تمنح هذه الشهادة إلى الطالب
+            </div>
             <div class="student-name">{{ cert.student_name }}</div>
-            <div class="phrase">هذه الشهادة تقديراً لتفوقه الدراسي وتميزه خلال العام الدراسي <strong>{{ cert.cert_year }}</strong>، متمنين له دوام النجاح والتوفيق.</div>
+            <div class="phrase">
+                من الصف <strong>{{ cert.class_name }}</strong> وذلك تقديراً على جهوده وتفوقه
+            </div>
         </div>
         <footer>
             <div class="footer-item">
