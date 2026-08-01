@@ -1,0 +1,74 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}برامج الصفوف{% endblock %}
+{% block page_heading %}طباعة برامج الصفوف{% endblock %}
+{% block content %}
+<div id="printArea">
+    {% if info %}
+    <div class="print-header d-flex align-items-center justify-content-between mb-3">
+        <div style="width: 120px;">
+            {% if info.ministry_logo %}
+            <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 70px; width: auto;">
+            {% else %}
+            <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 70px; width: auto;">
+            {% endif %}
+        </div>
+        <div class="text-center">
+            <h5 class="mb-0">{{ info.name_ar|default:'اسم المدرسة' }}</h5>
+            <div class="small">برامج الصفوف اليومية</div>
+        </div>
+        <div style="width: 120px;" class="text-center">
+            <div class="small">مدير المدرسة</div>
+            <div class="fw-bold">{{ info.principal_name|default:'---' }}</div>
+        </div>
+    </div>
+    <hr class="mt-0">
+    {% endif %}
+    {% for c in classes %}
+    <div class="schedule-card mb-4">
+        <div class="schedule-card-title">الصف {{ c.name }}</div>
+        <table class="table table-bordered table-sm text-center align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="bg-light">اليوم</th>
+                    {% for p in period_range %}
+                    <th class="bg-light">حصة {{ p }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in days %}
+                <tr>
+                    <th class="bg-light">{{ day }}</th>
+                    {% for p in period_range %}
+                    <td>
+                        {% for e in entries %}{% if e.student_class_id == c.id and e.day == day and e.period == p %}
+                        <strong>{{ e.subject.name|default:'---' }}</strong><br>
+                        <small>{{ e.teacher.full_name|default:'---' }}</small>
+                        {% endif %}{% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% empty %}
+    <p class="text-muted text-center">لا توجد صفوف مسجلة.</p>
+    {% endfor %}
+</div>
+<div class="mt-3 no-print">
+    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+    <a href="{% url 'schedule_edit' %}" class="btn btn-outline-secondary">العودة</a>
+</div>
+<style>
+@media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; }
+    .schedule-card { page-break-inside: avoid; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; }
+    .schedule-card-title { background: #198754; color: #fff; font-weight: bold; text-align: center; padding: 6px; }
+    .print-header { page-break-before: auto; }
+    table { font-size: 12px; }
+}
+</style>
+{% endblock %}

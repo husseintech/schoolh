@@ -146,6 +146,13 @@ urlpatterns = [
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:notification_id>/read/', views.notification_read, name='notification_read'),
 
+    # Teacher schedule
+    path('schedule/', views.schedule_edit, name='schedule_edit'),
+    path('schedule/print/cards/', views.schedule_print_cards, name='schedule_print_cards'),
+    path('schedule/print/all/', views.schedule_print_all, name='schedule_print_all'),
+    path('schedule/print/classes/', views.schedule_print_classes, name='schedule_print_classes'),
+    path('schedule/print/admin/', views.schedule_print_admin, name='schedule_print_admin'),
+
     # Absence
     path('absence/', views.absence_list, name='absence_list'),
     path('absence/report/', views.absence_report, name='absence_report'),

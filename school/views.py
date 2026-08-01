@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -1456,7 +1456,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1478,6 +1478,7 @@ def add_account(request):
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
         'absence': 'غياب الطلاب',
+        'schedule': 'الجدول اليومي للمعلمين',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -1539,7 +1540,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1561,6 +1562,7 @@ def edit_account(request, user_id):
         'inspection_visits': 'الزيارات الإشرافية',
         'visit_program': 'برنامج الزيارات',
         'absence': 'غياب الطلاب',
+        'schedule': 'الجدول اليومي للمعلمين',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -2049,6 +2051,128 @@ def absence_report(request):
         'attendance_pct': attendance_pct,
         'absence_date': absence_date,
         'info': info,
+        'today': date.today(),
+    })
+
+
+# ─── Teacher Daily Schedule (الجدول اليومي للمعلمين) ──────────────────────────
+
+SCHEDULE_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
+SCHEDULE_PERIODS = 7
+
+
+@login_required
+def schedule_edit(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teacher_id = request.GET.get('teacher_id', '') or request.POST.get('teacher_id', '')
+    teacher = Teacher.objects.filter(id=teacher_id).first() if teacher_id and teacher_id.isdigit() else None
+    teacher = teacher or Teacher.objects.first()
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'save' and teacher and has_perm(request.user, 'schedule', 'add'):
+            for day in SCHEDULE_DAYS:
+                for period in range(1, SCHEDULE_PERIODS + 1):
+                    subject_id = request.POST.get(f'cell_{day}_{period}_subject', '')
+                    class_id = request.POST.get(f'cell_{day}_{period}_class', '')
+                    entry = TeacherScheduleEntry.objects.filter(teacher=teacher, day=day, period=period).first()
+                    if subject_id or class_id:
+                        TeacherScheduleEntry.objects.update_or_create(
+                            teacher=teacher, day=day, period=period,
+                            defaults={
+                                'subject_id': subject_id or None,
+                                'student_class_id': class_id or None,
+                                'updated_by': request.user,
+                            },
+                        )
+                    elif entry:
+                        entry.delete()
+            messages.success(request, f'تم حفظ جدول {teacher.full_name}')
+        return redirect(f'{request.path}?teacher_id={teacher.id}')
+    classes = Class.objects.all().order_by('name')
+    subjects = Subject.objects.all().order_by('name')
+    teachers = Teacher.objects.all().order_by('full_name')
+    entries = list(TeacherScheduleEntry.objects.filter(teacher=teacher).select_related('subject', 'student_class')) if teacher else []
+    return render(request, 'school/schedule_edit.html', {
+        'teachers': teachers,
+        'teacher': teacher,
+        'days': SCHEDULE_DAYS,
+        'period_range': range(1, SCHEDULE_PERIODS + 1),
+        'subjects': subjects,
+        'classes': classes,
+        'entries': entries,
+    })
+
+
+def _schedule_info():
+    return SchoolInfo.objects.first()
+
+
+@login_required
+def schedule_print_cards(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().order_by('full_name')
+    entries = list(TeacherScheduleEntry.objects.all().select_related('teacher', 'subject', 'student_class'))
+    return render(request, 'school/schedule_print_cards.html', {
+        'teachers': teachers,
+        'entries': entries,
+        'days': SCHEDULE_DAYS,
+        'period_range': range(1, SCHEDULE_PERIODS + 1),
+        'info': _schedule_info(),
+        'today': date.today(),
+    })
+
+
+@login_required
+def schedule_print_all(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().order_by('full_name')
+    entries = list(TeacherScheduleEntry.objects.all().select_related('teacher', 'subject', 'student_class'))
+    return render(request, 'school/schedule_print_all.html', {
+        'teachers': teachers,
+        'entries': entries,
+        'days': SCHEDULE_DAYS,
+        'period_range': range(1, SCHEDULE_PERIODS + 1),
+        'info': _schedule_info(),
+        'today': date.today(),
+    })
+
+
+@login_required
+def schedule_print_classes(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    classes = Class.objects.all().order_by('name')
+    entries = list(TeacherScheduleEntry.objects.filter(student_class__isnull=False).select_related('teacher', 'subject', 'student_class'))
+    return render(request, 'school/schedule_print_classes.html', {
+        'classes': classes,
+        'entries': entries,
+        'days': SCHEDULE_DAYS,
+        'period_range': range(1, SCHEDULE_PERIODS + 1),
+        'info': _schedule_info(),
+        'today': date.today(),
+    })
+
+
+@login_required
+def schedule_print_admin(request):
+    if not has_perm(request.user, 'schedule', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    classes = list(Class.objects.all().order_by('name'))
+    entries = list(TeacherScheduleEntry.objects.filter(student_class__isnull=False).select_related('teacher', 'subject', 'student_class'))
+    return render(request, 'school/schedule_print_admin.html', {
+        'classes': classes,
+        'entries': entries,
+        'days': SCHEDULE_DAYS,
+        'period_range': range(1, SCHEDULE_PERIODS + 1),
+        'info': _schedule_info(),
         'today': date.today(),
     })
 

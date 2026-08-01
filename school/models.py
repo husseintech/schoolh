@@ -52,6 +52,7 @@ DEFAULT_PERMISSIONS = {
         'lateness': ['view', 'add'],
         'meetings': ['view', 'add'],
         'absence': ['view', 'add'],
+        'schedule': ['view', 'add'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -84,6 +85,7 @@ DEFAULT_PERMISSIONS = {
         'notes': ['view', 'add'],
         'lateness': ['view', 'add'],
         'absence': ['view', 'add'],
+        'schedule': ['view', 'add'],
     },
     'teacher': {        'students': ['view'],
         'teachers': [],
@@ -605,6 +607,27 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f'شهادة {self.student_name} - {self.class_name}'
+
+
+class TeacherScheduleEntry(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='schedule_entries', verbose_name='المعلم')
+    day = models.CharField('اليوم', max_length=20)
+    period = models.PositiveIntegerField('رقم الحصة')
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='schedule_entries', verbose_name='المادة')
+    student_class = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True, related_name='schedule_entries', verbose_name='الصف')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='عدل بواسطة')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'حصة في الجدول'
+        verbose_name_plural = 'الجدول اليومي للمعلمين'
+        ordering = ['day', 'period']
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'day', 'period'], name='unique_teacher_schedule_cell'),
+        ]
+
+    def __str__(self):
+        return f'{self.teacher.full_name} - {self.day} ح{self.period}'
 
 
 class PushSubscription(models.Model):

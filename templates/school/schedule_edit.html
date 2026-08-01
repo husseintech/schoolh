@@ -1,0 +1,76 @@
+{% extends 'school/base.html' %}
+{% block title %}الجدول اليومي للمعلمين{% endblock %}
+{% block page_heading %}الجدول اليومي للمعلمين{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label fw-bold">اختر المعلم</label>
+                <select class="form-select" id="teacherSelect" onchange="location.href='{% url 'schedule_edit' %}?teacher_id=' + this.value">
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if t.id == teacher.id %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-7 d-flex align-items-end justify-content-end gap-2 flex-wrap">
+                <a href="{% url 'schedule_print_cards' %}" class="btn btn-success btn-sm" target="_blank"><i class="bi bi-printer"></i> برامج المعلمين</a>
+                <a href="{% url 'schedule_print_all' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> جدول جميع المعلمين</a>
+                <a href="{% url 'schedule_print_classes' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> برامج الصفوف</a>
+                <a href="{% url 'schedule_print_admin' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> الجدول العام</a>
+            </div>
+        </div>
+
+        {% if teacher %}
+        <form method="post" action="{% url 'schedule_edit' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
+            <div class="table-responsive">
+                <table class="table table-bordered text-center align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="min-width: 110px;">اليوم</th>
+                            {% for p in period_range %}
+                            <th>حصة {{ p }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in days %}
+                        <tr>
+                            <th class="align-middle">{{ day }}</th>
+                            {% for p in period_range %}
+                            <td>
+                                <select class="form-select form-select-sm mb-1" name="cell_{{ day }}_{{ p }}_subject">
+                                    <option value="">-- المادة --</option>
+                                    {% for s in subjects %}
+                                    <option value="{{ s.id }}" {% for e in entries %}{% if e.day == day and e.period == p and e.subject_id == s.id %}selected{% endif %}{% endfor %}>{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-select form-select-sm" name="cell_{{ day }}_{{ p }}_class">
+                                    <option value="">-- الصف --</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}" {% for e in entries %}{% if e.day == day and e.period == p and e.student_class_id == c.id %}selected{% endif %}{% endfor %}>{{ c.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if 'schedule_add' in user_perms %}
+            <div class="text-center mt-3">
+                <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check2-circle"></i> حفظ جدول {{ teacher.full_name }}</button>
+            </div>
+            {% endif %}
+        </form>
+        <p class="text-muted small mt-3 mb-0">اترك المادة والصف فارغين في أي حصة لتكون الحصة فارغة عند المعلم.</p>
+        {% else %}
+        <p class="text-muted text-center">لا يوجد معلمون مسجلون بعد.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
