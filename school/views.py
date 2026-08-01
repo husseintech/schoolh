@@ -1188,6 +1188,12 @@ def send_message(request, user_id=None):
             return redirect('send_message_to', user_id=recipient_id or 0)
         recipient = get_object_or_404(User, id=recipient_id)
         Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
+        send_push(
+            recipient,
+            f'رسالة جديدة من {request.user.first_name or request.user.username}',
+            subject[:150],
+            '/messages/',
+        )
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
     students = Student.objects.all().select_related('student_class').order_by('full_name')
@@ -1835,6 +1841,7 @@ def supervisor_visit_list(request):
                     message=msg,
                     link=f'/supervisor-visits/{visit.id}/report/',
                 )
+                send_push(selected_teacher.user, 'زيارة مشرف جديدة', f'تم تسجيل زيارة مشرف بتاريخ {visit.visit_date}', f'/supervisor-visits/{visit.id}/report/')
             messages.success(request, 'تم إضافة الزيارة بنجاح')
             return redirect(f'{request.path}?teacher_id={teacher_id}')
         messages.error(request, 'الرجاء اختيار معلم')
@@ -2331,6 +2338,7 @@ def inspection_visit_list(request):
                     message=f'تم تسجيل زيارة إشرافية بتاريخ {visit.visit_date}',
                     link=f'/inspection-visits/{visit.id}/report/',
                 )
+                send_push(selected_teacher.user, 'زيارة إشرافية جديدة', f'تم تسجيل زيارة إشرافية بتاريخ {visit.visit_date}', f'/inspection-visits/{visit.id}/report/')
             messages.success(request, 'تم إضافة الزيارة الإشرافية بنجاح')
             return redirect(f'{request.path}?teacher_id={teacher_id}')
         messages.error(request, 'الرجاء اختيار معلم')
