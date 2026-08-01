@@ -1,50 +1,82 @@
 {% extends 'school/base.html' %}
-{% load static %}
-{% block title %}برامج المعلمين{% endblock %}
-{% block page_heading %}طباعة برامج جميع المعلمين{% endblock %}
+{% block title %}برامج المعلمين - بطاقات{% endblock %}
+{% block page_heading %}طباعة برامج المعلمين (بطاقات للقص){% endblock %}
 {% block content %}
-<div id="printArea">
-    {% if info %}
-    <div class="print-header d-flex align-items-center justify-content-between mb-3">
-        <div style="width: 120px;">
-            {% if info.ministry_logo %}
-            <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 70px; width: auto;">
-            {% else %}
-            <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 70px; width: auto;">
-            {% endif %}
-        </div>
-        <div class="text-center">
-            <h5 class="mb-0">{{ info.name_ar|default:'اسم المدرسة' }}</h5>
-            <div class="small">برامج المعلمين اليومية</div>
-        </div>
-        <div style="width: 120px;" class="text-center">
-            <div class="small">مدير المدرسة</div>
-            <div class="fw-bold">{{ info.principal_name|default:'---' }}</div>
-        </div>
-    </div>
-    <hr class="mt-0">
-    {% endif %}
+<style>
+@page { size: A4 landscape; margin: 8mm; }
+.cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6mm;
+}
+.schedule-card {
+    border: 1.5px solid #000;
+    border-radius: 3mm;
+    overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    height: 89mm;
+    display: flex;
+    flex-direction: column;
+}
+.card-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 2.5mm;
+    background: #f1f3f5;
+    border-bottom: 1.5px solid #000;
+}
+.schedule-card table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    flex: 1;
+}
+.schedule-card th, .schedule-card td {
+    border: 0.75px solid #000;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 10.5px;
+    padding: 1mm;
+}
+.schedule-card th {
+    background: #f8f9fa;
+}
+.schedule-card .subj {
+    font-weight: bold;
+    font-size: 11px;
+}
+.schedule-card .cls {
+    font-size: 9.5px;
+    color: #333;
+}
+@media print {
+    .no-print { display: none !important; }
+}
+</style>
+<div class="cards-grid">
     {% for t in teachers %}
-    <div class="schedule-card mb-4">
-        <div class="schedule-card-title">{{ t.full_name }}</div>
-        <table class="table table-bordered table-sm text-center align-middle mb-0">
+    <div class="schedule-card">
+        <div class="card-title">المعلم: {{ t.full_name }}</div>
+        <table>
             <thead>
                 <tr>
-                    <th class="bg-light">اليوم</th>
+                    <th style="width: 16%;">اليوم</th>
                     {% for p in period_range %}
-                    <th class="bg-light">حصة {{ p }}</th>
+                    <th>حصة {{ p }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for day in days %}
                 <tr>
-                    <th class="bg-light">{{ day }}</th>
+                    <th>{{ day }}</th>
                     {% for p in period_range %}
                     <td>
                         {% for e in entries %}{% if e.teacher_id == t.id and e.day == day and e.period == p %}
-                        <strong>{{ e.subject.name|default:'---' }}</strong><br>
-                        <small>{{ e.student_class.name|default:'---' }}</small>
+                        <div class="subj">{{ e.subject.name }}</div>
+                        <div class="cls">{{ e.student_class.name }}</div>
                         {% endif %}{% endfor %}
                     </td>
                     {% endfor %}
@@ -61,14 +93,4 @@
     <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
     <a href="{% url 'schedule_edit' %}" class="btn btn-outline-secondary">العودة</a>
 </div>
-<style>
-@media print {
-    .no-print { display: none !important; }
-    body { background: #fff !important; }
-    .schedule-card { page-break-inside: avoid; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; }
-    .schedule-card-title { background: #0d6efd; color: #fff; font-weight: bold; text-align: center; padding: 6px; }
-    .print-header { page-break-before: auto; }
-    table { font-size: 12px; }
-}
-</style>
 {% endblock %}
