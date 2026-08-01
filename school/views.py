@@ -2037,12 +2037,14 @@ def absence_report(request):
     total_students = Student.objects.count()
     total_absent = sum(r['count'] for r in rows)
     total_present = total_students - total_absent
+    attendance_pct = round((total_present / total_students) * 100, 1) if total_students else 0
     info = SchoolInfo.objects.first()
     return render(request, 'school/absence_report.html', {
         'rows': rows,
         'total_students': total_students,
         'total_absent': total_absent,
         'total_present': total_present,
+        'attendance_pct': attendance_pct,
         'absence_date': absence_date,
         'info': info,
         'today': date.today(),

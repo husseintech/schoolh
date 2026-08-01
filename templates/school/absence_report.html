@@ -85,10 +85,13 @@ td.cnt { width: 20mm; text-align: center; }
             <div class="label">عدد الحضور اليوم</div>
             <div class="value">{{ total_present }}</div>
         </div>
+        <div class="stat">
+            <div class="label">نسبة الحضور</div>
+            <div class="value">{{ attendance_pct }}%</div>
+        </div>
     </div>
     <div class="sign">
-        <div>مدير المدرسة</div>
-        <div class="name">{% if info %}{{ info.principal_name }}{% endif %}</div>
+        <span>مدير المدرسة:&nbsp; <strong>{% if info %}{{ info.principal_name }}{% endif %}</strong></span>
     </div>
 </div>
 <div class="toolbar"><a href="javascript:window.print()">طباعة التقرير</a></div>
