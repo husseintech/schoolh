@@ -549,6 +549,16 @@ def teachers_report(request):
 
 
 @login_required
+def teacher_cards_report(request):
+    if not has_perm(request.user, 'teachers', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teachers = Teacher.objects.all().prefetch_related('classes', 'subjects', 'inspection_visits', 'supervisor_visits').order_by('full_name')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/teacher_cards_report.html', {'teachers': teachers, 'info': info})
+
+
+@login_required
 def notes_report(request):
     if not has_perm(request.user, 'notes', 'view'):
         messages.error(request, 'ليس لديك صلاحية')

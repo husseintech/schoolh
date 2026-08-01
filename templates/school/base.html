@@ -369,6 +369,11 @@
             <i class="bi bi-person-plus-fill"></i> إضافة معلم
         </a>
         {% endif %}
+        {% if 'teachers_view' in user_perms %}
+        <a href="{% url 'teacher_cards_report' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_cards_report' %}active{% endif %}">
+            <i class="bi bi-card-checklist"></i> بطاقات المعلمين
+        </a>
+        {% endif %}
         {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms %}
         </div>
         {% endif %}
