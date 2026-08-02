@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-from datetime import date
+from datetime import date, datetime
+from django.utils import timezone
 
 
 def has_perm(user, module, action):
@@ -628,6 +629,36 @@ class TeacherScheduleEntry(models.Model):
 
     def __str__(self):
         return f'{self.teacher.full_name} - {self.day} ح{self.period}'
+
+
+class LoginCounter(models.Model):
+    count = models.PositiveIntegerField('عدد مرات الدخول', default=0)
+    last_reset = models.DateTimeField('آخر تصفير', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'عداد دخول الطلاب'
+        verbose_name_plural = 'عداد دخول الطلاب'
+
+    @classmethod
+    def get(cls):
+        return cls.objects.first() or cls.objects.create()
+
+    @classmethod
+    def increment(cls):
+        obj = cls.get()
+        obj.count += 1
+        obj.save(update_fields=['count'])
+        return obj.count
+
+    @classmethod
+    def reset(cls):
+        obj = cls.get()
+        obj.count = 0
+        obj.last_reset = timezone.now()
+        obj.save()
+
+    def __str__(self):
+        return f'عدد مرات الدخول: {self.count}'
 
 
 class PushSubscription(models.Model):

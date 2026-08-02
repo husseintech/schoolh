@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -27,6 +27,11 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            try:
+                if user.profile.role == 'student':
+                    LoginCounter.increment()
+            except (Profile.DoesNotExist, AttributeError):
+                pass
             return redirect('home')
         messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
         return redirect('home')
@@ -1342,7 +1347,15 @@ def reports(request):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     classes = Class.objects.all().order_by('name')
-    return render(request, 'school/reports.html', {'classes': classes})
+    if request.method == 'POST' and request.POST.get('action') == 'reset_login_counter':
+        LoginCounter.reset()
+        messages.success(request, 'تم تصفير عداد الدخول')
+        return redirect('reports')
+    login_counter = LoginCounter.get()
+    return render(request, 'school/reports.html', {
+        'classes': classes,
+        'login_counter': login_counter,
+    })
 
 
 @login_required
