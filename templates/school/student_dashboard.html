@@ -32,6 +32,103 @@
                     <strong>{{ unread_messages }}</strong>
                 </div>
             </div>
+            <div class="col-md-3 col-6">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">أيام الغياب</small>
+                    <strong class="{% if absence_count %}text-danger{% else %}text-success{% endif %}">{{ absence_count }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">أذونات المغادرة</small>
+                    <strong>{{ leaves|length }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-door-open-fill"></i> أذونات المغادرة
+                    </div>
+                    <div class="card-body">
+                        {% if leaves %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>التاريخ</th>
+                                        <th>الوقت</th>
+                                        <th>السبب</th>
+                                        <th>الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for l in leaves %}
+                                    <tr>
+                                        <td>{{ l.leave_date|date:"Y-m-d" }}</td>
+                                        <td>{{ l.leave_time|time:"H:i" }}</td>
+                                        <td>{{ l.reason|truncatewords:8 }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if l.status == 'approved' %}success{% elif l.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                                {{ l.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد أذونات مغادرة مسجلة</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-calendar-week-fill"></i> البرنامج المدرسي — الصف {{ student.student_class.name|default:'' }}
+                    </div>
+                    <div class="card-body">
+                        {% if student.student_class %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm text-center align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>اليوم</th>
+                                        {% for p in period_range %}
+                                        <th>حصة {{ p }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for day in schedule_days %}
+                                    <tr>
+                                        <th class="align-middle">{{ day }}</th>
+                                        {% for p in period_range %}
+                                        <td>
+                                            {% for e in schedule_entries %}{% if e.day == day and e.period == p %}
+                                            <strong>{{ e.subject.name|default:'---' }}</strong><br>
+                                            <small class="text-muted">{{ e.teacher.full_name|default:'' }}</small>
+                                            {% endif %}{% endfor %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-3">لم يتم تحديد صف لهذا الطالب</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row g-3">

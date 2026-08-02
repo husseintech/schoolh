@@ -89,10 +89,22 @@ def dashboard(request):
             notes = student.notes.filter(is_private=False).order_by('-created_at')
             notes.update(is_read=True)
             messages_qs = Message.objects.filter(recipient=request.user, is_read=False)
+            absence_count = student.absences.count()
+            leaves = student.leaves.all()[:10]
+            schedule_entries = []
+            if student.student_class:
+                schedule_entries = list(TeacherScheduleEntry.objects.filter(
+                    student_class=student.student_class,
+                ).select_related('subject', 'teacher'))
             return render(request, 'school/student_dashboard.html', {
                 'student': student,
                 'notes': notes,
                 'unread_messages': messages_qs.count(),
+                'absence_count': absence_count,
+                'leaves': leaves,
+                'schedule_entries': schedule_entries,
+                'schedule_days': SCHEDULE_DAYS,
+                'period_range': range(1, SCHEDULE_PERIODS + 1),
             })
         except Student.DoesNotExist:
             messages.error(request, 'لا يوجد ملف طالب مرتبط بهذا الحساب')
