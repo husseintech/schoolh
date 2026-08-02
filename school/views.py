@@ -1,6 +1,7 @@
 import os, io, csv, re
 from datetime import date, datetime
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -1670,6 +1671,79 @@ def delete_account(request, user_id):
         messages.success(request, f'تم حذف الحساب: {username}')
         return redirect('account_list')
     return render(request, 'school/delete_account.html', {'del_user': user})
+
+
+@login_required
+def role_permissions(request):
+    if not has_perm(request.user, 'settings', 'accounts'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
+    ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+    MODULE_LABELS = {
+        'students': 'الطلاب', 'teachers': 'المعلمون', 'classes': 'الصفوف', 'subjects': 'المواد',
+        'announcements': 'الإعلانات', 'agenda': 'الأجندة', 'leaves': 'أذونات المغادرة',
+        'levels': 'مستويات الطلاب', 'exams': 'تحليل الامتحانات', 'messages': 'الرسائل',
+        'reports': 'التقارير', 'settings': 'الإعدادات', 'notes': 'الملاحظات',
+        'lateness': 'تأخيرات الطلاب', 'meetings': 'اجتماعات المعلمين',
+        'supervisor_visits': 'زيارات المشرفين', 'inspection_visits': 'الزيارات الإشرافية',
+        'visit_program': 'برنامج الزيارات', 'absence': 'غياب الطلاب',
+        'schedule': 'الجدول اليومي للمعلمين', 'survey': 'المسح الصحي والاجتماعي',
+        'certificates': 'شهادات التقدير', 'guardians': 'مربو الصفوف', 'nominations': 'ترشيح المتفوقين',
+    }
+    ACTION_LABELS = {
+        'view': 'عرض', 'add': 'إضافة', 'edit': 'تعديل', 'delete': 'حذف',
+        'import': 'استيراد', 'export': 'تصدير', 'notes': 'ملاحظات', 'complete': 'إكمال',
+        'send': 'إرسال', 'whatsapp': 'واتساب', 'accounts': 'الحسابات',
+    }
+    modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
+    actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
+
+    role = request.GET.get('role', 'student')
+    if role not in dict(Profile.ROLE_CHOICES):
+        role = 'student'
+
+    if request.method == 'POST':
+        role = request.POST.get('role', role)
+        action_kind = request.POST.get('action_kind', 'default')  # 'default' | 'custom'
+        new_perms = {}
+        if action_kind == 'custom':
+            for key, val in request.POST.items():
+                if key.startswith('perm_'):
+                    parts = key.replace('perm_', '', 1).rsplit('_', 1)
+                    if len(parts) == 2:
+                        module, act = parts
+                        new_perms.setdefault(module, []).append(act)
+        else:
+            new_perms = UserPermission.get_defaults(role)
+
+        if not new_perms:
+            new_perms = UserPermission.get_defaults(role)
+
+        # ensure every user of that role has a UserPermission row
+        users = User.objects.filter(profile__role=role)
+        updated = 0
+        for u in users:
+            up, _ = UserPermission.objects.get_or_create(user=u, defaults={'permissions': new_perms})
+            up.permissions = new_perms
+            up.save()
+            updated += 1
+        role_label = dict(Profile.ROLE_CHOICES).get(role, role)
+        messages.success(request, f'تم منح الصلاحيات ({action_kind}) لـ {updated} من حسابات دور {role_label}')
+        return redirect(f"{reverse('role_permissions')}?role={role}")
+
+    counts = User.objects.filter(profile__role__in=[r for r, _ in Profile.ROLE_CHOICES]).values('profile__role').annotate(n=Count('id'))
+    count_map = {c['profile__role']: c['n'] for c in counts}
+    role_counts = [(r, label, count_map.get(r, 0)) for r, label in Profile.ROLE_CHOICES]
+    return render(request, 'school/role_permissions.html', {
+        'roles': Profile.ROLE_CHOICES,
+        'modules': modules,
+        'actions': actions,
+        'default_perms': DEFAULT_PERMISSIONS,
+        'selected_role': role,
+        'role_counts': role_counts,
+    })
 
 
 @login_required

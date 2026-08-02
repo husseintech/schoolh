@@ -104,6 +104,7 @@ urlpatterns = [
     path('accounts/add/', views.add_account, name='add_account'),
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
     path('accounts/<int:user_id>/delete/', views.delete_account, name='delete_account'),
+    path('accounts/role-permissions/', views.role_permissions, name='role_permissions'),
 
     # My Account
     path('my-account/', views.my_account, name='my_account'),

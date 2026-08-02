@@ -23,6 +23,7 @@ function filterRole(role) {
                 <option value="teacher">المعلمون</option>
                 <option value="student">الطلاب</option>
             </select>
+            <a href="{% url 'role_permissions' %}" class="btn btn-outline-success btn-sm"><i class="bi bi-shield-fill-check"></i> منح صلاحيات لدور دفعة واحدة</a>
             <a href="{% url 'add_account' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة حساب</a>
         </div>
     </div>

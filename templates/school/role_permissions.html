@@ -1,0 +1,92 @@
+{% extends 'school/base.html' %}
+{% block title %}منح الصلاحيات حسب الدور{% endblock %}
+{% block page_heading %}منح الصلاحيات لجميع حسابات الدور{% endblock %}
+{% block extra_js %}
+<script>
+function setRole() {
+    var role = document.getElementById('roleSelect').value;
+    location.href = '{% url 'role_permissions' %}?role=' + role;
+}
+function checkRoleDefaults() {
+    var role = document.getElementById('roleSelect').value;
+    var defaults = {{ default_perms|safe }};
+    var perms = defaults[role] || {};
+    document.querySelectorAll('[name^="perm_"]').forEach(function(cb) {
+        var parts = cb.name.replace('perm_', '').split('_');
+        var module = parts.slice(0, -1).join('_');
+        var action = parts[parts.length - 1];
+        cb.checked = perms[module] && perms[module].includes(action);
+    });
+}
+function toggleAll(checked) {
+    document.querySelectorAll('[name^="perm_"]').forEach(function(cb) { cb.checked = checked; });
+}
+</script>
+{% endblock %}
+{% block content %}
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-shield-fill-check"></i> صلاحيات عامة للدور</div>
+    <div class="card-body">
+        <p>تتيح هذه الصفحة منح نفس مجموعة الصلاحيات <strong>لجميع حسابات الدور المختار دفعة واحدة</strong>
+        (مثلاً كل المعلمين، أو كل الطلاب، أو كل المديرين).</p>
+        <div class="alert alert-warning small mb-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            تنبيه: التطبيق يستبدل صلاحيات <strong>كل</strong> حسابات الدور المختار بالصلاحيات المحددة هنا، بما فيها أي تخصيصات سابقة لكل حساب.
+        </div>
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">اختر الدور</label>
+                <select name="role" id="roleSelect" class="form-select" onchange="setRole()">
+                    {% for val, label, cnt in role_counts %}
+                    <option value="{{ val }}" {% if val == selected_role %}selected{% endif %}>{{ label }} ({{ cnt }} حساب)</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-lock-fill"></i> صلاحيات دور: {% for val, label in roles %}{% if val == selected_role %}{{ label }}{% endif %}{% endfor %}</span>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="role" value="{{ selected_role }}">
+            <div class="mb-3 d-flex flex-wrap gap-2">
+                <button type="submit" name="action_kind" value="default" class="btn btn-success"><i class="bi bi-arrow-repeat"></i> استعادة الصلاحيات الافتراضية للدور</button>
+                <button type="submit" name="action_kind" value="custom" class="btn btn-primary"><i class="bi bi-check2-circle"></i> تطبيق الصلاحيات المحددة أدناه</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="checkRoleDefaults()">تعبئة من الصلاحيات الافتراضية</button>
+                <button type="button" class="btn btn-outline-danger" onclick="toggleAll(true)">تحديد الكل</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleAll(false)">إلغاء الكل</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>القسم</th>
+                            {% for a in actions %}
+                            <th class="text-center small">{{ a.label }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in modules %}
+                        <tr>
+                            <td><strong>{{ m.label }}</strong></td>
+                            {% for a in actions %}
+                            <td class="text-center">
+                                <input type="checkbox" name="perm_{{ m.key }}_{{ a.key }}" class="form-check-input">
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'account_list' %}" class="btn btn-outline-secondary">رجوع لإدارة الحسابات</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
