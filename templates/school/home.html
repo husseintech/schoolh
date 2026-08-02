@@ -5,30 +5,7 @@
 {% block content %}
 {% if user.is_authenticated %}
 <div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
-                <i class="bi bi-megaphone-fill"></i> الإعلانات
-            </div>
-            <div class="card-body p-3">
-                {% if announcements %}
-                    {% for a in announcements %}
-                    <div class="mb-3 pb-2 border-bottom">
-                        <div style="font-weight: 600; font-size: 0.95rem; color: #1a2744;">{{ a.title }}</div>
-                        <div style="font-size: 0.75rem; color: #94a3b8;"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
-                        <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ a.content|truncatewords:25 }}</div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-megaphone" style="font-size: 2rem;"></i>
-                    <p class="mt-2">لا توجد إعلانات حالياً</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
+    <div class="col-lg-12">
         <div class="card">
             <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
                 <i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية
@@ -187,28 +164,7 @@
     </div>
     <div class="container" style="padding: 40px 0;">
         <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="side-card">
-                    <div class="card-header"><i class="bi bi-megaphone-fill"></i> الإعلانات</div>
-                    <div class="card-body p-3">
-                        {% if announcements %}
-                            {% for a in announcements %}
-                            <div class="announce-item">
-                                <div class="title">{{ a.title }}</div>
-                                <div class="date"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
-                                <div class="content">{{ a.content|truncatewords:25 }}</div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-placeholder">
-                                <i class="bi bi-megaphone"></i>
-                                لا توجد إعلانات حالياً
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
+            <div class="col-lg-12">
                 <div class="side-card">
                     <div class="card-header"><i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية</div>
                     <div class="card-body p-3">

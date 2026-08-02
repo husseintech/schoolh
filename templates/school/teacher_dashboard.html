@@ -37,25 +37,6 @@
 </div>
 {% endif %}
 
-{% if announcements %}
-<div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-        <i class="bi bi-megaphone-fill"></i> آخر الإعلانات
-    </div>
-    <div class="card-body">
-        {% for a in announcements %}
-        <div class="mb-2 pb-2 border-bottom">
-            <strong>{{ a.title }}</strong>
-            <p class="mb-0 text-muted small">{{ a.content|truncatewords:40 }}</p>
-            <small class="text-muted">{{ a.created_at|date:"Y-m-d" }}</small>
-        </div>
-        {% empty %}
-        <p class="text-muted mb-0">لا توجد إعلانات حالياً</p>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
 <div class="card mb-4">
     <div class="card-header bg-success text-white">
         <i class="bi bi-calendar-week-fill"></i> برنامجي الدراسي

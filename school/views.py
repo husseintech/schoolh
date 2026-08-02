@@ -45,13 +45,11 @@ def logout_view(request):
 
 def home(request):
     from datetime import datetime, timedelta
-    announcements = Announcement.objects.filter(is_active=True)[:5]
     lesson_links = LessonLink.objects.filter(is_active=True)[:10]
     now = datetime.now()
     now_ago = now - timedelta(hours=1)
     school_info = SchoolInfo.objects.first()
     return render(request, 'school/home.html', {
-        'announcements': announcements,
         'lesson_links': lesson_links,
         'now': now,
         'now_ago': now_ago,
@@ -79,7 +77,6 @@ def dashboard(request):
         try:
             teacher = request.user.teacher_profile
             classes = teacher.classes.all()
-            announcements = Announcement.objects.filter(is_active=True)[:5]
             schedule_entries = list(TeacherScheduleEntry.objects.filter(
                 teacher=teacher,
             ).select_related('subject', 'student_class'))
@@ -92,7 +89,6 @@ def dashboard(request):
             return render(request, 'school/teacher_dashboard.html', {
                 'teacher': teacher,
                 'classes': classes,
-                'announcements': announcements,
                 'schedule_entries': schedule_entries,
                 'schedule_days': SCHEDULE_DAYS,
                 'period_range': range(1, SCHEDULE_PERIODS + 1),
