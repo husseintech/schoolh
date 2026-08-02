@@ -5,7 +5,7 @@ from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, 
 
 class StudentForm(forms.ModelForm):
     password = forms.CharField(label='كلمة المرور', widget=forms.PasswordInput, required=False, help_text='اترك فارغة لإنشاء كلمة مرور تلقائية من رقم الهوية')
-    username = forms.CharField(label='اسم المستخدم', required=True)
+    username = forms.CharField(label='اسم المستخدم', required=False, help_text='اترك فارغة لاستخدام رقم الهوية كاسم مستخدم')
 
     class Meta:
         model = Student
@@ -26,7 +26,7 @@ class StudentForm(forms.ModelForm):
 
     def save(self, commit=True):
         student = super().save(commit=False)
-        username = self.cleaned_data['username']
+        username = self.cleaned_data.get('username', '').strip() or student.student_id
         password = self.cleaned_data.get('password')
         if not password:
             password = student.student_id[-6:] if len(student.student_id) >= 6 else student.student_id

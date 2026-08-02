@@ -299,7 +299,7 @@ def download_student_template(request):
     ws = wb.active
     ws.title = 'نموذج استيراد الطلاب'
 
-    headers = ['الاسم الكامل', 'رقم الهوية', 'الصف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'العنوان', 'تاريخ الميلاد', 'كلمة المرور']
+    headers = ['الاسم الكامل', 'رقم الهوية', 'الصف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'العنوان', 'تاريخ الميلاد', 'كلمة المرور', 'اسم المستخدم']
     ws.append(headers)
 
     for col in range(1, len(headers) + 1):
@@ -316,9 +316,9 @@ def download_student_template(request):
     ws.column_dimensions['F'].width = 30
     ws.column_dimensions['G'].width = 15
     ws.column_dimensions['H'].width = 18
+    ws.column_dimensions['I'].width = 18
 
-    ws.merge_cells('I1:J1')
-    note_cell = ws.cell(row=1, column=9, value='كلمة المرور اختيارية - اذا تركت فارغة سيتم إنشاءها تلقائياً من آخر 6 أرقام من رقم الهوية')
+    note_cell = ws.cell(row=2, column=10, value='كلمة المرور اختيارية - اذا تركت فارغة سيتم إنشاءها تلقائياً من آخر 6 أرقام من رقم الهوية، واسم المستخدم إذا تُرك فارغاً يصبح رقم الهوية')
     note_cell.font = openpyxl.styles.Font(size=9, color="e74c3c")
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -364,6 +364,7 @@ def import_students(request):
                 address = str(row[5]).strip() if row[5] else ''
                 birth_date = row[6]
                 password = str(row[7]).strip() if len(row) > 7 and row[7] else ''
+                username = str(row[8]).strip() if len(row) > 8 and row[8] else ''
 
                 if not full_name or not student_id:
                     errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
@@ -384,7 +385,8 @@ def import_students(request):
                 else:
                     bd = None
 
-                username = f'student_{student_id}'
+                if not username:
+                    username = student_id
                 if not password:
                     password = student_id[-6:] if len(student_id) >= 6 else student_id
 
@@ -407,10 +409,7 @@ def import_students(request):
 
         if imported:
             msg = f'تم استيراد {imported} طالب/طالب بنجاح'
-            if imported <= 5:
-                messages.success(request, f'{msg}\nاسم المستخدم لكل طالب: student_[رقم الهوية]\nكلمة المرور: آخر 6 أرقام من رقم الهوية')
-            else:
-                messages.success(request, f'{msg}\nاسم المستخدم: student_[رقم الهوية]\nكلمة المرور الافتراضية: آخر 6 أرقام من رقم الهوية')
+            messages.success(request, f'{msg}\nاسم المستخدم: رقم الهوية (أو ما أُدرج في عمود اسم المستخدم)\nكلمة المرور: آخر 6 أرقام من رقم الهوية (أو ما أُدرج في عمود كلمة المرور)')
         if errors:
             for err in errors[:10]:
                 messages.warning(request, err)
