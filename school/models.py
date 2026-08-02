@@ -9,7 +9,11 @@ def has_perm(user, module, action):
         return True
     try:
         perms = user.custom_permissions
-        return action in perms.permissions.get(module, [])
+        stored = perms.permissions.get(module)
+        if stored is not None:
+            return action in stored
+        # module not configured yet → fall back to the role's defaults
+        return action in DEFAULT_PERMISSIONS.get(user.profile.role, {}).get(module, [])
     except User.custom_permissions.RelatedObjectDoesNotExist:
         return False
 
