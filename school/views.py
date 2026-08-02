@@ -111,6 +111,23 @@ def dashboard(request):
             return redirect('logout')
 
 
+@login_required
+def student_absence_report(request):
+    if request.user.profile.role != 'student':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    student = request.user.student_profile
+    days_names = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+    absences = list(student.absences.all().order_by('-absence_date'))
+    rows = [{'date': a.absence_date, 'day': days_names[a.absence_date.weekday()]} for a in absences]
+    return render(request, 'school/student_absence_report.html', {
+        'student': student,
+        'rows': rows,
+        'total': len(rows),
+        'today': date.today(),
+    })
+
+
 # ─── Students ─────────────────────────────────────────────────────────────────
 
 @login_required

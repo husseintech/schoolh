@@ -36,6 +36,7 @@
                 <div class="border rounded p-3 text-center">
                     <small class="text-muted d-block">أيام الغياب</small>
                     <strong class="{% if absence_count %}text-danger{% else %}text-success{% endif %}">{{ absence_count }}</strong>
+                    <a href="{% url 'student_absence_report' %}" class="btn btn-outline-danger btn-sm mt-2"><i class="bi bi-calendar-x"></i> تقرير أيام الغياب</a>
                 </div>
             </div>
             <div class="col-md-3 col-6">

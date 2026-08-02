@@ -1,0 +1,51 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير أيام الغياب{% endblock %}
+{% block page_heading %}تقرير أيام الغياب{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="text-center mb-4">
+            <h5>تقرير أيام غياب الطالب</h5>
+            <p class="mb-1"><strong>{{ student.full_name }}</strong> — الصف {{ student.student_class.name|default:'غير محدد' }}</p>
+            <p class="text-muted mb-0">تاريخ إصدار التقرير: {{ today|date:'Y/m/d' }}</p>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 15%;">#</th>
+                        <th>التاريخ</th>
+                        <th>اليوم</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ r.date|date:'Y/m/d' }}</td>
+                        <td>{{ r.day }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-muted py-4">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">لا توجد أيام غياب مسجلة</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-light fw-bold">
+                        <td colspan="2" class="text-start">إجمالي أيام الغياب</td>
+                        <td>{{ total }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="mt-3 no-print">
+            <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">العودة</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

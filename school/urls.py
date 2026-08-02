@@ -88,6 +88,7 @@ urlpatterns = [
     path('messages/delete-all-received/', views.delete_all_received_messages, name='delete_all_received_messages'),
     path('messages/delete-all/', views.delete_all_messages, name='delete_all_messages'),
     path('messages/student/', views.student_messages, name='student_messages'),
+    path('student/absence-report/', views.student_absence_report, name='student_absence_report'),
 
     # Reports
     path('reports/', views.reports, name='reports'),
