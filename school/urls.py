@@ -89,6 +89,9 @@ urlpatterns = [
     path('messages/delete-all/', views.delete_all_messages, name='delete_all_messages'),
     path('messages/student/', views.student_messages, name='student_messages'),
     path('student/absence-report/', views.student_absence_report, name='student_absence_report'),
+    path('survey/', views.survey_form, name='survey_form'),
+    path('survey/report/', views.survey_report, name='survey_report'),
+    path('survey/<int:student_id>/', views.survey_detail, name='survey_detail'),
 
     # Reports
     path('reports/', views.reports, name='reports'),

@@ -1,0 +1,115 @@
+{% extends 'school/base.html' %}
+{% block title %}مسح الطالب{% endblock %}
+{% block page_heading %}تفاصيل المسح الصحي والاجتماعي{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <div>
+        <a href="{% url 'survey_report' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> العودة للتقرير</a>
+        <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-info ms-1"><i class="bi bi-person"></i> بطاقة الطالب</a>
+    </div>
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
+</div>
+
+<div class="d-none d-print-block text-center mb-3">
+    <h4>المسح الصحي والاجتماعي</h4>
+    <h5 class="text-muted">{{ today|date:'Y/m/d' }}</h5>
+    <hr>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-info text-white"><i class="bi bi-person-circle"></i> بيانات الطالب</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3"><small class="text-muted d-block">الاسم</small><strong>{{ student.full_name }}</strong></div>
+            <div class="col-md-3"><small class="text-muted d-block">رقم الهوية</small><strong>{{ student.student_id }}</strong></div>
+            <div class="col-md-3"><small class="text-muted d-block">الصف</small><strong>{{ student.student_class.name|default:'غير محدد' }}</strong></div>
+            <div class="col-md-3"><small class="text-muted d-block">تاريخ التعبئة</small><strong>{{ survey.submitted_at|date:'Y/m/d H:i'|default:'-' }}</strong></div>
+        </div>
+    </div>
+</div>
+
+{% if not survey %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill"></i> لم يملأ هذا الطالب المسح بعد.</div>
+{% else %}
+
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white"><i class="bi bi-heart-pulse-fill"></i> المسح الصحي</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6"><small class="text-muted d-block">مرض مزمن</small><strong>{% if survey.chronic_disease %}نعم{% else %}لا{% endif %}</strong>{% if survey.chronic_disease_details %} <span class="badge bg-light text-dark ms-1">{{ survey.chronic_disease_details }}</span>{% endif %}</div>
+            <div class="col-md-6"><small class="text-muted d-block">أدوية منتظمة</small><strong>{% if survey.regular_medication %}نعم{% else %}لا{% endif %}</strong>{% if survey.medication_name %} <span class="badge bg-light text-dark ms-1">{{ survey.medication_name }}</span>{% endif %}</div>
+            <div class="col-md-6"><small class="text-muted d-block">حساسية</small><strong>{% if survey.has_allergy %}نعم{% else %}لا{% endif %}</strong>
+                {% if survey.allergy_drugs %}<span class="badge bg-danger ms-1">أدوية</span>{% endif %}
+                {% if survey.allergy_food %}<span class="badge bg-danger ms-1">أطعمة</span>{% endif %}
+                {% if survey.allergy_dust %}<span class="badge bg-danger ms-1">غبار</span>{% endif %}
+                {% if survey.allergy_other %}<span class="badge bg-light text-dark ms-1">{{ survey.allergy_other }}</span>{% endif %}
+            </div>
+            <div class="col-md-6"><small class="text-muted d-block">حالات صحية</small>
+                {% if survey.condition_none %}
+                <strong>لا يوجد</strong>
+                {% else %}
+                {% if survey.condition_asthma %}<span class="badge bg-info ms-1">الربو</span>{% endif %}
+                {% if survey.condition_diabetes %}<span class="badge bg-info ms-1">السكري</span>{% endif %}
+                {% if survey.condition_epilepsy %}<span class="badge bg-info ms-1">الصرع</span>{% endif %}
+                {% if survey.condition_heart %}<span class="badge bg-info ms-1">مشاكل القلب</span>{% endif %}
+                {% if survey.condition_hearing %}<span class="badge bg-info ms-1">ضعف السمع</span>{% endif %}
+                {% if survey.condition_vision %}<span class="badge bg-info ms-1">ضعف البصر</span>{% endif %}
+                {% if not survey.condition_asthma and not survey.condition_diabetes and not survey.condition_epilepsy and not survey.condition_heart and not survey.condition_hearing and not survey.condition_vision %}<span class="text-muted">-</span>{% endif %}
+                {% endif %}
+            </div>
+            <div class="col-md-6"><small class="text-muted d-block">يحتاج نظارات طبية</small><strong>{% if survey.needs_glasses %}نعم{% else %}لا{% endif %}</strong></div>
+            <div class="col-md-6"><small class="text-muted d-block">رعاية صحية خاصة أثناء الدوام</small><strong>{% if survey.special_care %}نعم{% else %}لا{% endif %}</strong>{% if survey.special_care_details %} <span class="badge bg-light text-dark ms-1">{{ survey.special_care_details }}</span>{% endif %}</div>
+            <div class="col-12"><small class="text-muted d-block">تعليمات خاصة للطبيب أو المدرسة</small><p class="mb-0">{% if survey.emergency_instructions %}{{ survey.emergency_instructions|linebreaksbr }}{% else %}-{% endif %}</p></div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white"><i class="bi bi-people-fill"></i> المسح الاجتماعي</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4"><small class="text-muted d-block">يعيش مع</small><strong>{{ survey.get_lives_with_display }}</strong>{% if survey.lives_with_other %} <span class="badge bg-light text-dark ms-1">{{ survey.lives_with_other }}</span>{% endif %}</div>
+            <div class="col-md-4"><small class="text-muted d-block">عدد أفراد الأسرة</small><strong>{{ survey.family_members_count|default:'-' }}</strong></div>
+            <div class="col-md-4"><small class="text-muted d-block">الإخوة في المدرسة</small><strong>{{ survey.siblings_in_school_count|default:'-' }}</strong></div>
+            <div class="col-md-6"><small class="text-muted d-block">صعوبات تؤثر على الدراسة</small><strong>{% if survey.study_difficulties %}نعم{% else %}لا{% endif %}</strong>{% if survey.study_difficulties_details %} <span class="badge bg-light text-dark ms-1">{{ survey.study_difficulties_details }}</span>{% endif %}</div>
+            <div class="col-md-6"><small class="text-muted d-block">يحتاج دعم</small>
+                {% if survey.support_none %}
+                    <strong>لا يحتاج</strong>
+                {% else %}
+                {% if survey.support_academic %}<span class="badge bg-warning ms-1">أكاديمي</span>{% endif %}
+                {% if survey.support_psychological %}<span class="badge bg-warning ms-1">نفسي</span>{% endif %}
+                {% if survey.support_social %}<span class="badge bg-warning ms-1">اجتماعي</span>{% endif %}
+                {% if not survey.support_academic and not survey.support_psychological and not survey.support_social %}<span class="text-muted">-</span>{% endif %}
+                {% endif %}
+            </div>
+            <div class="col-md-3"><small class="text-muted d-block">مكان مخصص للمذاكرة</small><strong>{% if survey.has_study_place %}نعم{% else %}لا{% endif %}</strong></div>
+            <div class="col-md-5"><small class="text-muted d-block">الأجهزة المتوفرة</small>
+                {% if survey.has_no_device %}
+                    <strong>لا يتوفر أي منها</strong>
+                {% else %}
+                {% if survey.has_smartphone %}<span class="badge bg-secondary ms-1">هاتف ذكي</span>{% endif %}
+                {% if survey.has_computer %}<span class="badge bg-secondary ms-1">حاسوب</span>{% endif %}
+                {% if survey.has_internet %}<span class="badge bg-secondary ms-1">إنترنت</span>{% endif %}
+                {% endif %}
+            </div>
+            <div class="col-md-4"><small class="text-muted d-block">أنشطة خارج المدرسة</small><strong>{% if survey.participates_activities %}نعم{% else %}لا{% endif %}</strong></div>
+            <div class="col-md-6"><small class="text-muted d-block">ظروف خاصة للأسرة</small><strong>{% if survey.family_special_conditions %}نعم{% else %}لا{% endif %}</strong>{% if survey.family_special_conditions_details %} <span class="badge bg-light text-dark ms-1">{{ survey.family_special_conditions_details }}</span>{% endif %}</div>
+            <div class="col-md-6"><small class="text-muted d-block">التواصل مع المرشد التربوي</small><strong>{% if survey.contact_counselor %}نعم{% else %}لا{% endif %}</strong>{% if survey.contact_method %} <span class="badge bg-success ms-1">{{ survey.get_contact_method_display }}</span>{% endif %}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white"><i class="bi bi-pencil-square"></i> أسئلة اختيارية</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6"><small class="text-muted d-block">أبرز نقاط القوة</small><p class="mb-0">{% if survey.strengths %}{{ survey.strengths|linebreaksbr }}{% else %}-{% endif %}</p></div>
+            <div class="col-md-6"><small class="text-muted d-block">أبرز الصعوبات</small><p class="mb-0">{% if survey.difficulties_notes %}{{ survey.difficulties_notes|linebreaksbr }}{% else %}-{% endif %}</p></div>
+            <div class="col-md-6"><small class="text-muted d-block">المواد التي يحتاج فيها دعم</small><p class="mb-0">{% if survey.subjects_need_support %}{{ survey.subjects_need_support|linebreaksbr }}{% else %}-{% endif %}</p></div>
+            <div class="col-md-6"><small class="text-muted d-block">اقتراحات لخدمة الطالب</small><p class="mb-0">{% if survey.suggestions %}{{ survey.suggestions|linebreaksbr }}{% else %}-{% endif %}</p></div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

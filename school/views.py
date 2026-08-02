@@ -9,11 +9,11 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
-    ParentMessageForm, ClassForm, SubjectForm)
+    ParentMessageForm, ClassForm, SubjectForm, StudentSurveyForm)
 from .services import send_push
 from .services import send_whatsapp_message
 
@@ -122,6 +122,7 @@ def dashboard(request):
                 'schedule_entries': schedule_entries,
                 'schedule_days': SCHEDULE_DAYS,
                 'period_range': range(1, SCHEDULE_PERIODS + 1),
+                'survey_status': '✓ مكتمل' if hasattr(student, 'survey') else '(لم يملأ بعد)',
             })
         except Student.DoesNotExist:
             messages.error(request, 'لا يوجد ملف طالب مرتبط بهذا الحساب')
@@ -1509,7 +1510,7 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1532,6 +1533,7 @@ def add_account(request):
         'visit_program': 'برنامج الزيارات',
         'absence': 'غياب الطلاب',
         'schedule': 'الجدول اليومي للمعلمين',
+        'survey': 'المسح الصحي والاجتماعي',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -1593,7 +1595,7 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'certificates', 'guardians', 'nominations']
+    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
     ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
     MODULE_LABELS = {
         'students': 'الطلاب',
@@ -1616,6 +1618,7 @@ def edit_account(request, user_id):
         'visit_program': 'برنامج الزيارات',
         'absence': 'غياب الطلاب',
         'schedule': 'الجدول اليومي للمعلمين',
+        'survey': 'المسح الصحي والاجتماعي',
         'certificates': 'شهادات التقدير',
         'guardians': 'مربو الصفوف',
         'nominations': 'ترشيح المتفوقين',
@@ -2226,6 +2229,76 @@ def schedule_print_admin(request):
         'days': SCHEDULE_DAYS,
         'period_range': range(1, SCHEDULE_PERIODS + 1),
         'info': _schedule_info(),
+        'today': date.today(),
+    })
+
+
+# ─── Health & Social Survey (المسح الصحي والاجتماعي) ─────────────────────────
+
+@login_required
+def survey_form(request):
+    student = getattr(request.user, 'student_profile', None)
+    if not student:
+        messages.error(request, 'هذه الصفحة خاصة بحسابات الطلاب')
+        return redirect('dashboard')
+    if not has_perm(request.user, 'survey', 'add'):
+        messages.error(request, 'المسح مغلق حالياً')
+        return redirect('dashboard')
+    survey = StudentSurvey.objects.filter(student=student).first()
+    if request.method == 'POST':
+        if not survey:
+            survey = StudentSurvey(student=student)
+        form = StudentSurveyForm(request.POST, instance=survey)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم حفظ بيانات المسح بنجاح')
+            return redirect('survey_form')
+    else:
+        form = StudentSurveyForm(instance=survey)
+    return render(request, 'school/survey_form.html', {
+        'student': student,
+        'form': form,
+        'has_survey': bool(survey),
+        'submitted_at': survey.submitted_at if survey else None,
+    })
+
+
+@login_required
+def survey_report(request):
+    if not has_perm(request.user, 'survey', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    surveys = StudentSurvey.objects.select_related('student__student_class').order_by('student__student_class__name', 'student__full_name')
+    total_students = Student.objects.count()
+    submitted_ids = set(surveys.values_list('student_id', flat=True))
+    not_submitted = Student.objects.exclude(id__in=submitted_ids).select_related('student_class').order_by('student_class__name', 'full_name')
+    classes = Class.objects.all().order_by('name')
+    stats = []
+    for cls in classes:
+        total = Student.objects.filter(student_class=cls).count()
+        done = surveys.filter(student__student_class=cls).count()
+        stats.append({'class': cls, 'total': total, 'done': done, 'missing': total - done})
+    return render(request, 'school/survey_report.html', {
+        'surveys': surveys,
+        'total_students': total_students,
+        'submitted_count': len(submitted_ids),
+        'not_submitted_count': not_submitted.count(),
+        'not_submitted': not_submitted,
+        'stats': stats,
+        'today': date.today(),
+    })
+
+
+@login_required
+def survey_detail(request, student_id):
+    if not has_perm(request.user, 'survey', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    student = get_object_or_404(Student, id=student_id)
+    survey = StudentSurvey.objects.filter(student=student).first()
+    return render(request, 'school/survey_detail.html', {
+        'student': student,
+        'survey': survey,
         'today': date.today(),
     })
 

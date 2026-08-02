@@ -1,0 +1,173 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير المسح الصحي والاجتماعي{% endblock %}
+{% block page_heading %}تقرير المسح الصحي والاجتماعي{% endblock %}
+{% block content %}
+<div class="text-center mb-3 no-print">
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-1">العودة</a>
+</div>
+
+<div class="d-none d-print-block text-center mb-3">
+    <h4>تقرير المسح الصحي والاجتماعي</h4>
+    <h5 class="text-muted">{{ today|date:'Y/m/d' }}</h5>
+    <hr>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card stat-blue">
+            <div class="card-body">
+                <div class="number">{{ total_students }}</div>
+                <div class="label">إجمالي الطلاب</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-green">
+            <div class="card-body">
+                <div class="number">{{ submitted_count }}</div>
+                <div class="label">عدد المسوح المكتملة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-red">
+            <div class="card-body">
+                <div class="number">{{ not_submitted_count }}</div>
+                <div class="label">طلاب لم يملؤوا المسح</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-diagram-3-fill"></i> إحصائيات حسب الصف</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>الصف</th>
+                        <th>إجمالي الطلاب</th>
+                        <th>المكتملة</th>
+                        <th>المتبقية</th>
+                        <th>نسبة الإنجاز</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in stats %}
+                    <tr>
+                        <td>{{ s.class.name|default:"-" }}</td>
+                        <td>{{ s.total }}</td>
+                        <td>
+                            <span class="badge bg-success">{{ s.done }}</span>
+                        </td>
+                        <td>
+                            {% if s.missing %}
+                            <span class="badge bg-danger">{{ s.missing }}</span>
+                            {% else %}
+                            <span class="badge bg-success">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if s.total %}
+                            <div class="progress" style="min-width: 120px;">
+                                <div class="progress-bar {% if s.done == s.total %}bg-success{% elif s.done %}bg-warning{% else %}bg-danger{% endif %}"
+                                     style="width: {% widthratio s.done s.total 100 %}%">
+                                    {% widthratio s.done s.total 100 %}%
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">لا توجد صفوف</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-check2-circle"></i> المسوح المكتملة ({{ submitted_count }})</div>
+    <div class="card-body">
+        {% if surveys %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الطالب</th>
+                        <th>الصف</th>
+                        <th>رقم الهوية</th>
+                        <th>تاريخ التعبئة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in surveys %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ s.student.full_name }}</td>
+                        <td>{{ s.student.student_class.name|default:"-" }}</td>
+                        <td>{{ s.student.student_id }}</td>
+                        <td>{{ s.submitted_at|date:'Y/m/d H:i' }}</td>
+                        <td>
+                            <a href="{% url 'survey_detail' s.student.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i> عرض</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2 mb-0">لم يتم تعبئة أي مسح حتى الآن</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-hourglass-split"></i> طلاب لم يملؤوا المسح بعد ({{ not_submitted_count }})</div>
+    <div class="card-body">
+        {% if not_submitted %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الطالب</th>
+                        <th>الصف</th>
+                        <th>رقم الهوية</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for st in not_submitted %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ st.full_name }}</td>
+                        <td>{{ st.student_class.name|default:"-" }}</td>
+                        <td>{{ st.student_id }}</td>
+                        <td>
+                            <a href="{% url 'student_detail' st.id %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-person"></i> بطاقة الطالب</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-success py-4">
+            <i class="bi bi-check-all" style="font-size: 2rem;"></i>
+            <p class="mt-2 mb-0">جميع الطلاب أكملوا المسح</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

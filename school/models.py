@@ -54,6 +54,7 @@ DEFAULT_PERMISSIONS = {
         'meetings': ['view', 'add'],
         'absence': ['view', 'add'],
         'schedule': ['view', 'add'],
+        'survey': ['view', 'add'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -102,6 +103,7 @@ DEFAULT_PERMISSIONS = {
         'settings': [],
         'notes': ['view', 'add'],
         'nominations': ['view', 'add'],
+        'survey': ['add'],
     },
     'student': {
         'students': [],
@@ -117,6 +119,7 @@ DEFAULT_PERMISSIONS = {
         'reports': [],
         'settings': [],
         'notes': ['view'],
+        'survey': ['add'],
     },
 }
 
@@ -659,6 +662,74 @@ class LoginCounter(models.Model):
 
     def __str__(self):
         return f'عدد مرات الدخول: {self.count}'
+
+
+class StudentSurvey(models.Model):
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='survey', verbose_name='الطالب')
+
+    # ── المسح الصحي ──
+    chronic_disease = models.BooleanField('مرض مزمن', default=False)
+    chronic_disease_details = models.CharField('تفاصيل المرض المزمن', max_length=500, blank=True)
+    regular_medication = models.BooleanField('أدوية منتظمة', default=False)
+    medication_name = models.CharField('اسم الدواء', max_length=200, blank=True)
+    has_allergy = models.BooleanField('حساسية', default=False)
+    allergy_drugs = models.BooleanField('حساسية أدوية', default=False)
+    allergy_food = models.BooleanField('حساسية أطعمة', default=False)
+    allergy_dust = models.BooleanField('حساسية غبار', default=False)
+    allergy_other = models.CharField('حساسية أخرى', max_length=300, blank=True)
+    condition_asthma = models.BooleanField('الربو', default=False)
+    condition_diabetes = models.BooleanField('السكري', default=False)
+    condition_epilepsy = models.BooleanField('الصرع', default=False)
+    condition_heart = models.BooleanField('مشاكل القلب', default=False)
+    condition_hearing = models.BooleanField('ضعف السمع', default=False)
+    condition_vision = models.BooleanField('ضعف البصر', default=False)
+    condition_none = models.BooleanField('لا يوجد حالات صحية', default=False)
+    needs_glasses = models.BooleanField('نظارات طبية', default=False)
+    special_care = models.BooleanField('رعاية صحية خاصة', default=False)
+    special_care_details = models.CharField('تفاصيل الرعاية الخاصة', max_length=500, blank=True)
+    emergency_instructions = models.TextField('تعليمات خاصة للطبيب أو المدرسة', blank=True)
+
+    # ── المسح الاجتماعي ──
+    lives_with = models.CharField('يعيش مع', max_length=50, choices=[
+        ('parents', 'الأب والأم'), ('father', 'الأب فقط'), ('mother', 'الأم فقط'),
+        ('relative', 'أحد الأقارب'), ('other', 'أخرى'),
+    ], default='parents')
+    lives_with_other = models.CharField('محدد أخرى', max_length=200, blank=True)
+    family_members_count = models.PositiveIntegerField('عدد أفراد الأسرة', null=True, blank=True)
+    siblings_in_school_count = models.PositiveIntegerField('عدد الإخوة في المدرسة', null=True, blank=True)
+    study_difficulties = models.BooleanField('صعوبات تؤثر على الدراسة', default=False)
+    study_difficulties_details = models.CharField('تفاصيل الصعوبات', max_length=500, blank=True)
+    support_academic = models.BooleanField('دعم أكاديمي', default=False)
+    support_psychological = models.BooleanField('دعم نفسي', default=False)
+    support_social = models.BooleanField('دعم اجتماعي', default=False)
+    support_none = models.BooleanField('لا يحتاج دعم', default=False)
+    has_study_place = models.BooleanField('مكان مخصص للمذاكرة', default=False)
+    has_smartphone = models.BooleanField('هاتف ذكي', default=False)
+    has_computer = models.BooleanField('جهاز حاسوب', default=False)
+    has_internet = models.BooleanField('اتصال بالإنترنت', default=False)
+    has_no_device = models.BooleanField('لا يتوفر أي منها', default=False)
+    participates_activities = models.BooleanField('أنشطة رياضية/ثقافية خارج المدرسة', default=False)
+    family_special_conditions = models.BooleanField('ظروف خاصة للأسرة', default=False)
+    family_special_conditions_details = models.CharField('تفاصيل الظروف الخاصة', max_length=500, blank=True)
+    contact_counselor = models.BooleanField('التواصل مع المرشد التربوي', default=False)
+    contact_method = models.CharField('أفضل وسيلة تواصل', max_length=20, choices=[('phone', 'اتصال هاتفي'), ('whatsapp', 'واتساب'), ('sms', 'رسالة نصية')], default='', blank=True)
+
+    # ── أسئلة اختيارية ──
+    strengths = models.TextField('أبرز نقاط القوة', blank=True)
+    difficulties_notes = models.TextField('أبرز الصعوبات', blank=True)
+    subjects_need_support = models.TextField('المواد التي يحتاج دعم', blank=True)
+    suggestions = models.TextField('اقتراحات لخدمة الطالب', blank=True)
+
+    submitted_at = models.DateTimeField('تاريخ التعبئة', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تعديل', auto_now=True)
+
+    class Meta:
+        verbose_name = 'مسح صحي واجتماعي'
+        verbose_name_plural = 'المسح الصحي والاجتماعي'
+        ordering = ['student__full_name']
+
+    def __str__(self):
+        return f'مسح {self.student.full_name}'
 
 
 class PushSubscription(models.Model):

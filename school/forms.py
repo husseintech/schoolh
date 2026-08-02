@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, StudentSurvey
 
 
 class StudentForm(forms.ModelForm):
@@ -299,4 +299,92 @@ class SubjectForm(forms.ModelForm):
         fields = ['name']
         labels = {
             'name': 'اسم المادة',
+        }
+
+
+class StudentSurveyForm(forms.ModelForm):
+    class Meta:
+        model = StudentSurvey
+        fields = [
+            # health
+            'chronic_disease', 'chronic_disease_details',
+            'regular_medication', 'medication_name',
+            'has_allergy', 'allergy_drugs', 'allergy_food', 'allergy_dust', 'allergy_other',
+            'condition_asthma', 'condition_diabetes', 'condition_epilepsy', 'condition_heart',
+            'condition_hearing', 'condition_vision', 'condition_none',
+            'needs_glasses',
+            'special_care', 'special_care_details',
+            'emergency_instructions',
+            # social
+            'lives_with', 'lives_with_other',
+            'family_members_count', 'siblings_in_school_count',
+            'study_difficulties', 'study_difficulties_details',
+            'support_academic', 'support_psychological', 'support_social', 'support_none',
+            'has_study_place',
+            'has_smartphone', 'has_computer', 'has_internet', 'has_no_device',
+            'participates_activities',
+            'family_special_conditions', 'family_special_conditions_details',
+            'contact_counselor', 'contact_method',
+            # optional
+            'strengths', 'difficulties_notes', 'subjects_need_support', 'suggestions',
+        ]
+        widgets = {
+            'chronic_disease': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio', 'data-target': 'chronic_disease_details'}),
+            'chronic_disease_details': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'يرجى التوضيح', 'hidden': True}),
+            'regular_medication': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio', 'data-target': 'medication_name'}),
+            'medication_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'اذكر اسم الدواء', 'hidden': True}),
+            'has_allergy': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio'}),
+            'allergy_drugs': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'allergy_food': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'allergy_dust': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'allergy_other': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أخرى: اذكرها'}),
+            'condition_asthma': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'condition_diabetes': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'condition_epilepsy': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'condition_heart': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'condition_hearing': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'condition_vision': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'condition_none': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check survey-no'}),
+            'needs_glasses': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio'}),
+            'special_care': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio', 'data-target': 'special_care_details'}),
+            'special_care_details': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'يرجى التوضيح', 'hidden': True}),
+            'emergency_instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'أي تعليمات خاصة للطبيب أو المدرسة في حال الطوارئ'}),
+            'lives_with': forms.RadioSelect(attrs={'class': 'survey-radio'}),
+            'lives_with_other': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'اذكر من يعيش معه'}),
+            'family_members_count': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'siblings_in_school_count': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'study_difficulties': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio', 'data-target': 'study_difficulties_details'}),
+            'study_difficulties_details': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'يرجى التوضيح', 'hidden': True}),
+            'support_academic': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'support_psychological': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'support_social': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'support_none': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check survey-no'}),
+            'has_study_place': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio'}),
+            'has_smartphone': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'has_computer': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'has_internet': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check'}),
+            'has_no_device': forms.CheckboxInput(attrs={'class': 'form-check-input survey-check survey-no'}),
+            'participates_activities': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio'}),
+            'family_special_conditions': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio', 'data-target': 'family_special_conditions_details'}),
+            'family_special_conditions_details': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نعم (اختياري)', 'hidden': True}),
+            'contact_counselor': forms.CheckboxInput(attrs={'class': 'form-check-input survey-radio'}),
+            'contact_method': forms.RadioSelect(attrs={'class': 'survey-radio'}),
+            'strengths': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'difficulties_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'subjects_need_support': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'suggestions': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+        labels = {
+            'chronic_disease': 'نعم، يرجى التوضيح',
+            'regular_medication': 'نعم، اذكر اسم الدواء',
+            'has_allergy': 'نعم، الطالب لديه حساسية',
+            'needs_glasses': 'نعم، يحتاج نظارات',
+            'special_care': 'نعم، يحتاج رعاية صحية خاصة',
+            'study_difficulties': 'نعم، يعاني صعوبات',
+            'has_study_place': 'نعم',
+            'participates_activities': 'نعم',
+            'family_special_conditions': 'نعم',
+            'contact_counselor': 'نعم',
+            'lives_with': 'يعيش الطالب مع',
+            'contact_method': 'أفضل وسيلة للتواصل مع ولي الأمر',
         }

@@ -36,6 +36,7 @@ def user_permissions(request):
             ('visit_program', 'view'), ('visit_program', 'add'), ('visit_program', 'delete'),
             ('absence', 'view'), ('absence', 'add'),
             ('schedule', 'view'), ('schedule', 'add'),
+            ('survey', 'view'), ('survey', 'add'),
             ('certificates', 'view'), ('certificates', 'add'), ('certificates', 'delete'),
             ('guardians', 'view'), ('guardians', 'add'),
             ('nominations', 'view'), ('nominations', 'add'),
