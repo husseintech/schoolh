@@ -27,6 +27,119 @@
 </div>
 {% endif %}
 
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-calendar-week-fill"></i> برنامجي الدراسي
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm text-center align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>اليوم</th>
+                        {% for p in period_range %}
+                        <th>حصة {{ p }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in schedule_days %}
+                    <tr>
+                        <th class="align-middle">{{ day }}</th>
+                        {% for p in period_range %}
+                        <td>
+                            {% for e in schedule_entries %}{% if e.day == day and e.period == p %}
+                            <strong>{{ e.subject.name|default:'---' }}</strong><br>
+                            <small class="text-muted">{{ e.student_class.name|default:'' }}</small>
+                            {% endif %}{% endfor %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small mb-0 mt-2">الجداول الفارغة تعني حصصاً غير محددّة بعد.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-send-fill"></i> الرسائل التي أرسلتها للطلاب
+            </div>
+            <div class="card-body">
+                {% if sent_messages %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>الطالب</th>
+                                <th>الموضوع</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in sent_messages %}
+                            <tr>
+                                <td>{{ m.recipient.student_profile.full_name }}</td>
+                                <td>{{ m.subject|truncatewords:6 }}</td>
+                                <td>{{ m.created_at|date:"Y-m-d" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="bi bi-envelope-open" style="font-size: 2rem;"></i>
+                    <p class="mt-2 mb-0">لم ترسل رسائل للطلاب بعد</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-sticky-fill"></i> الملاحظات التي كتبتها للطلاب
+            </div>
+            <div class="card-body">
+                {% if teacher_notes %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>الطالب</th>
+                                <th>النوع</th>
+                                <th>المحتوى</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for n in teacher_notes %}
+                            <tr>
+                                <td>{{ n.student.full_name }}</td>
+                                <td><span class="badge bg-{% if n.note_type == 'تأخير' %}warning{% elif n.note_type == 'تأديبية' %}danger{% elif n.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ n.note_type }}</span></td>
+                                <td>{{ n.content|truncatewords:8 }}</td>
+                                <td>{{ n.created_at|date:"Y-m-d" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="bi bi-journal-check" style="font-size: 2rem;"></i>
+                    <p class="mt-2 mb-0">لم تكتب ملاحظات بعد</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 {% if classes %}
 <div class="row g-4">
     {% for class_obj in classes %}

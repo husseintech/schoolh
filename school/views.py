@@ -80,10 +80,24 @@ def dashboard(request):
             teacher = request.user.teacher_profile
             classes = teacher.classes.all()
             announcements = Announcement.objects.filter(is_active=True)[:5]
+            schedule_entries = list(TeacherScheduleEntry.objects.filter(
+                teacher=teacher,
+            ).select_related('subject', 'student_class'))
+            sent_messages = list(Message.objects.filter(
+                sender=request.user, recipient__profile__role='student',
+            ).select_related('recipient__student_profile').order_by('-created_at')[:10])
+            teacher_notes = list(Note.objects.filter(
+                created_by=request.user,
+            ).select_related('student__student_class').order_by('-created_at')[:10])
             return render(request, 'school/teacher_dashboard.html', {
                 'teacher': teacher,
                 'classes': classes,
                 'announcements': announcements,
+                'schedule_entries': schedule_entries,
+                'schedule_days': SCHEDULE_DAYS,
+                'period_range': range(1, SCHEDULE_PERIODS + 1),
+                'sent_messages': sent_messages,
+                'teacher_notes': teacher_notes,
             })
         except Teacher.DoesNotExist:
             messages.error(request, 'لا يوجد ملف معلم مرتبط بهذا الحساب')
