@@ -2969,3 +2969,46 @@ def inspection_visits_all_report(request):
         'info': info,
     })
 
+
+# ─── Backup / Restore ─────────────────────────────────────────────────────────
+
+@login_required
+def backup_data(request):
+    """نسخ احتياطي لكل البيانات (JSON) أو استعادتها — للمدير فقط."""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+
+    import tempfile
+    from django.core.management import call_command
+
+    EXCLUDED = ['contenttypes', 'sessions', 'admin']
+
+    if request.method == 'POST':
+        restore_file = request.FILES.get('backup_file')
+        if not restore_file or not restore_file.name.endswith('.json'):
+            messages.error(request, 'يرجى اختيار ملف JSON صالح')
+            return redirect('backup_data')
+        tmp = tempfile.NamedTemporaryFile(suffix='.json', delete=False, dir='/tmp' if os.getenv('VERCEL') else None)
+        try:
+            tmp.write(restore_file.read())
+            tmp.close()
+            call_command('loaddata', tmp.name, verbosity=0)
+            messages.success(request, 'تمت استعادة النسخة الاحتياطية بنجاح')
+        except Exception as e:
+            messages.error(request, f'فشلت الاستعادة: {e}')
+        finally:
+            if os.path.exists(tmp.name):
+                os.remove(tmp.name)
+        return redirect('backup_data')
+
+    if request.GET.get('download') != '1':
+        return render(request, 'school/backup_data.html')
+
+    out = io.StringIO()
+    call_command('dumpdata', 'school', 'auth', exclude=EXCLUDED, stdout=out, verbosity=0)
+    filename = f'backup_{date.today().strftime("%Y%m%d")}.json'
+    response = HttpResponse(out.getvalue(), content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
+

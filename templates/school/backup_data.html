@@ -1,0 +1,38 @@
+{% extends 'school/base.html' %}
+{% block title %}النسخ الاحتياطي والاستعادة{% endblock %}
+{% block page_heading %}النسخ الاحتياطي والاستعادة{% endblock %}
+{% block content %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle-fill"></i>
+    انسخ بيانات النظام احتياطياً بشكل دوري، أو استعد نسخة سابقة عند الحاجة.
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white"><i class="bi bi-download"></i> تنزيل نسخة احتياطية</div>
+            <div class="card-body">
+                <p class="text-muted">تنزيل كل بيانات النظام (الطلاب، المعلمون، الملاحظات، الزيارات، المسوح...) في ملف JSON واحد.</p>
+                <a href="{% url 'backup_data' %}?download=1" class="btn btn-success btn-lg w-100"><i class="bi bi-download"></i> تنزيل النسخة الاحتياطية</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white"><i class="bi bi-upload"></i> استعادة نسخة احتياطية</div>
+            <div class="card-body">
+                <p class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> تحذير: الاستعادة تستبدل جميع البيانات الحالية ببيانات الملف.</p>
+                <form method="post" enctype="multipart/form-data" onsubmit="return confirm('سيتم استبدال جميع البيانات الحالية ببيانات النسخة المرفوعة. هل أنت متأكد؟')">
+                    {% csrf_token %}
+                    <input type="file" name="backup_file" accept=".json" class="form-control mb-2" required>
+                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-upload"></i> استعادة البيانات</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">العودة للوحة التحكم</a>
+</div>
+{% endblock %}

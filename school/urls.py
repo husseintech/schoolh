@@ -111,6 +111,9 @@ urlpatterns = [
     # My Account
     path('my-account/', views.my_account, name='my_account'),
 
+    # Backup / Restore
+    path('backup/', views.backup_data, name='backup_data'),
+
     # WhatsApp
     path('whatsapp-settings/', views.whatsapp_settings, name='whatsapp_settings'),
 
