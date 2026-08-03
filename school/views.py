@@ -18,6 +18,48 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
+ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+MODULE_LABELS = {
+    'students': 'الطلاب',
+    'teachers': 'المعلمون',
+    'classes': 'الصفوف',
+    'subjects': 'المواد',
+    'announcements': 'الإعلانات',
+    'agenda': 'الأجندة',
+    'leaves': 'أذونات المغادرة',
+    'levels': 'مستويات الطلاب',
+    'exams': 'تحليل الامتحانات',
+    'messages': 'الرسائل',
+    'reports': 'التقارير',
+    'settings': 'الإعدادات',
+    'notes': 'الملاحظات',
+    'lateness': 'تأخيرات الطلاب',
+    'meetings': 'اجتماعات المعلمين',
+    'supervisor_visits': 'زيارات المشرفين',
+    'inspection_visits': 'الزيارات الإشرافية',
+    'visit_program': 'برنامج الزيارات',
+    'absence': 'غياب الطلاب',
+    'schedule': 'الجدول اليومي للمعلمين',
+    'survey': 'المسح الصحي والاجتماعي',
+    'certificates': 'شهادات التقدير',
+    'guardians': 'مربو الصفوف',
+    'nominations': 'ترشيح المتفوقين',
+}
+ACTION_LABELS = {
+    'view': 'عرض',
+    'add': 'إضافة',
+    'edit': 'تعديل',
+    'delete': 'حذف',
+    'import': 'استيراد',
+    'export': 'تصدير',
+    'notes': 'ملاحظات',
+    'complete': 'إكمال',
+    'send': 'إرسال',
+    'whatsapp': 'واتساب',
+    'accounts': 'الحسابات',
+}
+
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -1515,12 +1557,15 @@ def add_account(request):
         Profile.objects.create(user=user, role=role, phone=phone)
 
         new_perms = {}
-        for key, val in request.POST.items():
-            if key.startswith('perm_'):
-                parts = key.replace('perm_', '', 1).rsplit('_', 1)
-                if len(parts) == 2:
-                    module, action = parts
-                    new_perms.setdefault(module, []).append(action)
+        if role == 'admin':
+            new_perms = {m: list(ACTION_KEYS) for m in MODULE_KEYS}
+        else:
+            for key, val in request.POST.items():
+                if key.startswith('perm_'):
+                    parts = key.replace('perm_', '', 1).rsplit('_', 1)
+                    if len(parts) == 2:
+                        module, action = parts
+                        new_perms.setdefault(module, []).append(action)
         if not new_perms:
             new_perms = UserPermission.get_defaults(role)
         UserPermission.objects.create(user=user, permissions=new_perms)
@@ -1528,47 +1573,6 @@ def add_account(request):
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
-    ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
-    MODULE_LABELS = {
-        'students': 'الطلاب',
-        'teachers': 'المعلمون',
-        'classes': 'الصفوف',
-        'subjects': 'المواد',
-        'announcements': 'الإعلانات',
-        'agenda': 'الأجندة',
-        'leaves': 'أذونات المغادرة',
-        'levels': 'مستويات الطلاب',
-        'exams': 'تحليل الامتحانات',
-        'messages': 'الرسائل',
-        'reports': 'التقارير',
-        'settings': 'الإعدادات',
-        'notes': 'الملاحظات',
-        'lateness': 'تأخيرات الطلاب',
-        'meetings': 'اجتماعات المعلمين',
-        'supervisor_visits': 'زيارات المشرفين',
-        'inspection_visits': 'الزيارات الإشرافية',
-        'visit_program': 'برنامج الزيارات',
-        'absence': 'غياب الطلاب',
-        'schedule': 'الجدول اليومي للمعلمين',
-        'survey': 'المسح الصحي والاجتماعي',
-        'certificates': 'شهادات التقدير',
-        'guardians': 'مربو الصفوف',
-        'nominations': 'ترشيح المتفوقين',
-    }
-    ACTION_LABELS = {
-        'view': 'عرض',
-        'add': 'إضافة',
-        'edit': 'تعديل',
-        'delete': 'حذف',
-        'import': 'استيراد',
-        'export': 'تصدير',
-        'notes': 'ملاحظات',
-        'complete': 'إكمال',
-        'send': 'إرسال',
-        'whatsapp': 'واتساب',
-        'accounts': 'الحسابات',
-    }
     modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
     actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
     return render(request, 'school/add_account.html', {
@@ -1601,59 +1605,21 @@ def edit_account(request, user_id):
             user.save()
 
         new_perms = {}
-        for key, val in request.POST.items():
-            if key.startswith('perm_'):
-                parts = key.replace('perm_', '', 1).rsplit('_', 1)
-                if len(parts) == 2:
-                    module, action = parts
-                    new_perms.setdefault(module, []).append(action)
+        if profile.role == 'admin':
+            new_perms = {m: list(ACTION_KEYS) for m in MODULE_KEYS}
+        else:
+            for key, val in request.POST.items():
+                if key.startswith('perm_'):
+                    parts = key.replace('perm_', '', 1).rsplit('_', 1)
+                    if len(parts) == 2:
+                        module, action = parts
+                        new_perms.setdefault(module, []).append(action)
         perms.permissions = new_perms
         perms.save()
 
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
-    ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
-    MODULE_LABELS = {
-        'students': 'الطلاب',
-        'teachers': 'المعلمون',
-        'classes': 'الصفوف',
-        'subjects': 'المواد',
-        'announcements': 'الإعلانات',
-        'agenda': 'الأجندة',
-        'leaves': 'أذونات المغادرة',
-        'levels': 'مستويات الطلاب',
-        'exams': 'تحليل الامتحانات',
-        'messages': 'الرسائل',
-        'reports': 'التقارير',
-        'settings': 'الإعدادات',
-        'notes': 'الملاحظات',
-        'lateness': 'تأخيرات الطلاب',
-        'meetings': 'اجتماعات المعلمين',
-        'supervisor_visits': 'زيارات المشرفين',
-        'inspection_visits': 'الزيارات الإشرافية',
-        'visit_program': 'برنامج الزيارات',
-        'absence': 'غياب الطلاب',
-        'schedule': 'الجدول اليومي للمعلمين',
-        'survey': 'المسح الصحي والاجتماعي',
-        'certificates': 'شهادات التقدير',
-        'guardians': 'مربو الصفوف',
-        'nominations': 'ترشيح المتفوقين',
-    }
-    ACTION_LABELS = {
-        'view': 'عرض',
-        'add': 'إضافة',
-        'edit': 'تعديل',
-        'delete': 'حذف',
-        'import': 'استيراد',
-        'export': 'تصدير',
-        'notes': 'ملاحظات',
-        'complete': 'إكمال',
-        'send': 'إرسال',
-        'whatsapp': 'واتساب',
-        'accounts': 'الحسابات',
-    }
     modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
     actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
 
@@ -1696,24 +1662,6 @@ def role_permissions(request):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
 
-    MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
-    ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
-    MODULE_LABELS = {
-        'students': 'الطلاب', 'teachers': 'المعلمون', 'classes': 'الصفوف', 'subjects': 'المواد',
-        'announcements': 'الإعلانات', 'agenda': 'الأجندة', 'leaves': 'أذونات المغادرة',
-        'levels': 'مستويات الطلاب', 'exams': 'تحليل الامتحانات', 'messages': 'الرسائل',
-        'reports': 'التقارير', 'settings': 'الإعدادات', 'notes': 'الملاحظات',
-        'lateness': 'تأخيرات الطلاب', 'meetings': 'اجتماعات المعلمين',
-        'supervisor_visits': 'زيارات المشرفين', 'inspection_visits': 'الزيارات الإشرافية',
-        'visit_program': 'برنامج الزيارات', 'absence': 'غياب الطلاب',
-        'schedule': 'الجدول اليومي للمعلمين', 'survey': 'المسح الصحي والاجتماعي',
-        'certificates': 'شهادات التقدير', 'guardians': 'مربو الصفوف', 'nominations': 'ترشيح المتفوقين',
-    }
-    ACTION_LABELS = {
-        'view': 'عرض', 'add': 'إضافة', 'edit': 'تعديل', 'delete': 'حذف',
-        'import': 'استيراد', 'export': 'تصدير', 'notes': 'ملاحظات', 'complete': 'إكمال',
-        'send': 'إرسال', 'whatsapp': 'واتساب', 'accounts': 'الحسابات',
-    }
     modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
     actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
 

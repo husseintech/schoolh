@@ -14,6 +14,11 @@ function setDefaultPerms() {
         cb.checked = perms[module] && perms[module].includes(action);
     });
 }
+function setAllPerms(checked) {
+    document.querySelectorAll('[name^="perm_"]').forEach(function(cb) {
+        cb.checked = checked;
+    });
+}
 </script>
 {% endblock %}
 {% block content %}
@@ -52,7 +57,7 @@ function setDefaultPerms() {
                     </div>
                     <hr>
                     <h5><i class="bi bi-shield-lock-fill"></i> الصلاحيات</h5>
-                    <p class="text-muted small">اختر الصلاحيات لكل قسم. <button type="button" class="btn btn-sm btn-outline-info" onclick="setDefaultPerms()">استعادة الصلاحيات الافتراضية</button></p>
+                    <p class="text-muted small">اختر الصلاحيات لكل قسم. <button type="button" class="btn btn-sm btn-outline-info" onclick="setDefaultPerms()">استعادة الصلاحيات الافتراضية</button> <button type="button" class="btn btn-sm btn-outline-success" onclick="setAllPerms(true)">تحديد الكل</button> <button type="button" class="btn btn-sm btn-outline-danger" onclick="setAllPerms(false)">إلغاء التحديد</button></p>
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered">
                             <thead>
