@@ -2415,7 +2415,7 @@ def survey_stats(request):
         ('لا يحتاج دعم', lambda s: s.support_none),
     ]:
         c = cnt(fn)
-        supports.append({'label': label, 'count': c, 'pct': pct(c)})
+        supports.append({'label': label, 'count': c, 'pct': pct(c), 'students': [s for s in submitted if fn(s)]})
 
     device_rows = []
     for label, fn in [

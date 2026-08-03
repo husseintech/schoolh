@@ -46,6 +46,16 @@
     </div>
 </div>
 
+<script>
+function toggleNames(id, btn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var hidden = el.style.display === 'none' || !el.style.display;
+    el.style.display = hidden ? '' : 'none';
+    btn.innerHTML = hidden ? 'إخفاء الأسماء' : 'عرض الأسماء';
+}
+</script>
+
 <div class="card mb-4">
     <div class="card-header bg-danger text-white"><i class="bi bi-heart-pulse-fill"></i> المؤشرات الصحية</div>
     <div class="card-body">
@@ -56,6 +66,7 @@
                         <th>المؤشر</th>
                         <th>العدد</th>
                         <th>النسبة</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,6 +80,20 @@
                             <div class="progress" style="min-width: 140px;">
                                 <div class="progress-bar bg-{{ r.color }}" style="width: {{ r.pct }}%">{{ r.pct }}%</div>
                             </div>
+                        </td>
+                        <td class="no-print">
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleNames('names-h{{ forloop.counter }}', this)">عرض الأسماء</button>
+                        </td>
+                    </tr>
+                    <tr id="names-h{{ forloop.counter }}" style="display:none;" class="table-light">
+                        <td colspan="4">
+                            {% if r.students %}
+                                {% for s in r.students %}
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark">{{ s.student.full_name }} — {{ s.student.student_class.name|default:'-' }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">لا يوجد</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -88,6 +113,7 @@
                         <th>المؤشر</th>
                         <th>العدد</th>
                         <th>النسبة</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -100,6 +126,20 @@
                                 <div class="progress-bar bg-warning" style="width: {{ r.pct }}%">{{ r.pct }}%</div>
                             </div>
                         </td>
+                        <td class="no-print">
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleNames('names-s{{ forloop.counter }}', this)">عرض الأسماء</button>
+                        </td>
+                    </tr>
+                    <tr id="names-s{{ forloop.counter }}" style="display:none;" class="table-light">
+                        <td colspan="4">
+                            {% if r.students %}
+                                {% for s in r.students %}
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark">{{ s.student.full_name }} — {{ s.student.student_class.name|default:'-' }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">لا يوجد</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                     {% for r in supports %}
@@ -110,6 +150,20 @@
                             <div class="progress" style="min-width: 140px;">
                                 <div class="progress-bar bg-info" style="width: {{ r.pct }}%">{{ r.pct }}%</div>
                             </div>
+                        </td>
+                        <td class="no-print">
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleNames('names-su{{ forloop.counter }}', this)">عرض الأسماء</button>
+                        </td>
+                    </tr>
+                    <tr id="names-su{{ forloop.counter }}" style="display:none;" class="table-light">
+                        <td colspan="4">
+                            {% if r.students %}
+                                {% for s in r.students %}
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark">{{ s.student.full_name }} — {{ s.student.student_class.name|default:'-' }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">لا يوجد</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
