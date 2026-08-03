@@ -1,0 +1,69 @@
+{% extends 'school/base.html' %}
+{% block title %}تفريغ البيانات{% endblock %}
+{% block page_heading %}تفريغ البيانات (بداية عام جديد){% endblock %}
+{% block content %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <strong>تنبيه:</strong> هذه الصفحة لحذف البيانات نهائياً عند بداية عام جديد. <u>ننصح بتنزيل نسخة احتياطية أولاً</u> من صفحة النسخ الاحتياطي قبل أي تفريغ.
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-danger text-white"><i class="bi bi-person-x-fill"></i> تفريغ سجلات كاملة مع ما يرتبط بها</div>
+            <div class="card-body">
+                <p class="text-muted small">تحذف القسم بالكامل مع كل البيانات المرتبطة به (مثال: حذف الطلاب يحذف ملاحظاتهم وأذوناتهم ومسوحهم).</p>
+                <div class="list-group">
+                    {% for key, label in full_groups %}
+                    <form method="post" class="list-group-item d-flex justify-content-between align-items-center" onsubmit="return confirm('سيتم حذف «{{ label }}» وجميع البيانات المرتبطة نهائياً. هل أنت متأكد؟')">
+                        {% csrf_token %}
+                        <span><strong>{{ label }}</strong> <span class="text-muted small">(كل سجلاته)</span></span>
+                        <input type="hidden" name="action" value="flush_related">
+                        <input type="hidden" name="key" value="{{ key }}">
+                        <input type="hidden" name="confirm" value="YES">
+                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> تفريغ</button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-warning text-dark"><i class="bi bi-eraser-fill"></i> تفريغ جداول بيانات محددة</div>
+            <div class="card-body">
+                <p class="text-muted small">اختر الجداول التي تريد تفريغها فقط دون المساس بالطلاب أو المعلمين.</p>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr><th>القسم</th><th>عدد السجلات</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for c in counts %}
+                            <tr>
+                                <td>{{ c.label }}</td>
+                                <td><span class="badge bg-secondary">{{ c.count }}</span></td>
+                                <td class="text-center">
+                                    <form method="post" style="display:inline" onsubmit="return confirm('سيتم حذف {{ c.count }} سجل من «{{ c.label }}» نهائياً. هل أنت متأكد؟')">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="flush_one">
+                                        <input type="hidden" name="key" value="{{ c.key }}">
+                                        <input type="hidden" name="confirm" value="YES">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> تفريغ</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{% url 'backup_data' %}" class="btn btn-outline-info"><i class="bi bi-database-check"></i> الذهاب للنسخ الاحتياطي</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">العودة للوحة التحكم</a>
+</div>
+{% endblock %}

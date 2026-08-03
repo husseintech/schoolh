@@ -105,5 +105,17 @@
             </div>
         </div>
     </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-database-fill-gear" style="font-size: 2rem; color: #16a085;"></i>
+                <h5 class="mt-2">أدوات البيانات</h5>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'backup_data' %}" class="btn btn-outline-info">النسخ الاحتياطي</a>
+                    <a href="{% url 'reset_data' %}" class="btn btn-outline-warning mt-1">تفريغ البيانات (بداية عام)</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

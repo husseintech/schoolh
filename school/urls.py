@@ -74,6 +74,7 @@ urlpatterns = [
     # Exam Analysis
     path('exam-analysis/', views.exam_analysis_list, name='exam_analysis_list'),
     path('exam-analysis/add/', views.add_exam_analysis, name='add_exam_analysis'),
+    path('exam-analysis/<int:analysis_id>/report/', views.exam_analysis_report, name='exam_analysis_report'),
 
     # Messages
     path('contact/', views.parent_message, name='parent_message'),
@@ -113,6 +114,9 @@ urlpatterns = [
 
     # Backup / Restore
     path('backup/', views.backup_data, name='backup_data'),
+
+    # Reset / Flush Data
+    path('reset-data/', views.reset_data, name='reset_data'),
 
     # WhatsApp
     path('whatsapp-settings/', views.whatsapp_settings, name='whatsapp_settings'),

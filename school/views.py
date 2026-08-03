@@ -175,12 +175,12 @@ def student_list(request):
     profile = user.profile
 
     if profile.role == 'admin':
-        students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+        students = Student.objects.all().select_related('student_class').order_by('full_name')
     elif profile.role == 'teacher':
         try:
             teacher = user.teacher_profile
             classes = teacher.classes.all()
-            students = Student.objects.filter(student_class__in=classes).select_related('student_class').order_by('student_class__name', 'full_name')
+            students = Student.objects.filter(student_class__in=classes).select_related('student_class').order_by('full_name')
         except Teacher.DoesNotExist:
             students = Student.objects.none()
     else:
@@ -1198,6 +1198,23 @@ def exam_analysis_list(request):
     return render(request, 'school/exam_analysis_list.html', {'analyses': analyses})
 
 
+@login_required
+def exam_analysis_report(request, analysis_id):
+    if request.user.profile.role not in ['admin', 'teacher']:
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    analysis = get_object_or_404(ExamAnalysis, id=analysis_id)
+    if request.user.profile.role == 'teacher' and analysis.created_by != request.user:
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('exam_analysis_list')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/exam_analysis_report.html', {
+        'analysis': analysis,
+        'info': info,
+        'today': date.today(),
+    })
+
+
 # ─── Messages ─────────────────────────────────────────────────────────────────
 
 def parent_message(request):
@@ -2005,10 +2022,16 @@ def supervisor_visits_report(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     visits = SupervisorVisit.objects.all().select_related('teacher').order_by('-visit_date')
+    teachers = Teacher.objects.all().order_by('full_name')
+    selected_teacher_id = request.GET.get('teacher_id', '')
+    if selected_teacher_id:
+        visits = visits.filter(teacher_id=selected_teacher_id)
     info = SchoolInfo.objects.first()
     return render(request, 'school/supervisor_visits_report.html', {
         'visits': visits,
         'info': info,
+        'teachers': teachers,
+        'selected_teacher_id': selected_teacher_id,
     })
 
 
@@ -3011,4 +3034,89 @@ def backup_data(request):
     response = HttpResponse(out.getvalue(), content_type='application/json')
     response['Content-Disposition'] = f'attachment; filename={filename}'
     return response
+
+
+# ─── Reset / Flush Data ───────────────────────────────────────────────────────
+
+CLEARABLE_TABLES = [
+    ('leaves', 'أذونات المغادرة', StudentLeave, ['student']),
+    ('notes', 'ملاحظات الطلاب', Note, ['student']),
+    ('lateness', 'تأخيرات الطلاب', StudentLateness, ['student']),
+    ('absence', 'غياب الطلاب', StudentAbsence, ['student']),
+    ('levels', 'مستويات الطلاب', StudentLevel, ['student']),
+    ('survey', 'المسوح الصحية والاجتماعية', StudentSurvey, ['student']),
+    ('visits', 'زيارات المشرفين', SupervisorVisit, ['teacher']),
+    ('inspection_visits', 'الزيارات الإشرافية', InspectionVisit, ['teacher']),
+    ('visit_program', 'برنامج الزيارات', VisitProgram, ['teacher']),
+    ('meetings', 'اجتماعات المعلمين', Meeting, ['teacher']),
+    ('exams', 'تحليل الامتحانات', ExamAnalysis, []),
+    ('messages', 'الرسائل', Message, []),
+    ('announcements', 'الإعلانات', Announcement, []),
+    ('agenda', 'الأجندة', Agenda, []),
+    ('schedule', 'الجدول اليومي للمعلمين', TeacherScheduleEntry, []),
+    ('notifications', 'الإشعارات', Notification, []),
+    ('certificates', 'شهادات التقدير', Certificate, []),
+    ('nominations', 'ترشيحات المتفوقين', Nomination, []),
+    ('teacher_notes', 'ملاحظات المعلمين', TeacherNote, []),
+    ('lesson_links', 'روابط الدروس', LessonLink, []),
+]
+
+DEPENDENT_MODELS = {
+    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter],
+    'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry],
+    'classes': [Student, TeacherScheduleEntry],
+    'subjects': [TeacherScheduleEntry],
+}
+
+
+@login_required
+def reset_data(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        confirm = request.POST.get('confirm', '')
+        if confirm != 'YES':
+            messages.error(request, 'يرجى كتابة YES للتأكيد')
+            return redirect('reset_data')
+        if action == 'flush_one':
+            key = request.POST.get('key', '')
+            for k, label, model, deps in CLEARABLE_TABLES:
+                if k == key:
+                    model.objects.all().delete()
+                    messages.success(request, f'تم تفريغ: {label}')
+                    return redirect('reset_data')
+            messages.error(request, 'قسم غير معروف')
+            return redirect('reset_data')
+        if action == 'flush_related':
+            key = request.POST.get('key', '')
+            if key == 'students':
+                for m in DEPENDENT_MODELS['students']:
+                    m.objects.all().delete()
+                Student.objects.all().delete()
+                User.objects.filter(profile__role='student').delete()
+                messages.success(request, 'تم تفريغ الطلاب وجميع بياناتهم المرتبطة')
+            elif key == 'teachers':
+                for m in DEPENDENT_MODELS['teachers']:
+                    m.objects.all().delete()
+                Teacher.objects.all().delete()
+                User.objects.filter(profile__role='teacher').delete()
+                messages.success(request, 'تم تفريغ المعلمين وجميع بياناتهم المرتبطة')
+            elif key == 'classes':
+                for m in DEPENDENT_MODELS['classes']:
+                    m.objects.all().delete()
+                Class.objects.all().delete()
+                messages.success(request, 'تم تفريغ الصفوف وجميع بياناتهم المرتبطة')
+            elif key == 'subjects':
+                for m in DEPENDENT_MODELS['subjects']:
+                    m.objects.all().delete()
+                Subject.objects.all().delete()
+                messages.success(request, 'تم تفريغ المواد وجميع بياناتهم المرتبطة')
+            return redirect('reset_data')
+    counts = [{'key': k, 'label': label, 'count': model.objects.count()} for k, label, model, deps in CLEARABLE_TABLES]
+    return render(request, 'school/reset_data.html', {
+        'counts': counts,
+        'full_groups': [('students', 'الطلاب'), ('teachers', 'المعلمون'), ('classes', 'الصفوف'), ('subjects', 'المواد')],
+    })
 

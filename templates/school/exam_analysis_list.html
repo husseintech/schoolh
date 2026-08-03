@@ -45,6 +45,9 @@
                         {% if a.fail_reasons %}<p class="mb-0"><strong>أسباب الرسوب:</strong> {{ a.fail_reasons }}</p>{% endif %}
                         {% endif %}
                         <small class="text-muted d-block mt-2">بواسطة: {{ a.created_by.get_full_name|default:a.created_by.username }} | {{ a.created_at|date:"Y-m-d" }}</small>
+                        <div class="mt-2 no-print">
+                            <a href="{% url 'exam_analysis_report' a.id %}" class="btn btn-sm btn-outline-success" target="_blank"><i class="bi bi-printer"></i> تقرير الطباعة والرسم البياني</a>
+                        </div>
                     </div>
                 </div>
             </div>

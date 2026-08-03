@@ -27,6 +27,22 @@
             <h5>سجل زيارات المشرفين</h5>
             <p class="text-muted">إجمالي الزيارات: {{ visits|length }}</p>
         </div>
+        <form method="get" class="row g-2 mb-4 no-print align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">اختر معلماً لعرض زياراته فقط</label>
+                <select name="teacher_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل المعلمين</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if selected_teacher_id == t.id|stringformat:'s' %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if selected_teacher_id %}
+            <div class="col-md-4 d-flex align-items-end">
+                <a href="{% url 'supervisor_visits_report' %}" class="btn btn-outline-secondary">عرض الكل</a>
+            </div>
+            {% endif %}
+        </form>
         {% if visits %}
         <div class="table-responsive">
             <table class="table table-bordered table-hover">
