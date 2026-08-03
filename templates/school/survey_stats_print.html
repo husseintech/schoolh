@@ -1,0 +1,53 @@
+{% extends 'school/base.html' %}
+{% block title %}طباعة نتائج المسح{% endblock %}
+{% block page_heading %}{% if mode == 'students' %}قائمة الطلاب (تقرير){% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
+{% block content %}
+<div class="d-print-none text-center mb-3">
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
+    <a href="{% url 'survey_stats' %}" class="btn btn-outline-secondary ms-1">العودة للنتائج</a>
+</div>
+
+<div class="text-center mb-3">
+    <h4 class="mb-1">{{ info.name_ar|default:'المدرسة' }}</h4>
+    <h6 class="text-muted">نتائج المسح الصحي والاجتماعي — {{ today|date:'Y/m/d' }} — عدد المسوح: {{ submitted_count }}</h6>
+    <hr>
+</div>
+
+{% if mode == 'students' %}
+<div class="table-responsive">
+    <table class="table table-bordered align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>اسم الطالب</th>
+                <th>الصف</th>
+                <th>الحالات المسجلة</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.cls }}</td>
+                <td>{{ row.labels }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">لا توجد مسوح</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+{% for g in groups %}
+<h5 class="border-bottom pb-1 mt-4">{{ g.title }} ({{ g.students|length }})</h5>
+<div class="mb-1">
+    {% for s in g.students %}
+    <span class="d-inline-block border rounded px-2 py-1 m-1">{{ s.student.full_name }} — {{ s.student.student_class.name|default:'-' }}</span>
+    {% endfor %}
+</div>
+{% empty %}
+<div class="text-center text-muted py-4">لا توجد بيانات</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

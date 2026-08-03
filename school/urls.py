@@ -92,6 +92,7 @@ urlpatterns = [
     path('survey/', views.survey_form, name='survey_form'),
     path('survey/report/', views.survey_report, name='survey_report'),
     path('survey/stats/', views.survey_stats, name='survey_stats'),
+    path('survey/stats/print/<str:mode>/', views.survey_stats_print, name='survey_stats_print'),
     path('survey/<int:student_id>/', views.survey_detail, name='survey_detail'),
 
     # Reports

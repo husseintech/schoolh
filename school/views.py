@@ -2363,12 +2363,39 @@ def survey_report(request):
     })
 
 
-@login_required
-def survey_stats(request):
-    if not has_perm(request.user, 'survey', 'view'):
-        messages.error(request, 'ليس لديك صلاحية')
-        return redirect('dashboard')
+def survey_condition_labels(s):
+    out = []
+    if s.chronic_disease:
+        out.append('مرض مزمن' + (f' ({s.chronic_disease_details})' if s.chronic_disease_details else ''))
+    if s.condition_asthma:
+        out.append('الربو')
+    if s.condition_diabetes:
+        out.append('السكري')
+    if s.condition_epilepsy:
+        out.append('الصرع')
+    if s.condition_heart:
+        out.append('مشاكل قلب')
+    if s.condition_hearing:
+        out.append('ضعف سمع')
+    if s.condition_vision:
+        out.append('ضعف بصر')
+    if s.allergy_drugs:
+        out.append('حساسية أدوية')
+    if s.allergy_food:
+        out.append('حساسية أطعمة')
+    if s.allergy_dust:
+        out.append('حساسية غبار')
+    if s.regular_medication:
+        out.append('أدوية منتظمة')
+    if s.special_care:
+        out.append('رعاية خاصة')
+    if s.family_special_conditions:
+        out.append('ظروف أسرية')
+    return '، '.join(out) or '-'
 
+
+def build_survey_stats_data():
+    """يحسب كل إحصاءات المسح ويُرجع قاموساً لاستخدامه في الصفحة أو تقارير الطباعة."""
     surveys = StudentSurvey.objects.select_related('student__student_class').order_by('student__student_class__name', 'student__full_name')
     submitted = list(surveys)
     n = max(len(submitted), 1)
@@ -2438,39 +2465,10 @@ def survey_stats(request):
                 or s.condition_heart or s.condition_hearing or s.condition_vision
                 or s.has_allergy or s.regular_medication or s.special_care or s.family_special_conditions)
 
-    def condition_labels(s):
-        out = []
-        if s.chronic_disease:
-            out.append('مرض مزمن' + (f' ({s.chronic_disease_details})' if s.chronic_disease_details else ''))
-        if s.condition_asthma:
-            out.append('الربو')
-        if s.condition_diabetes:
-            out.append('السكري')
-        if s.condition_epilepsy:
-            out.append('الصرع')
-        if s.condition_heart:
-            out.append('مشاكل قلب')
-        if s.condition_hearing:
-            out.append('ضعف سمع')
-        if s.condition_vision:
-            out.append('ضعف بصر')
-        if s.allergy_drugs:
-            out.append('حساسية أدوية')
-        if s.allergy_food:
-            out.append('حساسية أطعمة')
-        if s.allergy_dust:
-            out.append('حساسية غبار')
-        if s.regular_medication:
-            out.append('أدوية منتظمة')
-        if s.special_care:
-            out.append('رعاية خاصة')
-        if s.family_special_conditions:
-            out.append('ظروف أسرية')
-        return '، '.join(out) or '-'
-
-    critical = [{'survey': s, 'labels': condition_labels(s)} for s in submitted if is_critical(s)]
+    critical = [{'survey': s, 'labels': survey_condition_labels(s)} for s in submitted if is_critical(s)]
     critical.sort(key=lambda d: (d['survey'].student.student_class.name if d['survey'].student.student_class else ''))
 
+    # ── ملخص حسب الصف ──
     class_stats = []
     for cls in Class.objects.all().order_by('name'):
         cs = [s for s in submitted if s.student.student_class_id == cls.id]
@@ -2484,7 +2482,7 @@ def survey_stats(request):
             'study_diff': len([s for s in cs if s.study_difficulties]),
         })
 
-    return render(request, 'school/survey_stats.html', {
+    return {
         'submitted_count': n,
         'health_rows': health_rows,
         'social_rows': social_rows,
@@ -2492,9 +2490,57 @@ def survey_stats(request):
         'device_rows': device_rows,
         'living_rows': living_rows,
         'critical': critical,
-        'condition_labels': condition_labels,
         'class_stats': class_stats,
+        'submitted': submitted,
         'today': date.today(),
+    }
+
+
+@login_required
+def survey_stats(request):
+    if not has_perm(request.user, 'survey', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    data = build_survey_stats_data()
+    return render(request, 'school/survey_stats.html', data)
+
+
+@login_required
+def survey_stats_print(request, mode):
+    """تقرير قابل للطباعة: students = قائمة بكل الطلاب، groups = تقسيمات حسب الحالة."""
+    if not has_perm(request.user, 'survey', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    data = build_survey_stats_data()
+    info = SchoolInfo.objects.first()
+
+    if mode == 'students':
+        rows = []
+        for s in data['submitted']:
+            rows.append({
+                'survey': s,
+                'name': s.student.full_name,
+                'cls': s.student.student_class.name if s.student.student_class else '-',
+                'labels': survey_condition_labels(s),
+            })
+        return render(request, 'school/survey_stats_print.html', {
+            'mode': 'students',
+            'rows': rows,
+            'info': info,
+            'submitted_count': data['submitted_count'],
+            'today': data['today'],
+        })
+
+    groups = []
+    for r in data['health_rows'] + data['social_rows'] + data['supports']:
+        if r['students']:
+            groups.append({'title': r['label'], 'students': r['students']})
+    return render(request, 'school/survey_stats_print.html', {
+        'mode': 'groups',
+        'groups': groups,
+        'info': info,
+        'submitted_count': data['submitted_count'],
+        'today': data['today'],
     })
 
 
