@@ -98,7 +98,8 @@
                 <h5 class="mt-2">المسح الصحي والاجتماعي</h5>
                 <div class="d-grid gap-2 mt-3">
                     {% if 'survey_view' in user_perms %}
-                    <a href="{% url 'survey_report' %}" class="btn btn-outline-purple">تقرير المسوح</a>
+                    <a href="{% url 'survey_stats' %}" class="btn btn-outline-purple">نتائج المسح</a>
+                    <a href="{% url 'survey_report' %}" class="btn btn-outline-secondary mt-1">تقرير الإنجاز</a>
                     {% endif %}
                 </div>
             </div>

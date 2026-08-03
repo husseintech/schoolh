@@ -2364,6 +2364,141 @@ def survey_report(request):
 
 
 @login_required
+def survey_stats(request):
+    if not has_perm(request.user, 'survey', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+
+    surveys = StudentSurvey.objects.select_related('student__student_class').order_by('student__student_class__name', 'student__full_name')
+    submitted = list(surveys)
+    n = max(len(submitted), 1)
+
+    def cnt(pred):
+        return len([s for s in submitted if pred(s)])
+
+    def pct(c):
+        return round(c * 100.0 / n, 1)
+
+    # ── مؤشرات صحية ──
+    health_rows = []
+    indicators = [
+        ('مرض مزمن (أي نوع)', lambda s: s.chronic_disease, 'danger'),
+        ('أدوية منتظمة', lambda s: s.regular_medication, 'warning'),
+        ('حساسية (أي نوع)', lambda s: s.has_allergy, 'warning'),
+        ('الربو', lambda s: s.condition_asthma, 'danger'),
+        ('السكري', lambda s: s.condition_diabetes, 'danger'),
+        ('الصرع', lambda s: s.condition_epilepsy, 'danger'),
+        ('مشاكل في القلب', lambda s: s.condition_heart, 'danger'),
+        ('ضعف في السمع', lambda s: s.condition_hearing, 'secondary'),
+        ('ضعف في البصر', lambda s: s.condition_vision, 'secondary'),
+        ('يحتاج نظارات طبية', lambda s: s.needs_glasses, 'info'),
+        ('يحتاج رعاية صحية خاصة أثناء الدوام', lambda s: s.special_care, 'danger'),
+        ('لديه تعليمات طارئة مسجلة', lambda s: bool((s.emergency_instructions or '').strip()), 'info'),
+    ]
+    for label, fn, color in indicators:
+        c = cnt(fn)
+        health_rows.append({'label': label, 'count': c, 'pct': pct(c), 'color': color, 'students': [s for s in submitted if fn(s)]})
+
+    # ── مؤشرات اجتماعية ──
+    social_rows = [
+        {'label': 'صعوبات تؤثر على الدراسة', 'count': 0, 'pct': 0, 'color': 'warning', 'students': []},
+    ]
+    social_rows[0]['count'] = cnt(lambda s: s.study_difficulties)
+    social_rows[0]['pct'] = pct(social_rows[0]['count'])
+    social_rows[0]['students'] = [s for s in submitted if s.study_difficulties]
+
+    supports = []
+    for label, fn in [
+        ('يحتاج دعم أكاديمي', lambda s: s.support_academic),
+        ('يحتاج دعم نفسي', lambda s: s.support_psychological),
+        ('يحتاج دعم اجتماعي', lambda s: s.support_social),
+        ('لا يحتاج دعم', lambda s: s.support_none),
+    ]:
+        c = cnt(fn)
+        supports.append({'label': label, 'count': c, 'pct': pct(c)})
+
+    device_rows = []
+    for label, fn in [
+        ('هاتف ذكي', lambda s: s.has_smartphone),
+        ('جهاز حاسوب', lambda s: s.has_computer),
+        ('اتصال بالإنترنت', lambda s: s.has_internet),
+        ('لا يتوفر أي من الأجهزة', lambda s: s.has_no_device),
+    ]:
+        c = cnt(fn)
+        device_rows.append({'label': label, 'count': c, 'pct': pct(c)})
+
+    living_rows = []
+    for val, label in [('parents', 'الأب والأم'), ('father', 'الأب فقط'), ('mother', 'الأم فقط'), ('relative', 'أحد الأقارب'), ('other', 'أخرى')]:
+        c = len([s for s in submitted if s.lives_with == val])
+        living_rows.append({'value': val, 'label': label, 'count': c, 'pct': pct(c)})
+
+    # ── طلاب بحالة تستدعي العناية ──
+    def is_critical(s):
+        return (s.chronic_disease or s.condition_asthma or s.condition_diabetes or s.condition_epilepsy
+                or s.condition_heart or s.condition_hearing or s.condition_vision
+                or s.has_allergy or s.regular_medication or s.special_care or s.family_special_conditions)
+
+    def condition_labels(s):
+        out = []
+        if s.chronic_disease:
+            out.append('مرض مزمن' + (f' ({s.chronic_disease_details})' if s.chronic_disease_details else ''))
+        if s.condition_asthma:
+            out.append('الربو')
+        if s.condition_diabetes:
+            out.append('السكري')
+        if s.condition_epilepsy:
+            out.append('الصرع')
+        if s.condition_heart:
+            out.append('مشاكل قلب')
+        if s.condition_hearing:
+            out.append('ضعف سمع')
+        if s.condition_vision:
+            out.append('ضعف بصر')
+        if s.allergy_drugs:
+            out.append('حساسية أدوية')
+        if s.allergy_food:
+            out.append('حساسية أطعمة')
+        if s.allergy_dust:
+            out.append('حساسية غبار')
+        if s.regular_medication:
+            out.append('أدوية منتظمة')
+        if s.special_care:
+            out.append('رعاية خاصة')
+        if s.family_special_conditions:
+            out.append('ظروف أسرية')
+        return '، '.join(out) or '-'
+
+    critical = [{'survey': s, 'labels': condition_labels(s)} for s in submitted if is_critical(s)]
+    critical.sort(key=lambda d: (d['survey'].student.student_class.name if d['survey'].student.student_class else ''))
+
+    class_stats = []
+    for cls in Class.objects.all().order_by('name'):
+        cs = [s for s in submitted if s.student.student_class_id == cls.id]
+        class_stats.append({
+            'class': cls,
+            'done': len(cs),
+            'chronic': len([s for s in cs if s.chronic_disease]),
+            'meds': len([s for s in cs if s.regular_medication]),
+            'allergy': len([s for s in cs if s.has_allergy]),
+            'conditions': len([s for s in cs if is_critical(s)]),
+            'study_diff': len([s for s in cs if s.study_difficulties]),
+        })
+
+    return render(request, 'school/survey_stats.html', {
+        'submitted_count': n,
+        'health_rows': health_rows,
+        'social_rows': social_rows,
+        'supports': supports,
+        'device_rows': device_rows,
+        'living_rows': living_rows,
+        'critical': critical,
+        'condition_labels': condition_labels,
+        'class_stats': class_stats,
+        'today': date.today(),
+    })
+
+
+@login_required
 def survey_detail(request, student_id):
     if not has_perm(request.user, 'survey', 'view'):
         messages.error(request, 'ليس لديك صلاحية')

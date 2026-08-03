@@ -1,0 +1,232 @@
+{% extends 'school/base.html' %}
+{% block title %}نتائج المسح الصحي والاجتماعي{% endblock %}
+{% block page_heading %}نتائج المسح الصحي والاجتماعي{% endblock %}
+{% block content %}
+<div class="text-center mb-3 no-print">
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <a href="{% url 'survey_report' %}" class="btn btn-outline-primary ms-1"><i class="bi bi-table"></i> تقرير الإنجاز (من لم يملأ)</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-1">العودة</a>
+</div>
+
+<div class="d-none d-print-block text-center mb-3">
+    <h4>نتائج المسح الصحي والاجتماعي</h4>
+    <h5 class="text-muted">{{ today|date:'Y/m/d' }} — عدد المسوح المكتملة: {{ submitted_count }}</h5>
+    <hr>
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-shield-lock-fill"></i>
+    ملاحظة: النسب مئوية محسوبة من عدد المسوح المكتملة ({{ submitted_count }}). تُستخدم هذه النتائج لدعم قرارات المدرسة الصحية والتعليمية مع الالتزام بسرية البيانات.
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card stat-blue">
+            <div class="card-body">
+                <div class="number">{{ submitted_count }}</div>
+                <div class="label">مسوح مكتملة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-red">
+            <div class="card-body">
+                <div class="number">{{ critical|length }}</div>
+                <div class="label">طلاب بحالة تستدعي العناية</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stat-orange">
+            <div class="card-body">
+                <div class="number">{{ health_rows.0.count }}</div>
+                <div class="label">طلاب لديهم مرض مزمن</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white"><i class="bi bi-heart-pulse-fill"></i> المؤشرات الصحية</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>المؤشر</th>
+                        <th>العدد</th>
+                        <th>النسبة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in health_rows %}
+                    <tr>
+                        <td>{{ r.label }}</td>
+                        <td>
+                            <span class="badge bg-{{ r.color }}">{{ r.count }}</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="min-width: 140px;">
+                                <div class="progress-bar bg-{{ r.color }}" style="width: {{ r.pct }}%">{{ r.pct }}%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white"><i class="bi bi-people-fill"></i> المؤشرات الاجتماعية</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>المؤشر</th>
+                        <th>العدد</th>
+                        <th>النسبة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in social_rows %}
+                    <tr>
+                        <td>{{ r.label }}</td>
+                        <td><span class="badge bg-warning">{{ r.count }}</span></td>
+                        <td>
+                            <div class="progress" style="min-width: 140px;">
+                                <div class="progress-bar bg-warning" style="width: {{ r.pct }}%">{{ r.pct }}%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% for r in supports %}
+                    <tr>
+                        <td>{{ r.label }}</td>
+                        <td><span class="badge bg-info">{{ r.count }}</span></td>
+                        <td>
+                            <div class="progress" style="min-width: 140px;">
+                                <div class="progress-bar bg-info" style="width: {{ r.pct }}%">{{ r.pct }}%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white"><i class="bi bi-house-gear-fill"></i> الأسرة والبيئة المنزلية</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="border-bottom pb-2">الأجهزة والإنترنت المتوفرة</h6>
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light"><tr><th>المؤشر</th><th>العدد</th><th>النسبة</th></tr></thead>
+                    <tbody>
+                        {% for r in device_rows %}
+                        <tr><td>{{ r.label }}</td><td>{{ r.count }}</td><td>{{ r.pct }}%</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="border-bottom pb-2">مع من يعيش الطالب؟</h6>
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light"><tr><th>الخيار</th><th>العدد</th><th>النسبة</th></tr></thead>
+                    <tbody>
+                        {% for r in living_rows %}
+                        <tr><td>{{ r.label }}</td><td>{{ r.count }}</td><td>{{ r.pct }}%</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white"><i class="bi bi-table"></i> الملخص حسب الصف</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>الصف</th>
+                        <th>مسوح</th>
+                        <th>مرض مزمن</th>
+                        <th>أدوية</th>
+                        <th>حساسية</th>
+                        <th>يحتاج عناية</th>
+                        <th>صعوبات دراسة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in class_stats %}
+                    <tr>
+                        <td>{{ c.class.name }}</td>
+                        <td>{{ c.done }}</td>
+                        <td>{% if c.chronic %}<span class="badge bg-danger">{{ c.chronic }}</span>{% else %}0{% endif %}</td>
+                        <td>{% if c.meds %}<span class="badge bg-warning">{{ c.meds }}</span>{% else %}0{% endif %}</td>
+                        <td>{% if c.allergy %}<span class="badge bg-warning">{{ c.allergy }}</span>{% else %}0{% endif %}</td>
+                        <td>{% if c.conditions %}<span class="badge bg-danger">{{ c.conditions }}</span>{% else %}0{% endif %}</td>
+                        <td>{% if c.study_diff %}<span class="badge bg-warning">{{ c.study_diff }}</span>{% else %}0{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">لا توجد مسوح</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white"><i class="bi bi-clipboard2-pulse-fill"></i> قائمة الطلاب الذين يحتاجون إلى متابعة ({{ critical|length }})</div>
+    <div class="card-body">
+        {% if critical %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الطالب</th>
+                        <th>الصف</th>
+                        <th>الحالة المسجلة</th>
+                        <th>تعليمات طارئة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+{% for item in critical %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.survey.student.full_name }}</td>
+                        <td>{{ item.survey.student.student_class.name|default:"-" }}</td>
+                        <td>{{ item.labels }}</td>
+                        <td>
+                            {% if item.survey.emergency_instructions %}
+                            <span class="badge bg-danger" title="{{ item.survey.emergency_instructions }}"><i class="bi bi-exclamation-triangle-fill"></i> موجودة</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'survey_detail' item.survey.student.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-eye"></i> تفاصيل المسح</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-success py-4">
+            <i class="bi bi-check2-circle" style="font-size: 2rem;"></i>
+            <p class="mt-2 mb-0">لا توجد حالات تستدعي عناية خاصة</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
