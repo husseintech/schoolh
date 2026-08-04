@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -18,7 +18,7 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations']
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing']
 ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
 MODULE_LABELS = {
     'students': 'الطلاب',
@@ -45,6 +45,8 @@ MODULE_LABELS = {
     'certificates': 'شهادات التقدير',
     'guardians': 'مربو الصفوف',
     'nominations': 'ترشيح المتفوقين',
+    'incoming': 'سجل الوارد',
+    'outgoing': 'سجل الصادر',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -156,6 +158,10 @@ def dashboard(request):
                 schedule_entries = list(TeacherScheduleEntry.objects.filter(
                     student_class=student.student_class,
                 ).select_related('subject', 'teacher'))
+            has_survey = hasattr(student, 'survey')
+            whatsapp_groups = []
+            if has_survey and student.student_class:
+                whatsapp_groups = list(student.student_class.whatsapp_groups.all())
             return render(request, 'school/student_dashboard.html', {
                 'student': student,
                 'notes': notes,
@@ -165,7 +171,9 @@ def dashboard(request):
                 'schedule_entries': schedule_entries,
                 'schedule_days': SCHEDULE_DAYS,
                 'period_range': range(1, SCHEDULE_PERIODS + 1),
-                'survey_status': '✓ مكتمل' if hasattr(student, 'survey') else '(لم يملأ بعد)',
+                'survey_status': '✓ مكتمل' if has_survey else '(لم يملأ بعد)',
+                'has_survey': has_survey,
+                'whatsapp_groups': whatsapp_groups,
             })
         except Student.DoesNotExist:
             messages.error(request, 'لا يوجد ملف طالب مرتبط بهذا الحساب')
@@ -3007,12 +3015,15 @@ CLEARABLE_TABLES = [
     ('nominations', 'ترشيحات المتفوقين', Nomination, []),
     ('teacher_notes', 'ملاحظات المعلمين', TeacherNote, []),
     ('lesson_links', 'روابط الدروس', LessonLink, []),
+    ('whatsapp_groups', 'روابط واتساب الصفوف', WhatsAppGroup, []),
+    ('incoming', 'سجل الوارد', IncomingLetter, ['created_by']),
+    ('outgoing', 'سجل الصادر', OutgoingLetter, ['created_by']),
 ]
 
 DEPENDENT_MODELS = {
     'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter],
     'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry],
-    'classes': [Student, TeacherScheduleEntry],
+    'classes': [Student, TeacherScheduleEntry, WhatsAppGroup],
     'subjects': [TeacherScheduleEntry],
 }
 
@@ -3067,4 +3078,140 @@ def reset_data(request):
         'counts': counts,
         'full_groups': [('students', 'الطلاب'), ('teachers', 'المعلمون'), ('classes', 'الصفوف'), ('subjects', 'المواد')],
     })
+
+
+# ─── WhatsApp Group Links (روابط واتساب الصفوف) ──────────────────────────────
+
+@login_required
+def whatsapp_groups(request):
+    if not has_perm(request.user, 'settings', 'whatsapp'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    if request.method == 'POST':
+        class_id = request.POST.get('class_id', '')
+        link = request.POST.get('link', '').strip()
+        if not class_id or not link:
+            messages.error(request, 'اختر الصف وأدخل رابط واتساب')
+        else:
+            cls = get_object_or_404(Class, id=class_id)
+            WhatsAppGroup.objects.create(student_class=cls, link=link)
+            messages.success(request, 'تم إضافة رابط واتساب بنجاح')
+        return redirect('whatsapp_groups')
+    groups = WhatsAppGroup.objects.select_related('student_class').all()
+    classes = Class.objects.all().order_by('name')
+    return render(request, 'school/whatsapp_groups.html', {
+        'groups': groups,
+        'classes': classes,
+    })
+
+
+@login_required
+def whatsapp_group_delete(request, group_id):
+    if not has_perm(request.user, 'settings', 'whatsapp'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    group = get_object_or_404(WhatsAppGroup, id=group_id)
+    group.delete()
+    messages.success(request, 'تم حذف رابط واتساب')
+    return redirect('whatsapp_groups')
+
+
+# ─── Secretary: Incoming (سجل الوارد) ────────────────────────────────────────
+
+def current_academic_year():
+    today = date.today()
+    if today.month >= 8:
+        return f'{today.year}/{today.year + 1}'
+    return f'{today.year - 1}/{today.year}'
+
+
+@login_required
+def incoming_list(request):
+    if not has_perm(request.user, 'incoming', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    year = request.GET.get('year', '').strip()
+    if not year:
+        year = current_academic_year()
+    if request.method == 'POST' and has_perm(request.user, 'incoming', 'add'):
+        number = request.POST.get('number', '').strip()
+        if not number:
+            messages.error(request, 'رقم الوارد مطلوب')
+        else:
+            IncomingLetter.objects.create(
+                academic_year=request.POST.get('academic_year', '').strip() or year,
+                number=number,
+                date=request.POST.get('date', '') or date.today(),
+                letter_type=request.POST.get('letter_type', '').strip(),
+                source_entity=request.POST.get('source_entity', '').strip(),
+                attachments=request.POST.get('attachments', '').strip(),
+                subject=request.POST.get('subject', '').strip(),
+                file_number=request.POST.get('file_number', '').strip(),
+                created_by=request.user,
+            )
+            messages.success(request, 'تم إضافة الوارد بنجاح')
+        return redirect(f'{reverse("incoming_list")}?year={year}')
+    letters = IncomingLetter.objects.filter(academic_year=year).order_by('date', 'number')
+    years = list(IncomingLetter.objects.values_list('academic_year', flat=True).distinct())
+    if year not in years:
+        years.append(year)
+    years.sort(reverse=True)
+    return render(request, 'school/incoming_list.html', {
+        'letters': letters,
+        'year': year,
+        'years': years,
+        'today': date.today(),
+    })
+
+
+@login_required
+def incoming_delete(request, letter_id):
+    if not has_perm(request.user, 'incoming', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    letter = get_object_or_404(IncomingLetter, id=letter_id)
+    year = letter.academic_year
+    letter.delete()
+    messages.success(request, 'تم حذف الوارد')
+    return redirect(f'{reverse("incoming_list")}?year={year}')
+
+
+# ─── Secretary: Outgoing (سجل الصادر) ────────────────────────────────────────
+
+@login_required
+def outgoing_list(request):
+    if not has_perm(request.user, 'outgoing', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    if request.method == 'POST' and has_perm(request.user, 'outgoing', 'add'):
+        book_number = request.POST.get('book_number', '').strip()
+        if not book_number:
+            messages.error(request, 'رقم الكتاب مطلوب')
+        else:
+            OutgoingLetter.objects.create(
+                book_number=book_number,
+                book_date=request.POST.get('book_date', '') or date.today(),
+                department=request.POST.get('department', '').strip(),
+                subject=request.POST.get('subject', '').strip(),
+                issuing_entity=request.POST.get('issuing_entity', '').strip(),
+                created_by=request.user,
+            )
+            messages.success(request, 'تم إضافة الصادر بنجاح')
+        return redirect('outgoing_list')
+    letters = OutgoingLetter.objects.all().order_by('book_date', 'book_number')
+    return render(request, 'school/outgoing_list.html', {
+        'letters': letters,
+        'today': date.today(),
+    })
+
+
+@login_required
+def outgoing_delete(request, letter_id):
+    if not has_perm(request.user, 'outgoing', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    letter = get_object_or_404(OutgoingLetter, id=letter_id)
+    letter.delete()
+    messages.success(request, 'تم حذف الصادر')
+    return redirect('outgoing_list')
 

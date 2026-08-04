@@ -65,6 +65,8 @@ DEFAULT_PERMISSIONS = {
         'certificates': ['view', 'add', 'delete'],
         'guardians': ['view', 'add', 'edit', 'delete'],
         'nominations': ['view', 'add', 'delete'],
+        'incoming': ['view', 'add', 'edit', 'delete'],
+        'outgoing': ['view', 'add', 'edit', 'delete'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -98,6 +100,8 @@ DEFAULT_PERMISSIONS = {
         'lateness': ['view', 'add'],
         'absence': ['view', 'add'],
         'schedule': ['view', 'add'],
+        'incoming': ['view', 'add', 'edit', 'delete'],
+        'outgoing': ['view', 'add', 'edit', 'delete'],
     },
     'teacher': {        'students': ['view'],
         'teachers': [],
@@ -755,3 +759,56 @@ class PushSubscription(models.Model):
 
     def __str__(self):
         return f'اشتراك {self.user.username}'
+
+
+class WhatsAppGroup(models.Model):
+    student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='whatsapp_groups', verbose_name='الصف')
+    link = models.TextField('رابط واتساب')
+    created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'رابط واتساب للصف'
+        verbose_name_plural = 'روابط واتساب الصفوف'
+        ordering = ['student_class__name', 'id']
+
+    def __str__(self):
+        return f'{self.student_class.name}'
+
+
+class IncomingLetter(models.Model):
+    academic_year = models.CharField('العام الدراسي', max_length=20, default='2026/2027')
+    number = models.CharField('رقم الوارد', max_length=50)
+    date = models.DateField('التاريخ', default=date.today)
+    letter_type = models.CharField('النوع', max_length=100, blank=True)
+    source_entity = models.CharField('الجهة الصادرة', max_length=200, blank=True)
+    attachments = models.CharField('المرفقات', max_length=200, blank=True)
+    subject = models.TextField('الموضوع', blank=True)
+    file_number = models.CharField('رقم الملف', max_length=50, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='سجل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'وارد'
+        verbose_name_plural = 'سجل الوارد'
+        ordering = ['date', 'number']
+
+    def __str__(self):
+        return f'{self.number} - {self.academic_year}'
+
+
+class OutgoingLetter(models.Model):
+    book_number = models.CharField('رقم الكتاب', max_length=50)
+    book_date = models.DateField('تاريخ الكتاب', default=date.today)
+    department = models.CharField('اسم الدائرة الصادر اليها الكتاب', max_length=200, blank=True)
+    subject = models.TextField('الموضوع', blank=True)
+    issuing_entity = models.CharField('الجهة المحررة', max_length=200, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='سجل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'صادر'
+        verbose_name_plural = 'سجل الصادر'
+        ordering = ['book_date', 'book_number']
+
+    def __str__(self):
+        return self.book_number

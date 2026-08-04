@@ -1,0 +1,94 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}سجل الصادر{% endblock %}
+{% block page_heading %}سجل الصادر - السكرتير{% endblock %}
+{% block content %}
+
+<div class="card mb-4 no-print">
+    <div class="card-header"><i class="bi bi-box-arrow-up"></i> إدخال صادر جديد</div>
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-4">
+                <label class="form-label">رقم الكتاب</label>
+                <input type="text" name="book_number" class="form-control" required dir="ltr">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">تاريخ الكتاب</label>
+                <input type="date" name="book_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">اسم الدائرة الصادر اليها الكتاب</label>
+                <input type="text" name="department" class="form-control">
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">الموضوع</label>
+                <input type="text" name="subject" class="form-control">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">الجهة المحررة</label>
+                <input type="text" name="issuing_entity" class="form-control">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة الصادر</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" id="reportArea">
+        <div style="background: #000; color: #fff; text-align: center; padding: 10px; font-size: 1.4rem; font-weight: 700;">
+            سجل الصادر العام
+        </div>
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered text-center align-middle" dir="ltr" style="font-size: 0.9rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الكتاب</th>
+                        <th>تاريخ الكتاب</th>
+                        <th>اسم الدائرة الصادر اليها الكتاب</th>
+                        <th>الموضوع</th>
+                        <th>الجهة المحررة</th>
+                        <th class="no-print">حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in letters %}
+                    <tr>
+                        <td>{{ l.book_number }}</td>
+                        <td>{{ l.book_date|arabic_full_date }}</td>
+                        <td>{{ l.department|default:'---' }}</td>
+                        <td>{{ l.subject|default:'---' }}</td>
+                        <td>{{ l.issuing_entity|default:'---' }}</td>
+                        <td class="no-print">
+                            <a href="{% url 'outgoing_delete' l.id %}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('هل أنت متأكد من حذف هذا الصادر؟')"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">لا توجد صادرات مسجلة بعد</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 pt-3">
+            <div class="row text-center">
+                <div class="col-6">
+                    <p><strong>معد الخطابات</strong></p>
+                    <p style="margin-top: 40px;">التوقيع: ........................</p>
+                </div>
+                <div class="col-6">
+                    <p><strong>مدير المدرسة</strong></p>
+                    <p style="margin-top: 40px;">التوقيع: ........................</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer no-print text-center">
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    </div>
+</div>
+{% endblock %}

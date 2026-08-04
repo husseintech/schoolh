@@ -1,0 +1,67 @@
+{% extends 'school/base.html' %}
+{% block title %}روابط واتساب الصفوف{% endblock %}
+{% block page_heading %}روابط واتساب الصفوف{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-whatsapp text-success"></i> إضافة رابط واتساب</div>
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-4">
+                <label class="form-label">الصف</label>
+                <select name="class_id" class="form-select" required>
+                    <option value="">اختر الصف...</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">رابط واتساب</label>
+                <input type="url" name="link" class="form-control" dir="ltr" placeholder="https://chat.whatsapp.com/..." required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success w-100"><i class="bi bi-plus-lg"></i> إضافة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-table"></i> روابط واتساب المسجلة</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الصف</th>
+                        <th>الرابط</th>
+                        <th class="text-center">حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in groups %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ g.student_class.name }}</strong></td>
+                        <td dir="ltr"><a href="{{ g.link }}" target="_blank" rel="noopener">{{ g.link }}</a></td>
+                        <td class="text-center">
+                            <a href="{% url 'whatsapp_group_delete' g.id %}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('هل أنت متأكد من حذف الرابط؟')"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i class="bi bi-whatsapp" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">لا توجد روابط بعد — أضف روابط مجموعات واتساب لكل صف</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

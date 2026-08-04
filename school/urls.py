@@ -187,4 +187,14 @@ urlpatterns = [
     path('certificates/<int:nomination_id>/print/', views.certificate_print, name='certificate_print'),
     path('certificates/print-all/', views.certificates_print_all, name='certificates_print_all'),
     path('certificates/export/', views.certificates_export, name='certificates_export'),
+
+    # WhatsApp group links
+    path('whatsapp-groups/', views.whatsapp_groups, name='whatsapp_groups'),
+    path('whatsapp-groups/<int:group_id>/delete/', views.whatsapp_group_delete, name='whatsapp_group_delete'),
+
+    # Secretary: Incoming / Outgoing
+    path('secretary/incoming/', views.incoming_list, name='incoming_list'),
+    path('secretary/incoming/<int:letter_id>/delete/', views.incoming_delete, name='incoming_delete'),
+    path('secretary/outgoing/', views.outgoing_list, name='outgoing_list'),
+    path('secretary/outgoing/<int:letter_id>/delete/', views.outgoing_delete, name='outgoing_delete'),
 ]

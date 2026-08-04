@@ -13,6 +13,18 @@
     <a href="{% url 'survey_form' %}" class="btn btn-primary"><i class="bi bi-pencil-square"></i> تعبئة / مراجعة المسح</a>
 </div>
 {% endif %}
+{% if has_survey and whatsapp_groups %}
+<div class="alert alert-success d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <i class="bi bi-whatsapp"></i>
+        <strong>مجموعات واتساب — الصف {{ student.student_class.name|default:'' }}</strong>
+        <div class="small text-muted">انضم إلى مجموعة الصف عبر واتساب لمتابعة الإعلانات والواجبات.</div>
+    </div>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#whatsappModal">
+        <i class="bi bi-whatsapp"></i> روابط الواتس
+    </button>
+</div>
+{% endif %}
 <div class="card">
     <div class="card-header bg-info text-white">
         <h5><i class="bi bi-person-circle"></i> مرحباً، {{ student.full_name }}</h5>
@@ -202,4 +214,28 @@
         </div>
     </div>
 </div>
+
+{% if whatsapp_groups %}
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-whatsapp text-success"></i> روابط واتساب — الصف {{ student.student_class.name|default:'' }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">اضغط على الرابط للانضمام إلى مجموعة الصف:</p>
+                {% for g in whatsapp_groups %}
+                <a href="{{ g.link }}" target="_blank" rel="noopener" class="btn btn-outline-success w-100 mb-2">
+                    <i class="bi bi-whatsapp"></i> مجموعة واتساب {{ forloop.counter }}
+                </a>
+                {% endfor %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

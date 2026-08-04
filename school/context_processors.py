@@ -40,6 +40,8 @@ def user_permissions(request):
             ('certificates', 'view'), ('certificates', 'add'), ('certificates', 'delete'),
             ('guardians', 'view'), ('guardians', 'add'),
             ('nominations', 'view'), ('nominations', 'add'),
+            ('incoming', 'view'), ('incoming', 'add'), ('incoming', 'delete'),
+            ('outgoing', 'view'), ('outgoing', 'add'), ('outgoing', 'delete'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
