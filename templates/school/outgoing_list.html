@@ -42,22 +42,34 @@
             سجل الصادر العام
         </div>
         <div class="table-responsive mt-3">
-            <table class="table table-bordered text-center align-middle" dir="ltr" style="font-size: 0.9rem;">
+            <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
                 <thead class="table-light">
                     <tr>
                         <th>رقم الكتاب</th>
-                        <th>تاريخ الكتاب</th>
+                        <th colspan="3">تاريخ الكتاب</th>
                         <th>اسم الدائرة الصادر اليها الكتاب</th>
                         <th>الموضوع</th>
                         <th>الجهة المحررة</th>
                         <th class="no-print">حذف</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th>اليوم</th>
+                        <th>الشهر</th>
+                        <th>السنة</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="no-print"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for l in letters %}
                     <tr>
                         <td>{{ l.book_number }}</td>
-                        <td>{{ l.book_date|arabic_full_date }}</td>
+                        <td>{{ l.book_date|date:'j' }}</td>
+                        <td>{{ l.book_date|arabic_month }}</td>
+                        <td>{{ l.book_date|date:'Y' }}</td>
                         <td>{{ l.department|default:'---' }}</td>
                         <td>{{ l.subject|default:'---' }}</td>
                         <td>{{ l.issuing_entity|default:'---' }}</td>
@@ -68,7 +80,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">لا توجد صادرات مسجلة بعد</td>
+                        <td colspan="8" class="text-center text-muted py-4">لا توجد صادرات مسجلة بعد</td>
                     </tr>
                     {% endfor %}
                 </tbody>

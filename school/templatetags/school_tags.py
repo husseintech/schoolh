@@ -11,3 +11,11 @@ def arabic_full_date(value):
     if not value:
         return ''
     return f'{value.day} {ARABIC_MONTHS[value.month - 1]} {value.year}'
+
+
+@register.filter
+def arabic_month(value):
+    """اسم الشهر بالعربية (مثال: أغسطس)."""
+    if not value:
+        return ''
+    return ARABIC_MONTHS[value.month - 1]
