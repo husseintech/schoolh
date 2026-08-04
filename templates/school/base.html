@@ -541,6 +541,11 @@
             <i class="bi bi-camera-video-fill"></i> روابط الحصص
         </a>
         {% endif %}
+        {% if 'settings_whatsapp' in user_perms or user.profile.role == 'admin' %}
+        <a href="{% url 'whatsapp_groups' %}" class="nav-link {% if 'whatsapp_group' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-whatsapp"></i> روابط واتساب الصفوف
+        </a>
+        {% endif %}
         {% if 'settings_whatsapp' in user_perms %}
         <a href="{% url 'whatsapp_settings' %}" class="nav-link {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-whatsapp"></i> إعدادات واتساب
@@ -683,7 +688,7 @@
             {% block content %}{% endblock %}
         </div>
 
-        <div class="footer">
+        <div class="footer no-print">
             <p>جميع الحقوق محفوظة &copy; {% now "Y" %} - النظام المدرسي | تصميم وبرمجة خاص</p>
         </div>
     </div>
