@@ -43,6 +43,7 @@ def user_permissions(request):
             ('incoming', 'view'), ('incoming', 'add'), ('incoming', 'delete'),
             ('outgoing', 'view'), ('outgoing', 'add'), ('outgoing', 'delete'),
             ('teacher_followup', 'view'), ('teacher_followup', 'add'), ('teacher_followup', 'delete'),
+            ('reciprocal_visits', 'view'), ('reciprocal_visits', 'add'), ('reciprocal_visits', 'delete'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):

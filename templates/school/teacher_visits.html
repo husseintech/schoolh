@@ -1,0 +1,134 @@
+{% extends 'school/base.html' %}
+{% block title %}مواعيد الزيارات{% endblock %}
+{% block page_heading %}مواعيد الزيارات - {{ teacher.full_name }}{% endblock %}
+{% block content %}
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-binoculars"></i> موعد الزيارة الإشرافية من مدير المدرسة</div>
+    <div class="card-body">
+        {% if inspection %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label text-muted">تاريخ الزيارة الإشرافية</label>
+                <p class="fw-bold fs-5">{{ inspection.visit_date|date:'Y/m/d' }}</p>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted">رقم الزيارة</label>
+                <p class="fw-bold">{{ inspection.visit_number|default:'---' }}</p>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted">الصف</label>
+                <p class="fw-bold">{{ inspection.class_name|default:'---' }}{% if inspection.section %} ({{ inspection.section }}){% endif %}</p>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-muted">لا يوجد موعد مسجل لزيارة إشرافية</p>
+        {% endif %}
+        {% if supervisor %}
+        <hr>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label text-muted">آخر زيارة مشرف</label>
+                <p class="fw-bold">{{ supervisor.visit_date|date:'Y/m/d' }} — {{ supervisor.supervisor_name|default:'' }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-arrow-left-right"></i> الزيارات التبادلية التي يجب أن تقوم بها</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>المعلم المزار</th>
+                        <th>التاريخ</th>
+                        <th>الصف</th>
+                        <th>رقم الحصة</th>
+                        <th class="text-center">الحالة</th>
+                        <th class="text-center">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in assigned %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ v.host.full_name }}</strong></td>
+                        <td><strong>{{ v.visit_date|date:'Y/m/d' }}</strong></td>
+                        <td>{{ v.student_class.name|default:'---' }}</td>
+                        <td class="text-center">الحصة {{ v.period }}</td>
+                        <td class="text-center">
+                            {% if v.completed %}
+                            <span class="badge bg-success">تمت المتابعة</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">بانتظار المتابعة</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if v.completed %}
+                            <a href="{% url 'reciprocal_visit_feedback' v.id %}" class="btn btn-sm btn-outline-secondary">تعديل الملاحظات</a>
+                            {% else %}
+                            {% if user.profile.role == 'teacher' %}
+                            <a href="{% url 'reciprocal_visit_feedback' v.id %}" class="btn btn-sm btn-primary"><i class="bi bi-pencil-square"></i> إدخال الملاحظات</a>
+                            {% else %}
+                            <a href="{% url 'reciprocal_visit_report' v.id %}" class="btn btn-sm btn-outline-success">عرض التقرير</a>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">لا توجد زيارات تبادلية مسجلة لك</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-person-check"></i> زيارات تبادلية حضرها زملاؤك عندك</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>المعلم الزائر</th>
+                        <th>التاريخ</th>
+                        <th>الصف</th>
+                        <th>رقم الحصة</th>
+                        <th class="text-center">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in guest %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ v.visitor.full_name }}</strong></td>
+                        <td>{{ v.visit_date|date:'Y/m/d' }}</td>
+                        <td>{{ v.student_class.name|default:'---' }}</td>
+                        <td class="text-center">الحصة {{ v.period }}</td>
+                        <td class="text-center">
+                            {% if v.completed %}
+                            <span class="badge bg-success">تمت المتابعة</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">بانتظار المتابعة</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">لا يوجد زيارات مسجلة عندك</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

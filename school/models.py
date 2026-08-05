@@ -68,6 +68,7 @@ DEFAULT_PERMISSIONS = {
         'incoming': ['view', 'add', 'edit', 'delete'],
         'outgoing': ['view', 'add', 'edit', 'delete'],
         'teacher_followup': ['view', 'add', 'edit', 'delete'],
+        'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -103,7 +104,7 @@ DEFAULT_PERMISSIONS = {
         'schedule': ['view', 'add'],
         'incoming': ['view', 'add', 'edit', 'delete'],
         'outgoing': ['view', 'add', 'edit', 'delete'],
-        'teacher_followup': ['view', 'add'],
+        'reciprocal_visits': ['view'],
     },
     'teacher': {        'students': ['view'],
         'teachers': [],
@@ -120,6 +121,7 @@ DEFAULT_PERMISSIONS = {
         'notes': ['view', 'add'],
         'nominations': ['view', 'add'],
         'survey': ['add'],
+        'reciprocal_visits': ['view'],
     },
     'student': {
         'students': [],
@@ -593,6 +595,31 @@ class InspectionVisit(models.Model):
 
     def __str__(self):
         return f'زيارة إشرافية - {self.teacher.full_name} - {self.visit_date}'
+
+
+class ReciprocalVisit(models.Model):
+    visitor = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name='المعلم الزائر', related_name='reciprocal_visits_as_visitor')
+    host = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name='المعلم المزار', related_name='reciprocal_visits_as_host')
+    visit_date = models.DateField('تاريخ الزيارة', default=date.today)
+    student_class = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='الصف', related_name='reciprocal_visits')
+    period = models.PositiveIntegerField('رقم الحصة', default=1)
+
+    positive_points = models.TextField('أبرز النقاط الإيجابية', blank=True)
+    development_points = models.TextField('أبرز النقاط التي تحتاج إلى تطوير', blank=True)
+    agreement = models.TextField('ما تم الاتفاق عليه مع المعلم المزار', blank=True)
+
+    completed = models.BooleanField('اكتملت المتابعة', default=False)
+    filled_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name='visits_filled_by_teacher', verbose_name='أُدخلت بواسطة')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'زيارة تبادلية'
+        verbose_name_plural = 'الزيارات التبادلية'
+        ordering = ['-visit_date', '-created_at']
+
+    def __str__(self):
+        return f'{self.visitor.full_name} ← {self.host.full_name}'
 
 
 class Nomination(models.Model):

@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -18,7 +18,7 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup']
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits']
 ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
 MODULE_LABELS = {
     'students': 'الطلاب',
@@ -48,6 +48,7 @@ MODULE_LABELS = {
     'incoming': 'سجل الوارد',
     'outgoing': 'سجل الصادر',
     'teacher_followup': 'متابعة المعلمين',
+    'reciprocal_visits': 'الزيارات التبادلية',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -3020,11 +3021,12 @@ CLEARABLE_TABLES = [
     ('incoming', 'سجل الوارد', IncomingLetter, ['created_by']),
     ('outgoing', 'سجل الصادر', OutgoingLetter, ['created_by']),
     ('teacher_followups', 'متابعة المعلمين', TeacherFollowup, ['teacher']),
+    ('reciprocal_visits', 'الزيارات التبادلية', ReciprocalVisit, ['teacher']),
 ]
 
 DEPENDENT_MODELS = {
     'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter],
-    'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup],
+    'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup, ReciprocalVisit],
     'classes': [Student, TeacherScheduleEntry, WhatsAppGroup],
     'subjects': [TeacherScheduleEntry],
 }
@@ -3355,5 +3357,143 @@ def teacher_followup_missing(request):
         'is_all': is_all,
         'total_teachers': Teacher.objects.count(),
         'info': info,
+    })
+
+
+@login_required
+def reciprocal_visit_list(request):
+    if not has_perm(request.user, 'reciprocal_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    if request.method == 'POST' and has_perm(request.user, 'reciprocal_visits', 'add'):
+        visitor_id = request.POST.get('visitor_id', '')
+        host_id = request.POST.get('host_id', '')
+        visitor = get_object_or_404(Teacher, id=visitor_id) if visitor_id else None
+        host = get_object_or_404(Teacher, id=host_id) if host_id else None
+        if not visitor or not host:
+            messages.error(request, 'اختر المعلم الزائر والمعلم المزار')
+        elif visitor == host:
+            messages.error(request, 'يجب أن يختلف الزائر عن المزار')
+        else:
+            period = int(request.POST.get('period', 1) or 1)
+            class_id = request.POST.get('class_id', '')
+            student_class = get_object_or_404(Class, id=class_id) if class_id else None
+            ReciprocalVisit.objects.create(
+                visitor=visitor,
+                host=host,
+                visit_date=request.POST.get('visit_date', '') or date.today(),
+                student_class=student_class,
+                period=period,
+                created_by=request.user,
+            )
+            messages.success(request, 'تم تسجيل الزيارة التبادلية بنجاح')
+        return redirect('reciprocal_visit_list')
+    visits = ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class').order_by('-visit_date', '-created_at')
+    teachers = Teacher.objects.all().order_by('full_name')
+    classes = Class.objects.all().order_by('name')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/reciprocal_visits.html', {
+        'visits': visits,
+        'teachers': teachers,
+        'classes': classes,
+        'today': date.today(),
+        'periods': range(1, 8),
+        'info': info,
+        'can_add': has_perm(request.user, 'reciprocal_visits', 'add'),
+        'can_delete': has_perm(request.user, 'reciprocal_visits', 'delete'),
+    })
+
+
+@login_required
+def reciprocal_visit_print(request, visit_id):
+    if not has_perm(request.user, 'reciprocal_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    visit = get_object_or_404(ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class'), id=visit_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/reciprocal_visit_print.html', {
+        'visit': visit,
+        'info': info,
+        'today': date.today(),
+    })
+
+
+@login_required
+def reciprocal_visit_report(request, visit_id):
+    if not has_perm(request.user, 'reciprocal_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    visit = get_object_or_404(ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class', 'filled_by'), id=visit_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/reciprocal_visit_report.html', {
+        'visit': visit,
+        'info': info,
+        'today': date.today(),
+    })
+
+
+@login_required
+def reciprocal_visit_feedback(request, visit_id):
+    if not has_perm(request.user, 'reciprocal_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    visit = get_object_or_404(ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class'), id=visit_id)
+    teacher = getattr(request.user, 'teacher_profile', None)
+    is_manager = has_perm(request.user, 'reciprocal_visits', 'add')
+    if teacher and teacher != visit.visitor:
+        messages.error(request, 'هذه الزيارة ليست من زياراتك')
+        return redirect('teacher_visits')
+    if request.method == 'POST' and (teacher == visit.visitor or is_manager):
+        positive = request.POST.get('positive_points', '').strip()
+        development = request.POST.get('development_points', '').strip()
+        agreement = request.POST.get('agreement', '').strip()
+        visit.positive_points = positive
+        visit.development_points = development
+        visit.agreement = agreement
+        visit.completed = bool(positive or development or agreement)
+        visit.filled_by = teacher or visit.filled_by
+        visit.save()
+        messages.success(request, 'تم حفظ ملاحظات الزيارة التبادلية')
+        if teacher:
+            return redirect('teacher_visits')
+        return redirect('reciprocal_visit_list')
+    return render(request, 'school/reciprocal_visit_feedback.html', {
+        'visit': visit,
+        'is_manager': is_manager,
+    })
+
+
+@login_required
+def reciprocal_visit_delete(request, visit_id):
+    if not has_perm(request.user, 'reciprocal_visits', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    visit = get_object_or_404(ReciprocalVisit, id=visit_id)
+    visit.delete()
+    messages.success(request, 'تم حذف الزيارة التبادلية')
+    return redirect('reciprocal_visit_list')
+
+
+@login_required
+def teacher_visits(request):
+    teacher = getattr(request.user, 'teacher_profile', None)
+    if not teacher or not has_perm(request.user, 'reciprocal_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    inspection = teacher.inspection_visits.order_by('-visit_date').first()
+    supervisor = teacher.supervisor_visits.order_by('-visit_date').first()
+    today = date.today()
+    assigned = ReciprocalVisit.objects.filter(visitor=teacher).select_related('host', 'student_class').order_by('-visit_date', '-created_at')
+    assigned = [v for v in assigned if v.completed or v.visit_date >= today]
+    guest = ReciprocalVisit.objects.filter(host=teacher).select_related('visitor', 'student_class').order_by('-visit_date', '-created_at')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/teacher_visits.html', {
+        'teacher': teacher,
+        'inspection': inspection,
+        'supervisor': supervisor,
+        'assigned': assigned,
+        'guest': guest,
+        'info': info,
+        'today': today,
     })
 

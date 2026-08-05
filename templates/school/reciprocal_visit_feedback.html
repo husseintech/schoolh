@@ -1,0 +1,52 @@
+{% extends 'school/base.html' %}
+{% block title %}ملاحظات الزيارة التبادلية{% endblock %}
+{% block page_heading %}ملاحظات الزيارة التبادلية{% endblock %}
+{% block content %}
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-calendar-event-fill"></i> بيانات الحصة التي حضرتها</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label text-muted">المعلم المزار</label>
+                <p class="fw-bold">{{ visit.host.full_name }}</p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted">تاريخ الزيارة</label>
+                <p class="fw-bold">{{ visit.visit_date|date:'Y/m/d' }}</p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted">الصف</label>
+                <p class="fw-bold">{{ visit.student_class.name|default:'---' }}</p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted">رقم الحصة</label>
+                <p class="fw-bold">الحصة {{ visit.period }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-journal-text"></i> ملاحظات الزيارة</div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">أبرز النقاط الإيجابية</label>
+                <textarea name="positive_points" class="form-control" rows="4" placeholder="اكتب أبرز النقاط الإيجابية التي لاحظتها في الحصة...">{{ visit.positive_points }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">أبرز النقاط التي تحتاج إلى تطوير</label>
+                <textarea name="development_points" class="form-control" rows="4" placeholder="اكتب أبرز النقاط التي تحتاج إلى تطوير من وجهة نظرك...">{{ visit.development_points }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">ما تم الاتفاق عليه مع المعلم المزار</label>
+                <textarea name="agreement" class="form-control" rows="4" placeholder="اكتب ما اتفقت عليه مع المعلم المزار...">{{ visit.agreement }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ الملاحظات</button>
+            <a href="{% url 'teacher_visits' %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
