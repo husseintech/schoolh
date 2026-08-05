@@ -3271,8 +3271,14 @@ def teacher_followups(request):
             messages.success(request, 'تم تسجيل متابعة المعلم بنجاح')
         return redirect('teacher_followups')
     month = request.GET.get('month', '')
-    year, mon = parse_month(month)
-    followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher', 'created_by').order_by('teacher__full_name', '-follow_date')
+    is_all = month == 'all'
+    if is_all:
+        followups = TeacherFollowup.objects.select_related('teacher', 'created_by').order_by('teacher__full_name', '-follow_date')
+        year, mon, month_value, month_label_text = None, None, 'all', 'جميع الشهور'
+    else:
+        year, mon = parse_month(month)
+        followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher', 'created_by').order_by('teacher__full_name', '-follow_date')
+        month_value, month_label_text = f'{year}-{mon:02d}', month_label(year, mon)
     teachers = Teacher.objects.all().order_by('full_name')
     return render(request, 'school/teacher_followups.html', {
         'followups': followups,
@@ -3280,8 +3286,9 @@ def teacher_followups(request):
         'today': date.today(),
         'year': year,
         'mon': mon,
-        'month_value': f'{year}-{mon:02d}',
-        'month_label': month_label(year, mon),
+        'month_value': month_value,
+        'month_label': month_label_text,
+        'is_all': is_all,
         'months_ar': MONTHS_AR,
     })
 
@@ -3302,15 +3309,23 @@ def teacher_followup_report(request):
     if not has_perm(request.user, 'teacher_followup', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    year, mon = parse_month(request.GET.get('month', ''))
-    followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher').order_by('teacher__full_name', '-follow_date')
+    month = request.GET.get('month', '')
+    is_all = month == 'all'
+    if is_all:
+        followups = TeacherFollowup.objects.select_related('teacher').order_by('teacher__full_name', '-follow_date')
+        year, mon, month_value, month_label_text = None, None, 'all', 'جميع الشهور'
+    else:
+        year, mon = parse_month(month)
+        followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher').order_by('teacher__full_name', '-follow_date')
+        month_value, month_label_text = f'{year}-{mon:02d}', month_label(year, mon)
     info = SchoolInfo.objects.first()
     return render(request, 'school/teacher_followup_report.html', {
         'followups': followups,
         'year': year,
         'mon': mon,
-        'month_value': f'{year}-{mon:02d}',
-        'month_label': month_label(year, mon),
+        'month_value': month_value,
+        'month_label': month_label_text,
+        'is_all': is_all,
         'info': info,
     })
 
@@ -3320,16 +3335,24 @@ def teacher_followup_missing(request):
     if not has_perm(request.user, 'teacher_followup', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    year, mon = parse_month(request.GET.get('month', ''))
-    followed_ids = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).values_list('teacher_id', flat=True)
+    month = request.GET.get('month', '')
+    is_all = month == 'all'
+    if is_all:
+        followed_ids = TeacherFollowup.objects.values_list('teacher_id', flat=True)
+        year, mon, month_value, month_label_text = None, None, 'all', 'جميع الشهور'
+    else:
+        year, mon = parse_month(month)
+        followed_ids = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).values_list('teacher_id', flat=True)
+        month_value, month_label_text = f'{year}-{mon:02d}', month_label(year, mon)
     missing = Teacher.objects.exclude(id__in=followed_ids).order_by('full_name')
     info = SchoolInfo.objects.first()
     return render(request, 'school/teacher_followup_missing.html', {
         'missing': missing,
         'year': year,
         'mon': mon,
-        'month_value': f'{year}-{mon:02d}',
-        'month_label': month_label(year, mon),
+        'month_value': month_value,
+        'month_label': month_label_text,
+        'is_all': is_all,
         'total_teachers': Teacher.objects.count(),
         'info': info,
     })

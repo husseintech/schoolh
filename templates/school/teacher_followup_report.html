@@ -8,10 +8,11 @@
         <form method="get" class="row g-2 align-items-end">
             <div class="col-md-3">
                 <label class="form-label">اختر الشهر</label>
-                <input type="month" name="month" class="form-control" value="{{ month_value }}">
+                <input type="month" name="month" class="form-control" value="{% if not is_all %}{{ month_value }}{% endif %}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button class="btn btn-outline-primary">عرض التقرير</button>
+                <a href="{% url 'teacher_followup_report' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %} ms-2">كل المتابعات</a>
             </div>
         </form>
     </div>
@@ -39,7 +40,7 @@
         {% endif %}
         <div class="text-center mb-4">
             <h5>سجل متابعة المعلمين للأمور الشهرية</h5>
-            <p class="text-muted">شهر {{ month_label }} — إجمالي متابعات الشهر: {{ followups|length }}</p>
+            <p class="text-muted">{% if is_all %}جميع متابعات المعلمين منذ بداية التسجيل{% else %}شهر {{ month_label }}{% endif %} — إجمالي متابعات: {{ followups|length }}</p>
         </div>
         {% if followups %}
         <div class="table-responsive">
