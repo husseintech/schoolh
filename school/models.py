@@ -67,6 +67,7 @@ DEFAULT_PERMISSIONS = {
         'nominations': ['view', 'add', 'delete'],
         'incoming': ['view', 'add', 'edit', 'delete'],
         'outgoing': ['view', 'add', 'edit', 'delete'],
+        'teacher_followup': ['view', 'add', 'edit', 'delete'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -102,6 +103,7 @@ DEFAULT_PERMISSIONS = {
         'schedule': ['view', 'add'],
         'incoming': ['view', 'add', 'edit', 'delete'],
         'outgoing': ['view', 'add', 'edit', 'delete'],
+        'teacher_followup': ['view', 'add'],
     },
     'teacher': {        'students': ['view'],
         'teachers': [],
@@ -812,3 +814,31 @@ class OutgoingLetter(models.Model):
 
     def __str__(self):
         return self.book_number
+
+
+class TeacherFollowup(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='followups', verbose_name='المعلم')
+    follow_date = models.DateField('تاريخ المتابعة', default=date.today)
+
+    prep_done = models.BooleanField('التحضير متابَع', default=False)
+    prep_notes = models.CharField('ملاحظات التحضير', max_length=500, blank=True)
+    marks_done = models.BooleanField('العلامات متابَعة', default=False)
+    marks_notes = models.CharField('ملاحظات العلامات', max_length=500, blank=True)
+    follow_done = models.BooleanField('المتابعة متابَعة', default=False)
+    follow_notes = models.CharField('ملاحظات المتابعة', max_length=500, blank=True)
+    plans_done = models.BooleanField('الخطط متابَعة', default=False)
+    plans_notes = models.CharField('ملاحظات الخطط', max_length=500, blank=True)
+    absence_done = models.BooleanField('دفتر الغياب متابَع', default=False)
+    absence_notes = models.CharField('ملاحظات دفتر الغياب', max_length=500, blank=True)
+
+    general_notes = models.TextField('ملاحظات عامة', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField('تاريخ الإدخال', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'متابعة معلم'
+        verbose_name_plural = 'متابعة المعلمين'
+        ordering = ['-follow_date', 'teacher__full_name']
+
+    def __str__(self):
+        return f'{self.teacher.full_name} - {self.follow_date}'

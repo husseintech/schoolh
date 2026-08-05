@@ -1,0 +1,131 @@
+{% extends 'school/base.html' %}
+{% block title %}متابعة المعلمين{% endblock %}
+{% block page_heading %}متابعة المعلمين - الأمور الشهرية{% endblock %}
+{% block content %}
+
+<div class="card mb-4 no-print">
+    <div class="card-header"><i class="bi bi-clipboard-check-fill"></i> تسجيل متابعة معلم</div>
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-4">
+                <label class="form-label">المعلم</label>
+                <select name="teacher_id" class="form-select" required>
+                    <option value="">اختر المعلم...</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}">{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">تاريخ المتابعة</label>
+                <input type="date" name="follow_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+            </div>
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 20%;">الأمر الشهري</th>
+                                <th class="text-center" style="width: 10%;">تمت المتابعة</th>
+                                <th>ملاحظات خاصة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>التحضير</strong></td>
+                                <td class="text-center"><input type="checkbox" name="prep_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
+                                <td><input type="text" name="prep_notes" class="form-control" placeholder="ملاحظات التحضير..."></td>
+                            </tr>
+                            <tr>
+                                <td><strong>العلامات</strong></td>
+                                <td class="text-center"><input type="checkbox" name="marks_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
+                                <td><input type="text" name="marks_notes" class="form-control" placeholder="ملاحظات العلامات..."></td>
+                            </tr>
+                            <tr>
+                                <td><strong>المتابعة</strong></td>
+                                <td class="text-center"><input type="checkbox" name="follow_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
+                                <td><input type="text" name="follow_notes" class="form-control" placeholder="ملاحظات المتابعة..."></td>
+                            </tr>
+                            <tr>
+                                <td><strong>الخطط</strong></td>
+                                <td class="text-center"><input type="checkbox" name="plans_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
+                                <td><input type="text" name="plans_notes" class="form-control" placeholder="ملاحظات الخطط..."></td>
+                            </tr>
+                            <tr>
+                                <td><strong>دفتر الغياب</strong></td>
+                                <td class="text-center"><input type="checkbox" name="absence_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
+                                <td><input type="text" name="absence_notes" class="form-control" placeholder="ملاحظات دفتر الغياب..."></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label"><strong>ملاحظات عامة</strong></label>
+                <textarea name="general_notes" class="form-control" rows="2" placeholder="ملاحظات عامة على متابعة المعلم..."></textarea>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ المتابعة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4 no-print">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-funnel"></i> متابعات شهر {{ month_label }}</span>
+        <div class="d-flex gap-2">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <input type="month" name="month" class="form-control form-control-sm" value="{{ month_value }}">
+                <button class="btn btn-sm btn-outline-primary">عرض</button>
+            </form>
+            <a href="{% url 'teacher_followup_report' %}?month={{ month_value }}" class="btn btn-sm btn-outline-success"><i class="bi bi-printer"></i> تقرير المتابَعين</a>
+            <a href="{% url 'teacher_followup_missing' %}?month={{ month_value }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-earmark-x"></i> غير المتابَعين</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>المعلم</th>
+                        <th>تاريخ المتابعة</th>
+                        <th>التحضير</th>
+                        <th>العلامات</th>
+                        <th>المتابعة</th>
+                        <th>الخطط</th>
+                        <th>دفتر الغياب</th>
+                        <th>الملاحظات العامة</th>
+                        <th class="text-center">حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in followups %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ f.teacher.full_name }}</strong></td>
+                        <td>{{ f.follow_date|date:'Y-m-d' }}</td>
+                        <td class="text-center">{% if f.prep_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
+                        <td class="text-center">{% if f.marks_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
+                        <td class="text-center">{% if f.follow_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
+                        <td class="text-center">{% if f.plans_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
+                        <td class="text-center">{% if f.absence_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
+                        <td>{{ f.general_notes|default:'---'|truncatewords:8 }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'teacher_followup_delete' f.id %}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('هل أنت متأكد من حذف هذه المتابعة؟')"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-4">لا توجد متابعات مسجلة لهذا الشهر</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -197,4 +197,10 @@ urlpatterns = [
     path('secretary/incoming/<int:letter_id>/delete/', views.incoming_delete, name='incoming_delete'),
     path('secretary/outgoing/', views.outgoing_list, name='outgoing_list'),
     path('secretary/outgoing/<int:letter_id>/delete/', views.outgoing_delete, name='outgoing_delete'),
+
+    # Teacher monthly follow-up
+    path('followups/', views.teacher_followups, name='teacher_followups'),
+    path('followups/<int:followup_id>/delete/', views.teacher_followup_delete, name='teacher_followup_delete'),
+    path('followups/report/', views.teacher_followup_report, name='teacher_followup_report'),
+    path('followups/missing/', views.teacher_followup_missing, name='teacher_followup_missing'),
 ]

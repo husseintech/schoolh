@@ -1,0 +1,80 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}المعلمون غير المتابَعين{% endblock %}
+{% block page_heading %}المعلمون غير المتابَعين{% endblock %}
+{% block content %}
+<div class="card mb-4 no-print">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">اختر الشهر</label>
+                <input type="month" name="month" class="form-control" value="{{ month_value }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-outline-primary">عرض التقرير</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" id="reportArea">
+        {% if info %}
+        <div class="row mb-4 align-items-center">
+            <div class="col-5 text-start">
+                <h6 style="line-height: 1.8;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم العالي - يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+            </div>
+            <div class="col-2 text-center">
+                {% if info.ministry_logo %}
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 80px; width: auto;">
+                {% else %}
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 80px; width: auto;">
+                {% endif %}
+            </div>
+            <div class="col-5 text-end" dir="ltr">
+                <h6 style="line-height: 1.8;">State of Palestine<br>Ministry Of Education & Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6>
+            </div>
+        </div>
+        <hr>
+        {% endif %}
+        <div class="text-center mb-4">
+            <h5>المعلمون غير المتابَعين</h5>
+            <p class="text-muted">شهر {{ month_label }} — لم يتم إدخال أي متابعة لهم في أي من الأمور الشهرية</p>
+        </div>
+        {% if missing %}
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم المعلم</th>
+                        <th>رقم الهوية</th>
+                        <th>التخصص</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in missing %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ t.full_name }}</strong></td>
+                        <td>{{ t.id_number|default:'---' }}</td>
+                        <td>{{ t.specialization|default:'---' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-center mt-3"><strong>إجمالي غير المتابَعين: {{ missing|length }} من أصل {{ total_teachers }} معلماً</strong></p>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+            <p class="mt-2">جميع المعلمين ({{ total_teachers }}) تمت متابعتهم في هذا الشهر</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer no-print text-center">
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">العودة</a>
+    </div>
+</div>
+{% endblock %}

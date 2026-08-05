@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -18,7 +18,7 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing']
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup']
 ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
 MODULE_LABELS = {
     'students': 'الطلاب',
@@ -47,6 +47,7 @@ MODULE_LABELS = {
     'nominations': 'ترشيح المتفوقين',
     'incoming': 'سجل الوارد',
     'outgoing': 'سجل الصادر',
+    'teacher_followup': 'متابعة المعلمين',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -3018,11 +3019,12 @@ CLEARABLE_TABLES = [
     ('whatsapp_groups', 'روابط واتساب الصفوف', WhatsAppGroup, []),
     ('incoming', 'سجل الوارد', IncomingLetter, ['created_by']),
     ('outgoing', 'سجل الصادر', OutgoingLetter, ['created_by']),
+    ('teacher_followups', 'متابعة المعلمين', TeacherFollowup, ['teacher']),
 ]
 
 DEPENDENT_MODELS = {
     'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter],
-    'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry],
+    'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup],
     'classes': [Student, TeacherScheduleEntry, WhatsAppGroup],
     'subjects': [TeacherScheduleEntry],
 }
@@ -3214,4 +3216,121 @@ def outgoing_delete(request, letter_id):
     letter.delete()
     messages.success(request, 'تم حذف الصادر')
     return redirect('outgoing_list')
+
+
+# ─── Teacher Monthly Follow-up (متابعة المعلمين) ─────────────────────────────
+
+MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+
+
+def parse_month(value):
+    """يقبل 'YYYY-MM' ويرجع (year, month) أو الشهر الحالي إذا لم يكن صالحاً."""
+    try:
+        if value and '-' in value:
+            y, m = value.split('-')
+            y, m = int(y), int(m)
+            if 1 <= m <= 12:
+                return y, m
+    except (ValueError, TypeError):
+        pass
+    today = date.today()
+    return today.year, today.month
+
+
+def month_label(year, month):
+    return f'{MONTHS_AR[month - 1]} {year}'
+
+
+@login_required
+def teacher_followups(request):
+    if not has_perm(request.user, 'teacher_followup', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    if request.method == 'POST' and has_perm(request.user, 'teacher_followup', 'add'):
+        teacher_id = request.POST.get('teacher_id', '')
+        teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
+        if not teacher:
+            messages.error(request, 'اختر معلماً')
+        else:
+            TeacherFollowup.objects.create(
+                teacher=teacher,
+                follow_date=request.POST.get('follow_date', '') or date.today(),
+                prep_done='prep_done' in request.POST,
+                prep_notes=request.POST.get('prep_notes', '').strip(),
+                marks_done='marks_done' in request.POST,
+                marks_notes=request.POST.get('marks_notes', '').strip(),
+                follow_done='follow_done' in request.POST,
+                follow_notes=request.POST.get('follow_notes', '').strip(),
+                plans_done='plans_done' in request.POST,
+                plans_notes=request.POST.get('plans_notes', '').strip(),
+                absence_done='absence_done' in request.POST,
+                absence_notes=request.POST.get('absence_notes', '').strip(),
+                general_notes=request.POST.get('general_notes', '').strip(),
+                created_by=request.user,
+            )
+            messages.success(request, 'تم تسجيل متابعة المعلم بنجاح')
+        return redirect('teacher_followups')
+    month = request.GET.get('month', '')
+    year, mon = parse_month(month)
+    followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher', 'created_by').order_by('teacher__full_name', '-follow_date')
+    teachers = Teacher.objects.all().order_by('full_name')
+    return render(request, 'school/teacher_followups.html', {
+        'followups': followups,
+        'teachers': teachers,
+        'today': date.today(),
+        'year': year,
+        'mon': mon,
+        'month_value': f'{year}-{mon:02d}',
+        'month_label': month_label(year, mon),
+        'months_ar': MONTHS_AR,
+    })
+
+
+@login_required
+def teacher_followup_delete(request, followup_id):
+    if not has_perm(request.user, 'teacher_followup', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    f = get_object_or_404(TeacherFollowup, id=followup_id)
+    f.delete()
+    messages.success(request, 'تم حذف متابعة المعلم')
+    return redirect('teacher_followups')
+
+
+@login_required
+def teacher_followup_report(request):
+    if not has_perm(request.user, 'teacher_followup', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    year, mon = parse_month(request.GET.get('month', ''))
+    followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher').order_by('teacher__full_name', '-follow_date')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/teacher_followup_report.html', {
+        'followups': followups,
+        'year': year,
+        'mon': mon,
+        'month_value': f'{year}-{mon:02d}',
+        'month_label': month_label(year, mon),
+        'info': info,
+    })
+
+
+@login_required
+def teacher_followup_missing(request):
+    if not has_perm(request.user, 'teacher_followup', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    year, mon = parse_month(request.GET.get('month', ''))
+    followed_ids = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).values_list('teacher_id', flat=True)
+    missing = Teacher.objects.exclude(id__in=followed_ids).order_by('full_name')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/teacher_followup_missing.html', {
+        'missing': missing,
+        'year': year,
+        'mon': mon,
+        'month_value': f'{year}-{mon:02d}',
+        'month_label': month_label(year, mon),
+        'total_teachers': Teacher.objects.count(),
+        'info': info,
+    })
 

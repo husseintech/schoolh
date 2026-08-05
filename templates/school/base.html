@@ -377,6 +377,11 @@
             <i class="bi bi-card-checklist"></i> بطاقات المعلمين
         </a>
         {% endif %}
+        {% if 'teacher_followup_view' in user_perms %}
+        <a href="{% url 'teacher_followups' %}" class="nav-link {% if 'followup' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-clipboard-check-fill"></i> متابعة المعلمين
+        </a>
+        {% endif %}
         {% if 'nominations_view' in user_perms %}
         <a href="{% url 'guardian_students' %}" class="nav-link {% if request.resolver_match.url_name == 'guardian_students' %}active{% endif %}">
             <i class="bi bi-trophy-fill"></i> ترشيح المتفوقين

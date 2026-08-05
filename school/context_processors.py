@@ -42,6 +42,7 @@ def user_permissions(request):
             ('nominations', 'view'), ('nominations', 'add'),
             ('incoming', 'view'), ('incoming', 'add'), ('incoming', 'delete'),
             ('outgoing', 'view'), ('outgoing', 'add'), ('outgoing', 'delete'),
+            ('teacher_followup', 'view'), ('teacher_followup', 'add'), ('teacher_followup', 'delete'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
