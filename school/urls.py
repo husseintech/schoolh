@@ -208,6 +208,7 @@ urlpatterns = [
     path('reciprocal-visits/', views.reciprocal_visit_list, name='reciprocal_visit_list'),
     path('reciprocal-visits/<int:visit_id>/print/', views.reciprocal_visit_print, name='reciprocal_visit_print'),
     path('reciprocal-visits/<int:visit_id>/report/', views.reciprocal_visit_report, name='reciprocal_visit_report'),
+    path('reciprocal-visits/report/room/', views.reciprocal_visits_room_report, name='reciprocal_visits_room_report'),
     path('reciprocal-visits/<int:visit_id>/feedback/', views.reciprocal_visit_feedback, name='reciprocal_visit_feedback'),
     path('reciprocal-visits/<int:visit_id>/delete/', views.reciprocal_visit_delete, name='reciprocal_visit_delete'),
     path('teacher/visits/', views.teacher_visits, name='teacher_visits'),

@@ -3433,6 +3433,22 @@ def reciprocal_visit_report(request, visit_id):
 
 
 @login_required
+def reciprocal_visits_room_report(request):
+    if not has_perm(request.user, 'reciprocal_visits', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    pending = ReciprocalVisit.objects.filter(completed=False).select_related('visitor', 'host', 'student_class').order_by('visit_date', '-created_at')
+    done = ReciprocalVisit.objects.filter(completed=True).select_related('visitor', 'host', 'student_class').order_by('-visit_date', '-created_at')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/reciprocal_visits_room_report.html', {
+        'pending': pending,
+        'done': done,
+        'info': info,
+        'today': date.today(),
+    })
+
+
+@login_required
 def reciprocal_visit_feedback(request, visit_id):
     if not has_perm(request.user, 'reciprocal_visits', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
