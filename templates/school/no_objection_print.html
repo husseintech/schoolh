@@ -1,0 +1,72 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}لا مانع - {{ obj.student_name }}{% endblock %}
+{% block page_heading %}لا مانع{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-body" id="reportArea">
+        {% if info %}
+        <div class="row mb-4 align-items-center">
+            <div class="col-5 text-start">
+                <h6 style="line-height: 1.8;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم العالي - يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+            </div>
+            <div class="col-2 text-center">
+                {% if info.ministry_logo %}
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 80px; width: auto;">
+                {% else %}
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 80px; width: auto;">
+                {% endif %}
+            </div>
+            <div class="col-5 text-end" dir="ltr">
+                <h6 style="line-height: 1.8;">State of Palestine<br>Ministry Of Education & Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6>
+            </div>
+        </div>
+        <hr>
+        {% endif %}
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <table class="table table-bordered">
+                    <tr>
+                        <th class="table-light" style="width: 45%;">اسم الطالب</th>
+                        <td><strong>{{ obj.student_name }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-4">
+                <table class="table table-bordered">
+                    <tr>
+                        <th class="table-light" style="width: 45%;">الصف</th>
+                        <td><strong>{{ obj.student_class }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-4">
+                <table class="table table-bordered">
+                    <tr>
+                        <th class="table-light" style="width: 45%;">المدرسة الباعثة</th>
+                        <td><strong>{{ obj.sending_school }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center my-5 px-4" style="font-size: 1.1rem; line-height: 2.5;">
+            <p>
+                حضرة مدير مدرسة <strong>{{ obj.sending_school }}</strong><br>
+                لا مانع لدينا من قبول الطالب <strong>{{ obj.student_name }}</strong> في الصف <strong>{{ obj.student_class }}</strong>
+            </p>
+            <p class="mt-4">وتقبلوا فائق الاحترام ،،،</p>
+        </div>
+
+        <div class="text-start" style="font-size: 1rem;">
+            <p><strong>مدير المدرسة: {{ info.principal_name|default:'---' }}</strong></p>
+        </div>
+    </div>
+    <div class="card-footer no-print text-center">
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة لا مانع</button>
+        <a href="{% url 'no_objection_list' %}" class="btn btn-outline-secondary">العودة</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'school/base.html' %}
+{% block title %}لا مانع{% endblock %}
+{% block page_heading %}لا مانع - قبول الطلاب{% endblock %}
+{% block content %}
+
+{% if can_add %}
+<div class="card mb-4 no-print">
+    <div class="card-header"><i class="bi bi-file-earmark-check"></i> تسجيل لا مانع جديد</div>
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-4">
+                <label class="form-label">اسم الطالب</label>
+                <input type="text" name="student_name" class="form-control" placeholder="اكتب اسم الطالب..." required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">الصف</label>
+                <input type="text" name="student_class" class="form-control" placeholder="مثال: الصف الخامس أ..." required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">اسم المدرسة الباعثة</label>
+                <input type="text" name="sending_school" class="form-control" placeholder="اكتب اسم المدرسة الباعثة..." required>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-list-check"></i> سجل لا مانع</span>
+        <span class="badge bg-info">{{ objects|length }} سجل</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الطالب</th>
+                        <th>الصف</th>
+                        <th>اسم المدرسة الباعثة</th>
+                        <th>تاريخ التسجيل</th>
+                        <th class="text-center no-print">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in objects %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ o.student_name }}</strong></td>
+                        <td>{{ o.student_class }}</td>
+                        <td>{{ o.sending_school }}</td>
+                        <td>{{ o.created_at|date:'Y-m-d' }}</td>
+                        <td class="text-center no-print">
+                            <a href="{% url 'no_objection_print' o.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="طباعة لا مانع"><i class="bi bi-printer"></i></a>
+                            {% if can_delete %}
+                            <a href="{% url 'no_objection_delete' o.id %}" class="btn btn-sm btn-outline-danger" title="حذف"
+                               onclick="return confirm('هل أنت متأكد من حذف هذا السجل؟')"><i class="bi bi-trash"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">لا توجد سجلات لا مانع</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

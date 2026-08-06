@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -18,7 +18,7 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits']
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection']
 ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
 MODULE_LABELS = {
     'students': 'الطلاب',
@@ -49,6 +49,7 @@ MODULE_LABELS = {
     'outgoing': 'سجل الصادر',
     'teacher_followup': 'متابعة المعلمين',
     'reciprocal_visits': 'الزيارات التبادلية',
+    'no_objection': 'لا مانع',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -3022,6 +3023,7 @@ CLEARABLE_TABLES = [
     ('outgoing', 'سجل الصادر', OutgoingLetter, ['created_by']),
     ('teacher_followups', 'متابعة المعلمين', TeacherFollowup, ['teacher']),
     ('reciprocal_visits', 'الزيارات التبادلية', ReciprocalVisit, ['teacher']),
+    ('no_objections', 'لا مانع', NoObjection, ['created_by']),
 ]
 
 DEPENDENT_MODELS = {
@@ -3512,4 +3514,59 @@ def teacher_visits(request):
         'info': info,
         'today': today,
     })
+
+
+@login_required
+def no_objection_list(request):
+    if not has_perm(request.user, 'no_objection', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    if request.method == 'POST' and has_perm(request.user, 'no_objection', 'add'):
+        student_name = request.POST.get('student_name', '').strip()
+        student_class = request.POST.get('student_class', '').strip()
+        sending_school = request.POST.get('sending_school', '').strip()
+        if not student_name or not student_class or not sending_school:
+            messages.error(request, 'يرجى تعبئة جميع الحقول')
+        else:
+            NoObjection.objects.create(
+                student_name=student_name,
+                student_class=student_class,
+                sending_school=sending_school,
+                created_by=request.user,
+            )
+            messages.success(request, 'تم تسجيل لا مانع بنجاح')
+        return redirect('no_objection_list')
+    objects = NoObjection.objects.select_related('created_by').order_by('-created_at')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/no_objection_list.html', {
+        'objects': objects,
+        'info': info,
+        'can_add': has_perm(request.user, 'no_objection', 'add'),
+        'can_delete': has_perm(request.user, 'no_objection', 'delete'),
+    })
+
+
+@login_required
+def no_objection_print(request, obj_id):
+    if not has_perm(request.user, 'no_objection', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    obj = get_object_or_404(NoObjection, id=obj_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/no_objection_print.html', {
+        'obj': obj,
+        'info': info,
+        'today': date.today(),
+    })
+
+
+@login_required
+def no_objection_delete(request, obj_id):
+    if not has_perm(request.user, 'no_objection', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    obj = get_object_or_404(NoObjection, id=obj_id)
+    obj.delete()
+    messages.success(request, 'تم حذف لا مانع')
+    return redirect('no_objection_list')
 

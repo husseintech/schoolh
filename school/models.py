@@ -69,6 +69,7 @@ DEFAULT_PERMISSIONS = {
         'outgoing': ['view', 'add', 'edit', 'delete'],
         'teacher_followup': ['view', 'add', 'edit', 'delete'],
         'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
+        'no_objection': ['view', 'add', 'edit', 'delete'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -85,6 +86,8 @@ DEFAULT_PERMISSIONS = {
         'settings': [],
         'notes': ['view', 'add'],
         'absence': ['view', 'add'],
+        'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
+        'no_objection': ['view', 'add'],
     },
     'secretary': {        'students': ['view', 'add', 'edit', 'import', 'export'],
         'teachers': ['view'],
@@ -105,6 +108,7 @@ DEFAULT_PERMISSIONS = {
         'incoming': ['view', 'add', 'edit', 'delete'],
         'outgoing': ['view', 'add', 'edit', 'delete'],
         'reciprocal_visits': ['view'],
+        'no_objection': ['view', 'add', 'edit', 'delete'],
     },
     'teacher': {        'students': ['view'],
         'teachers': [],
@@ -620,6 +624,22 @@ class ReciprocalVisit(models.Model):
 
     def __str__(self):
         return f'{self.visitor.full_name} ← {self.host.full_name}'
+
+
+class NoObjection(models.Model):
+    student_name = models.CharField('اسم الطالب', max_length=200)
+    student_class = models.CharField('الصف', max_length=100)
+    sending_school = models.CharField('اسم المدرسة الباعثة', max_length=200)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'لا مانع'
+        verbose_name_plural = 'لا مانع'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student_name} - {self.student_class}'
 
 
 class Nomination(models.Model):

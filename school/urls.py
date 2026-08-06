@@ -198,6 +198,11 @@ urlpatterns = [
     path('secretary/outgoing/', views.outgoing_list, name='outgoing_list'),
     path('secretary/outgoing/<int:letter_id>/delete/', views.outgoing_delete, name='outgoing_delete'),
 
+    # Secretary: No Objection (لا مانع)
+    path('secretary/no-objection/', views.no_objection_list, name='no_objection_list'),
+    path('secretary/no-objection/<int:obj_id>/print/', views.no_objection_print, name='no_objection_print'),
+    path('secretary/no-objection/<int:obj_id>/delete/', views.no_objection_delete, name='no_objection_delete'),
+
     # Teacher monthly follow-up
     path('followups/', views.teacher_followups, name='teacher_followups'),
     path('followups/<int:followup_id>/delete/', views.teacher_followup_delete, name='teacher_followup_delete'),

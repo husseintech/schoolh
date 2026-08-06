@@ -486,7 +486,7 @@
         </div>
         {% endif %}
 
-        {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms %}
+        {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms or 'no_objection_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-secretary" aria-expanded="false">
             <span>السكرتير</span><i class="bi bi-chevron-down"></i>
         </button>
@@ -500,6 +500,11 @@
         {% if 'outgoing_view' in user_perms %}
         <a href="{% url 'outgoing_list' %}" class="nav-link {% if 'outgoing' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-box-arrow-up"></i> الصادر
+        </a>
+        {% endif %}
+        {% if 'no_objection_view' in user_perms %}
+        <a href="{% url 'no_objection_list' %}" class="nav-link {% if 'no_objection' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-file-earmark-check"></i> لا مانع
         </a>
         {% endif %}
         {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms %}
