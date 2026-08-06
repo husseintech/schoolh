@@ -1,5 +1,5 @@
 from django.conf import settings
-from .models import has_perm, Notification, Message
+from .models import has_perm, Notification, Message, SchoolInfo
 from .services import send_visit_reminders
 
 
@@ -55,6 +55,7 @@ def user_permissions(request):
         recent_messages = Message.objects.filter(recipient=request.user)[:5]
     return {
         'user_perms': perms,
+        'school_info': SchoolInfo.objects.first(),
         'unread_notifications_count': unread_count,
         'recent_notifications': recent_notifications,
         'unread_messages_count': unread_messages_count,

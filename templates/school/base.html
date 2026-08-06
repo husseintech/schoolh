@@ -46,9 +46,16 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         .sidebar .brand h4 {
-            margin: 0;
+            margin: 10px 0 0;
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.05rem;
+        }
+        .brand-logo {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: 8px;
+            object-fit: contain;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         .sidebar .brand small {
             color: rgba(255,255,255,0.7);
@@ -363,8 +370,10 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="brand">
-            <h4><i class="bi bi-mortarboard-fill"></i> النظام المدرسي</h4>
-            <small>نظام إدارة المدارس</small>
+            {% if school_info.school_logo %}
+            <img src="{{ school_info.school_logo }}" alt="شعار المدرسة" class="brand-logo">
+            {% endif %}
+            <h4>إدارة مدرسة {{ school_info.name_ar }}</h4>
         </div>
 
         {% if user.is_authenticated %}
