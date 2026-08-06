@@ -17,6 +17,22 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
     ParentMessageForm, ClassForm, SubjectForm, StudentSurveyForm)
 from .services import send_push
 from .services import send_whatsapp_message
+from .arabic_sort import arabic_sort_key
+
+
+def sort_students(students):
+    return sorted(students, key=lambda s: arabic_sort_key(s.full_name))
+
+
+def sort_students_class_first(students):
+    return sorted(students, key=lambda s: (
+        arabic_sort_key(s.student_class.name) if getattr(s, 'student_class', None) else (0,),
+        arabic_sort_key(s.full_name),
+    ))
+
+
+def sort_by_student_name(items):
+    return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
 
 MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection']
 ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
@@ -228,12 +244,12 @@ def student_list(request):
     profile = user.profile
 
     if profile.role == 'admin':
-        students = Student.objects.all().select_related('student_class').order_by('full_name')
+        students = sort_students(Student.objects.all().select_related('student_class'))
     elif profile.role == 'teacher':
         try:
             teacher = user.teacher_profile
             classes = teacher.classes.all()
-            students = Student.objects.filter(student_class__in=classes).select_related('student_class').order_by('full_name')
+            students = sort_students(Student.objects.filter(student_class__in=classes).select_related('student_class'))
         except Teacher.DoesNotExist:
             students = Student.objects.none()
     else:
