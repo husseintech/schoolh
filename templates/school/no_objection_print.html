@@ -25,33 +25,6 @@
         <hr>
         {% endif %}
 
-        <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <table class="table table-bordered">
-                    <tr>
-                        <th class="table-light" style="width: 45%;">اسم الطالب</th>
-                        <td><strong>{{ obj.student_name }}</strong></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="col-md-4">
-                <table class="table table-bordered">
-                    <tr>
-                        <th class="table-light" style="width: 45%;">الصف</th>
-                        <td><strong>{{ obj.student_class }}</strong></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="col-md-4">
-                <table class="table table-bordered">
-                    <tr>
-                        <th class="table-light" style="width: 45%;">المدرسة الباعثة</th>
-                        <td><strong>{{ obj.sending_school }}</strong></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
         <div class="text-center my-5 px-4" style="font-size: 1.1rem; line-height: 2.5;">
             <p>
                 حضرة مدير مدرسة <strong>{{ obj.sending_school }}</strong><br>
