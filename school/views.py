@@ -509,7 +509,7 @@ def export_students(request):
         cell = ws.cell(row=1, column=col)
         cell.font = openpyxl.styles.Font(bold=True)
 
-    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+    students = sort_students_class_first(Student.objects.all().select_related('student_class'))
     for s in students:
         ws.append([
             s.full_name,
@@ -1022,7 +1022,7 @@ def leave_list(request):
         leaves = leaves.filter(student_id=student_id)
     elif search_query:
         leaves = leaves.filter(student__full_name__icontains=search_query)
-    students = Student.objects.all().order_by('full_name')
+    students = sort_students(Student.objects.all())
     return render(request, 'school/leave_list.html', {
         'leaves': leaves,
         'students': students,
@@ -1119,7 +1119,7 @@ def bulk_add_student_level(request):
         if teacher and selected_class not in teacher.classes.all():
             messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا الصف')
             return redirect('bulk_add_student_level')
-        students = Student.objects.filter(student_class=selected_class).order_by('full_name')
+        students = sort_students(Student.objects.filter(student_class=selected_class))
     return render(request, 'school/bulk_add_student_level.html', {
         'students': students,
         'subjects': subjects_qs,
@@ -1172,7 +1172,7 @@ def add_student_level(request):
         if teacher and selected_class not in teacher.classes.all():
             messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا الصف')
             return redirect('add_student_level')
-        students = Student.objects.filter(student_class=selected_class).order_by('full_name')
+        students = sort_students(Student.objects.filter(student_class=selected_class))
     return render(request, 'school/add_student_level.html', {
         'students': students,
         'subjects': subjects_qs,
@@ -1329,7 +1329,7 @@ def send_message(request, user_id=None):
         )
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
-    students = Student.objects.all().select_related('student_class').order_by('full_name')
+    students = sort_students(Student.objects.all().select_related('student_class'))
     teachers = Teacher.objects.all().order_by('full_name')
     admins = User.objects.filter(profile__role__in=['admin', 'vice_principal', 'secretary']).select_related('profile').order_by('first_name')
     if user_id:
@@ -1463,9 +1463,9 @@ def class_report(request, class_id):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     class_obj = get_object_or_404(Class, id=class_id)
-    students = Student.objects.filter(student_class=class_obj).order_by('full_name')
+    students = sort_students(Student.objects.filter(student_class=class_obj))
     notes = Note.objects.filter(student__student_class=class_obj).order_by('-created_at')
-    levels = StudentLevel.objects.filter(student__student_class=class_obj).select_related('subject').order_by('student__full_name')
+    levels = sort_by_student_name(StudentLevel.objects.filter(student__student_class=class_obj).select_related('subject'))
 
     context = {
         'class_obj': class_obj,
@@ -1494,7 +1494,8 @@ def student_levels_report(request):
         levels = StudentLevel.objects.filter(
             student__student_class=selected_class,
             subject=selected_subject
-        ).select_related('student', 'created_by').order_by('student__full_name')
+        ).select_related('student', 'created_by')
+        levels = sort_by_student_name(levels)
     return render(request, 'school/student_levels_report.html', {
         'classes': classes,
         'subjects': subjects,
@@ -1849,11 +1850,12 @@ def lateness_list(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     classes = Class.objects.all().order_by('name')
-    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+    students = Student.objects.all().select_related('student_class')
     search_query = request.GET.get('q', '')
     if search_query:
         students = students.filter(full_name__icontains=search_query)
     students = students.annotate(lateness_count=Count('lateness'))
+    students = sort_students_class_first(students)
     today_lateness = list(StudentLateness.objects.filter(date=date.today()).values_list('student_id', flat=True))
     today_notes = {
         l.student_id: l.notes
@@ -2133,7 +2135,7 @@ def absence_list(request):
         absent_ids = set(StudentAbsence.objects.filter(
             absence_date=absence_date, student__student_class=selected_class,
         ).values_list('student_id', flat=True))
-    students = Student.objects.filter(student_class=selected_class).order_by('full_name') if selected_class else Student.objects.none()
+    students = sort_students(Student.objects.filter(student_class=selected_class)) if selected_class else Student.objects.none()
     today = date.today()
     return render(request, 'school/absence_list.html', {
         'classes': classes,
@@ -2156,7 +2158,8 @@ def absence_report(request):
     for i, cls in enumerate(classes, start=1):
         absent = list(StudentAbsence.objects.filter(
             absence_date=absence_date, student__student_class=cls,
-        ).select_related('student').order_by('student__full_name'))
+        ).select_related('student'))
+        absent = sort_by_student_name(absent)
         class_students = Student.objects.filter(student_class=cls).count()
         rows.append({
             'num': i,
@@ -2340,21 +2343,25 @@ def survey_report(request):
     if not has_perm(request.user, 'survey', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    surveys = StudentSurvey.objects.select_related('student__student_class').order_by('student__student_class__name', 'student__full_name')
+    surveys = StudentSurvey.objects.select_related('student__student_class')
     total_students = Student.objects.count()
     submitted_ids = set(surveys.values_list('student_id', flat=True))
-    not_submitted = Student.objects.exclude(id__in=submitted_ids).select_related('student_class').order_by('student_class__name', 'full_name')
+    not_submitted = sort_students_class_first(Student.objects.exclude(id__in=submitted_ids).select_related('student_class'))
     classes = Class.objects.all().order_by('name')
     stats = []
     for cls in classes:
         total = Student.objects.filter(student_class=cls).count()
         done = surveys.filter(student__student_class=cls).count()
         stats.append({'class': cls, 'total': total, 'done': done, 'missing': total - done})
+    surveys_sorted = sorted(list(surveys), key=lambda s: (
+        arabic_sort_key(s.student.student_class.name) if s.student.student_class else (0,),
+        arabic_sort_key(s.student.full_name),
+    ))
     return render(request, 'school/survey_report.html', {
-        'surveys': surveys,
+        'surveys': surveys_sorted,
         'total_students': total_students,
         'submitted_count': len(submitted_ids),
-        'not_submitted_count': not_submitted.count(),
+        'not_submitted_count': len(not_submitted),
         'not_submitted': not_submitted,
         'stats': stats,
         'today': date.today(),
@@ -2394,8 +2401,12 @@ def survey_condition_labels(s):
 
 def build_survey_stats_data():
     """يحسب كل إحصاءات المسح ويُرجع قاموساً لاستخدامه في الصفحة أو تقارير الطباعة."""
-    surveys = StudentSurvey.objects.select_related('student__student_class').order_by('student__student_class__name', 'student__full_name')
+    surveys = StudentSurvey.objects.select_related('student__student_class')
     submitted = list(surveys)
+    submitted.sort(key=lambda s: (
+        arabic_sort_key(s.student.student_class.name) if s.student.student_class else (0,),
+        arabic_sort_key(s.student.full_name),
+    ))
     n = max(len(submitted), 1)
 
     def cnt(pred):
@@ -2633,7 +2644,7 @@ def guardian_students(request):
         if not guardian_class:
             messages.error(request, 'لم يتم تخصيص صف لك كمربي صف بعد')
             return redirect('dashboard')
-    students = Student.objects.filter(student_class=guardian_class).order_by('full_name')
+    students = sort_students(Student.objects.filter(student_class=guardian_class))
     nominated_ids = set(Nomination.objects.filter(student_class=guardian_class).values_list('student_id', flat=True))
     can_nominate = has_perm(request.user, 'nominations', 'add') or is_admin
     if request.method == 'POST':
@@ -2699,7 +2710,7 @@ def certificates_manage(request):
     nominations = Nomination.objects.select_related('student', 'student_class__guardian', 'nominated_by')
     if class_id:
         nominations = nominations.filter(student_class_id=class_id)
-    students = Student.objects.all().select_related('student_class').order_by('student_class__name', 'full_name')
+    students = sort_students_class_first(Student.objects.all().select_related('student_class'))
     nominated_classes = Class.objects.filter(nominations__isnull=False).distinct().order_by('name')
     classes_without = Class.objects.exclude(id__in=nominated_classes.values('id')).order_by('name')
     return render(request, 'school/certificates_manage.html', {
@@ -2740,6 +2751,7 @@ def certificates_print_all(request):
     if class_id:
         nominations = nominations.filter(student_class_id=class_id)
     issue_certificates(nominations, request.user)
+    nominations = sorted(nominations, key=lambda n: (arabic_sort_key(n.student_class.name), arabic_sort_key(n.student.full_name)))
     certs = [Certificate.objects.get(nomination=n) for n in nominations]
     info = SchoolInfo.objects.first()
     bg = request.GET.get('bg', '1')
@@ -2769,7 +2781,7 @@ def certificates_export(request):
     ws.append(headers)
     for col in range(1, len(headers) + 1):
         ws.cell(row=1, column=col).font = openpyxl.styles.Font(bold=True)
-    for n in nominations:
+    for n in sorted(nominations, key=lambda n: arabic_sort_key(n.student.full_name)):
         ws.append([
             n.student.full_name,
             n.student_class.name,
