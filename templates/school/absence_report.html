@@ -49,7 +49,8 @@ td.cnt { width: 14mm; text-align: center; }
     <thead>
         <tr>
             <th class="num">الرقم</th>
-            <th class="cls">الصف (عدد الطلاب)</th>
+            <th class="cls">الصف</th>
+            <th class="cnt">عدد الطلاب</th>
             <th class="cnt">عدد الغائبين</th>
             <th class="cnt">نسبة الغياب</th>
             <th>أسماء الطلبة الغائبين</th>
@@ -59,7 +60,8 @@ td.cnt { width: 14mm; text-align: center; }
         {% for r in rows %}
         <tr>
             <td class="num">{{ r.num }}</td>
-            <td class="cls">{{ r.class_name }} ({{ r.students_count }})</td>
+            <td class="cls">{{ r.class_name }}</td>
+            <td class="cnt">{{ r.students_count }}</td>
             <td class="cnt">{{ r.count }}</td>
             <td class="cnt">{{ r.absence_pct }}%</td>
             <td>{{ r.names }}</td>
