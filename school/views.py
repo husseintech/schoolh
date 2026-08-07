@@ -2175,12 +2175,14 @@ def absence_report(request):
             'students_count': class_students,
             'present': class_students - len(absent),
             'count': len(absent),
+            'absence_pct': round((len(absent) / class_students) * 100, 1) if class_students else 0,
             'names': ', '.join(a.student.full_name for a in absent) if absent else 'لا يوجد غياب',
         })
     total_students = Student.objects.count()
     total_absent = sum(r['count'] for r in rows)
     total_present = total_students - total_absent
     attendance_pct = round((total_present / total_students) * 100, 1) if total_students else 0
+    absence_pct = round((total_absent / total_students) * 100, 1) if total_students else 0
     info = SchoolInfo.objects.first()
     return render(request, 'school/absence_report.html', {
         'rows': rows,
@@ -2188,6 +2190,7 @@ def absence_report(request):
         'total_absent': total_absent,
         'total_present': total_present,
         'attendance_pct': attendance_pct,
+        'absence_pct': absence_pct,
         'absence_date': absence_date,
         'info': info,
         'today': date.today(),

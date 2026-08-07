@@ -52,6 +52,7 @@ td.cnt { width: 14mm; text-align: center; }
             <th class="cls">الصف</th>
             <th class="cnt">عدد الحضور</th>
             <th class="cnt">عدد الغائبين</th>
+            <th class="cnt">نسبة الغياب</th>
             <th>أسماء الطلبة الغائبين</th>
         </tr>
     </thead>
@@ -62,10 +63,11 @@ td.cnt { width: 14mm; text-align: center; }
             <td class="cls">{{ r.class_name }}</td>
             <td class="cnt">{{ r.present }}</td>
             <td class="cnt">{{ r.count }}</td>
+            <td class="cnt">{{ r.absence_pct }}%</td>
             <td>{{ r.names }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="center" style="padding: 8mm;">لا توجد صفوف دراسية</td></tr>
+        <tr><td colspan="6" class="center" style="padding: 8mm;">لا توجد صفوف دراسية</td></tr>
         {% endfor %}
     </tbody>
 </table>
@@ -86,6 +88,10 @@ td.cnt { width: 14mm; text-align: center; }
         <div class="stat">
             <div class="label">نسبة الحضور</div>
             <div class="value">{{ attendance_pct }}%</div>
+        </div>
+        <div class="stat">
+            <div class="label">نسبة الغياب</div>
+            <div class="value">{{ absence_pct }}%</div>
         </div>
     </div>
     <div class="sign">
