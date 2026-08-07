@@ -162,6 +162,23 @@
         background: #10b981; color: #fff; font-size: 0.6rem;
         padding: 2px 8px; border-radius: 10px; margin-right: 5px;
     }
+    .btn-social-fb {
+        background: #1877f2;
+        color: #fff;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 7px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 2px 6px rgba(24, 119, 242, 0.4);
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .btn-social:hover {
+        background: #1464c7;
+        color: #fff;
+        transform: translateY(-1px);
+    }
     @media (max-width: 768px) {
         .home-topbar .brand small { display: none; }
         .login-inline .form-control { font-size: 0.8rem; padding: 5px 10px; }
@@ -187,6 +204,9 @@
                         <input type="password" name="password" class="form-control" required placeholder="كلمة المرور" style="width:140px">
                         <button type="submit" class="btn-login-sm">دخول <i class="bi bi-box-arrow-in-left"></i></button>
                     </form>
+                    <a href="https://www.facebook.com/ALMANSOUR.SCHOOL.YATTA" target="_blank" rel="noopener" class="btn btn-social-fb d-flex align-items-center gap-2 mt-2 justify-content-center" style="width:auto;">
+                        <i class="bi bi-facebook" style="font-size:1.2rem;"></i> تابع صفحة المدرسة على فيسبوك
+                    </a>
                 </div>
             </div>
         </div>

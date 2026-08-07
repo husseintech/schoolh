@@ -238,6 +238,31 @@
             color: #6c757d;
             font-size: 0.85rem;
         }
+        .footer-social {
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        .footer-social a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 1.05rem;
+            text-decoration: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .footer-social a:hover {
+            transform: translateY(-2px);
+            opacity: 0.85;
+        }
+        .footer-social a.fb { background: #1877f2; }
+        .footer-social a.tt { background: #000000; }
+        .footer-social a.yt { background: #ff0000; }
         .sidebar-toggle {
             display: none;
             background: none;
@@ -726,6 +751,11 @@
         <div class="footer no-print">
             <p>جميع الحقوق محفوظة &copy; {% now "Y" %} - النظام المدرسي</p>
             <p>جميع الحقوق محفوظة للمصمم : حسين حمامدة</p>
+            <p class="footer-social">
+                <a href="https://www.facebook.com/hhamamdeh" target="_blank" rel="noopener" class="fb" title="فيسبوك" aria-label="فيسبوك"><i class="bi bi-facebook"></i></a>
+                <a href="https://www.tiktok.com/@abuadelhamamdeh" target="_blank" rel="noopener" class="tt" title="تيك توك" aria-label="تيك توك"><i class="bi bi-tiktok"></i></a>
+                <a href="https://www.youtube.com/@husseintech" target="_blank" rel="noopener" class="yt" title="يوتيوب" aria-label="يوتيوب"><i class="bi bi-youtube"></i></a>
+            </p>
         </div>
     </div>
 
@@ -741,6 +771,15 @@
             {% endfor %}
         {% endif %}
         {% block unauth_content %}{% endblock %}
+    </div>
+    <div class="footer no-print" style="margin-top: 30px;">
+        <p>جميع الحقوق محفوظة &copy; {% now "Y" %} - النظام المدرسي</p>
+        <p>جميع الحقوق محفوظة للمصمم : حسين حمامدة</p>
+        <p class="footer-social">
+            <a href="https://www.facebook.com/hhamamdeh" target="_blank" rel="noopener" class="fb" title="فيسبوك" aria-label="فيسبوك"><i class="bi bi-facebook"></i></a>
+            <a href="https://www.tiktok.com/@abuadelhamamdeh" target="_blank" rel="noopener" class="tt" title="تيك توك" aria-label="تيك توك"><i class="bi bi-tiktok"></i></a>
+            <a href="https://www.youtube.com/@husseintech" target="_blank" rel="noopener" class="yt" title="يوتيوب" aria-label="يوتيوب"><i class="bi bi-youtube"></i></a>
+        </p>
     </div>
     {% endif %}
 
