@@ -150,6 +150,7 @@ urlpatterns = [
     path('inspection-visits/all-report/', views.inspection_visits_all_report, name='inspection_visits_all_report'),
 
     # Visit Program
+    path('visit-program/<int:entry_id>/', views.visit_program_entry, name='visit_program_entry'),
     path('visit-program/', views.visit_program_list, name='visit_program_list'),
     path('visit-program/<int:entry_id>/delete/', views.visit_program_delete, name='visit_program_delete'),
     path('visit-program/<int:entry_id>/update/', views.visit_program_update, name='visit_program_update'),

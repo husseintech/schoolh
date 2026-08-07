@@ -2015,6 +2015,14 @@ def supervisor_visits_report(request):
 # ─── Visit Program ─────────────────────────────────────────────────────────────
 
 @login_required
+def visit_program_entry(request, entry_id):
+    entry = get_object_or_404(VisitProgram, id=entry_id)
+    if request.user.profile.role == 'teacher' and entry.teacher and entry.teacher.user == request.user:
+        return redirect('teacher_visits')
+    return redirect('visit_program_list')
+
+
+@login_required
 def visit_program_list(request):
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
