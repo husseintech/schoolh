@@ -50,7 +50,6 @@ td.cnt { width: 14mm; text-align: center; }
         <tr>
             <th class="num">الرقم</th>
             <th class="cls">الصف</th>
-            <th class="cnt">عدد الحضور</th>
             <th class="cnt">عدد الغائبين</th>
             <th class="cnt">نسبة الغياب</th>
             <th>أسماء الطلبة الغائبين</th>
@@ -61,7 +60,6 @@ td.cnt { width: 14mm; text-align: center; }
         <tr>
             <td class="num">{{ r.num }}</td>
             <td class="cls">{{ r.class_name }}</td>
-            <td class="cnt">{{ r.present }}</td>
             <td class="cnt">{{ r.count }}</td>
             <td class="cnt">{{ r.absence_pct }}%</td>
             <td>{{ r.names }}</td>
@@ -80,10 +78,6 @@ td.cnt { width: 14mm; text-align: center; }
         <div class="stat">
             <div class="label">عدد الغائبين اليوم</div>
             <div class="value">{{ total_absent }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">عدد الحضور اليوم</div>
-            <div class="value">{{ total_present }}</div>
         </div>
         <div class="stat">
             <div class="label">نسبة الحضور</div>
