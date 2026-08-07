@@ -263,6 +263,23 @@
         .footer-social a.fb { background: #1877f2; }
         .footer-social a.tt { background: #000000; }
         .footer-social a.yt { background: #ff0000; }
+        .btn-social-fb {
+            background: #1877f2;
+            color: #fff;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(24, 119, 242, 0.4);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .btn-social-fb:hover {
+            background: #1464c7;
+            color: #fff;
+            transform: translateY(-1px);
+        }
         .sidebar-toggle {
             display: none;
             background: none;
@@ -649,7 +666,11 @@
                 </button>
                 <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
             </div>
-            <div class="user-info">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <a href="https://www.facebook.com/ALMANSOUR.SCHOOL.YATTA" target="_blank" rel="noopener" class="btn btn-social-fb d-none d-md-inline-flex align-items-center gap-2">
+                    <i class="bi bi-facebook"></i> تابع صفحة المدرسة
+                </a>
+                <div class="user-info">
                 <div class="dropdown d-inline-block mx-2" id="messageBell">
                     <button class="btn btn-link text-reset position-relative p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.3rem;">
                         <i class="bi bi-envelope-fill"></i>
@@ -726,8 +747,9 @@
                 <button id="notifBtn" class="btn btn-sm btn-outline-primary ms-2 d-none" title="تفعيل الإشعارات">
                     <i class="bi bi-bell-fill"></i> <span class="d-none d-sm-inline">إشعارات</span>
                 </button>
+                </div>
+                </div>
             </div>
-        </div>
 
         <div class="page-content">
             {% if messages %}
