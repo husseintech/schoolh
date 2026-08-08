@@ -3,6 +3,7 @@
 {% block page_heading %}الرئيسية{% endblock %}
 
 {% block content %}
+{% include 'school/includes/vision_message.html' %}
 {% if user.is_authenticated %}
 <div class="row g-4">
     <div class="col-lg-6">
@@ -85,6 +86,7 @@
 {% endblock %}
 
 {% block unauth_content %}
+{% include 'school/includes/vision_message.html' %}
 <style>
     .home-page {
         min-height: 100vh;

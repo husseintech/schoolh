@@ -1,0 +1,67 @@
+{% load static %}
+<style>
+    .vm-section {
+        padding: 35px 0 5px;
+    }
+    .vm-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
+    }
+    .vm-card {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .vm-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 40px rgba(0,0,0,0.12);
+    }
+    .vm-card .vm-head {
+        padding: 14px 20px;
+        text-align: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 0.3px;
+    }
+    .vm-card .vm-head i { margin-left: 8px; }
+    .vm-card.vm-vision .vm-head { background: linear-gradient(135deg, #1e6fd9, #2d9cdb); }
+    .vm-card.vm-message .vm-head { background: linear-gradient(135deg, #0f9d76, #2bb58a); }
+    .vm-card .vm-body {
+        padding: 18px;
+        background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+    }
+    .vm-card .vm-body img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        display: block;
+        border: 1px solid #eef2f7;
+    }
+    @media (max-width: 767px) {
+        .vm-section { padding: 22px 0 2px; }
+        .vm-wrap { gap: 18px; }
+    }
+</style>
+<div class="container vm-section">
+    <div class="vm-wrap">
+        <div class="vm-card vm-vision">
+            <div class="vm-head"><i class="bi bi-eye-fill"></i>رؤية المدرسة</div>
+            <div class="vm-body">
+                <img src="{% static 'images/school_vision.jpg' %}" alt="رؤية المدرسة" loading="lazy">
+            </div>
+        </div>
+        <div class="vm-card vm-message">
+            <div class="vm-head"><i class="bi bi-envelope-paper-fill"></i>رسالة المدرسة</div>
+            <div class="vm-body">
+                <img src="{% static 'images/school_message.jpg' %}" alt="رسالة المدرسة" loading="lazy">
+            </div>
+        </div>
+    </div>
+</div>
