@@ -612,6 +612,129 @@ def teacher_list(request):
 
 
 @login_required
+def download_teacher_template(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'نموذج استيراد المعلمين'
+
+    headers = ['الاسم الكامل', 'رقم الهوية', 'البريد الإلكتروني', 'رقم الهاتف', 'المؤهل العلمي', 'التخصص', 'تاريخ الميلاد', 'كلمة المرور', 'اسم المستخدم']
+    ws.append(headers)
+
+    for col in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+        cell.fill = openpyxl.styles.PatternFill(start_color="2c3e50", end_color="2c3e50", fill_type="solid")
+        cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+
+    widths = [30, 20, 25, 20, 15, 20, 15, 18, 18]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+
+    note_cell = ws.cell(row=2, column=10, value='رقم الهوية إلزامي - اسم المستخدم إذا تُرك فارغاً يصبح رقم الهوية، وكلمة المرور إذا تُركت فارغة تصبح آخر 6 أرقام من رقم الهوية. لا تُدرج الصفوف أو المواد هنا: تُضاف لاحقاً من صفحة تعديل المعلم داخل الموقع.')
+    note_cell.font = openpyxl.styles.Font(size=9, color="e74c3c")
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=نموذج_استيراد_المعلمين.xlsx'
+    wb.save(response)
+    return response
+
+
+@login_required
+def import_teachers(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('teacher_list')
+
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        excel_file = request.FILES['excel_file']
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, 'الرجاء رفع ملف Excel صالح (xlsx أو xls)')
+            return redirect('teacher_list')
+
+        import openpyxl
+        try:
+            wb = openpyxl.load_workbook(excel_file)
+            ws = wb.active
+        except Exception:
+            messages.error(request, 'فشل في قراءة الملف. تأكد من أنه ملف Excel صالح.')
+            return redirect('teacher_list')
+
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+        if not rows:
+            messages.warning(request, 'الملف فارغ، لا توجد بيانات للاستيراد')
+            return redirect('teacher_list')
+
+        imported = 0
+        errors = []
+        for i, row in enumerate(rows, start=2):
+            try:
+                full_name = str(row[0]).strip() if row[0] else ''
+                id_number = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+                email = str(row[2]).strip() if len(row) > 2 and row[2] else ''
+                phone = str(row[3]).strip() if len(row) > 3 and row[3] else ''
+                qualification = str(row[4]).strip() if len(row) > 4 and row[4] else ''
+                specialization = str(row[5]).strip() if len(row) > 5 and row[5] else ''
+                birth_date = row[6] if len(row) > 6 else None
+                password = str(row[7]).strip() if len(row) > 7 and row[7] else ''
+                username = str(row[8]).strip() if len(row) > 8 and row[8] else ''
+
+                if not full_name or not id_number:
+                    errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
+                    continue
+
+                if Teacher.objects.filter(id_number=id_number).exists():
+                    errors.append(f'الصف {i}: رقم الهوية {id_number} موجود مسبقاً')
+                    continue
+
+                if not username:
+                    username = id_number
+                if User.objects.filter(username=username).exists():
+                    errors.append(f'الصف {i}: اسم المستخدم {username} مستخدم مسبقاً')
+                    continue
+                if not password:
+                    password = id_number[-6:] if len(id_number) >= 6 else id_number
+
+                if isinstance(birth_date, datetime):
+                    bd = birth_date.date()
+                elif isinstance(birth_date, date):
+                    bd = birth_date
+                else:
+                    bd = None
+
+                user = User.objects.create_user(username=username, password=password)
+                Profile.objects.create(user=user, role='teacher')
+                Teacher.objects.create(
+                    user=user,
+                    full_name=full_name,
+                    id_number=id_number,
+                    email=email,
+                    phone=phone,
+                    qualification=qualification,
+                    specialization=specialization,
+                    birth_date=bd,
+                )
+                imported += 1
+            except Exception as e:
+                errors.append(f'الصف {i}: خطأ - {str(e)}')
+
+        if imported:
+            messages.success(request, f'تم استيراد {imported} معلم بنجاح\nاسم المستخدم: رقم الهوية (أو ما أُدرج في عمود اسم المستخدم)\nكلمة المرور: آخر 6 أرقام من رقم الهوية (أو ما أُدرج في عمود كلمة المرور)')
+        if errors:
+            for err in errors[:10]:
+                messages.warning(request, err)
+            if len(errors) > 10:
+                messages.warning(request, f'و {len(errors) - 10} خطأ آخر...')
+        return redirect('teacher_list')
+
+    return redirect('teacher_list')
+
+
+@login_required
 def edit_teacher(request, teacher_id):
     if not has_perm(request.user, 'teachers', 'edit'):
         messages.error(request, 'ليس لديك صلاحية')

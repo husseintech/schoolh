@@ -8,7 +8,17 @@
         <div>
             <a href="{% url 'teacher_cards_report' %}" class="btn btn-info btn-sm"><i class="bi bi-card-checklist"></i> بطاقات المعلمين</a>
             <a href="{% url 'teachers_report' %}" class="btn btn-success btn-sm"><i class="bi bi-printer"></i> طباعة التقرير</a>
+            {% if user.profile.role == 'admin' %}
+            <div class="btn-group btn-group-sm">
+                <a href="{% url 'download_teacher_template' %}" class="btn btn-outline-secondary"><i class="bi bi-download"></i> تحميل نموذج</a>
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('importTeachersInput').click()"><i class="bi bi-upload"></i> استيراد</button>
+            </div>
+            <form method="post" action="{% url 'import_teachers' %}" enctype="multipart/form-data" style="display:none" id="importTeachersForm">
+                {% csrf_token %}
+                <input type="file" name="excel_file" id="importTeachersInput" accept=".xlsx,.xls" onchange="document.getElementById('importTeachersForm').submit()">
+            </form>
             <a href="{% url 'add_teacher' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة معلم</a>
+            {% endif %}
         </div>
     </div>
     <div class="card-body">
@@ -18,6 +28,7 @@
                     <tr>
                         <th>#</th>
                         <th>الاسم الكامل</th>
+                        <th>رقم الهوية</th>
                         <th>المؤهل العلمي</th>
                         <th>التخصص</th>
                         <th>البريد الإلكتروني</th>
@@ -33,6 +44,7 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td><strong>{{ teacher.full_name }}</strong></td>
+                        <td>{{ teacher.id_number|default:"-" }}</td>
                         <td>{{ teacher.qualification|default:"-" }}</td>
                         <td>{{ teacher.specialization|default:"-" }}</td>
                         <td>{{ teacher.email|default:"-" }}</td>
@@ -58,7 +70,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
                             <p class="mt-2">لا يوجد معلمون مسجلون</p>
                         </td>

@@ -74,14 +74,17 @@ class NoteForm(forms.ModelForm):
 
 
 class TeacherForm(forms.ModelForm):
-    password = forms.CharField(label='كلمة المرور', widget=forms.PasswordInput, required=True)
-    username = forms.CharField(label='اسم المستخدم', required=True)
+    password = forms.CharField(label='كلمة المرور', widget=forms.PasswordInput, required=False,
+                               help_text='اتركها فارغة لاستخدام آخر 6 أرقام من رقم الهوية')
+    username = forms.CharField(label='اسم المستخدم', required=False,
+                               help_text='اتركه فارغاً لاستخدام رقم الهوية كاسم مستخدم')
 
     class Meta:
         model = Teacher
-        fields = ['username', 'password', 'full_name', 'email', 'phone', 'hire_date', 'birth_date', 'qualification', 'specialization', 'classes', 'subjects']
+        fields = ['username', 'password', 'full_name', 'id_number', 'email', 'phone', 'hire_date', 'birth_date', 'qualification', 'specialization', 'classes', 'subjects']
         labels = {
             'full_name': 'الاسم الكامل',
+            'id_number': 'رقم الهوية',
             'email': 'البريد الإلكتروني',
             'phone': 'رقم الهاتف',
             'hire_date': 'تاريخ التعيين',
@@ -99,10 +102,24 @@ class TeacherForm(forms.ModelForm):
             'subjects': forms.SelectMultiple(attrs={'class': 'select2'}),
         }
 
+    def clean(self):
+        cleaned = super().clean()
+        id_number = str(cleaned.get('id_number', '') or '').strip()
+        username = str(cleaned.get('username', '') or '').strip()
+        if not username:
+            username = id_number
+        if not username:
+            self.add_error('username', 'أدخل اسم المستخدم أو رقم الهوية')
+            return cleaned
+        if User.objects.filter(username=username).exists():
+            self.add_error('username', f'اسم المستخدم {username} مستخدم مسبقاً')
+        cleaned['username'] = username
+        return cleaned
+
     def save(self, commit=True):
         teacher = super().save(commit=False)
         username = self.cleaned_data['username']
-        password = self.cleaned_data['password']
+        password = self.cleaned_data.get('password', '') or (username[-6:] if len(username) >= 6 else username)
         if commit:
             user = User.objects.create_user(username=username, password=password)
             Profile.objects.create(user=user, role='teacher')
