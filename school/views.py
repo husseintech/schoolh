@@ -622,7 +622,7 @@ def download_teacher_template(request):
     ws = wb.active
     ws.title = 'نموذج استيراد المعلمين'
 
-    headers = ['الاسم الكامل', 'رقم الهوية', 'البريد الإلكتروني', 'رقم الهاتف', 'المؤهل العلمي', 'التخصص', 'تاريخ الميلاد', 'كلمة المرور', 'اسم المستخدم']
+    headers = ['الاسم الكامل', 'رقم الهوية', 'البريد الإلكتروني', 'رقم الهاتف', 'المؤهل العلمي', 'التخصص', 'تاريخ الميلاد', 'تاريخ التعيين', 'كلمة المرور', 'اسم المستخدم']
     ws.append(headers)
 
     for col in range(1, len(headers) + 1):
@@ -631,11 +631,11 @@ def download_teacher_template(request):
         cell.fill = openpyxl.styles.PatternFill(start_color="2c3e50", end_color="2c3e50", fill_type="solid")
         cell.alignment = openpyxl.styles.Alignment(horizontal='center')
 
-    widths = [30, 20, 25, 20, 15, 20, 15, 18, 18]
+    widths = [30, 20, 25, 20, 15, 20, 15, 15, 18, 18]
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
 
-    note_cell = ws.cell(row=2, column=10, value='رقم الهوية إلزامي - اسم المستخدم إذا تُرك فارغاً يصبح رقم الهوية، وكلمة المرور إذا تُركت فارغة تصبح آخر 6 أرقام من رقم الهوية. لا تُدرج الصفوف أو المواد هنا: تُضاف لاحقاً من صفحة تعديل المعلم داخل الموقع.')
+    note_cell = ws.cell(row=2, column=12, value='رقم الهوية إلزامي - اسم المستخدم إذا تُرك فارغاً يصبح رقم الهوية، وكلمة المرور إذا تُركت فارغة تصبح آخر 6 أرقام من رقم الهوية. لا تُدرج الصفوف أو المواد هنا: تُضاف لاحقاً من صفحة تعديل المعلم داخل الموقع.')
     note_cell.font = openpyxl.styles.Font(size=9, color="e74c3c")
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -680,8 +680,9 @@ def import_teachers(request):
                 qualification = str(row[4]).strip() if len(row) > 4 and row[4] else ''
                 specialization = str(row[5]).strip() if len(row) > 5 and row[5] else ''
                 birth_date = row[6] if len(row) > 6 else None
-                password = str(row[7]).strip() if len(row) > 7 and row[7] else ''
-                username = str(row[8]).strip() if len(row) > 8 and row[8] else ''
+                hire_date = row[7] if len(row) > 7 else None
+                password = str(row[8]).strip() if len(row) > 8 and row[8] else ''
+                username = str(row[9]).strip() if len(row) > 9 and row[9] else ''
 
                 if not full_name or not id_number:
                     errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
@@ -706,6 +707,13 @@ def import_teachers(request):
                 else:
                     bd = None
 
+                if isinstance(hire_date, datetime):
+                    hd = hire_date.date()
+                elif isinstance(hire_date, date):
+                    hd = hire_date
+                else:
+                    hd = None
+
                 user = User.objects.create_user(username=username, password=password)
                 Profile.objects.create(user=user, role='teacher')
                 Teacher.objects.create(
@@ -717,6 +725,7 @@ def import_teachers(request):
                     qualification=qualification,
                     specialization=specialization,
                     birth_date=bd,
+                    hire_date=hd,
                 )
                 imported += 1
             except Exception as e:
