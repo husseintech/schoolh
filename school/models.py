@@ -889,3 +889,19 @@ class TeacherFollowup(models.Model):
 
     def __str__(self):
         return f'{self.teacher.full_name} - {self.follow_date}'
+
+
+class AuditLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='المستخدم')
+    user_role = models.CharField('الدور', max_length=20, blank=True)
+    action = models.CharField('العملية', max_length=255)
+    details = models.TextField('التفاصيل', blank=True)
+    created_at = models.DateTimeField('التاريخ', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'سجل تعديل'
+        verbose_name_plural = 'سجل التعديلات'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.action} - {self.created_at}'

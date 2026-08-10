@@ -634,6 +634,11 @@
         </a>
         {% endif %}
         {% if user.profile.role == 'admin' %}
+        <a href="{% url 'audit_log_list' %}" class="nav-link {% if request.resolver_match.url_name == 'audit_log_list' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i> سجل التعديلات
+        </a>
+        {% endif %}
+        {% if user.profile.role == 'admin' %}
         <a href="{% url 'school_info' %}" class="nav-link {% if request.resolver_match.url_name == 'school_info' %}active{% endif %}">
             <i class="bi bi-building"></i> بيانات المدرسة
         </a>

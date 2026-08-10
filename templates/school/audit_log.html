@@ -1,0 +1,55 @@
+{% extends 'school/base.html' %}
+{% block title %}سجل التعديلات{% endblock %}
+{% block page_heading %}سجل التعديلات{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-clock-history"></i> سجل جميع العمليات (أحدث {{ logs.count }} عملية)</span>
+        <form method="get" class="d-flex gap-2">
+            <select name="role" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                <option value="">كل الأدوار</option>
+                {% for r in roles %}
+                <option value="{{ r }}" {% if role == r %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>المستخدم</th>
+                        <th>العملية</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="text-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if log.user %}{{ log.user.first_name|default:log.user.username }}
+                            <span class="badge bg-secondary">{{ log.user_role }}</span>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td><span class="badge bg-info text-dark">{{ log.action }}</span></td>
+                        <td>{{ log.details|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد عمليات مسجلة بعد</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

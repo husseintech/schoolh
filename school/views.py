@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -22,6 +22,37 @@ from .arabic_sort import arabic_sort_key
 
 def sort_students(students):
     return sorted(students, key=lambda s: arabic_sort_key(s.full_name))
+
+
+def log_action(user, action, details=''):
+    if not user or not user.is_authenticated:
+        return
+    try:
+        AuditLog.objects.create(
+            user=user,
+            user_role=user.profile.role,
+            action=action,
+            details=details,
+        )
+    except Exception:
+        pass
+
+
+@login_required
+def audit_log_list(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    role = request.GET.get('role', '')
+    logs = AuditLog.objects.select_related('user')
+    if role:
+        logs = logs.filter(user_role=role)
+    logs = logs.order_by('-created_at')[:2000]
+    return render(request, 'school/audit_log.html', {
+        'logs': logs,
+        'role': role,
+        'roles': ['admin', 'teacher', 'student', 'supervisor'],
+    })
 
 
 def sort_students_class_first(students):
@@ -231,6 +262,7 @@ def add_student(request):
             password = form.cleaned_data.get('password')
             if not password:
                 password = form.cleaned_data['student_id'][-6:] if len(form.cleaned_data['student_id']) >= 6 else form.cleaned_data['student_id']
+            log_action(request.user, 'إضافة طالب', f'{student.full_name} ({student.student_id}) - الصف: {student.student_class}')
             messages.success(request, f'تم إضافة الطالب بنجاح\nاسم المستخدم: {username}\nكلمة المرور: {password}')
             return redirect('student_list')
     else:
@@ -270,6 +302,7 @@ def edit_student(request, student_id):
         form = StudentEditForm(request.POST, instance=student)
         if form.is_valid():
             form.save()
+            log_action(request.user, 'تعديل طالب', f'{student.full_name} ({student.student_id})')
             messages.success(request, 'تم تحديث بيانات الطالب بنجاح')
             return redirect('student_list')
     else:
@@ -285,6 +318,7 @@ def delete_student(request, student_id):
     student = get_object_or_404(Student, id=student_id)
     if request.method == 'POST':
         user = student.user
+        log_action(request.user, 'حذف طالب', f'{student.full_name} ({student.student_id})')
         student.delete()
         user.delete()
         messages.success(request, 'تم حذف الطالب بنجاح')
@@ -480,6 +514,7 @@ def import_students(request):
 
         if imported:
             msg = f'تم استيراد {imported} طالب/طالب بنجاح'
+            log_action(request.user, 'استيراد طلاب من Excel', msg)
             messages.success(request, f'{msg}\nاسم المستخدم: رقم الهوية (أو ما أُدرج في عمود اسم المستخدم)\nكلمة المرور: آخر 6 أرقام من رقم الهوية (أو ما أُدرج في عمود كلمة المرور)')
         if errors:
             for err in errors[:10]:
@@ -594,7 +629,8 @@ def add_teacher(request):
     if request.method == 'POST':
         form = TeacherForm(request.POST)
         if form.is_valid():
-            form.save()
+            teacher = form.save()
+            log_action(request.user, 'إضافة معلم', f'{teacher.full_name} ({teacher.id_number})')
             messages.success(request, 'تم إضافة المعلم بنجاح')
             return redirect('teacher_list')
     else:
@@ -732,6 +768,7 @@ def import_teachers(request):
                 errors.append(f'الصف {i}: خطأ - {str(e)}')
 
         if imported:
+            log_action(request.user, 'استيراد معلمين من Excel', f'تم استيراد {imported} معلم')
             messages.success(request, f'تم استيراد {imported} معلم بنجاح\nاسم المستخدم: رقم الهوية (أو ما أُدرج في عمود اسم المستخدم)\nكلمة المرور: آخر 6 أرقام من رقم الهوية (أو ما أُدرج في عمود كلمة المرور)')
         if errors:
             for err in errors[:10]:
@@ -757,6 +794,7 @@ def edit_teacher(request, teacher_id):
             if password and teacher.user:
                 teacher.user.set_password(password)
                 teacher.user.save()
+            log_action(request.user, 'تعديل معلم', f'{teacher.full_name} ({teacher.id_number})')
             messages.success(request, 'تم تحديث بيانات المعلم بنجاح')
             return redirect('teacher_list')
     else:
@@ -772,6 +810,7 @@ def delete_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
     if request.method == 'POST':
         user = teacher.user
+        log_action(request.user, 'حذف معلم', f'{teacher.full_name} ({teacher.id_number})')
         teacher.delete()
         user.delete()
         messages.success(request, 'تم حذف المعلم بنجاح')
@@ -956,7 +995,8 @@ def add_class(request):
     if request.method == 'POST':
         form = ClassForm(request.POST)
         if form.is_valid():
-            form.save()
+            cls = form.save()
+            log_action(request.user, 'إضافة صف', cls.name)
             messages.success(request, 'تم إضافة الصف بنجاح')
             return redirect('class_list')
     else:
@@ -980,6 +1020,7 @@ def delete_class(request, class_id):
         return redirect('dashboard')
     class_obj = get_object_or_404(Class, id=class_id)
     if request.method == 'POST':
+        log_action(request.user, 'حذف صف', class_obj.name)
         class_obj.delete()
         messages.success(request, 'تم حذف الصف بنجاح')
         return redirect('class_list')
@@ -996,7 +1037,8 @@ def add_subject(request):
     if request.method == 'POST':
         form = SubjectForm(request.POST)
         if form.is_valid():
-            form.save()
+            subj = form.save()
+            log_action(request.user, 'إضافة مادة', subj.name)
             messages.success(request, 'تم إضافة المادة بنجاح')
             return redirect('subject_list')
     else:
@@ -1020,6 +1062,7 @@ def delete_subject(request, subject_id):
         return redirect('dashboard')
     subject = get_object_or_404(Subject, id=subject_id)
     if request.method == 'POST':
+        log_action(request.user, 'حذف مادة', subject.name)
         subject.delete()
         messages.success(request, 'تم حذف المادة بنجاح')
         return redirect('subject_list')
@@ -1048,6 +1091,7 @@ def add_announcement(request):
             announcement = form.save(commit=False)
             announcement.created_by = request.user
             announcement.save()
+            log_action(request.user, 'إضافة إعلان', announcement.title)
             messages.success(request, 'تم إضافة الإعلان بنجاح')
             return redirect('announcement_list')
     else:
@@ -1062,6 +1106,7 @@ def delete_announcement(request, announcement_id):
         return redirect('dashboard')
     announcement = get_object_or_404(Announcement, id=announcement_id)
     if request.method == 'POST':
+        log_action(request.user, 'حذف إعلان', announcement.title)
         announcement.delete()
         messages.success(request, 'تم حذف الإعلان بنجاح')
         return redirect('announcement_list')
@@ -1174,6 +1219,7 @@ def add_leave(request, student_id=None):
             leave = form.save(commit=False)
             leave.approved_by = request.user
             leave.save()
+            log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.date}')
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
             return redirect('leave_list')
     else:
@@ -1197,6 +1243,7 @@ def delete_leave(request, leave_id):
         return redirect('dashboard')
     leave = get_object_or_404(StudentLeave, id=leave_id)
     if request.method == 'POST':
+        log_action(request.user, 'حذف إذن مغادرة', f'{leave.student.full_name} - {leave.date}')
         leave.delete()
         messages.success(request, 'تم حذف إذن المغادرة')
         return redirect('leave_list')
@@ -1730,6 +1777,7 @@ def add_account(request):
             new_perms = UserPermission.get_defaults(role)
         UserPermission.objects.create(user=user, permissions=new_perms)
 
+        log_action(request.user, 'إضافة حساب', f'{username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
@@ -1777,6 +1825,7 @@ def edit_account(request, user_id):
         perms.permissions = new_perms
         perms.save()
 
+        log_action(request.user, 'تعديل حساب', user.username)
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
@@ -1810,6 +1859,7 @@ def delete_account(request, user_id):
         return redirect('account_list')
     if request.method == 'POST':
         username = user.username
+        log_action(request.user, 'حذف حساب', username)
         user.delete()
         messages.success(request, f'تم حذف الحساب: {username}')
         return redirect('account_list')
@@ -1855,6 +1905,7 @@ def role_permissions(request):
             up.save()
             updated += 1
         role_label = dict(Profile.ROLE_CHOICES).get(role, role)
+        log_action(request.user, 'تعديل صلاحيات دور', f'{role_label} ({action_kind}) - {updated} حساب')
         messages.success(request, f'تم منح الصلاحيات ({action_kind}) لـ {updated} من حسابات دور {role_label}')
         return redirect(f"{reverse('role_permissions')}?role={role}")
 
@@ -2266,6 +2317,18 @@ def absence_list(request):
             to_create = [StudentAbsence(student=s, absence_date=absence_date, created_by=request.user)
                          for s in students if s.id in selected_ids]
             StudentAbsence.objects.bulk_create(to_create)
+            for s in students:
+                if s.id in selected_ids and s.user:
+                    try:
+                        Notification.objects.create(
+                            user=s.user,
+                            title='تنبيه بغياب الطالب',
+                            message=f'الطالب {s.full_name} مسجَّل غائب بتاريخ {absence_date}. يرجى مراجعة المدرسة أو التواصل مع الإدارة.',
+                            link='/leaves/',
+                        )
+                    except Exception:
+                        pass
+            log_action(request.user, 'تسجيل غياب طلاب', f'{len(to_create)} طالب - {absence_date} - الصف: {selected_class.name}')
             messages.success(request, f'تم حفظ غياب {len(to_create)} طالب بتاريخ {absence_date}')
         else:
             messages.error(request, 'الرجاء اختيار صف')
@@ -3220,6 +3283,7 @@ def reset_data(request):
             key = request.POST.get('key', '')
             for k, label, model, deps in CLEARABLE_TABLES:
                 if k == key:
+                    log_action(request.user, 'تفريغ بيانات', label)
                     model.objects.all().delete()
                     messages.success(request, f'تم تفريغ: {label}')
                     return redirect('reset_data')
@@ -3228,23 +3292,27 @@ def reset_data(request):
         if action == 'flush_related':
             key = request.POST.get('key', '')
             if key == 'students':
+                log_action(request.user, 'تفريغ الطلاب', 'حذف جميع الطلاب وجميع بياناتهم المرتبطة')
                 for m in DEPENDENT_MODELS['students']:
                     m.objects.all().delete()
                 Student.objects.all().delete()
                 User.objects.filter(profile__role='student').delete()
                 messages.success(request, 'تم تفريغ الطلاب وجميع بياناتهم المرتبطة')
             elif key == 'teachers':
+                log_action(request.user, 'تفريغ المعلمين', 'حذف جميع المعلمين وجميع بياناتهم المرتبطة')
                 for m in DEPENDENT_MODELS['teachers']:
                     m.objects.all().delete()
                 Teacher.objects.all().delete()
                 User.objects.filter(profile__role='teacher').delete()
                 messages.success(request, 'تم تفريغ المعلمين وجميع بياناتهم المرتبطة')
             elif key == 'classes':
+                log_action(request.user, 'تفريغ الصفوف', 'حذف جميع الصفوف وجميع بياناتهم المرتبطة')
                 for m in DEPENDENT_MODELS['classes']:
                     m.objects.all().delete()
                 Class.objects.all().delete()
                 messages.success(request, 'تم تفريغ الصفوف وجميع بياناتهم المرتبطة')
             elif key == 'subjects':
+                log_action(request.user, 'تفريغ المواد', 'حذف جميع المواد وجميع بياناتهم المرتبطة')
                 for m in DEPENDENT_MODELS['subjects']:
                     m.objects.all().delete()
                 Subject.objects.all().delete()
