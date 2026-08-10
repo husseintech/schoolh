@@ -762,6 +762,7 @@ def import_teachers(request):
                     specialization=specialization,
                     birth_date=bd,
                     hire_date=hd,
+                    plain_password=password,
                 )
                 imported += 1
             except Exception as e:
@@ -794,6 +795,8 @@ def edit_teacher(request, teacher_id):
             if password and teacher.user:
                 teacher.user.set_password(password)
                 teacher.user.save()
+                teacher.plain_password = password
+                teacher.save()
             log_action(request.user, 'تعديل معلم', f'{teacher.full_name} ({teacher.id_number})')
             messages.success(request, 'تم تحديث بيانات المعلم بنجاح')
             return redirect('teacher_list')
@@ -826,6 +829,42 @@ def teacher_notes(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
     notes = TeacherNote.objects.filter(teacher=teacher).select_related('created_by').order_by('-created_at')
     return render(request, 'school/teacher_notes.html', {'teacher': teacher, 'notes': notes})
+
+
+@login_required
+def teacher_detail(request, teacher_id):
+    if not has_perm(request.user, 'teachers', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    notes = TeacherNote.objects.filter(teacher=teacher).select_related('created_by').order_by('-created_at')
+    followups = TeacherFollowup.objects.filter(teacher=teacher).order_by('-follow_date')
+    return render(request, 'school/teacher_detail.html', {
+        'teacher': teacher,
+        'notes': notes,
+        'followups': followups,
+    })
+
+
+@login_required
+def reset_teacher_password(request, teacher_id):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        if len(new_password) < 4:
+            messages.error(request, 'كلمة المرور يجب أن تكون 4 أحرف على الأقل')
+            return redirect('reset_teacher_password', teacher_id=teacher.id)
+        teacher.user.set_password(new_password)
+        teacher.user.save()
+        teacher.plain_password = new_password
+        teacher.save()
+        log_action(request.user, 'تغيير كلمة مرور معلم', f'{teacher.full_name} ({teacher.id_number})')
+        messages.success(request, f'تم تغيير كلمة مرور المعلم {teacher.full_name} إلى: {new_password}')
+        return redirect('teacher_detail', teacher_id=teacher.id)
+    return render(request, 'school/reset_teacher_password.html', {'teacher': teacher})
 
 
 @login_required

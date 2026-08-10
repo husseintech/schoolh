@@ -44,7 +44,7 @@
                     {% for teacher in teachers %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ teacher.full_name }}</strong></td>
+                        <td><strong><a href="{% url 'teacher_detail' teacher.id %}">{{ teacher.full_name }}</a></strong></td>
                         <td>{{ teacher.id_number|default:"-" }}</td>
                         <td>{{ teacher.qualification|default:"-" }}</td>
                         <td>{{ teacher.specialization|default:"-" }}</td>
@@ -64,6 +64,7 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                <a href="{% url 'teacher_detail' teacher.id %}" class="btn btn-outline-info" title="عرض"><i class="bi bi-eye"></i></a>
                                 <a href="{% url 'teacher_notes' teacher.id %}" class="btn btn-outline-warning" title="ملاحظات"><i class="bi bi-sticky"></i></a>
                                 <a href="{% url 'edit_teacher' teacher.id %}" class="btn btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
                                 <a href="{% url 'delete_teacher' teacher.id %}" class="btn btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></a>

@@ -203,6 +203,7 @@ class Teacher(models.Model):
     specialization = models.CharField('التخصص', max_length=200, blank=True, help_text='مثال: رياضيات، فيزياء، لغة عربية')
     classes = models.ManyToManyField(Class, verbose_name='الصفوف', blank=True, related_name='teachers')
     subjects = models.ManyToManyField(Subject, verbose_name='المواد', blank=True, related_name='teachers')
+    plain_password = models.CharField('كلمة المرور', max_length=100, blank=True, help_text='تظهر لمدير المدرسة فقط')
     created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
 
     class Meta:

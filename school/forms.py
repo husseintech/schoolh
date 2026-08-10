@@ -120,6 +120,7 @@ class TeacherForm(forms.ModelForm):
         teacher = super().save(commit=False)
         username = self.cleaned_data['username']
         password = self.cleaned_data.get('password', '') or (username[-6:] if len(username) >= 6 else username)
+        teacher.plain_password = password
         if commit:
             user = User.objects.create_user(username=username, password=password)
             Profile.objects.create(user=user, role='teacher')

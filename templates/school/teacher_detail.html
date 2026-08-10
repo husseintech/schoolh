@@ -1,0 +1,154 @@
+{% extends 'school/base.html' %}
+{% block title %}تفاصيل المعلم{% endblock %}
+{% block page_heading %}تفاصيل المعلم{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-badge"></i> {{ teacher.full_name }}</span>
+        <div>
+            <a href="{% url 'add_teacher_note' teacher.id %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> ملاحظة</a>
+            <a href="{% url 'edit_teacher' teacher.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> تعديل</a>
+            <a href="{% url 'reset_teacher_password' teacher.id %}" class="btn btn-info btn-sm"><i class="bi bi-key"></i> كلمة المرور</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">رقم الهوية</small>
+                    <strong>{{ teacher.id_number|default:"-" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">المؤهل العلمي</small>
+                    <strong>{{ teacher.qualification|default:"-" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">التخصص</small>
+                    <strong>{{ teacher.specialization|default:"-" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">رقم الهاتف</small>
+                    <strong dir="ltr">{{ teacher.phone|default:"-" }}</strong>
+                    {% if teacher.phone %}
+                    <a href="https://web.whatsapp.com/send?phone={{ teacher.phone }}" target="_blank" class="btn btn-success btn-sm mt-1"><i class="bi bi-whatsapp"></i> واتساب</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">البريد الإلكتروني</small>
+                    <strong dir="ltr">{{ teacher.email|default:"-" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">تاريخ التعيين</small>
+                    <strong>{{ teacher.hire_date|date:"Y-m-d"|default:"-" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">تاريخ الميلاد</small>
+                    <strong>{{ teacher.birth_date|date:"Y-m-d"|default:"-" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">تاريخ الإضافة</small>
+                    <strong>{{ teacher.created_at|date:"Y-m-d" }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center bg-light">
+                    <small class="text-muted d-block">اسم المستخدم</small>
+                    <strong dir="ltr">{{ teacher.user.username }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center bg-light">
+                    <small class="text-muted d-block">كلمة المرور</small>
+                    <strong dir="ltr" class="text-success">{{ teacher.plain_password|default:"-" }}</strong>
+                    <a href="{% url 'reset_teacher_password' teacher.id %}" class="d-block mt-1 small text-info">تغيير</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">الصفوف</small>
+                    {% for c in teacher.classes.all %}
+                    <span class="badge bg-info">{{ c.name }}</span>
+                    {% empty %}<span>-</span>{% endfor %}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <small class="text-muted d-block">المواد</small>
+                    {% for s in teacher.subjects.all %}
+                    <span class="badge bg-success">{{ s.name }}</span>
+                    {% empty %}<span>-</span>{% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات</div>
+            <div class="card-body">
+                {% if notes %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>المحتوى</th><th>كتب بواسطة</th><th>التاريخ</th></tr></thead>
+                        <tbody>
+                            {% for note in notes|slice:":10" %}
+                            <tr>
+                                <td>{{ note.content|truncatewords:10 }}</td>
+                                <td>{{ note.created_by.first_name|default:note.created_by.username|default:"-" }}</td>
+                                <td>{{ note.created_at|date:"Y-m-d" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if notes.count > 10 %}<a href="{% url 'teacher_notes' teacher.id %}" class="btn btn-outline-primary btn-sm">عرض الكل</a>{% endif %}
+                {% else %}
+                <p class="text-muted text-center py-3">لا توجد ملاحظات</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-check2-square"></i> متابعة المعلم</div>
+            <div class="card-body">
+                {% if followups %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>التاريخ</th><th>التحضير</th><th>العلامات</th><th>الغياب</th></tr></thead>
+                        <tbody>
+                            {% for f in followups|slice:":10" %}
+                            <tr>
+                                <td>{{ f.follow_date|date:"Y-m-d" }}</td>
+                                <td>{% if f.prep_done %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+                                <td>{% if f.marks_done %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+                                <td>{% if f.absence_done %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا توجد متابعات مسجلة</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
