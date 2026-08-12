@@ -16,6 +16,11 @@ body {
 .bg-2 { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%); color: #1b3a1b; }
 .bg-3 { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%); color: #0d2f4f; }
 .bg-4 { background: #fff; color: #333; }
+.bg-5 { background: linear-gradient(135deg, #fff5f7 0%, #fbd3dc 50%, #f6aec2 100%); color: #4a1d2b; }
+.bg-6 { background: linear-gradient(135deg, #fff8f5 0%, #fad3d8 50%, #f2aebf 100%); color: #4a1d2b; }
+.bg-7 { background: linear-gradient(135deg, #ffe9f0 0%, #f9b8cc 50%, #ee7fa4 100%); color: #3d0f24; }
+.bg-8 { background: #fffafb; color: #4a1d2b; }
+.bg-9 { background: linear-gradient(135deg, #fff3e8 0%, #ffd9d3 45%, #ffc2ca 100%); color: #4a1d2b; }
 .frame {
     width: 277mm; height: 190mm;
     border: 4mm double #c9a227;
@@ -25,6 +30,16 @@ body {
     padding: 12mm;
 }
 .bg-4 .frame { border-color: #1d4ed8; }
+.bg-5 .frame { border-color: #b3405f; box-shadow: inset 0 0 0 1.2mm rgba(255,255,255,.6); }
+.bg-6 .frame { border-color: #c2527d; box-shadow: inset 0 0 0 1.2mm #e8b04b; }
+.bg-7 .frame { border-color: #8e1e4e; }
+.bg-8 .frame { border-color: #e8487d; box-shadow: inset 0 0 0 1.2mm rgba(179,64,95,.25); }
+.bg-9 .frame { border-color: #d96459; box-shadow: inset 0 0 0 1.2mm rgba(255,255,255,.7); }
+.bg-5 .corner, .bg-6 .corner, .bg-7 .corner, .bg-8 .corner, .bg-9 .corner { border-color: #b3405f; }
+.bg-6 .corner { border-color: #c2527d; }
+.bg-7 .corner { border-color: #8e1e4e; }
+.bg-8 .corner { border-color: #e8487d; }
+.bg-9 .corner { border-color: #d96459; }
 .corner { position: absolute; width: 22mm; height: 22mm; opacity: .35; }
 .corner-tl { top: 2mm; left: 2mm; border-top: 1.5mm solid #c9a227; border-left: 1.5mm solid #c9a227; border-radius: 6mm 0 0 0; }
 .corner-tr { top: 2mm; right: 2mm; border-top: 1.5mm solid #c9a227; border-right: 1.5mm solid #c9a227; border-radius: 0 6mm 0 0; }
@@ -49,12 +64,15 @@ footer { display: flex; justify-content: space-between; align-items: flex-end; }
 .footer-item { text-align: center; font-size: 15pt; }
 .footer-item .line { border-bottom: .6mm solid #555; min-width: 60mm; height: 9mm; }
 .footer-item .role { margin-top: 2mm; color: #666; font-size: 12pt; }
-.toolbar { position: fixed; top: 10px; left: 10px; z-index: 10; }
+.toolbar { position: fixed; top: 10px; left: 10px; z-index: 10; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: 92vw; }
 .toolbar a {
     display: inline-block; background: #2563eb; color: #fff;
-    padding: 8px 18px; border-radius: 8px; text-decoration: none;
-    font-family: Arial, sans-serif; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    padding: 8px 14px; border-radius: 8px; text-decoration: none;
+    font-family: Arial, sans-serif; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
+.toolbar a:hover { filter: brightness(1.1); }
+.toolbar-label { background: #333; color: #fff; padding: 8px 12px; border-radius: 8px; font-family: Arial, sans-serif; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.toolbar-print { background: #059669 !important; }
 @media print { .toolbar { display: none; } }
 </style>
 </head>
@@ -95,6 +113,17 @@ footer { display: flex; justify-content: space-between; align-items: flex-end; }
         </div>
     </footer>
 </div>
-<div class="toolbar"><a href="javascript:window.print()">طباعة</a></div>
+<div class="toolbar">
+    <span class="toolbar-label">التصميم:</span>
+    <a href="?bg=5">وردي فاتح</a>
+    <a href="?bg=6">وردي ذهبي</a>
+    <a href="?bg=7">فوشيا</a>
+    <a href="?bg=8">أبيض وردي</a>
+    <a href="?bg=9">خوخي</a>
+    <a href="?bg=1">ذهبي</a>
+    <a href="?bg=2">أخضر</a>
+    <a href="?bg=3">أزرق</a>
+    <a href="javascript:window.print()" class="toolbar-print">طباعة</a>
+</div>
 </body>
 </html>
