@@ -4,6 +4,13 @@
 
 {% block content %}
 {% if user.is_authenticated %}
+{% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{% url 'student_list' %}" class="btn btn-primary"><i class="bi bi-people-fill"></i> جميع الطلاب</a>
+    <a href="{% url 'lateness_list' %}" class="btn btn-warning text-dark"><i class="bi bi-clock-history"></i> تأخيرات الطلاب</a>
+    <a href="{% url 'absence_list' %}" class="btn btn-danger"><i class="bi bi-person-x-fill"></i> غياب الطلاب</a>
+</div>
+{% endif %}
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card">
