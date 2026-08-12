@@ -67,8 +67,20 @@
                         <td>{{ forloop.counter }}</td>
                         <td><strong>{{ n.student.full_name }}</strong></td>
                         <td>{{ n.student_class.name }}</td>
-                        <td>{{ n.student_class.guardian.full_name|default:'---' }}</td>
-                        <td>{{ n.nominated_by.get_full_name|default:n.nominated_by.username }}</td>
+                        <td>
+                            {% if n.student_class.guardian %}
+                            {{ n.student_class.guardian.full_name }}
+                            {% else %}
+                            <span class="text-muted">---</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if n.nominated_by %}
+                            {{ n.nominated_by.get_full_name|default:n.nominated_by.username }}
+                            {% else %}
+                            <span class="text-muted">---</span>
+                            {% endif %}
+                        </td>
                         <td>{{ n.created_at|date:'Y-m-d' }}</td>
                         <td>
                             {% if n.certificate %}
