@@ -187,6 +187,7 @@ urlpatterns = [
     # Guardians
     path('guardians/', views.guardian_assign, name='guardian_assign'),
     path('guardians/students/', views.guardian_students, name='guardian_students'),
+    path('guardians/report/', views.guardians_report, name='guardians_report'),
 
     # Certificates (outstanding students)
     path('certificates/manage/', views.certificates_manage, name='certificates_manage'),

@@ -157,7 +157,7 @@ def home(request):
 @login_required
 def dashboard(request):
     profile = request.user.profile
-    if profile.role == 'admin':
+    if profile.role in ('admin', 'vice_principal', 'secretary'):
         students_count = Student.objects.count()
         notes_count = Note.objects.count()
         teachers_count = Teacher.objects.count()
@@ -169,6 +169,7 @@ def dashboard(request):
             'teachers_count': teachers_count,
             'unread_messages': unread_messages,
             'pending_agenda': pending_agenda,
+            'show_quick_actions': profile.role in ('admin', 'vice_principal'),
         })
     elif profile.role == 'teacher':
         try:
@@ -1801,6 +1802,8 @@ def add_account(request):
 
         user = User.objects.create_user(username=username, password=password, first_name=full_name)
         Profile.objects.create(user=user, role=role, phone=phone)
+        if role == 'teacher':
+            Teacher.objects.create(user=user, full_name=full_name, phone=phone)
 
         new_perms = {}
         if role == 'admin':
@@ -1845,6 +1848,11 @@ def edit_account(request, user_id):
         user.first_name = request.POST.get('full_name', '')
         profile.save()
         user.save()
+        if profile.role == 'teacher':
+            try:
+                user.teacher_profile
+            except Teacher.DoesNotExist:
+                Teacher.objects.create(user=user, full_name=user.first_name or user.username, phone=profile.phone)
 
         new_password = request.POST.get('new_password', '').strip()
         if new_password:
@@ -1971,6 +1979,20 @@ def my_account(request):
         new_password = request.POST.get('new_password', '').strip()
         if full_name:
             user.first_name = full_name
+            try:
+                if hasattr(user, 'teacher_profile'):
+                    t = user.teacher_profile
+                    t.full_name = full_name
+                    t.save()
+            except Exception:
+                pass
+            try:
+                if hasattr(user, 'student_profile'):
+                    s = user.student_profile
+                    s.full_name = full_name
+                    s.save()
+            except Exception:
+                pass
         if phone:
             profile.phone = phone
         if new_password:
@@ -2838,6 +2860,29 @@ def issue_certificates(nominations, user):
         )
         count += 1
     return count
+
+
+@login_required
+def guardians_report(request):
+    if not has_perm(request.user, 'guardians', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    info = SchoolInfo.objects.first()
+    class_rows = []
+    for i, cls in enumerate(Class.objects.all().order_by('name'), start=1):
+        class_rows.append({
+            'num': i,
+            'name': cls.name,
+            'students_count': Student.objects.filter(student_class=cls).count(),
+            'guardian': cls.guardian,
+        })
+    unassigned = Teacher.objects.filter(guardian_class=None).order_by('full_name')
+    return render(request, 'school/guardians_report.html', {
+        'class_rows': class_rows,
+        'unassigned': unassigned,
+        'info': info,
+        'today': date.today(),
+    })
 
 
 @login_required
@@ -3779,6 +3824,7 @@ def teacher_visits(request):
     inspection = teacher.inspection_visits.order_by('-visit_date').first()
     supervisor = teacher.supervisor_visits.order_by('-visit_date').first()
     today = date.today()
+    visit_entries = teacher.visit_program_entries.filter(visit_date__gte=today).order_by('visit_date', '-created_at')
     assigned = ReciprocalVisit.objects.filter(visitor=teacher).select_related('host', 'student_class').order_by('-visit_date', '-created_at')
     assigned = [v for v in assigned if v.completed or v.visit_date >= today]
     guest = ReciprocalVisit.objects.filter(host=teacher).select_related('visitor', 'student_class').order_by('-visit_date', '-created_at')
@@ -3787,6 +3833,7 @@ def teacher_visits(request):
         'teacher': teacher,
         'inspection': inspection,
         'supervisor': supervisor,
+        'visit_entries': visit_entries,
         'assigned': assigned,
         'guest': guest,
         'info': info,

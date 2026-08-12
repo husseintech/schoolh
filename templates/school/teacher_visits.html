@@ -21,7 +21,36 @@
                 <p class="fw-bold">{{ inspection.class_name|default:'---' }}{% if inspection.section %} ({{ inspection.section }}){% endif %}</p>
             </div>
         </div>
-        {% else %}
+        {% endif %}
+        {% if visit_entries %}
+        <hr>
+        <h6 class="text-muted"><i class="bi bi-calendar-check"></i> مواعيد حضورك المسجلة (برنامج الزيارات)</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>تاريخ الموعد</th>
+                        <th>اليوم</th>
+                        <th>الحصة</th>
+                        <th>الملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in visit_entries %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ e.visit_date|date:'Y/m/d' }}</strong></td>
+                        <td>{{ e.day_name }}</td>
+                        <td>{{ e.lesson|default:'---' }}</td>
+                        <td>{{ e.notes|default:'---' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        {% if not inspection and not visit_entries %}
         <p class="text-muted">لا يوجد موعد مسجل لزيارة إشرافية</p>
         {% endif %}
         {% if supervisor %}
