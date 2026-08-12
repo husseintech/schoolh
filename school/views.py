@@ -2885,7 +2885,7 @@ def guardian_students(request):
             return redirect('dashboard')
     else:
         classes = []
-        guardian_class = teacher.guardian_class if teacher else None
+        guardian_class = getattr(teacher, 'guardian_class', None) if teacher else None
         if not guardian_class:
             messages.error(request, 'لم يتم تخصيص صف لك كمربي صف بعد')
             return redirect('dashboard')
