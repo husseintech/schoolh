@@ -1,0 +1,19 @@
+{% extends 'school/base.html' %}
+{% block title %}حذف درس{% endblock %}
+{% block page_heading %}حذف درس{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            هل أنت متأكد من حذف الدرس <strong>{{ lesson.title }}</strong> ({{ lesson.subject.name }} — {{ lesson.student_class.name }})؟
+            سيتم حذف جميع موارده أيضاً ولا يمكن التراجع.
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> حذف نهائي</button>
+            <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

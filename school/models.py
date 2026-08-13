@@ -70,6 +70,7 @@ DEFAULT_PERMISSIONS = {
         'teacher_followup': ['view', 'add', 'edit', 'delete'],
         'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
         'no_objection': ['view', 'add', 'edit', 'delete'],
+        'open_learning': ['view', 'add', 'edit', 'delete', 'review'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -126,6 +127,7 @@ DEFAULT_PERMISSIONS = {
         'nominations': ['view', 'add'],
         'survey': ['add'],
         'reciprocal_visits': ['view'],
+        'open_learning': ['view', 'add', 'edit', 'delete'],
     },
     'student': {
         'students': [],
@@ -142,6 +144,7 @@ DEFAULT_PERMISSIONS = {
         'settings': [],
         'notes': ['view'],
         'survey': ['add'],
+        'open_learning': ['view'],
     },
 }
 

@@ -1,0 +1,20 @@
+{% extends 'school/base.html' %}
+{% block title %}رفض درس{% endblock %}
+{% block page_heading %}رفض الدرس{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h6><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }} — {{ lesson.subject.name }} ({{ lesson.student_class.name }})</h6>
+        <p class="text-muted small">سيُبلَّغ المعلم بسبب الرفض عبر ملاحظة تظهر له في صفحة الدرس.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">سبب الرفض <span class="text-danger">*</span></label>
+                <textarea name="review_note" class="form-control" rows="3" required placeholder="مثال: المحتوى غير مكتمل، يرجى إضافة مزيد من الأمثلة"></textarea>
+            </div>
+            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle"></i> تأكيد الرفض</button>
+            <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

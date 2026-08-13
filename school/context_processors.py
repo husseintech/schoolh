@@ -45,6 +45,7 @@ def user_permissions(request):
             ('teacher_followup', 'view'), ('teacher_followup', 'add'), ('teacher_followup', 'delete'),
             ('reciprocal_visits', 'view'), ('reciprocal_visits', 'add'), ('reciprocal_visits', 'delete'),
             ('no_objection', 'view'), ('no_objection', 'add'), ('no_objection', 'delete'),
+            ('open_learning', 'view'), ('open_learning', 'add'), ('open_learning', 'review'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):

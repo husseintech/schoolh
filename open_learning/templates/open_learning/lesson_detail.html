@@ -1,0 +1,119 @@
+{% extends 'school/base.html' %}
+{% block title %}{{ lesson.title }}{% endblock %}
+{% block page_heading %}{{ lesson.title }}{% endblock %}
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <span class="badge
+                    {% if lesson.status == 'published' %}bg-success
+                    {% elif lesson.status == 'pending' %}bg-warning text-dark
+                    {% elif lesson.status == 'approved' %}bg-info
+                    {% elif lesson.status == 'rejected' %}bg-danger
+                    {% elif lesson.status == 'archived' %}bg-secondary
+                    {% else %}bg-secondary{% endif %} mb-2">
+                    {{ lesson.status_display_ar }}
+                </span>
+                <h5 class="mb-2"><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}</h5>
+                <div class="small text-muted">
+                    <div><i class="bi bi-easel"></i> {{ lesson.subject.name }} — <i class="bi bi-people"></i> {{ lesson.student_class.name }}</div>
+                    <div><i class="bi bi-person-badge"></i> {{ lesson.teacher.full_name }}</div>
+                    {% if lesson.reviewed_by %}<div><i class="bi bi-shield-check"></i> راجعه: {{ lesson.reviewed_by.username }}</div>{% endif %}
+                </div>
+                {% if lesson.description %}
+                <p class="mt-2 mb-0">{{ lesson.description }}</p>
+                {% endif %}
+                {% if lesson.review_note %}
+                <div class="alert alert-danger small mt-2 mb-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i> ملاحظة المراجعة: {{ lesson.review_note }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% if can_manage %}
+                {% if lesson.status == 'draft' or lesson.status == 'rejected' %}
+                <a href="{% url 'open_learning_lesson_submit' lesson.id %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-send"></i> إرسال للاعتماد
+                </a>
+                <a href="{% url 'open_learning_lesson_edit' lesson.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil"></i> تعديل
+                </a>
+                {% endif %}
+                <a href="{% url 'open_learning_lesson_delete' lesson.id %}" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i> حذف
+                </a>
+                {% endif %}
+                {% if is_admin %}
+                {% if lesson.status == 'pending' %}
+                <a href="{% url 'open_learning_lesson_approve' lesson.id %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-check2-circle"></i> اعتماد
+                </a>
+                <a href="{% url 'open_learning_lesson_reject' lesson.id %}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-x-circle"></i> رفض
+                </a>
+                {% endif %}
+                {% if lesson.status == 'approved' %}
+                <a href="{% url 'open_learning_lesson_publish' lesson.id %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-megaphone"></i> نشر للطلاب
+                </a>
+                <a href="{% url 'open_learning_lesson_reject' lesson.id %}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-x-circle"></i> رفض
+                </a>
+                {% endif %}
+                {% if lesson.status == 'published' %}
+                <a href="{% url 'open_learning_lesson_archive' lesson.id %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-archive"></i> أرشفة
+                </a>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-collection-fill"></i> الموارد التعليمية ({{ lesson.resources.count }})</span>
+        {% if can_manage and lesson.status == 'draft' or can_manage and lesson.status == 'rejected' or can_manage and lesson.status == 'approved' %}
+        <a href="{% url 'open_learning_resource_add' lesson.id %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg"></i> إضافة مورد
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if lesson.resources.all %}
+        <div class="list-group">
+            {% for r in lesson.resources.all %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi {{ r.type_icon }} text-primary"></i>
+                    <strong>{{ r.title }}</strong>
+                    <span class="badge bg-light text-dark border ms-1">{{ r.get_resource_type_display }}</span>
+                    {% if r.description %}<div class="small text-muted">{{ r.description }}</div>{% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ r.url }}" target="_blank" rel="noopener" class="btn btn-sm btn-success">
+                        <i class="bi bi-box-arrow-up-right"></i> فتح
+                    </a>
+                    {% if can_manage %}
+                    <a href="{% url 'open_learning_resource_delete' lesson.id r.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف هذا المورد؟')">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> لا توجد موارد بعد.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'open_learning_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right"></i> العودة للقائمة
+    </a>
+</div>
+{% endblock %}

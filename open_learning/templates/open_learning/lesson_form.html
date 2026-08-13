@@ -1,0 +1,57 @@
+{% extends 'school/base.html' %}
+{% block title %}{% if lesson %}تعديل درس{% else %}درس جديد{% endif %}{% endblock %}
+{% block page_heading %}{% if lesson %}تعديل الدرس{% else %}إنشاء درس جديد{% endif %}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">عنوان الدرس <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" required value="{{ lesson.title|default:'' }}" placeholder="مثال: درس الجمع والطرح">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">وصف الدرس</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="نبذة مختصرة عن الدرس وأهدافه">{{ lesson.description|default:'' }}</textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الصف <span class="text-danger">*</span></label>
+                    <select name="student_class" class="form-select" required>
+                        <option value="">اختر الصف</option>
+                        {% for c in classes %}
+                        <option value="{{ c.id }}" {% if lesson and lesson.student_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">المادة <span class="text-danger">*</span></label>
+                    <select name="subject" class="form-select" required>
+                        <option value="">اختر المادة</option>
+                        {% for s in subjects %}
+                        <option value="{{ s.id }}" {% if lesson and lesson.subject_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if role == 'admin' %}
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">المعلم <span class="text-danger">*</span></label>
+                    <select name="teacher" class="form-select" required>
+                        <option value="">اختر المعلم</option>
+                        {% for t in teachers %}
+                        <option value="{{ t.id }}" {% if lesson and lesson.teacher_id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle"></i>
+                سيُحفظ الدرس كمسودة، ثم ترسله للاعتماد، ويقوم مدير المدرسة باعتماده ونشره ليظهر للطلاب.
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+            <a href="{% url 'open_learning_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

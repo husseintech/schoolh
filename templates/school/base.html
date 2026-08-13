@@ -607,6 +607,12 @@
         </div>
         {% endif %}
 
+        {% if 'open_learning_view' in user_perms %}
+        <a href="{% url 'open_learning_list' %}" class="nav-link {% if 'open_learning' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-mortarboard-fill"></i> التعلم المفتوح
+        </a>
+        {% endif %}
+
         {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms or user.profile.role == 'admin' %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-settings" aria-expanded="false">
             <span>الإعدادات</span><i class="bi bi-chevron-down"></i>

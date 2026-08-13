@@ -1,0 +1,36 @@
+{% extends 'school/base.html' %}
+{% block title %}إضافة مورد{% endblock %}
+{% block page_heading %}إضافة مورد تعليمي{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h6><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}</h6>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">عنوان المورد <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" required placeholder="مثال: فيديو شرح الدرس">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">النوع <span class="text-danger">*</span></label>
+                <select name="resource_type" class="form-select" required>
+                    <option value="">اختر النوع</option>
+                    {% for key, label in resource_types %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">الرابط <span class="text-danger">*</span></label>
+                <input type="url" name="url" class="form-control" required placeholder="https://example.com/... (يوتيوب، درايف، PDF، واتساب...)">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">وصف مختصر</label>
+                <input type="text" name="description" class="form-control" maxlength="500" placeholder="مثال: مدة الفيديو 10 دقائق">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> إضافة</button>
+            <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
