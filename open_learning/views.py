@@ -279,11 +279,17 @@ def lesson_detail(request, lesson_id):
         return redirect('open_learning_list')
 
     can_manage = _can_manage(request, lesson)
+    if role == 'student':
+        visible_resources = lesson.resources.filter(status='approved')
+    else:
+        visible_resources = lesson.resources.all()
     return render(request, 'open_learning/lesson_detail.html', {
         'lesson': lesson,
         'role': role,
         'is_admin': _is_admin(request),
         'can_manage': can_manage,
+        'ai_visible': lesson.ai_visible_to_students,
+        'visible_resources': visible_resources,
     })
 
 

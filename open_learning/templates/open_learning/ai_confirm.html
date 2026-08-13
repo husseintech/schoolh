@@ -1,0 +1,27 @@
+{% extends 'school/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_heading %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h6 class="mb-3"><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }} — {{ lesson.subject.name }} ({{ lesson.student_class.name }})</h6>
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i> {{ message }}
+        </div>
+        {% if cost_notice %}
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle"></i>
+            تُنفذ هذه العملية <strong>مرة واحدة فقط</strong> عند طلبها يدوياً. بعد حفظ النتائج تُعرض مباشرة من قاعدة البيانات
+            عند فتح الدرس دون أي استدعاء للذكاء الاصطناعي أو استهلاك.
+        </div>
+        {% endif %}
+        <form method="post" action="{% url action_url lesson.id %}{{ query|default:'' }}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-stars"></i> تنفيذ الآن
+            </button>
+            <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'school/base.html' %}
+﻿{% extends 'school/base.html' %}
 {% block title %}{{ lesson.title }}{% endblock %}
 {% block page_heading %}{{ lesson.title }}{% endblock %}
 {% block content %}
@@ -15,11 +15,19 @@
                     {% else %}bg-secondary{% endif %} mb-2">
                     {{ lesson.status_display_ar }}
                 </span>
+                {% if can_manage and lesson.ai_status != 'none' %}
+                <span class="badge
+                    {% if lesson.ai_status == 'approved' %}bg-success
+                    {% else %}bg-warning text-dark{% endif %} mb-2 ms-1">
+                    المحتوى الذكي: {{ lesson.get_ai_status_display }}
+                </span>
+                {% endif %}
                 <h5 class="mb-2"><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}</h5>
                 <div class="small text-muted">
                     <div><i class="bi bi-easel"></i> {{ lesson.subject.name }} — <i class="bi bi-people"></i> {{ lesson.student_class.name }}</div>
                     <div><i class="bi bi-person-badge"></i> {{ lesson.teacher.full_name }}</div>
                     {% if lesson.reviewed_by %}<div><i class="bi bi-shield-check"></i> راجعه: {{ lesson.reviewed_by.username }}</div>{% endif %}
+                    {% if lesson.ai_generated_at %}<div><i class="bi bi-stars"></i> أُنشئ المحتوى الذكي: {{ lesson.ai_generated_at|date:"Y-m-d H:i" }}</div>{% endif %}
                 </div>
                 {% if lesson.description %}
                 <p class="mt-2 mb-0">{{ lesson.description }}</p>
@@ -72,6 +80,95 @@
     </div>
 </div>
 
+{% if can_manage %}
+<div class="card mb-3 border-primary">
+    <div class="card-header"><i class="bi bi-stars text-primary"></i> أدوات الذكاء الاصطناعي (تُنفذ عند طلبك فقط)</div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            {% if lesson.ai_status == 'none' %}
+            <a href="{% url 'open_learning_ai_generate' lesson.id %}" class="btn btn-primary">
+                <i class="bi bi-stars"></i> إنشاء محتوى ذكي
+            </a>
+            {% endif %}
+            <a href="{% url 'open_learning_ai_search' lesson.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-search"></i> البحث الذكي عن مصادر
+            </a>
+            <a href="{% url 'open_learning_ai_update' lesson.id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-repeat"></i> تحديث المصادر
+            </a>
+            {% if lesson.ai_payload %}
+            {% if lesson.ai_status == 'pending' %}
+            <form method="post" action="{% url 'open_learning_ai_approve_content' lesson.id %}" class="d-inline">
+                {% csrf_token %}
+                <input type="text" name="ai_review_note" class="form-control form-control-sm d-inline-block w-auto" placeholder="ملاحظة (اختياري)">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> اعتماد المحتوى الذكي</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'open_learning_ai_section' lesson.id %}?op=questions" class="btn btn-outline-info btn-sm">إنشاء أسئلة جديدة</a>
+            <a href="{% url 'open_learning_ai_section' lesson.id %}?op=explanation" class="btn btn-outline-info btn-sm">إنشاء شرح جديد</a>
+            <a href="{% url 'open_learning_ai_section' lesson.id %}?op=activities" class="btn btn-outline-info btn-sm">اقتراح أنشطة جديدة</a>
+            {% endif %}
+        </div>
+        <div class="small text-muted mt-2">
+            <i class="bi bi-info-circle"></i>
+            كل الأزرار أفعال يدوية. عند فتح الدرس تُقرأ النتائج من قاعدة البيانات فقط دون أي استدعاء للذكاء الاصطناعي.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if lesson.ai_payload and ai_visible or lesson.ai_payload and can_manage %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-stars text-primary"></i> المحتوى الذكي</span>
+        {% if can_manage and lesson.ai_status == 'pending' %}
+        <span class="badge bg-warning text-dark">بانتظار الاعتماد — لا يظهر للطلاب بعد</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if lesson.ai_payload.objectives %}
+        <h6 class="text-primary"><i class="bi bi-bullseye"></i> أهداف التعلم</h6>
+        <ul>{% for o in lesson.ai_payload.objectives %}<li>{{ o }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if lesson.ai_payload.explanation %}
+        <h6 class="text-primary"><i class="bi bi-journal-richtext"></i> الشرح المبسط</h6>
+        <div class="mb-3">{{ lesson.ai_payload.explanation|linebreaksbr }}</div>
+        {% endif %}
+        {% if lesson.ai_payload.concepts %}
+        <h6 class="text-primary"><i class="bi bi-tags"></i> الكلمات والمفاهيم الأساسية</h6>
+        <div class="mb-3">
+            {% for c in lesson.ai_payload.concepts %}
+            <span class="badge bg-light text-dark border me-1 mb-1">{{ c }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if lesson.ai_payload.pre_questions %}
+        <h6 class="text-primary"><i class="bi bi-question-circle"></i> أسئلة تمهيدية</h6>
+        <ul>{% for q in lesson.ai_payload.pre_questions %}<li>{{ q }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if lesson.ai_payload.activities %}
+        <h6 class="text-primary"><i class="bi bi-lightbulb"></i> الأنشطة</h6>
+        <ul>{% for a in lesson.ai_payload.activities %}<li>{{ a }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if lesson.ai_payload.evaluation_questions %}
+        <h6 class="text-primary"><i class="bi bi-pencil-square"></i> أسئلة التقييم</h6>
+        <ul>{% for q in lesson.ai_payload.evaluation_questions %}<li>{{ q }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if lesson.ai_payload.interactive_ideas %}
+        <h6 class="text-primary"><i class="bi bi-people"></i> أفكار للتعلم التفاعلي</h6>
+        <ul>{% for i in lesson.ai_payload.interactive_ideas %}<li>{{ i }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if lesson.ai_payload.external_suggestions %}
+        <h6 class="text-primary"><i class="bi bi-box-arrow-up-right"></i> اقتراحات إثرائية</h6>
+        <ul>{% for s in lesson.ai_payload.external_suggestions %}<li>{{ s }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if not lesson.ai_payload.objectives and not lesson.ai_payload.explanation and not lesson.ai_payload.concepts and not lesson.ai_payload.pre_questions and not lesson.ai_payload.activities and not lesson.ai_payload.evaluation_questions and not lesson.ai_payload.interactive_ideas and not lesson.ai_payload.external_suggestions %}
+        <p class="text-muted mb-0">المحتوى فارغ — أعد توليده من أدوات الذكاء الاصطناعي.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-collection-fill"></i> الموارد التعليمية ({{ lesson.resources.count }})</span>
@@ -82,14 +179,21 @@
         {% endif %}
     </div>
     <div class="card-body">
-        {% if lesson.resources.all %}
+        {% if visible_resources %}
         <div class="list-group">
-            {% for r in lesson.resources.all %}
+            {% for r in visible_resources %}
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
                     <i class="bi {{ r.type_icon }} text-primary"></i>
                     <strong>{{ r.title }}</strong>
                     <span class="badge bg-light text-dark border ms-1">{{ r.get_resource_type_display }}</span>
+                    {% if r.language == 'en' %}<span class="badge bg-secondary">EN</span>{% endif %}
+                    {% if r.relevance_score %}<span class="badge bg-info text-dark">ملاءمة {{ r.relevance_score }}</span>{% endif %}
+                    {% if r.source_name %}<span class="badge bg-light text-dark border">{{ r.source_name }}</span>{% endif %}
+                    {% if can_manage and r.is_ai_generated %}
+                        {% if r.status == 'pending' %}<span class="badge bg-warning text-dark">بانتظار الاعتماد</span>{% endif %}
+                        {% if r.status == 'archived' %}<span class="badge bg-secondary">مرفوض</span>{% endif %}
+                    {% endif %}
                     {% if r.description %}<div class="small text-muted">{{ r.description }}</div>{% endif %}
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -97,7 +201,17 @@
                         <i class="bi bi-box-arrow-up-right"></i> فتح
                     </a>
                     {% if can_manage %}
-                    <a href="{% url 'open_learning_resource_delete' lesson.id r.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف هذا المورد؟')">
+                        {% if r.status == 'pending' %}
+                        <form method="post" action="{% url 'open_learning_ai_approve_resource' lesson.id r.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="اعتماد"><i class="bi bi-check2"></i></button>
+                        </form>
+                        <form method="post" action="{% url 'open_learning_ai_reject_resource' lesson.id r.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="رفض (أرشفة)" onclick="return confirm('رفض هذا المصدر؟ سيُخفى دون حذف.')"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                        {% endif %}
+                    <a href="{% url 'open_learning_resource_delete' lesson.id r.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف هذا المورد نهائياً؟')">
                         <i class="bi bi-trash"></i>
                     </a>
                     {% endif %}
@@ -106,7 +220,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> لا توجد موارد بعد.</p>
+        <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> لا توجد موارد معتمدة بعد.</p>
         {% endif %}
     </div>
 </div>
@@ -115,5 +229,10 @@
     <a href="{% url 'open_learning_list' %}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-right"></i> العودة للقائمة
     </a>
+    {% if is_admin %}
+    <a href="{% url 'open_learning_ai_dashboard' %}" class="btn btn-outline-info">
+        <i class="bi bi-speedometer2"></i> لوحة مراقبة الذكاء الاصطناعي
+    </a>
+    {% endif %}
 </div>
 {% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'school/base.html' %}
+{% block title %}لوحة مراقبة الذكاء الاصطناعي{% endblock %}
+{% block page_heading %}لوحة مراقبة الذكاء الاصطناعي{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-0">{{ stats.ai_requests_month }}</h3>
+                <div class="text-muted small">عمليات AI هذا الشهر</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm border-success">
+            <div class="card-body">
+                <h3 class="mb-0 text-success">{{ stats.success_month }}</h3>
+                <div class="text-muted small">عمليات ناجحة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm border-danger">
+            <div class="card-body">
+                <h3 class="mb-0 text-danger">{{ stats.failed_month }}</h3>
+                <div class="text-muted small">عمليات فاشلة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm border-info">
+            <div class="card-body">
+                <h3 class="mb-0 text-info">{{ stats.cache_hits }}</h3>
+                <div class="text-muted small">مرات إعادة استخدام المخزن (صفر استهلاك)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-0">{{ stats.total_ai_calls }}</h3>
+                <div class="text-muted small">إجمالي استدعاءات AI</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-0">{{ stats.generated_resources }}</h3>
+                <div class="text-muted small">مصادر أنشأها AI</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-0">{{ stats.stored_resources }}</h3>
+                <div class="text-muted small">مصادر في المكتبة المركزية</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm border-warning">
+            <div class="card-body">
+                <h3 class="mb-0 text-warning">{{ stats.pending_resources }}</h3>
+                <div class="text-muted small">بانتظار الاعتماد</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm border-success">
+            <div class="card-body">
+                <h3 class="mb-0 text-success">{{ stats.approved_resources }}</h3>
+                <div class="text-muted small">مصادر معتمدة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-0">{{ stats.lessons_with_ai }}</h3>
+                <div class="text-muted small">دروس بمحتوى ذكي</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-clock-history"></i> آخر العمليات</div>
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>التاريخ</th>
+                    <th>المستخدم</th>
+                    <th>الدرس</th>
+                    <th>العملية</th>
+                    <th>المزوّد</th>
+                    <th>الرموز</th>
+                    <th>النتيجة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td class="small">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="small">{{ log.user.username|default:'-' }}</td>
+                    <td class="small">{{ log.lesson.title|truncatechars:30|default:'-' }}</td>
+                    <td class="small">{{ log.operation_label }}</td>
+                    <td class="small">{{ log.provider }}</td>
+                    <td class="small">{{ log.estimated_tokens|default:'-' }}</td>
+                    <td>
+                        {% if log.operation == 'cache_hit' %}
+                        <span class="badge bg-info">مخزّن</span>
+                        {% elif log.success %}
+                        <span class="badge bg-success">نجاح</span>
+                        {% else %}
+                        <span class="badge bg-danger" title="{{ log.error }}">فشل</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted">لا توجد عمليات بعد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'open_learning_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> العودة للتعلم المفتوح</a>
+</div>
+{% endblock %}

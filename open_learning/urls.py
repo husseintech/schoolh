@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, ai_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -14,4 +14,14 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/archive/', views.lesson_archive, name='open_learning_lesson_archive'),
     path('lessons/<int:lesson_id>/resources/add/', views.resource_add, name='open_learning_resource_add'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/delete/', views.resource_delete, name='open_learning_resource_delete'),
+
+    # ── طبقة الذكاء الاصطناعي (أفعال يدوية فقط، بدون استدعاء تلقائي) ──
+    path('ai/generate/<int:lesson_id>/', ai_views.ai_generate_content, name='open_learning_ai_generate'),
+    path('ai/section/<int:lesson_id>/', ai_views.ai_regenerate_section, name='open_learning_ai_section'),
+    path('ai/search/<int:lesson_id>/', ai_views.ai_search_resources, name='open_learning_ai_search'),
+    path('ai/update/<int:lesson_id>/', ai_views.ai_update_resources, name='open_learning_ai_update'),
+    path('ai/approve-content/<int:lesson_id>/', ai_views.ai_approve_content, name='open_learning_ai_approve_content'),
+    path('ai/approve-resource/<int:lesson_id>/<int:resource_id>/', ai_views.ai_approve_resource, name='open_learning_ai_approve_resource'),
+    path('ai/reject-resource/<int:lesson_id>/<int:resource_id>/', ai_views.ai_reject_resource, name='open_learning_ai_reject_resource'),
+    path('ai/dashboard/', ai_views.ai_dashboard, name='open_learning_ai_dashboard'),
 ]
