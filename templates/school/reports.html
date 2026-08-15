@@ -136,6 +136,19 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center py-3">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.8rem; color: #e74c3c;"></i>
+                <h6 class="mt-2 mb-1">الإنذارات واستدعاءات أولياء الأمور</h6>
+                <small class="text-muted d-block mb-2">طباعة جميع الإنذارات والاستدعاءات</small>
+                <div class="btn-group btn-group-sm w-100">
+                    <a href="{% url 'print_all_warnings' %}" class="btn btn-danger"><i class="bi bi-printer"></i> الإنذارات</a>
+                    <a href="{% url 'print_all_summons' %}" class="btn btn-warning"><i class="bi bi-printer"></i> الاستدعاءات</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
                 <i class="bi bi-eye-fill" style="font-size: 1.8rem; color: #2c3e50;"></i>
                 <h6 class="mt-2 mb-1">الزيارات الإشرافية خاص بالمدير</h6>
                 <small class="text-muted d-block mb-2">تقرير شامل لجميع الزيارات</small>

@@ -442,6 +442,26 @@ def print_guardian_summons(request, summons_id):
 
 
 @login_required
+def print_all_warnings(request):
+    if not has_perm(request.user, 'discipline', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    warnings = StudentWarning.objects.all().select_related('student__student_class', 'created_by').order_by('student__full_name', '-incident_date')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/print_all_warnings.html', {'warnings': warnings, 'info': info})
+
+
+@login_required
+def print_all_summons(request):
+    if not has_perm(request.user, 'discipline', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    summons = GuardianSummons.objects.all().select_related('student__student_class', 'created_by').order_by('student__full_name', '-summons_date')
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/print_all_summons.html', {'summons': summons, 'info': info})
+
+
+@login_required
 def reset_student_password(request, student_id):
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
@@ -466,6 +486,8 @@ def student_report(request, student_id):
     student = get_object_or_404(Student, id=student_id)
     leaves = StudentLeave.objects.filter(student=student).order_by('-created_at')
     notes = Note.objects.filter(student=student).select_related('created_by').order_by('-created_at')
+    warnings = student.warnings.all()
+    summons = student.summons.all()
     principal_name = ''
     principal_phone = ''
     if request.user.profile.role == 'admin':
@@ -475,6 +497,8 @@ def student_report(request, student_id):
         'student': student,
         'leaves': leaves,
         'notes': notes,
+        'warnings': warnings,
+        'summons': summons,
         'principal_name': principal_name,
         'principal_phone': principal_phone,
     })

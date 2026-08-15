@@ -3,7 +3,13 @@
 {% block page_heading %}الإنذارات واستدعاء أولياء الأمور{% endblock %}
 {% block content %}
 <div class="card">
-    <div class="card-header"><i class="bi bi-shield-exclamation"></i> جميع الطلاب ({{ students|length }})</div>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-shield-exclamation"></i> جميع الطلاب ({{ students|length }})</span>
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'print_all_warnings' %}" class="btn btn-outline-danger"><i class="bi bi-printer"></i> طباعة جميع الإنذارات</a>
+            <a href="{% url 'print_all_summons' %}" class="btn btn-outline-warning"><i class="bi bi-printer"></i> طباعة جميع استدعاءات أولياء الأمور</a>
+        </div>
+    </div>
     <div class="card-body">
         <div class="row mb-3">
             <div class="col-md-6">

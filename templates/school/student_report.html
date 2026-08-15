@@ -126,6 +126,68 @@
     </div>
 </div>
 
+<div class="card mt-3">
+    <div class="card-header"><i class="bi bi-exclamation-triangle-fill"></i> الإنذارات ({{ warnings.count }})</div>
+    <div class="card-body">
+        {% if warnings %}
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>تاريخ الحادثة</th>
+                    <th>وقائع الحادثة</th>
+                    <th>طريقة التسليم</th>
+                    <th>بواسطة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in warnings %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ w.incident_date|date:"Y-m-d" }}</td>
+                    <td>{{ w.incident_facts }}</td>
+                    <td>{{ w.get_delivery_method_display }}</td>
+                    <td>{{ w.created_by.first_name|default:w.created_by.username }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-3">لا توجد إنذارات لهذا الطالب</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header"><i class="bi bi-person-lines-fill"></i> استدعاءات أولياء الأمور ({{ summons.count }})</div>
+    <div class="card-body">
+        {% if summons %}
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>تاريخ الاستدعاء</th>
+                    <th>نص الاستدعاء</th>
+                    <th>بواسطة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in summons %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ s.summons_date|date:"Y-m-d" }}</td>
+                    <td>{{ s.summons_text }}</td>
+                    <td>{{ s.created_by.first_name|default:s.created_by.username }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-3">لا توجد استدعاءات لهذا الطالب</p>
+        {% endif %}
+    </div>
+</div>
+
 <div class="report-footer" style="margin-top:40px;text-align:center;border-top:2px solid #333;padding-top:10px;">
     <p><strong>{{ principal_name }}</strong> &nbsp;|&nbsp; <strong>{{ principal_phone }}</strong></p>
     <small class="text-muted">مدير المدرسة</small>

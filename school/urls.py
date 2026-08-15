@@ -24,6 +24,8 @@ urlpatterns = [
     path('students/<int:student_id>/summons/add/', views.add_guardian_summons, name='add_guardian_summons'),
     path('warnings/<int:warning_id>/print/', views.print_student_warning, name='print_student_warning'),
     path('summons/<int:summons_id>/print/', views.print_guardian_summons, name='print_guardian_summons'),
+    path('warnings/print-all/', views.print_all_warnings, name='print_all_warnings'),
+    path('summons/print-all/', views.print_all_summons, name='print_all_summons'),
 
     # Excel Import/Export
     path('students/download-template/', views.download_student_template, name='download_student_template'),
