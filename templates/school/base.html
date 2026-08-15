@@ -377,7 +377,7 @@
         {% endif %}
         </div>
 
-        {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms %}
+        {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms or 'discipline_view' in user_perms or 'discipline_add' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-students" aria-expanded="false">
             <span>الطلاب</span><i class="bi bi-chevron-down"></i>
         </button>
@@ -403,7 +403,12 @@
             <i class="bi bi-graph-up-arrow"></i> مستويات الطلاب
         </a>
         {% endif %}
-        {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms %}
+        {% if 'discipline_view' in user_perms or 'discipline_add' in user_perms %}
+        <a href="{% url 'student_discipline' %}" class="nav-link {% if request.resolver_match.url_name == 'student_discipline' or 'warning' in request.resolver_match.url_name or 'summons' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-shield-exclamation"></i> الإنذارات واستدعاء أولياء الأمور
+        </a>
+        {% endif %}
+        {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms or 'discipline_view' in user_perms or 'discipline_add' in user_perms %}
         </div>
         {% endif %}
 

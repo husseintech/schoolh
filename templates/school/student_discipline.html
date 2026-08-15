@@ -1,0 +1,77 @@
+{% extends 'school/base.html' %}
+{% block title %}الإنذارات واستدعاء أولياء الأمور{% endblock %}
+{% block page_heading %}الإنذارات واستدعاء أولياء الأمور{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-shield-exclamation"></i> جميع الطلاب ({{ students|length }})</div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control form-control-lg" id="searchInput" placeholder="ابحث عن طالب بالاسم أو رقم الهوية..." onkeyup="filterStudents()" autofocus>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم الكامل</th>
+                        <th>رقم الهوية</th>
+                        <th>الصف</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr data-name="{{ student.full_name }}" data-id="{{ student.student_id }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <a href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a>
+                            {% if student.parent_name %}
+                            <small class="text-muted d-block">ولي الأمر: {{ student.parent_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ student.student_id }}</td>
+                        <td><span class="badge bg-info">{{ student.student_class.name|default:"-" }}</span></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'add_student_warning' student.id %}" class="btn btn-outline-danger" title="توجيه إنذار">
+                                    <i class="bi bi-exclamation-triangle"></i> توجيه إنذار
+                                </a>
+                                <a href="{% url 'add_guardian_summons' student.id %}" class="btn btn-outline-warning" title="استدعاء ولي الأمر">
+                                    <i class="bi bi-person-lines-fill"></i> استدعاء ولي الأمر
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا يوجد طلاب مسجلون</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small" id="noResults" style="display:none;">لا توجد نتائج مطابقة للبحث</p>
+    </div>
+</div>
+
+<script>
+function filterStudents() {
+    var searchInput = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    var rows = document.querySelectorAll('#studentsTable tbody tr');
+    var visible = 0;
+    rows.forEach(function(row) {
+        var textMatch = !searchInput ||
+            (row.getAttribute('data-name') || '').toLowerCase().includes(searchInput) ||
+            (row.getAttribute('data-id') || '').toLowerCase().includes(searchInput);
+        row.style.display = textMatch ? '' : 'none';
+        if (textMatch) visible++;
+    });
+    document.getElementById('noResults').style.display = visible === 0 ? '' : 'none';
+}
+</script>
+{% endblock %}

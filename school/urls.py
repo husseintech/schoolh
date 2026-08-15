@@ -18,6 +18,13 @@ urlpatterns = [
     path('students/<int:student_id>/report/', views.student_report, name='student_report'),
     path('students/<int:student_id>/reset-password/', views.reset_student_password, name='reset_student_password'),
 
+    # Student discipline (warnings & guardian summons)
+    path('students/discipline/', views.student_discipline, name='student_discipline'),
+    path('students/<int:student_id>/warning/add/', views.add_student_warning, name='add_student_warning'),
+    path('students/<int:student_id>/summons/add/', views.add_guardian_summons, name='add_guardian_summons'),
+    path('warnings/<int:warning_id>/print/', views.print_student_warning, name='print_student_warning'),
+    path('summons/<int:summons_id>/print/', views.print_guardian_summons, name='print_guardian_summons'),
+
     # Excel Import/Export
     path('students/download-template/', views.download_student_template, name='download_student_template'),
     path('students/import/', views.import_students, name='import_students'),

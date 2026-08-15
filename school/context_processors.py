@@ -29,6 +29,7 @@ def user_permissions(request):
             ('settings', 'whatsapp'), ('settings', 'accounts'),
             ('settings', 'links'),
             ('notes', 'view'), ('notes', 'add'),
+            ('discipline', 'view'), ('discipline', 'add'),
             ('lateness', 'view'), ('lateness', 'add'),
             ('meetings', 'view'), ('meetings', 'add'),
             ('supervisor_visits', 'view'), ('supervisor_visits', 'add'),

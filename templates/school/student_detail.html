@@ -7,6 +7,8 @@
         <span><i class="bi bi-person-circle"></i> {{ student.full_name }}</span>
         <div>
             <a href="{% url 'add_note_with_student' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> ملاحظة</a>
+            <a href="{% url 'add_student_warning' student.id %}" class="btn btn-danger btn-sm"><i class="bi bi-exclamation-triangle"></i> توجيه إنذار</a>
+            <a href="{% url 'add_guardian_summons' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-person-lines-fill"></i> استدعاء ولي الأمر</a>
             <a href="{% url 'edit_student' student.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> تعديل</a>
             <a href="{% url 'reset_student_password' student.id %}" class="btn btn-info btn-sm"><i class="bi bi-key"></i> كلمة المرور</a>
         </div>
@@ -127,6 +129,60 @@
                 </div>
                 {% else %}
                 <p class="text-muted text-center py-3">لا توجد مستويات مسجلة</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white"><i class="bi bi-exclamation-triangle-fill"></i> الإنذارات</div>
+            <div class="card-body">
+                {% if warnings %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>تاريخ الحادثة</th><th>وقائع الحادثة</th><th>التسليم</th><th>طباعة</th></tr></thead>
+                        <tbody>
+                            {% for w in warnings %}
+                            <tr>
+                                <td>{{ w.incident_date|date:"Y-m-d" }}</td>
+                                <td>{{ w.incident_facts|truncatewords:12 }}</td>
+                                <td>{{ w.get_delivery_method_display }}</td>
+                                <td><a href="{% url 'print_student_warning' w.id %}" class="btn btn-outline-primary btn-sm" title="طباعة"><i class="bi bi-printer"></i></a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا توجد إنذارات</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark"><i class="bi bi-person-lines-fill"></i> استدعاءات أولياء الأمور</div>
+            <div class="card-body">
+                {% if summons %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>تاريخ الاستدعاء</th><th>نص الاستدعاء</th><th>طباعة</th></tr></thead>
+                        <tbody>
+                            {% for s in summons %}
+                            <tr>
+                                <td>{{ s.summons_date|date:"Y-m-d" }}</td>
+                                <td>{{ s.summons_text|truncatewords:12 }}</td>
+                                <td><a href="{% url 'print_guardian_summons' s.id %}" class="btn btn-outline-primary btn-sm" title="طباعة"><i class="bi bi-printer"></i></a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا توجد استدعاءات</p>
                 {% endif %}
             </div>
         </div>

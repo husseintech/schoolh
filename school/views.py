@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -220,6 +220,8 @@ def dashboard(request):
                 'unread_messages': messages_qs.count(),
                 'absence_count': absence_count,
                 'leaves': leaves,
+                'warnings': student.warnings.all(),
+                'summons': student.summons.all(),
                 'schedule_entries': schedule_entries,
                 'schedule_days': SCHEDULE_DAYS,
                 'period_range': range(1, SCHEDULE_PERIODS + 1),
@@ -351,7 +353,92 @@ def student_detail(request, student_id):
         'student': student,
         'notes': notes,
         'levels': levels,
+        'warnings': student.warnings.all(),
+        'summons': student.summons.all(),
     })
+
+
+@login_required
+def student_discipline(request):
+    if not has_perm(request.user, 'discipline', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    students = sort_students(Student.objects.all().select_related('student_class'))
+    return render(request, 'school/student_discipline.html', {'students': students})
+
+
+@login_required
+def add_student_warning(request, student_id):
+    if not has_perm(request.user, 'discipline', 'add'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    student = get_object_or_404(Student, id=student_id)
+    if request.method == 'POST':
+        incident_date = request.POST.get('incident_date', '').strip()
+        incident_facts = request.POST.get('incident_facts', '').strip()
+        delivery_method = request.POST.get('delivery_method', 'direct')
+        if not incident_date:
+            messages.error(request, 'يرجى إدخال تاريخ الحادثة')
+        elif not incident_facts:
+            messages.error(request, 'يرجى إدخال وقائع الحادثة')
+        else:
+            warning = StudentWarning.objects.create(
+                student=student,
+                incident_date=incident_date,
+                incident_facts=incident_facts,
+                delivery_method=delivery_method,
+                created_by=request.user,
+            )
+            log_action(request.user, 'توجيه إنذار', f'{student.full_name} ({student.student_id})')
+            messages.success(request, f'تم توجيه إنذار للطالب {student.full_name}')
+            return redirect('print_student_warning', warning_id=warning.id)
+    return render(request, 'school/add_student_warning.html', {'student': student})
+
+
+@login_required
+def add_guardian_summons(request, student_id):
+    if not has_perm(request.user, 'discipline', 'add'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    student = get_object_or_404(Student, id=student_id)
+    if request.method == 'POST':
+        summons_date = request.POST.get('summons_date', '').strip()
+        summons_text = request.POST.get('summons_text', '').strip()
+        if not summons_date:
+            messages.error(request, 'يرجى إدخال تاريخ الاستدعاء')
+        elif not summons_text:
+            messages.error(request, 'يرجى إدخال نص الاستدعاء')
+        else:
+            summons = GuardianSummons.objects.create(
+                student=student,
+                summons_date=summons_date,
+                summons_text=summons_text,
+                created_by=request.user,
+            )
+            log_action(request.user, 'استدعاء ولي أمر', f'{student.full_name} ({student.student_id})')
+            messages.success(request, f'تم إصدار استدعاء ولي أمر للطالب {student.full_name}')
+            return redirect('print_guardian_summons', summons_id=summons.id)
+    return render(request, 'school/add_guardian_summons.html', {'student': student})
+
+
+@login_required
+def print_student_warning(request, warning_id):
+    if not has_perm(request.user, 'discipline', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    warning = get_object_or_404(StudentWarning, id=warning_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/print_student_warning.html', {'warning': warning, 'info': info})
+
+
+@login_required
+def print_guardian_summons(request, summons_id):
+    if not has_perm(request.user, 'discipline', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    summons = get_object_or_404(GuardianSummons, id=summons_id)
+    info = SchoolInfo.objects.first()
+    return render(request, 'school/print_guardian_summons.html', {'summons': summons, 'info': info})
 
 
 @login_required

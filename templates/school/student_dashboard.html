@@ -155,6 +155,81 @@
             </div>
         </div>
 
+        {% if warnings or summons %}
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <i class="bi bi-exclamation-triangle-fill"></i> الإنذارات
+                    </div>
+                    <div class="card-body">
+                        {% if warnings %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>تاريخ الحادثة</th>
+                                        <th>وقائع الحادثة</th>
+                                        <th>طريقة التسليم</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for w in warnings %}
+                                    <tr>
+                                        <td>{{ w.incident_date|date:"Y-m-d" }}</td>
+                                        <td>{{ w.incident_facts|truncatewords:15 }}</td>
+                                        <td>{{ w.get_delivery_method_display }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد إنذارات. تهانينا!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-person-lines-fill"></i> استدعاءات ولي الأمر
+                    </div>
+                    <div class="card-body">
+                        {% if summons %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>تاريخ الاستدعاء</th>
+                                        <th>نص الاستدعاء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in summons %}
+                                    <tr>
+                                        <td>{{ s.summons_date|date:"Y-m-d" }}</td>
+                                        <td>{{ s.summons_text|truncatewords:15 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لا توجد استدعاءات. تهانينا!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="row g-3">
             <div class="col-md-6">
                 <div class="card">

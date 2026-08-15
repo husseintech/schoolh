@@ -54,6 +54,7 @@ DEFAULT_PERMISSIONS = {
         'reports': ['view'],
         'settings': ['whatsapp', 'accounts', 'links'],
         'notes': ['view', 'add'],
+        'discipline': ['view', 'add'],
         'lateness': ['view', 'add'],
         'meetings': ['view', 'add'],
         'supervisor_visits': ['view', 'add', 'edit', 'delete'],
@@ -86,6 +87,7 @@ DEFAULT_PERMISSIONS = {
         'reports': ['view'],
         'settings': [],
         'notes': ['view', 'add'],
+        'discipline': ['view', 'add'],
         'absence': ['view', 'add'],
         'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
         'no_objection': ['view', 'add'],
@@ -289,6 +291,43 @@ class Announcement(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class StudentWarning(models.Model):
+    DELIVERY_CHOICES = [
+        ('direct', 'تسليم مباشر للطالب'),
+        ('guardian', 'تسليم لولي الأمر'),
+    ]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='warnings', verbose_name='الطالب')
+    incident_date = models.DateField('تاريخ الحادثة')
+    incident_facts = models.TextField('وقائع الحادثة')
+    delivery_method = models.CharField('طريقة تسليم الإنذار', max_length=20, choices=DELIVERY_CHOICES, default='direct')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أصدر بواسطة')
+    created_at = models.DateTimeField('تاريخ الإصدار', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'إنذار طالب'
+        verbose_name_plural = 'إنذارات الطلاب'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.full_name} - {self.incident_date}'
+
+
+class GuardianSummons(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='summons', verbose_name='الطالب')
+    summons_date = models.DateField('تاريخ الاستدعاء')
+    summons_text = models.TextField('نص الاستدعاء')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أصدر بواسطة')
+    created_at = models.DateTimeField('تاريخ الإصدار', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'استدعاء ولي أمر'
+        verbose_name_plural = 'استدعاءات أولياء الأمور'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.full_name} - {self.summons_date}'
 
 
 class Agenda(models.Model):

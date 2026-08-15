@@ -1,0 +1,37 @@
+{% extends 'school/base.html' %}
+{% block title %}استدعاء ولي الأمر{% endblock %}
+{% block page_heading %}استدعاء ولي الأمر{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark"><i class="bi bi-person-lines-fill"></i> استدعاء ولي أمر الطالب: {{ student.full_name }}</div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    الصف: <strong>{{ student.student_class.name|default:"غير محدد" }}</strong> |
+                    ولي الأمر: <strong>{{ student.parent_name|default:"غير مسجل" }}</strong> |
+                    هاتف ولي الأمر: <strong dir="ltr">{{ student.parent_phone|default:"-" }}</strong>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">تاريخ الاستدعاء</label>
+                            <input type="date" name="summons_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">نص الاستدعاء</label>
+                            <textarea name="summons_text" class="form-control" rows="6" required placeholder="مثال: يُرجى من ولي أمر الطالب ... الحضور إلى المدرسة يوم ... الساعة ... لمناقشة سلوك الطالب..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-warning"><i class="bi bi-person-lines-fill"></i> حفظ وإصدار الاستدعاء</button>
+                        <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

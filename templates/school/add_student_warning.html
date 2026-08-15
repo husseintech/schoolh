@@ -1,0 +1,44 @@
+{% extends 'school/base.html' %}
+{% block title %}توجيه إنذار{% endblock %}
+{% block page_heading %}توجيه إنذار{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white"><i class="bi bi-exclamation-triangle-fill"></i> توجيه إنذار للطالب: {{ student.full_name }}</div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    الصف: <strong>{{ student.student_class.name|default:"غير محدد" }}</strong> |
+                    ولي الأمر: <strong>{{ student.parent_name|default:"غير مسجل" }}</strong> |
+                    هاتف ولي الأمر: <strong dir="ltr">{{ student.parent_phone|default:"-" }}</strong>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">تاريخ الحادثة</label>
+                            <input type="date" name="incident_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">طريقة تسليم الإنذار</label>
+                            <select name="delivery_method" class="form-select" required>
+                                <option value="direct">تسليم مباشر للطالب</option>
+                                <option value="guardian">تسليم لولي الأمر</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">وقائع الحادثة</label>
+                            <textarea name="incident_facts" class="form-control" rows="6" required placeholder="اكتب تفاصيل ما حدث من الطالب داخل المدرسة..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-exclamation-triangle"></i> حفظ وتوجيه الإنذار</button>
+                        <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
