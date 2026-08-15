@@ -131,8 +131,8 @@ class TeacherForm(forms.ModelForm):
 
 
 class TeacherEditForm(forms.ModelForm):
-    username = forms.CharField(label='اسم المستخدم', required=False, disabled=True,
-                               help_text='لا يمكن تعديل اسم المستخدم')
+    username = forms.CharField(label='اسم المستخدم', required=False,
+                               help_text='اسم تسجيل الدخول للمعلم')
     password = forms.CharField(label='كلمة المرور الجديدة', widget=forms.PasswordInput,
                                required=False, help_text='اتركه فارغاً إذا لم ترد التغيير')
 
@@ -163,6 +163,28 @@ class TeacherEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.user_id:
             self.fields['username'].initial = self.instance.user.username
+
+    def clean_username(self):
+        username = str(self.cleaned_data.get('username') or '').strip()
+        if not username:
+            raise forms.ValidationError('اسم المستخدم لا يمكن أن يكون فارغاً')
+        qs = User.objects.filter(username=username)
+        if self.instance and self.instance.user_id:
+            qs = qs.exclude(pk=self.instance.user_id)
+        if qs.exists():
+            raise forms.ValidationError(f'اسم المستخدم {username} مستخدم مسبقاً')
+        return username
+
+    def save(self, commit=True):
+        teacher = super().save(commit=False)
+        if self.instance.user_id and self.cleaned_data.get('username'):
+            user = self.instance.user
+            user.username = self.cleaned_data['username']
+            user.save()
+        if commit:
+            teacher.save()
+            self.save_m2m()
+        return teacher
 
 
 class TeacherNoteForm(forms.ModelForm):
