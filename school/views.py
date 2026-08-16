@@ -3454,10 +3454,12 @@ CLEARABLE_TABLES = [
     ('teacher_followups', 'متابعة المعلمين', TeacherFollowup, ['teacher']),
     ('reciprocal_visits', 'الزيارات التبادلية', ReciprocalVisit, ['teacher']),
     ('no_objections', 'لا مانع', NoObjection, ['created_by']),
+    ('warnings', 'إنذارات الطلاب', StudentWarning, ['student']),
+    ('summons', 'استدعاءات أولياء الأمور', GuardianSummons, ['student']),
 ]
 
 DEPENDENT_MODELS = {
-    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter],
+    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter, StudentWarning, GuardianSummons],
     'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup, ReciprocalVisit],
     'classes': [Student, TeacherScheduleEntry, WhatsAppGroup],
     'subjects': [TeacherScheduleEntry],
