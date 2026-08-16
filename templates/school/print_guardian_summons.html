@@ -1,5 +1,6 @@
 {% extends 'school/base.html' %}
 {% load static %}
+{% load school_tags %}
 {% block title %}استدعاء ولي أمر - {{ summons.student.full_name }}{% endblock %}
 {% block page_heading %}تقرير استدعاء ولي الأمر{% endblock %}
 {% block content %}
@@ -47,7 +48,7 @@
                 <p><strong>مدير المدرسة: {{ info.principal_name|default:'______________' }}</strong></p>
             </div>
         </div>
-        <p class="text-muted small mt-3">تاريخ الإصدار: {{ summons.created_at|date:"Y/m/d" }} | أصدر بواسطة: {{ summons.created_by.first_name|default:summons.created_by.username }}</p>
+        <p class="text-muted small mt-3">تاريخ الإصدار: {{ summons.created_at|date:"Y/m/d" }} | أصدر بواسطة: {{ summons.created_by|by_name }}</p>
     </div>
     <div class="card-footer no-print text-center">
         <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الاستدعاء</button>

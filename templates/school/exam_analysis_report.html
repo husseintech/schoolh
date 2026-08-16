@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}تقرير تحليل الامتحان{% endblock %}
 {% block page_heading %}تقرير تحليل الامتحان{% endblock %}
 {% block content %}
@@ -23,7 +24,7 @@
         <div class="text-center mb-4">
             <h5>تحليل امتحان: {{ analysis.exam_name }}</h5>
             <p class="text-muted mb-0">المادة: {{ analysis.subject.name|default:'-' }} | الصف: {{ analysis.student_class.name|default:'-' }}</p>
-            <small class="text-muted">بواسطة: {{ analysis.created_by.get_full_name|default:analysis.created_by.username }} | {{ analysis.created_at|date:'Y/m/d' }}</small>
+            <small class="text-muted">بواسطة: {{ analysis.created_by|by_name }} | {{ analysis.created_at|date:'Y/m/d' }}</small>
         </div>
 
         <div class="row g-3 mb-4">
@@ -98,7 +99,7 @@
 
         {% if info %}
         <div class="mt-4 pt-3 border-top d-flex justify-content-between">
-            <p class="mb-0"><strong>المعلم/ة: {{ analysis.created_by.get_full_name|default:analysis.created_by.username }}</strong></p>
+            <p class="mb-0"><strong>المعلم/ة: {{ analysis.created_by|by_name }}</strong></p>
             <p class="mb-0"><strong>المدير: {{ info.principal_name }}</strong></p>
         </div>
         {% endif %}

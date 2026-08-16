@@ -19,3 +19,15 @@ def arabic_month(value):
     if not value:
         return ''
     return ARABIC_MONTHS[value.month - 1]
+
+
+@register.filter
+def by_name(value, fallback='---'):
+    """يعرض اسم المستخدم بأمان حتى لو كان الحساب محذوفاً (None)."""
+    if value is None:
+        return fallback
+    name = (getattr(value, 'get_full_name', None) or (lambda: ''))() or ''
+    name = name.strip()
+    if not name:
+        name = getattr(value, 'username', '')
+    return name or fallback

@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}تقرير الصف{% endblock %}
 {% block page_heading %}تقرير الصف: {{ class_obj.name }}{% endblock %}
 {% block content %}
@@ -60,7 +61,7 @@
                         <td>{{ lvl.student.full_name }}</td>
                         <td>{{ lvl.subject.name|default:"-" }}</td>
                         <td><span class="badge bg-{% if lvl.level == 'excellent' %}success{% elif lvl.level == 'very_good' %}info{% elif lvl.level == 'good' %}primary{% elif lvl.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ lvl.get_level_display }}</span></td>
-                        <td>{{ lvl.created_by.get_full_name|default:lvl.created_by.username }}</td>
+                        <td>{{ lvl.created_by|by_name }}</td>
                         <td>{{ lvl.created_at|date:"Y-m-d" }}</td>
                     </tr>
                     {% endfor %}

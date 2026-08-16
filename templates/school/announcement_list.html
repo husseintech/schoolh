@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}الإعلانات{% endblock %}
 {% block page_heading %}الإعلانات{% endblock %}
 {% block content %}
@@ -16,7 +17,7 @@
                         <h5 class="card-title mb-1">{{ a.title }}</h5>
                         <p class="card-text">{{ a.content }}</p>
                         <small class="text-muted">
-                            <i class="bi bi-person"></i> {{ a.created_by.get_full_name|default:a.created_by.username }} |
+                            <i class="bi bi-person"></i> {{ a.created_by|by_name }} |
                             <i class="bi bi-calendar"></i> {{ a.created_at|date:"Y-m-d H:i" }} |
                             {% if a.is_active %}<span class="badge bg-success">نشط</span>{% else %}<span class="badge bg-secondary">غير نشط</span>{% endif %}
                         </small>

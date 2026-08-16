@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}ملاحظات المعلم{% endblock %}
 {% block page_heading %}ملاحظات المعلم{% endblock %}
 {% block content %}
@@ -27,7 +28,7 @@
             <div class="list-group-item">
                 <div class="d-flex justify-content-between">
                     <small class="text-muted">{{ note.created_at|date:"Y-m-d H:i" }}</small>
-                    <small class="text-muted">بواسطة: {{ note.created_by.get_full_name|default:note.created_by.username }}</small>
+                    <small class="text-muted">بواسطة: {{ note.created_by|by_name }}</small>
                 </div>
                 <p class="mb-0 mt-1">{{ note.content }}</p>
             </div>

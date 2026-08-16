@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}تقرير الطالب{% endblock %}
 {% block page_heading %}تقرير الطالب{% endblock %}
 {% block content %}
@@ -115,7 +116,7 @@
                     <td>{{ n.created_at|date:"Y-m-d" }}</td>
                     <td><span class="badge bg-info">{{ n.note_type }}</span></td>
                     <td>{{ n.content }}</td>
-                    <td>{{ n.created_by.first_name|default:n.created_by.username }}</td>
+                    <td>{{ n.created_by|by_name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -147,7 +148,7 @@
                     <td>{{ w.incident_date|date:"Y-m-d" }}</td>
                     <td>{{ w.incident_facts }}</td>
                     <td>{{ w.get_delivery_method_display }}</td>
-                    <td>{{ w.created_by.first_name|default:w.created_by.username }}</td>
+                    <td>{{ w.created_by|by_name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -177,7 +178,7 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ s.summons_date|date:"Y-m-d" }}</td>
                     <td>{{ s.summons_text }}</td>
-                    <td>{{ s.created_by.first_name|default:s.created_by.username }}</td>
+                    <td>{{ s.created_by|by_name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

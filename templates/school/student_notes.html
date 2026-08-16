@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}ملاحظات الطالب{% endblock %}
 {% block page_heading %}ملاحظات الطالب{% endblock %}
 {% block content %}
@@ -38,7 +39,7 @@
                         <td>{{ forloop.counter }}</td>
                         <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% elif note.note_type == 'تحصيل' %}primary{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
                         <td>{{ note.content }}</td>
-                        <td>{{ note.created_by.get_full_name|default:note.created_by.username }}</td>
+                        <td>{{ note.created_by|by_name }}</td>
                         <td>{% if note.is_private %}<span class="badge bg-danger">خاص</span>{% else %}<span class="badge bg-success">عام</span>{% endif %}</td>
                         <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
                     </tr>

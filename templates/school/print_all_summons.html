@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}تقرير جميع استدعاءات أولياء الأمور{% endblock %}
 {% block page_heading %}تقرير جميع استدعاءات أولياء الأمور{% endblock %}
 {% block content %}
@@ -42,7 +43,7 @@
                         <td>{{ s.student.parent_name|default:"-" }}</td>
                         <td>{{ s.summons_date|date:"Y-m-d" }}</td>
                         <td>{{ s.summons_text|truncatewords:15 }}</td>
-                        <td>{{ s.created_by.first_name|default:s.created_by.username }}</td>
+                        <td>{{ s.created_by|by_name }}</td>
                     </tr>
                     {% empty %}
                     <tr>

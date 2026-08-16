@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}مستويات الطلاب{% endblock %}
 {% block page_heading %}مستويات الطلاب{% endblock %}
 {% block content %}
@@ -68,7 +69,7 @@
                             </span>
                         </td>
                         <td>{{ level.notes|truncatewords:10|default:"-" }}</td>
-                        <td>{{ level.created_by.get_full_name|default:level.created_by.username }}</td>
+                        <td>{{ level.created_by|by_name }}</td>
                         <td>{{ level.created_at|date:"Y-m-d" }}</td>
                     </tr>
                     {% empty %}

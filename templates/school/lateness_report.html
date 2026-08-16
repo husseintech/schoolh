@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load school_tags %}
 {% block title %}تقرير التأخيرات{% endblock %}
 {% block page_heading %}تقرير التأخيرات{% endblock %}
 {% block content %}
@@ -52,7 +53,7 @@
                         <td>{{ l.student.student_id }}</td>
                         <td>{{ l.date|date:"Y-m-d" }}</td>
                         <td>{{ l.notes|default:"-" }}</td>
-                        <td>{{ l.created_by.get_full_name|default:l.created_by.username }}</td>
+                        <td>{{ l.created_by|by_name }}</td>
                     </tr>
                     {% empty %}
                     <tr>
