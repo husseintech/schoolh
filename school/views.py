@@ -488,6 +488,8 @@ def student_report(request, student_id):
     notes = Note.objects.filter(student=student).select_related('created_by').order_by('-created_at')
     warnings = student.warnings.all()
     summons = student.summons.all()
+    days_names = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+    absences = [{'date': a.absence_date, 'day': days_names[a.absence_date.weekday()]} for a in student.absences.all().order_by('-absence_date')]
     principal_name = ''
     principal_phone = ''
     if request.user.profile.role == 'admin':
@@ -499,6 +501,7 @@ def student_report(request, student_id):
         'notes': notes,
         'warnings': warnings,
         'summons': summons,
+        'absences': absences,
         'principal_name': principal_name,
         'principal_phone': principal_phone,
     })

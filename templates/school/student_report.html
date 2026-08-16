@@ -96,6 +96,34 @@
 </div>
 
 <div class="card mt-3">
+    <div class="card-header"><i class="bi bi-calendar-x"></i> أيام الغياب ({{ absences|length }})</div>
+    <div class="card-body">
+        {% if absences %}
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>اليوم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in absences %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ a.date|date:"Y-m-d" }}</td>
+                    <td>{{ a.day }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-3">لا يوجد غياب لهذا الطالب. تهانينا!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-3">
     <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات ({{ notes.count }})</div>
     <div class="card-body">
         {% if notes %}
