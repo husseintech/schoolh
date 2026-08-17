@@ -63,4 +63,5 @@ def user_permissions(request):
         'unread_messages_count': unread_messages_count,
         'recent_messages': recent_messages,
         'vapid_public_key': settings.VAPID_PUBLIC_KEY,
+        'word_export': request.GET.get('export') == 'word',
     }
