@@ -124,6 +124,36 @@
 </div>
 
 <div class="card mt-3">
+    <div class="card-header"><i class="bi bi-clock-history"></i> التأخيرات ({{ lateness.count }})</div>
+    <div class="card-body">
+        {% if lateness %}
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>ملاحظات</th>
+                    <th>بواسطة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lt in lateness %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ lt.date|date:"Y-m-d" }}</td>
+                    <td>{{ lt.notes|default:"-" }}</td>
+                    <td>{{ lt.created_by|by_name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-3">لا يوجد تأخير لهذا الطالب. تهانينا!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-3">
     <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات ({{ notes.count }})</div>
     <div class="card-body">
         {% if notes %}
