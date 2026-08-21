@@ -1552,6 +1552,7 @@ def student_level_list(request):
     selected_subject = None
     class_id = request.GET.get('class_id')
     subject_id = request.GET.get('subject_id')
+    level_filter = request.GET.get('level')
 
     if is_teacher:
         classes = teacher.classes.all().order_by('name')
@@ -1589,6 +1590,13 @@ def student_level_list(request):
         else:
             levels_qs = levels_qs.filter(student__student_class=selected_class)
 
+    selected_level = None
+    selected_level_label = None
+    if level_filter and not is_teacher:
+        selected_level = level_filter
+        levels_qs = levels_qs.filter(level=level_filter)
+        selected_level_label = dict(StudentLevel.LEVEL_CHOICES).get(level_filter)
+
     return render(request, 'school/student_level_list.html', {
         'is_teacher': is_teacher,
         'levels': levels_qs,
@@ -1597,6 +1605,8 @@ def student_level_list(request):
         'subjects': subjects,
         'selected_class': selected_class,
         'selected_subject': selected_subject,
+        'selected_level': selected_level,
+        'selected_level_label': selected_level_label,
         'level_choices': StudentLevel.LEVEL_CHOICES,
     })
 

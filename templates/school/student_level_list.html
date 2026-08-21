@@ -15,7 +15,7 @@
     </div>
     <div class="card-body">
         <form method="get" class="row g-3 mb-4 no-print">
-            <div class="col-md-4">
+            <div class="col-md-{% if is_teacher %}4{% else %}3{% endif %}">
                 <label class="form-label">الصف</label>
                 <select name="class_id" class="form-select" onchange="this.form.submit()">
                     <option value="">اختر الصف</option>
@@ -24,7 +24,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-{% if is_teacher %}4{% else %}3{% endif %}">
                 <label class="form-label">المادة</label>
                 <select name="subject_id" class="form-select" onchange="this.form.submit()">
                     <option value="">اختر المادة</option>
@@ -33,7 +33,18 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
+            {% if not is_teacher %}
+            <div class="col-md-3">
+                <label class="form-label">المستوى</label>
+                <select name="level" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل المستويات</option>
+                    {% for val, label in level_choices %}
+                    <option value="{{ val }}" {% if selected_level == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-{% if is_teacher %}4{% else %}3{% endif %} d-flex align-items-end">
                 <a href="{% url 'student_level_list' %}" class="btn btn-outline-secondary w-100">إعادة تعيين</a>
             </div>
         </form>
@@ -95,6 +106,7 @@
             <div class="d-none d-print-block text-center mb-3">
                 <h4>مستويات الطلاب</h4>
                 {% if selected_class %}<h5>{{ selected_class.name }}{% if selected_subject %} - {{ selected_subject.name }}{% endif %}</h5>{% endif %}
+                {% if selected_level_label %}<h6 class="text-secondary">المستوى: {{ selected_level_label }}</h6>{% endif %}
                 <hr>
             </div>
 
