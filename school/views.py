@@ -164,8 +164,12 @@ def dashboard(request):
         teachers_count = Teacher.objects.count()
         pending_agenda = Agenda.objects.filter(is_completed=False).count()
         today = date.today()
+        arabic_months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                         'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+        today_str = f'{today.day} {arabic_months[today.month - 1]} {today.year}'
         today_lateness = StudentLateness.objects.filter(date=today).count()
         today_absence = StudentAbsence.objects.filter(absence_date=today).count()
+        recent_notes = list(Note.objects.select_related('student__student_class', 'created_by').order_by('-created_at')[:6])
         return render(request, 'school/admin_dashboard.html', {
             'students_count': students_count,
             'notes_count': notes_count,
@@ -173,6 +177,8 @@ def dashboard(request):
             'pending_agenda': pending_agenda,
             'today_lateness': today_lateness,
             'today_absence': today_absence,
+            'today_str': today_str,
+            'recent_notes': recent_notes,
             'show_quick_actions': profile.role in ('admin', 'vice_principal'),
         })
     elif profile.role == 'teacher':

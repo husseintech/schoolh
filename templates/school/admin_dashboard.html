@@ -1,138 +1,260 @@
 {% extends 'school/base.html' %}
-{% block title %}لوحة تحكم المدير{% endblock %}
-{% block page_heading %}لوحة تحكم المدير{% endblock %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block page_heading %}لوحة التحكم الرئيسية{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="page-title mb-0">
-        <i class="bi bi-house-door-fill"></i> مرحباً، {{ user.first_name|default:user.username }}
-    </h4>
-</div>
+<style>
+    .dash-hero {
+        background: linear-gradient(120deg, #1f2d3d 0%, #2c3e50 55%, #34495e 100%);
+        border-radius: 18px;
+        padding: 28px 30px;
+        color: #fff;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        box-shadow: 0 12px 30px rgba(31, 45, 61, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+    .dash-hero::after {
+        content: "";
+        position: absolute;
+        left: -40px;
+        bottom: -60px;
+        width: 220px;
+        height: 220px;
+        background: radial-gradient(circle, rgba(52, 152, 219, 0.35), transparent 70%);
+        border-radius: 50%;
+    }
+    .dash-hero-greet { font-size: 0.95rem; color: rgba(255,255,255,0.7); }
+    .dash-hero-name { font-size: 1.9rem; font-weight: 800; margin: 2px 0 6px; letter-spacing: -0.5px; }
+    .dash-hero-date { font-size: 0.9rem; color: rgba(255,255,255,0.75); display: inline-flex; gap: 6px; align-items: center; }
+    .role-badge {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .qa-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 8px; }
+    .qa-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 0.92rem;
+        color: #fff; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .qa-btn:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
+    .qa-primary { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .qa-warning { background: linear-gradient(135deg, #f39c12, #d68910); }
+    .qa-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    .qa-success { background: linear-gradient(135deg, #27ae60, #1e8449); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .kpi-grid .col-6, .kpi-grid .col-xl-4, .fade-up { animation: fadeUp 0.5s ease both; }
+    .kpi-grid .col-6:nth-child(2) { animation-delay: 0.05s; }
+    .kpi-grid .col-6:nth-child(3) { animation-delay: 0.1s; }
+    .kpi-grid .col-6:nth-child(4) { animation-delay: 0.15s; }
+    .kpi-grid .col-6:nth-child(5) { animation-delay: 0.2s; }
+    .kpi-grid .col-6:nth-child(6) { animation-delay: 0.25s; }
+
+    .kpi-card {
+        background: #fff; border-radius: 16px; padding: 18px 20px;
+        display: flex; align-items: center; gap: 14px; height: 100%;
+        border-right: 5px solid var(--accent, #3498db);
+        box-shadow: 0 4px 16px rgba(31, 45, 61, 0.07);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 26px rgba(31, 45, 61, 0.14); }
+    .kpi-icon {
+        width: 54px; height: 54px; border-radius: 14px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; color: #fff;
+        background: var(--accent, #3498db);
+        box-shadow: 0 6px 14px color-mix(in srgb, var(--accent, #3498db) 40%, transparent);
+    }
+    .kpi-value { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #1f2d3d; }
+    .kpi-label { font-size: 0.88rem; color: #7b8794; margin-top: 4px; }
+
+    .panel { background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(31,45,61,0.07); height: 100%; }
+    .panel-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 20px; border-bottom: 1px solid #eef1f5;
+    }
+    .panel-head h5 { margin: 0; font-weight: 700; font-size: 1.05rem; color: #1f2d3d; display: flex; align-items: center; gap: 8px; }
+    .panel-head h5 i { color: #3498db; }
+    .panel-body { padding: 18px 20px; }
+
+    .module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (min-width: 768px) { .module-grid { grid-template-columns: repeat(3, 1fr); } }
+    .module-tile {
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        padding: 20px 12px; border-radius: 14px; text-align: center;
+        background: #f7f9fc; color: #1f2d3d; text-decoration: none;
+        border: 1px solid #eef1f5; transition: all 0.18s ease;
+    }
+    .module-tile:hover { background: #fff; transform: translateY(-3px); box-shadow: 0 10px 22px rgba(31,45,61,0.12); color: #1f2d3d; border-color: #d6e4f0; }
+    .module-tile i { font-size: 1.6rem; color: var(--mc, #3498db); }
+    .module-tile span { font-size: 0.85rem; font-weight: 600; }
+
+    .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f2f5; }
+    .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .activity-avatar {
+        width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+        background: linear-gradient(135deg, #3498db, #2980b9); color: #fff;
+        display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+    .activity-body { flex: 1; min-width: 0; }
+    .activity-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .activity-title { font-weight: 700; color: #1f2d3d; font-size: 0.92rem; }
+    .activity-text { color: #5b6675; font-size: 0.85rem; margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .activity-meta { color: #9aa5b1; font-size: 0.75rem; }
+    .note-type { background: #eaf2fb; color: #2c6db5; font-size: 0.7rem; font-weight: 600; }
+    .empty-soft { text-align: center; color: #9aa5b1; padding: 30px 10px; }
+    .empty-soft i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.5; }
+</style>
+
+<!-- Hero -->
+<section class="dash-hero">
+    <div>
+        <div class="dash-hero-greet">مرحباً بعودتك،</div>
+        <h2 class="dash-hero-name">{{ user.first_name|default:user.username }}</h2>
+        <div class="dash-hero-date"><i class="bi bi-calendar3"></i> {{ today_str }}</div>
+    </div>
+    <div class="role-badge"><i class="bi bi-shield-check"></i> لوحة الإدارة</div>
+</section>
 
 {% if show_quick_actions %}
-<div class="d-flex flex-wrap gap-2 mb-4">
-    <a href="{% url 'student_list' %}" class="btn btn-primary"><i class="bi bi-people-fill"></i> جميع الطلاب</a>
-    <a href="{% url 'lateness_list' %}" class="btn btn-warning text-dark"><i class="bi bi-clock-history"></i> تأخيرات الطلاب</a>
-    <a href="{% url 'absence_list' %}" class="btn btn-danger"><i class="bi bi-person-x-fill"></i> غياب الطلاب</a>
-</div>
+<section class="qa-row">
+    <a class="qa-btn qa-primary" href="{% url 'student_list' %}"><i class="bi bi-people-fill"></i> جميع الطلاب</a>
+    <a class="qa-btn qa-warning" href="{% url 'lateness_list' %}"><i class="bi bi-clock-history"></i> تأخيرات الطلاب</a>
+    <a class="qa-btn qa-danger" href="{% url 'absence_list' %}"><i class="bi bi-person-x-fill"></i> غياب الطلاب</a>
+    <a class="qa-btn qa-success" href="{% url 'add_student' %}"><i class="bi bi-person-plus-fill"></i> إضافة طالب</a>
+</section>
 {% endif %}
 
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card stat-card stat-blue">
-            <div class="card-body">
-                <div class="number">{{ students_count }}</div>
-                <div class="label">إجمالي الطلاب</div>
+<!-- KPI Cards -->
+<section class="row g-3 g-xl-4 kpi-grid mt-2">
+    <div class="col-6 col-xl-4">
+        <div class="kpi-card" style="--accent:#3498db;">
+            <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value">{{ students_count }}</div>
+                <div class="kpi-label">إجمالي الطلاب</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card stat-green">
-            <div class="card-body">
-                <div class="number">{{ teachers_count }}</div>
-                <div class="label">إجمالي المعلمين</div>
+    <div class="col-6 col-xl-4">
+        <div class="kpi-card" style="--accent:#27ae60;">
+            <div class="kpi-icon"><i class="bi bi-person-badge-fill"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value">{{ teachers_count }}</div>
+                <div class="kpi-label">إجمالي المعلمين</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card stat-orange">
-            <div class="card-body">
-                <div class="number">{{ notes_count }}</div>
-                <div class="label">إجمالي الملاحظات</div>
+    <div class="col-6 col-xl-4">
+        <div class="kpi-card" style="--accent:#f39c12;">
+            <div class="kpi-icon"><i class="bi bi-sticky-fill"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value">{{ notes_count }}</div>
+                <div class="kpi-label">إجمالي الملاحظات</div>
             </div>
         </div>
     </div>
-</div>
+    <div class="col-6 col-xl-4">
+        <div class="kpi-card" style="--accent:#17a2b8;">
+            <div class="kpi-icon"><i class="bi bi-list-check"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value">{{ pending_agenda }}</div>
+                <div class="kpi-label">مهام الأجندة المعلقة</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-4">
+        <div class="kpi-card" style="--accent:#e67e22;">
+            <div class="kpi-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value">{{ today_lateness }}</div>
+                <div class="kpi-label">تأخيرات اليوم</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-4">
+        <div class="kpi-card" style="--accent:#e74c3c;">
+            <div class="kpi-icon"><i class="bi bi-person-x-fill"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value">{{ today_absence }}</div>
+                <div class="kpi-label">غياب اليوم</div>
+            </div>
+        </div>
+    </div>
+</section>
 
-<div class="row g-4 mb-4">
-        <div class="col-md-6">
-            <div class="card stat-card stat-teal">
-                <div class="card-body">
-                    <div class="number">{{ pending_agenda }}</div>
-                    <div class="label">مهام الأجندة المعلقة</div>
-                </div>
+<!-- Lower Section -->
+<div class="row g-4 mt-1">
+    <div class="col-lg-8">
+        <div class="panel">
+            <div class="panel-head">
+                <h5><i class="bi bi-grid-1x2-fill"></i> الوحدات الإدارية</h5>
+                <a href="{% url 'reports_overview' %}" class="btn btn-sm btn-light"><i class="bi bi-bar-chart-fill"></i> التقارير</a>
             </div>
-        </div>
-    </div>
-
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card stat-card stat-orange">
-            <div class="card-body">
-                <div class="number">{{ today_lateness }}</div>
-                <div class="label">تأخيرات اليوم</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card stat-card stat-red">
-            <div class="card-body">
-                <div class="number">{{ today_absence }}</div>
-                <div class="label">غياب اليوم</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-people-fill" style="font-size: 2rem; color: #3498db;"></i>
-                <h5 class="mt-2">إدارة الطلاب</h5>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="{% url 'student_list' %}" class="btn btn-outline-primary">عرض الطلاب</a>
-                    <a href="{% url 'add_student' %}" class="btn btn-primary">إضافة طالب جديد</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-person-badge-fill" style="font-size: 2rem; color: #27ae60;"></i>
-                <h5 class="mt-2">إدارة المعلمين</h5>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="{% url 'teacher_list' %}" class="btn btn-outline-success">عرض المعلمين</a>
-                    <a href="{% url 'add_teacher' %}" class="btn btn-success">إضافة معلم جديد</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-bar-chart-fill" style="font-size: 2rem; color: #e74c3c;"></i>
-                <h5 class="mt-2">التقارير</h5>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="{% url 'reports_overview' %}" class="btn btn-outline-danger">نظرة عامة</a>
-                    <a href="{% url 'reports' %}" class="btn btn-danger">تقارير الصفوف</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-clipboard2-heart-fill" style="font-size: 2rem; color: #8e44ad;"></i>
-                <h5 class="mt-2">المسح الصحي والاجتماعي</h5>
-                <div class="d-grid gap-2 mt-3">
+            <div class="panel-body">
+                <div class="module-grid">
+                    <a class="module-tile" style="--mc:#3498db;" href="{% url 'student_list' %}">
+                        <i class="bi bi-people-fill"></i><span>إدارة الطلاب</span>
+                    </a>
+                    <a class="module-tile" style="--mc:#27ae60;" href="{% url 'teacher_list' %}">
+                        <i class="bi bi-person-badge-fill"></i><span>إدارة المعلمين</span>
+                    </a>
+                    <a class="module-tile" style="--mc:#e74c3c;" href="{% url 'reports' %}">
+                        <i class="bi bi-bar-chart-fill"></i><span>تقارير الصفوف</span>
+                    </a>
                     {% if 'survey_view' in user_perms %}
-                    <a href="{% url 'survey_stats' %}" class="btn btn-outline-purple">نتائج المسح</a>
-                    <a href="{% url 'survey_report' %}" class="btn btn-outline-secondary mt-1">تقرير الإنجاز</a>
+                    <a class="module-tile" style="--mc:#8e44ad;" href="{% url 'survey_stats' %}">
+                        <i class="bi bi-clipboard2-heart-fill"></i><span>المسح الصحي</span>
+                    </a>
                     {% endif %}
+                    <a class="module-tile" style="--mc:#16a085;" href="{% url 'backup_data' %}">
+                        <i class="bi bi-database-fill-gear"></i><span>أدوات البيانات</span>
+                    </a>
+                    <a class="module-tile" style="--mc:#2c3e50;" href="{% url 'supervisor_visit_list' %}">
+                        <i class="bi bi-person-video3"></i><span>الزيارات</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-database-fill-gear" style="font-size: 2rem; color: #16a085;"></i>
-                <h5 class="mt-2">أدوات البيانات</h5>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="{% url 'backup_data' %}" class="btn btn-outline-info">النسخ الاحتياطي</a>
-                    <a href="{% url 'reset_data' %}" class="btn btn-outline-warning mt-1">تفريغ البيانات (بداية عام)</a>
+    <div class="col-lg-4">
+        <div class="panel">
+            <div class="panel-head">
+                <h5><i class="bi bi-activity"></i> أحدث الملاحظات</h5>
+                <a href="{% url 'note_list' %}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i> الكل</a>
+            </div>
+            <div class="panel-body">
+                {% if recent_notes %}
+                {% for note in recent_notes %}
+                <div class="activity-item">
+                    <div class="activity-avatar">{{ note.student.full_name|first }}</div>
+                    <div class="activity-body">
+                        <div class="activity-top">
+                            <span class="activity-title">{{ note.student.full_name }}</span>
+                            <span class="note-type">{{ note.get_note_type_display }}</span>
+                        </div>
+                        <div class="activity-text">{{ note.content|truncatechars:48 }}</div>
+                        <div class="activity-meta"><i class="bi bi-clock"></i> {{ note.created_at|timesince }}</div>
+                    </div>
                 </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-soft">
+                    <i class="bi bi-inbox"></i>
+                    <div>لا توجد ملاحظات بعد</div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
