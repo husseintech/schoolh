@@ -327,9 +327,22 @@
         }
 
         @media print {
-            .sidebar, .top-bar, .no-print { display: none !important; }
-            .main-content { margin-right: 0 !important; }
+            .sidebar, .top-bar, .no-print, .toast-container, .footer { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+            * {
+                box-shadow: none !important;
+                text-shadow: none !important;
+                filter: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                transform: none !important;
+                transition: none !important;
+                animation: none !important;
+                background-image: none !important;
+            }
+            body { background: #fff !important; }
             .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+            * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
         }
 
         .word-export .sidebar, .word-export .top-bar, .word-export .no-print,
