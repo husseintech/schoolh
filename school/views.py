@@ -164,12 +164,17 @@ def dashboard(request):
         teachers_count = Teacher.objects.count()
         unread_messages = Message.objects.filter(recipient__isnull=True, is_read=False).count()
         pending_agenda = Agenda.objects.filter(is_completed=False).count()
+        today = date.today()
+        today_lateness = StudentLateness.objects.filter(date=today).count()
+        today_absence = StudentAbsence.objects.filter(absence_date=today).count()
         return render(request, 'school/admin_dashboard.html', {
             'students_count': students_count,
             'notes_count': notes_count,
             'teachers_count': teachers_count,
             'unread_messages': unread_messages,
             'pending_agenda': pending_agenda,
+            'today_lateness': today_lateness,
+            'today_absence': today_absence,
             'show_quick_actions': profile.role in ('admin', 'vice_principal'),
         })
     elif profile.role == 'teacher':
