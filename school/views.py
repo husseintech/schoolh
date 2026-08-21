@@ -14,7 +14,7 @@ from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, 
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
-    ParentMessageForm, ClassForm, SubjectForm, StudentSurveyForm)
+    ClassForm, SubjectForm, StudentSurveyForm)
 from .services import send_push
 from .services import send_whatsapp_message
 from .arabic_sort import arabic_sort_key
@@ -162,7 +162,6 @@ def dashboard(request):
         students_count = Student.objects.count()
         notes_count = Note.objects.count()
         teachers_count = Teacher.objects.count()
-        unread_messages = Message.objects.filter(recipient__isnull=True, is_read=False).count()
         pending_agenda = Agenda.objects.filter(is_completed=False).count()
         today = date.today()
         today_lateness = StudentLateness.objects.filter(date=today).count()
@@ -171,7 +170,6 @@ def dashboard(request):
             'students_count': students_count,
             'notes_count': notes_count,
             'teachers_count': teachers_count,
-            'unread_messages': unread_messages,
             'pending_agenda': pending_agenda,
             'today_lateness': today_lateness,
             'today_absence': today_absence,
@@ -1626,18 +1624,6 @@ def exam_analysis_report(request, analysis_id):
 
 
 # ─── Messages ─────────────────────────────────────────────────────────────────
-
-def parent_message(request):
-    if request.method == 'POST':
-        form = ParentMessageForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'تم إرسال رسالتك بنجاح، سيتم مراجعتها من قبل الإدارة')
-            return redirect('home')
-    else:
-        form = ParentMessageForm()
-    return render(request, 'school/parent_message.html', {'form': form})
-
 
 @login_required
 def message_list(request):

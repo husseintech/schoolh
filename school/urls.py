@@ -91,7 +91,6 @@ urlpatterns = [
     path('exam-analysis/<int:analysis_id>/report/', views.exam_analysis_report, name='exam_analysis_report'),
 
     # Messages
-    path('contact/', views.parent_message, name='parent_message'),
     path('messages/', views.message_list, name='message_list'),
     path('messages/send/', views.send_message, name='send_message'),
     path('messages/send/<int:user_id>/', views.send_message, name='send_message_to'),

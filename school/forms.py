@@ -309,19 +309,7 @@ class MessageForm(forms.ModelForm):
         }
 
 
-class ParentMessageForm(forms.ModelForm):
-    class Meta:
-        model = Message
-        fields = ['parent_name', 'parent_phone', 'subject', 'content']
-        labels = {
-            'parent_name': 'اسمك',
-            'parent_phone': 'رقم هاتفك',
-            'subject': 'الموضوع',
-            'content': 'الرسالة',
-        }
-        widgets = {
-            'content': forms.Textarea(attrs={'rows': 5}),
-        }
+
 
 
 class ClassForm(forms.ModelForm):

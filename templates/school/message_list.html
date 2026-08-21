@@ -1,10 +1,10 @@
 {% extends 'school/base.html' %}
-{% block title %}رسائل أولياء الأمور{% endblock %}
-{% block page_heading %}رسائل أولياء الأمور{% endblock %}
+{% block title %}صندوق الوارد{% endblock %}
+{% block page_heading %}صندوق الوارد{% endblock %}
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <i class="bi bi-envelope-fill"></i> رسائل أولياء الأمور ({{ messages_qs.count }})
+        <i class="bi bi-envelope-fill"></i> الرسائل الواردة ({{ messages_qs.count }})
     </div>
     <div class="card-body">
         {% if messages_qs %}
@@ -16,8 +16,7 @@
                         <h6 class="mb-1">{{ msg.subject }}</h6>
                         <p class="mb-1">{{ msg.content|truncatewords:20 }}</p>
                         <small class="text-muted">
-                            <i class="bi bi-person"></i> {% if msg.sender %}{{ msg.sender.username }}{% else %}{{ msg.parent_name }}{% endif %} |
-                            {% if msg.parent_phone %}<i class="bi bi-phone"></i> {{ msg.parent_phone }} |{% endif %}
+                            <i class="bi bi-person"></i> {% if msg.sender %}{{ msg.sender.username }}{% else %}مجهول{% endif %} |
                             <i class="bi bi-clock"></i> {{ msg.created_at|date:"Y-m-d H:i" }}
                             {% if not msg.is_read %}<span class="badge bg-danger">جديد</span>{% endif %}
                         </small>
@@ -31,7 +30,7 @@
         <div class="empty-state">
             <i class="bi bi-envelope-open"></i>
             <h5>لا توجد رسائل</h5>
-            <p class="text-muted">لم يتم استلام أي رسائل من أولياء الأمور بعد</p>
+            <p class="text-muted">لا توجد رسائل واردة حالياً</p>
         </div>
         {% endif %}
     </div>

@@ -443,8 +443,7 @@ class Message(models.Model):
     subject = models.CharField('الموضوع', max_length=200)
     content = models.TextField('المحتوى')
     is_read = models.BooleanField('مقروء', default=False)
-    parent_name = models.CharField('اسم ولي الأمر', max_length=200, blank=True, help_text='يستخدم عند إرسال ولي الأمر')
-    parent_phone = models.CharField('هاتف ولي الأمر', max_length=20, blank=True)
+
     created_at = models.DateTimeField('تاريخ الإرسال', auto_now_add=True)
 
     class Meta:
@@ -453,7 +452,7 @@ class Message(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f'{self.subject} - {self.sender.username if self.sender else self.parent_name or "مجهول"}'
+        return f'{self.subject} - {self.sender.username if self.sender else "مجهول"}'
 
 
 class LessonLink(models.Model):

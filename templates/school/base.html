@@ -588,7 +588,7 @@
         {% endif %}
         {% if 'messages_view' in user_perms %}
         <a href="{% url 'message_list' %}" class="nav-link {% if request.resolver_match.url_name == 'message_list' %}active{% endif %}">
-            <i class="bi bi-envelope-fill"></i> رسائل أولياء الأمور
+            <i class="bi bi-envelope-fill"></i> صندوق الوارد
         </a>
         {% endif %}
         {% if 'messages_send' in user_perms %}
