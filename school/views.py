@@ -293,15 +293,17 @@ def student_list(request):
     elif profile.role == 'teacher':
         try:
             teacher = user.teacher_profile
-            classes = teacher.classes.all()
+            classes = teacher.classes.all().order_by('name')
             students = sort_students(Student.objects.filter(student_class__in=classes).select_related('student_class'))
         except Teacher.DoesNotExist:
             students = Student.objects.none()
+            classes = Class.objects.none()
     else:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
 
-    classes = Class.objects.all().order_by('name')
+    if profile.role == 'admin':
+        classes = Class.objects.all().order_by('name')
     return render(request, 'school/student_list.html', {'students': students, 'classes': classes})
 
 
@@ -1528,38 +1530,74 @@ def add_student_level(request):
 
 @login_required
 def student_level_list(request):
-    if request.user.profile.role == 'admin':
+    user = request.user
+    is_teacher = user.profile.role == 'teacher'
+    if user.profile.role == 'admin':
         levels_qs = StudentLevel.objects.all().select_related('student', 'subject', 'created_by').order_by('-created_at')
-    elif request.user.profile.role == 'teacher':
+    elif is_teacher:
         try:
-            teacher = request.user.teacher_profile
-            levels_qs = StudentLevel.objects.filter(
-                created_by=request.user
-            ).select_related('student', 'subject').order_by('-created_at')
+            teacher = user.teacher_profile
         except Teacher.DoesNotExist:
-            levels_qs = StudentLevel.objects.none()
+            messages.error(request, 'لا يوجد حساب معلم مرتبط بحسابك')
+            return redirect('dashboard')
+        levels_qs = StudentLevel.objects.none()
     else:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
+
     classes = Class.objects.all().order_by('name')
     subjects = Subject.objects.all().order_by('name')
+    students = []
     selected_class = None
     selected_subject = None
     class_id = request.GET.get('class_id')
     subject_id = request.GET.get('subject_id')
+
+    if is_teacher:
+        classes = teacher.classes.all().order_by('name')
+        subjects = teacher.subjects.all().order_by('name')
+
     if class_id and subject_id:
         selected_class = get_object_or_404(Class, id=class_id)
         selected_subject = get_object_or_404(Subject, id=subject_id)
-        levels_qs = levels_qs.filter(student__student_class=selected_class, subject=selected_subject)
+        if is_teacher:
+            if not teacher.classes.filter(id=selected_class.id).exists() or not teacher.subjects.filter(id=selected_subject.id).exists():
+                messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا الصف أو المادة')
+                return redirect('student_level_list')
+            students = sort_students(Student.objects.filter(student_class=selected_class))
+            for s in students:
+                s.current_level = StudentLevel.objects.filter(student=s, subject=selected_subject).first()
+            if request.method == 'POST':
+                for s in students:
+                    lvl = request.POST.get(f'level_{s.id}')
+                    notes = request.POST.get(f'notes_{s.id}', '') or ''
+                    if lvl:
+                        StudentLevel.objects.update_or_create(
+                            student=s, subject=selected_subject,
+                            defaults={'level': lvl, 'notes': notes, 'created_by': request.user},
+                        )
+                messages.success(request, f'تم حفظ مستويات {len(students)} طالب')
+                return redirect(f"{request.path}?class_id={selected_class.id}&subject_id={selected_subject.id}")
+        else:
+            levels_qs = levels_qs.filter(student__student_class=selected_class, subject=selected_subject)
     elif class_id:
         selected_class = get_object_or_404(Class, id=class_id)
-        levels_qs = levels_qs.filter(student__student_class=selected_class)
+        if is_teacher:
+            if not teacher.classes.filter(id=selected_class.id).exists():
+                messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا الصف')
+                return redirect('student_level_list')
+        else:
+            levels_qs = levels_qs.filter(student__student_class=selected_class)
+
     return render(request, 'school/student_level_list.html', {
+        'is_teacher': is_teacher,
         'levels': levels_qs,
+        'students': students,
         'classes': classes,
         'subjects': subjects,
         'selected_class': selected_class,
         'selected_subject': selected_subject,
+        'level_choices': StudentLevel.LEVEL_CHOICES,
     })
 
 

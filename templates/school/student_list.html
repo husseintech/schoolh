@@ -21,7 +21,7 @@
         </div>
     </div>
     <div class="card-body">
-        {% if user.profile.role == 'admin' %}
+        {% if user.profile.role == 'admin' or user.profile.role == 'teacher' %}
         <div class="row mb-3">
             <div class="col-md-4">
                 <select class="form-select" id="classFilter" onchange="filterStudents()">
@@ -32,7 +32,7 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <input type="text" class="form-control" id="searchInput" placeholder="بحث..." onkeyup="filterStudents()">
+                <input type="text" class="form-control" id="searchInput" placeholder="بحث بالاسم أو رقم الهوية..." onkeyup="filterStudents()">
             </div>
         </div>
         {% endif %}

@@ -5,10 +5,12 @@
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-graph-up-arrow"></i> المستويات المسجلة ({{ levels.count }})</span>
+        <span><i class="bi bi-graph-up-arrow"></i> {% if is_teacher %}إدخال مستويات طلابي{% else %}المستويات المسجلة ({{ levels.count }}){% endif %}</span>
         <div>
+            {% if not is_teacher %}
             <button onclick="window.print()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
             <a href="{% url 'add_student_level' %}" class="btn btn-primary btn-sm no-print"><i class="bi bi-plus-lg"></i> إضافة مستوى</a>
+            {% endif %}
         </div>
     </div>
     <div class="card-body">
@@ -16,7 +18,7 @@
             <div class="col-md-4">
                 <label class="form-label">الصف</label>
                 <select name="class_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">كل الصفوف</option>
+                    <option value="">اختر الصف</option>
                     {% for c in classes %}
                     <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
                     {% endfor %}
@@ -25,7 +27,7 @@
             <div class="col-md-4">
                 <label class="form-label">المادة</label>
                 <select name="subject_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">كل المواد</option>
+                    <option value="">اختر المادة</option>
                     {% for s in subjects %}
                     <option value="{{ s.id }}" {% if selected_subject and selected_subject.id == s.id %}selected{% endif %}>{{ s.name }}</option>
                     {% endfor %}
@@ -36,53 +38,108 @@
             </div>
         </form>
 
-        <div class="d-none d-print-block text-center mb-3">
-            <h4>مستويات الطلاب</h4>
-            {% if selected_class %}<h5>{{ selected_class.name }}{% if selected_subject %} - {{ selected_subject.name }}{% endif %}</h5>{% endif %}
-            <hr>
-        </div>
+        {% if is_teacher %}
+            {% if selected_class and selected_subject %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3 no-print">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> حفظ المستويات</button>
+                    <span class="text-muted small ms-2">الصف: <strong>{{ selected_class.name }}</strong> — المادة: <strong>{{ selected_subject.name }}</strong></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>الطالب</th>
+                                <th>الصف</th>
+                                <th>المستوى</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in students %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ s.full_name }}</td>
+                                <td>{{ s.student_class.name|default:"-" }}</td>
+                                <td>
+                                    <select name="level_{{ s.id }}" class="form-select form-select-sm">
+                                        <option value="">-- اختر --</option>
+                                        {% for val, label in level_choices %}
+                                        <option value="{{ val }}" {% if s.current_level and s.current_level.level == val %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="text" name="notes_{{ s.id }}" value="{{ s.current_level.notes|default:'' }}" class="form-control form-control-sm"></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">لا يوجد طلاب في هذا الصف</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-funnel" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                <p class="mt-3">اختر الصف والمادة لعرض طلابك وإدخال مستوياتهم</p>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="d-none d-print-block text-center mb-3">
+                <h4>مستويات الطلاب</h4>
+                {% if selected_class %}<h5>{{ selected_class.name }}{% if selected_subject %} - {{ selected_subject.name }}{% endif %}</h5>{% endif %}
+                <hr>
+            </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>الطالب</th>
-                        <th>الصف</th>
-                        <th>المادة</th>
-                        <th>المستوى</th>
-                        <th>الملاحظات</th>
-                        <th>أضيف بواسطة</th>
-                        <th>التاريخ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for level in levels %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><a href="{% url 'student_detail' level.student.id %}">{{ level.student.full_name }}</a></td>
-                        <td>{{ level.student.student_class.name|default:"-" }}</td>
-                        <td>{{ level.subject.name|default:"-" }}</td>
-                        <td>
-                            <span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">
-                                {{ level.get_level_display }}
-                            </span>
-                        </td>
-                        <td>{{ level.notes|truncatewords:10|default:"-" }}</td>
-                        <td>{{ level.created_by|by_name }}</td>
-                        <td>{{ level.created_at|date:"Y-m-d" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
-                            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
-                            <p class="mt-2">لا توجد مستويات مسجلة</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الطالب</th>
+                            <th>الصف</th>
+                            <th>المادة</th>
+                            <th>المستوى</th>
+                            <th>الملاحظات</th>
+                            <th>أضيف بواسطة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for level in levels %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><a href="{% url 'student_detail' level.student.id %}">{{ level.student.full_name }}</a></td>
+                            <td>{{ level.student.student_class.name|default:"-" }}</td>
+                            <td>{{ level.subject.name|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">
+                                    {{ level.get_level_display }}
+                                </span>
+                            </td>
+                            <td>{{ level.notes|truncatewords:10|default:"-" }}</td>
+                            <td>{{ level.created_by|by_name }}</td>
+                            <td>{{ level.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                                <p class="mt-2">لا توجد مستويات مسجلة</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
     </div>
 </div>
 
