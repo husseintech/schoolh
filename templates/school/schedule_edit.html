@@ -5,6 +5,7 @@
 <div class="card">
     <div class="card-body">
         <div class="row mb-3 align-items-center">
+            {% if not is_teacher %}
             <div class="col-md-5">
                 <label class="form-label fw-bold">اختر المعلم</label>
                 <select class="form-select" id="teacherSelect" onchange="location.href='{% url 'schedule_edit' %}?teacher_id=' + this.value">
@@ -19,6 +20,11 @@
                 <a href="{% url 'schedule_print_classes' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> برامج الصفوف</a>
                 <a href="{% url 'schedule_print_admin' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> الجدول العام</a>
             </div>
+            {% else %}
+            <div class="col-12">
+                <h5 class="mb-0"><i class="bi bi-calendar-week"></i> جدولي الدراسي — {{ teacher.full_name }}</h5>
+            </div>
+            {% endif %}
         </div>
 
         {% if teacher %}

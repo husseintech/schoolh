@@ -2581,37 +2581,51 @@ def schedule_edit(request):
     if not has_perm(request.user, 'schedule', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    teacher_id = request.GET.get('teacher_id', '') or request.POST.get('teacher_id', '')
-    teacher = Teacher.objects.filter(id=teacher_id).first() if teacher_id and teacher_id.isdigit() else None
-    teacher = teacher or Teacher.objects.first()
+    is_teacher = request.user.profile.role == 'teacher'
+    own_teacher = getattr(request.user, 'teacher_profile', None) if is_teacher else None
+    if is_teacher:
+        teacher = own_teacher
+    else:
+        teacher_id = request.GET.get('teacher_id', '') or request.POST.get('teacher_id', '')
+        teacher = Teacher.objects.filter(id=teacher_id).first() if teacher_id and teacher_id.isdigit() else None
+        teacher = teacher or Teacher.objects.first()
     if request.method == 'POST':
         action = request.POST.get('action', '')
-        if action == 'save' and teacher and has_perm(request.user, 'schedule', 'add'):
-            for day in SCHEDULE_DAYS:
-                for period in range(1, SCHEDULE_PERIODS + 1):
-                    subject_id = request.POST.get(f'cell_{day}_{period}_subject', '')
-                    class_id = request.POST.get(f'cell_{day}_{period}_class', '')
-                    entry = TeacherScheduleEntry.objects.filter(teacher=teacher, day=day, period=period).first()
-                    if subject_id or class_id:
-                        TeacherScheduleEntry.objects.update_or_create(
-                            teacher=teacher, day=day, period=period,
-                            defaults={
-                                'subject_id': subject_id or None,
-                                'student_class_id': class_id or None,
-                                'updated_by': request.user,
-                            },
-                        )
-                    elif entry:
-                        entry.delete()
-            messages.success(request, f'تم حفظ جدول {teacher.full_name}')
+        if action == 'save' and has_perm(request.user, 'schedule', 'add'):
+            if is_teacher:
+                teacher = own_teacher
+                if not teacher:
+                    messages.error(request, 'لا يوجد حساب معلم مرتبط بحسابك')
+                    return redirect('schedule_edit')
+            if teacher:
+                for day in SCHEDULE_DAYS:
+                    for period in range(1, SCHEDULE_PERIODS + 1):
+                        subject_id = request.POST.get(f'cell_{day}_{period}_subject', '')
+                        class_id = request.POST.get(f'cell_{day}_{period}_class', '')
+                        entry = TeacherScheduleEntry.objects.filter(teacher=teacher, day=day, period=period).first()
+                        if subject_id or class_id:
+                            TeacherScheduleEntry.objects.update_or_create(
+                                teacher=teacher, day=day, period=period,
+                                defaults={
+                                    'subject_id': subject_id or None,
+                                    'student_class_id': class_id or None,
+                                    'updated_by': request.user,
+                                },
+                            )
+                        elif entry:
+                            entry.delete()
+                messages.success(request, f'تم حفظ جدول {teacher.full_name}')
+        if is_teacher:
+            return redirect('schedule_edit')
         return redirect(f'{request.path}?teacher_id={teacher.id}')
     classes = Class.objects.all().order_by('name')
     subjects = Subject.objects.all().order_by('name')
-    teachers = Teacher.objects.all().order_by('full_name')
+    teachers = [] if is_teacher else Teacher.objects.all().order_by('full_name')
     entries = list(TeacherScheduleEntry.objects.filter(teacher=teacher).select_related('subject', 'student_class')) if teacher else []
     return render(request, 'school/schedule_edit.html', {
         'teachers': teachers,
         'teacher': teacher,
+        'is_teacher': is_teacher,
         'days': SCHEDULE_DAYS,
         'period_range': range(1, SCHEDULE_PERIODS + 1),
         'subjects': subjects,
@@ -2629,8 +2643,13 @@ def schedule_print_cards(request):
     if not has_perm(request.user, 'schedule', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    is_teacher = request.user.profile.role == 'teacher'
+    own_teacher = getattr(request.user, 'teacher_profile', None) if is_teacher else None
     teachers = Teacher.objects.all().order_by('full_name')
     entries = list(TeacherScheduleEntry.objects.all().select_related('teacher', 'subject', 'student_class'))
+    if is_teacher and own_teacher:
+        teachers = [own_teacher]
+        entries = [e for e in entries if e.teacher_id == own_teacher.id]
     return render(request, 'school/schedule_print_cards.html', {
         'teachers': teachers,
         'entries': entries,
@@ -2646,8 +2665,13 @@ def schedule_print_all(request):
     if not has_perm(request.user, 'schedule', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    is_teacher = request.user.profile.role == 'teacher'
+    own_teacher = getattr(request.user, 'teacher_profile', None) if is_teacher else None
     teachers = Teacher.objects.all().order_by('full_name')
     entries = list(TeacherScheduleEntry.objects.all().select_related('teacher', 'subject', 'student_class'))
+    if is_teacher and own_teacher:
+        teachers = [own_teacher]
+        entries = [e for e in entries if e.teacher_id == own_teacher.id]
     return render(request, 'school/schedule_print_all.html', {
         'teachers': teachers,
         'entries': entries,
@@ -2663,8 +2687,12 @@ def schedule_print_classes(request):
     if not has_perm(request.user, 'schedule', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    is_teacher = request.user.profile.role == 'teacher'
+    own_teacher = getattr(request.user, 'teacher_profile', None) if is_teacher else None
     classes = Class.objects.all().order_by('name')
     entries = list(TeacherScheduleEntry.objects.filter(student_class__isnull=False).select_related('teacher', 'subject', 'student_class'))
+    if is_teacher and own_teacher:
+        entries = [e for e in entries if e.teacher_id == own_teacher.id]
     return render(request, 'school/schedule_print_classes.html', {
         'classes': classes,
         'entries': entries,
@@ -2680,8 +2708,12 @@ def schedule_print_admin(request):
     if not has_perm(request.user, 'schedule', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    is_teacher = request.user.profile.role == 'teacher'
+    own_teacher = getattr(request.user, 'teacher_profile', None) if is_teacher else None
     classes = list(Class.objects.all().order_by('name'))
     entries = list(TeacherScheduleEntry.objects.filter(student_class__isnull=False).select_related('teacher', 'subject', 'student_class'))
+    if is_teacher and own_teacher:
+        entries = [e for e in entries if e.teacher_id == own_teacher.id]
     return render(request, 'school/schedule_print_admin.html', {
         'classes': classes,
         'entries': entries,
