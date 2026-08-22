@@ -1,18 +1,18 @@
-{% extends 'school/base.html' %}
+﻿{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}تقرير متابعة المعلمين{% endblock %}
-{% block page_heading %}تقرير متابعة المعلمين{% endblock %}
+{% block title %}طھظ‚ط±ظٹط± ظ…طھط§ط¨ط¹ط© ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†{% endblock %}
+{% block page_heading %}طھظ‚ط±ظٹط± ظ…طھط§ط¨ط¹ط© ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†{% endblock %}
 {% block content %}
 <div class="card mb-4 no-print">
     <div class="card-body">
         <form method="get" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">اختر الشهر</label>
+                <label class="form-label">ط§ط®طھط± ط§ظ„ط´ظ‡ط±</label>
                 <input type="month" name="month" class="form-control" value="{% if not is_all %}{{ month_value }}{% endif %}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-primary">عرض التقرير</button>
-                <a href="{% url 'teacher_followup_report' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %} ms-2">كل المتابعات</a>
+                <button class="btn btn-outline-primary">ط¹ط±ط¶ ط§ظ„طھظ‚ط±ظٹط±</button>
+                <a href="{% url 'teacher_followup_report' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %} ms-2">ظƒظ„ ط§ظ„ظ…طھط§ط¨ط¹ط§طھ</a>
             </div>
         </form>
     </div>
@@ -23,13 +23,13 @@
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -39,8 +39,8 @@
         <hr>
         {% endif %}
         <div class="text-center mb-4">
-            <h5>سجل متابعة المعلمين للأمور الشهرية</h5>
-            <p class="text-muted">{% if is_all %}جميع متابعات المعلمين منذ بداية التسجيل{% else %}شهر {{ month_label }}{% endif %} — إجمالي متابعات: {{ followups|length }}</p>
+            <h5>ط³ط¬ظ„ ظ…طھط§ط¨ط¹ط© ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ظ„ظ„ط£ظ…ظˆط± ط§ظ„ط´ظ‡ط±ظٹط©</h5>
+            <p class="text-muted">{% if is_all %}ط¬ظ…ظٹط¹ ظ…طھط§ط¨ط¹ط§طھ ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ظ…ظ†ط° ط¨ط¯ط§ظٹط© ط§ظ„طھط³ط¬ظٹظ„{% else %}ط´ظ‡ط± {{ month_label }}{% endif %} â€” ط¥ط¬ظ…ط§ظ„ظٹ ظ…طھط§ط¨ط¹ط§طھ: {{ followups|length }}</p>
         </div>
         {% if followups %}
         <div class="table-responsive">
@@ -48,14 +48,14 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
-                        <th>اسم المعلم</th>
-                        <th>تاريخ المتابعة</th>
-                        <th>التحضير</th>
-                        <th>العلامات</th>
-                        <th>المتابعة</th>
-                        <th>الخطط</th>
-                        <th>دفتر الغياب</th>
-                        <th>الملاحظات العامة</th>
+                        <th>ط§ط³ظ… ط§ظ„ظ…ط¹ظ„ظ…</th>
+                        <th>طھط§ط±ظٹط® ط§ظ„ظ…طھط§ط¨ط¹ط©</th>
+                        <th>ط§ظ„طھط­ط¶ظٹط±</th>
+                        <th>ط§ظ„ط¹ظ„ط§ظ…ط§طھ</th>
+                        <th>ط§ظ„ظ…طھط§ط¨ط¹ط©</th>
+                        <th>ط§ظ„ط®ط·ط·</th>
+                        <th>ط¯ظپطھط± ط§ظ„ط؛ظٹط§ط¨</th>
+                        <th>ط§ظ„ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„ط¹ط§ظ…ط©</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,11 +64,11 @@
                         <td>{{ forloop.counter }}</td>
                         <td><strong>{{ f.teacher.full_name }}</strong></td>
                         <td>{{ f.follow_date|date:'Y-m-d' }}</td>
-                        <td>{% if f.prep_done %}✓{% else %}✗{% endif %}<br><small class="text-muted">{{ f.prep_notes|default:'' }}</small></td>
-                        <td>{% if f.marks_done %}✓{% else %}✗{% endif %}<br><small class="text-muted">{{ f.marks_notes|default:'' }}</small></td>
-                        <td>{% if f.follow_done %}✓{% else %}✗{% endif %}<br><small class="text-muted">{{ f.follow_notes|default:'' }}</small></td>
-                        <td>{% if f.plans_done %}✓{% else %}✗{% endif %}<br><small class="text-muted">{{ f.plans_notes|default:'' }}</small></td>
-                        <td>{% if f.absence_done %}✓{% else %}✗{% endif %}<br><small class="text-muted">{{ f.absence_notes|default:'' }}</small></td>
+                        <td>{% if f.prep_done %}âœ“{% else %}âœ—{% endif %}<br><small class="text-muted">{{ f.prep_notes|default:'' }}</small></td>
+                        <td>{% if f.marks_done %}âœ“{% else %}âœ—{% endif %}<br><small class="text-muted">{{ f.marks_notes|default:'' }}</small></td>
+                        <td>{% if f.follow_done %}âœ“{% else %}âœ—{% endif %}<br><small class="text-muted">{{ f.follow_notes|default:'' }}</small></td>
+                        <td>{% if f.plans_done %}âœ“{% else %}âœ—{% endif %}<br><small class="text-muted">{{ f.plans_notes|default:'' }}</small></td>
+                        <td>{% if f.absence_done %}âœ“{% else %}âœ—{% endif %}<br><small class="text-muted">{{ f.absence_notes|default:'' }}</small></td>
                         <td class="text-start">{{ f.general_notes|linebreaks|default:'---' }}</td>
                     </tr>
                     {% endfor %}
@@ -76,12 +76,12 @@
             </table>
         </div>
         {% else %}
-        <p class="text-muted text-center py-4">لا توجد متابعات مسجلة لهذا الشهر</p>
+        <p class="text-muted text-center py-4">ظ„ط§ طھظˆط¬ط¯ ظ…طھط§ط¨ط¹ط§طھ ظ…ط³ط¬ظ„ط© ظ„ظ‡ط°ط§ ط§ظ„ط´ظ‡ط±</p>
         {% endif %}
     </div>
     <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
-        <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">العودة</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„طھظ‚ط±ظٹط±</button>
+        <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
     </div>
 </div>
 {% endblock %}

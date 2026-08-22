@@ -1,20 +1,20 @@
-{% extends 'school/base.html' %}
+﻿{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}{% if missing_only %}تقرير المعلمين الذين لم تتم زيارتهم بعد{% else %}تقرير برنامج الزيارات{% endif %}{% endblock %}
-{% block page_heading %}{% if missing_only %}تقرير المعلمين الذين لم تتم زيارتهم بعد{% else %}تقرير برنامج الزيارات{% endif %}{% endblock %}
+{% block title %}{% if missing_only %}طھظ‚ط±ظٹط± ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ط§ظ„ط°ظٹظ† ظ„ظ… طھطھظ… ط²ظٹط§ط±طھظ‡ظ… ط¨ط¹ط¯{% else %}طھظ‚ط±ظٹط± ط¨ط±ظ†ط§ظ…ط¬ ط§ظ„ط²ظٹط§ط±ط§طھ{% endif %}{% endblock %}
+{% block page_heading %}{% if missing_only %}طھظ‚ط±ظٹط± ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ط§ظ„ط°ظٹظ† ظ„ظ… طھطھظ… ط²ظٹط§ط±طھظ‡ظ… ط¨ط¹ط¯{% else %}طھظ‚ط±ظٹط± ط¨ط±ظ†ط§ظ…ط¬ ط§ظ„ط²ظٹط§ط±ط§طھ{% endif %}{% endblock %}
 {% block content %}
 <div class="card" id="reportCard">
     <div class="card-body">
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -25,25 +25,25 @@
         {% endif %}
         <div class="text-center mb-4">
             {% if missing_only %}
-            <h5>تقرير المعلمين الذين لم تتم زيارتهم بعد</h5>
-            <p class="text-muted">المعلمون الذين لم تُكتب لهم ملاحظات بعد ولم يحضر موعد زيارتهم</p>
+            <h5>طھظ‚ط±ظٹط± ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ط§ظ„ط°ظٹظ† ظ„ظ… طھطھظ… ط²ظٹط§ط±طھظ‡ظ… ط¨ط¹ط¯</h5>
+            <p class="text-muted">ط§ظ„ظ…ط¹ظ„ظ…ظˆظ† ط§ظ„ط°ظٹظ† ظ„ظ… طھظڈظƒطھط¨ ظ„ظ‡ظ… ظ…ظ„ط§ط­ط¸ط§طھ ط¨ط¹ط¯ ظˆظ„ظ… ظٹط­ط¶ط± ظ…ظˆط¹ط¯ ط²ظٹط§ط±طھظ‡ظ…</p>
             {% else %}
-            <h5>برنامج الزيارات</h5>
+            <h5>ط¨ط±ظ†ط§ظ…ط¬ ط§ظ„ط²ظٹط§ط±ط§طھ</h5>
             {% endif %}
-            <p class="text-muted">إجمالي السجلات: {{ entries|length }} — تاريخ الطباعة: {% now 'Y-m-d' %}</p>
+            <p class="text-muted">ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط³ط¬ظ„ط§طھ: {{ entries|length }} â€” طھط§ط±ظٹط® ط§ظ„ط·ط¨ط§ط¹ط©: {% now 'Y-m-d' %}</p>
         </div>
         {% if entries %}
         <div class="table-responsive">
             <table class="table table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th>الرقم المتسلسل</th>
-                        <th>اسم المعلم</th>
-                        <th>تاريخ الحضور</th>
-                        <th>اليوم</th>
-                        <th>الأيام المتبقية</th>
-                        <th>الحصة</th>
-                        <th>الملاحظات</th>
+                        <th>ط§ظ„ط±ظ‚ظ… ط§ظ„ظ…طھط³ظ„ط³ظ„</th>
+                        <th>ط§ط³ظ… ط§ظ„ظ…ط¹ظ„ظ…</th>
+                        <th>طھط§ط±ظٹط® ط§ظ„ط­ط¶ظˆط±</th>
+                        <th>ط§ظ„ظٹظˆظ…</th>
+                        <th>ط§ظ„ط£ظٹط§ظ… ط§ظ„ظ…طھط¨ظ‚ظٹط©</th>
+                        <th>ط§ظ„ط­طµط©</th>
+                        <th>ط§ظ„ظ…ظ„ط§ط­ط¸ط§طھ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,17 +62,17 @@
             </table>
         </div>
         {% else %}
-        <p class="text-muted text-center">لا توجد سجلات</p>
+        <p class="text-muted text-center">ظ„ط§ طھظˆط¬ط¯ ط³ط¬ظ„ط§طھ</p>
         {% endif %}
         {% if info %}
         <div class="mt-4 pt-3 border-top">
-            <p><strong>المدير: {{ info.principal_name }}</strong></p>
+            <p><strong>ط§ظ„ظ…ط¯ظٹط±: {{ info.principal_name }}</strong></p>
         </div>
         {% endif %}
     </div>
 </div>
 <div class="mt-3 no-print">
-    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
-    <a href="{% url 'visit_program_list' %}" class="btn btn-outline-secondary">العودة</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط©</button>
+    <a href="{% url 'visit_program_list' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
 </div>
 {% endblock %}

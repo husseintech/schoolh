@@ -1,30 +1,30 @@
-{% extends 'school/base.html' %}
+﻿{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}تقرير الاجتماع{% endblock %}
-{% block page_heading %}تقرير الاجتماع{% endblock %}
+{% block title %}طھظ‚ط±ظٹط± ط§ظ„ط§ط¬طھظ…ط§ط¹{% endblock %}
+{% block page_heading %}طھظ‚ط±ظٹط± ط§ظ„ط§ط¬طھظ…ط§ط¹{% endblock %}
 {% block content %}
 {% if info %}
 <div class="row mb-4 no-print">
     <div class="col-md-6">
         <form method="get" class="d-flex gap-2">
-            <input type="text" name="meeting_id" class="form-control" placeholder="رقم الاجتماع" value="{{ meeting.meeting_number|default:'' }}">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> بحث</button>
+            <input type="text" name="meeting_id" class="form-control" placeholder="ط±ظ‚ظ… ط§ظ„ط§ط¬طھظ…ط§ط¹" value="{{ meeting.meeting_number|default:'' }}">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> ط¨ط­ط«</button>
         </form>
     </div>
 </div>
 {% endif %}
 <div class="card" id="reportCard">
     <div class="card-body">
-        <!-- حانوت التقرير -->
+        <!-- ط­ط§ظ†ظˆطھ ط§ظ„طھظ‚ط±ظٹط± -->
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -32,38 +32,38 @@
             </div>
         </div>
         <hr>
-        <!-- عنوان التقرير -->
+        <!-- ط¹ظ†ظˆط§ظ† ط§ظ„طھظ‚ط±ظٹط± -->
         <div class="text-center mb-4">
-            <h5>محضر اجتماع معلمين</h5>
+            <h5>ظ…ط­ط¶ط± ط§ط¬طھظ…ط§ط¹ ظ…ط¹ظ„ظ…ظٹظ†</h5>
         </div>
-        <!-- بيانات الاجتماع -->
+        <!-- ط¨ظٹط§ظ†ط§طھ ط§ظ„ط§ط¬طھظ…ط§ط¹ -->
         <table class="table table-bordered">
             <tr>
-                <td style="width: 50%;"><strong>رقم الاجتماع:</strong> {{ meeting.meeting_number }}</td>
-                <td style="width: 50%;"><strong>التاريخ:</strong> {{ meeting.date|date:"Y-m-d" }}</td>
+                <td style="width: 50%;"><strong>ط±ظ‚ظ… ط§ظ„ط§ط¬طھظ…ط§ط¹:</strong> {{ meeting.meeting_number }}</td>
+                <td style="width: 50%;"><strong>ط§ظ„طھط§ط±ظٹط®:</strong> {{ meeting.date|date:"Y-m-d" }}</td>
             </tr>
             <tr>
-                <td><strong>اليوم:</strong> {{ meeting.day }}</td>
-                <td><strong>الساعة:</strong> {{ meeting.time|time:"H:i" }}</td>
+                <td><strong>ط§ظ„ظٹظˆظ…:</strong> {{ meeting.day }}</td>
+                <td><strong>ط§ظ„ط³ط§ط¹ط©:</strong> {{ meeting.time|time:"H:i" }}</td>
             </tr>
             <tr>
-                <td><strong>النوع:</strong> {{ meeting.meeting_type }}</td>
-                <td><strong>المكان:</strong> {{ meeting.place }}</td>
+                <td><strong>ط§ظ„ظ†ظˆط¹:</strong> {{ meeting.meeting_type }}</td>
+                <td><strong>ط§ظ„ظ…ظƒط§ظ†:</strong> {{ meeting.place }}</td>
             </tr>
         </table>
-        <!-- أهداف الاجتماع -->
+        <!-- ط£ظ‡ط¯ط§ظپ ط§ظ„ط§ط¬طھظ…ط§ط¹ -->
         <div class="mb-3">
-            <h6>أهداف الاجتماع:</h6>
+            <h6>ط£ظ‡ط¯ط§ظپ ط§ظ„ط§ط¬طھظ…ط§ط¹:</h6>
             <p style="line-height: 1.8;">{{ meeting.goals|linebreaks }}</p>
         </div>
-        <!-- محضر الاجتماع -->
+        <!-- ظ…ط­ط¶ط± ط§ظ„ط§ط¬طھظ…ط§ط¹ -->
         <div class="mb-3">
-            <h6>محضر الاجتماع:</h6>
+            <h6>ظ…ط­ط¶ط± ط§ظ„ط§ط¬طھظ…ط§ط¹:</h6>
             <p style="line-height: 1.8;">{{ meeting.minutes|linebreaks }}</p>
         </div>
-        <!-- الحضور -->
+        <!-- ط§ظ„ط­ط¶ظˆط± -->
         <div class="mb-3">
-            <h6>المعلمون الحاضرون:</h6>
+            <h6>ط§ظ„ظ…ط¹ظ„ظ…ظˆظ† ط§ظ„ط­ط§ط¶ط±ظˆظ†:</h6>
             <div style="column-count: 2; column-gap: 40px;">
                 {% for teacher in meeting.attendees.all %}
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; break-inside: avoid;">
@@ -71,19 +71,19 @@
                     <span style="flex: 1; border-bottom: 2px solid #333; height: 1.2em;"></span>
                 </div>
                 {% empty %}
-                <p class="text-muted">لا يوجد</p>
+                <p class="text-muted">ظ„ط§ ظٹظˆط¬ط¯</p>
                 {% endfor %}
             </div>
         </div>
         {% if info %}
         <div class="mt-4 pt-3 border-top">
-            <p><strong>المدير: {{ info.principal_name }}</strong></p>
+            <p><strong>ط§ظ„ظ…ط¯ظٹط±: {{ info.principal_name }}</strong></p>
         </div>
         {% endif %}
     </div>
 </div>
 <div class="mt-3 no-print">
-    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
-    <a href="{% url 'meeting_list' %}" class="btn btn-outline-secondary">العودة</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط©</button>
+    <a href="{% url 'meeting_list' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
 </div>
 {% endblock %}

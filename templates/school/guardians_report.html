@@ -1,20 +1,20 @@
-{% extends 'school/base.html' %}
+﻿{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}تقرير مربي الصفوف{% endblock %}
-{% block page_heading %}تقرير مربي الصفوف{% endblock %}
+{% block title %}طھظ‚ط±ظٹط± ظ…ط±ط¨ظٹ ط§ظ„طµظپظˆظپ{% endblock %}
+{% block page_heading %}طھظ‚ط±ظٹط± ظ…ط±ط¨ظٹ ط§ظ„طµظپظˆظپ{% endblock %}
 {% block content %}
 <div class="card" id="reportCard">
     <div class="card-body">
         {% if info %}
         <div class="row mb-3 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -24,19 +24,19 @@
         <hr>
         {% endif %}
         <div class="text-center mb-4">
-            <h5>تقرير مربي الصفوف</h5>
-            <p class="text-muted">عدد الصفوف: {{ class_rows|length }} — تاريخ الطباعة: {{ today|date:'Y-m-d' }}</p>
+            <h5>طھظ‚ط±ظٹط± ظ…ط±ط¨ظٹ ط§ظ„طµظپظˆظپ</h5>
+            <p class="text-muted">ط¹ط¯ط¯ ط§ظ„طµظپظˆظپ: {{ class_rows|length }} â€” طھط§ط±ظٹط® ط§ظ„ط·ط¨ط§ط¹ط©: {{ today|date:'Y-m-d' }}</p>
         </div>
         {% if class_rows %}
         <div class="table-responsive">
             <table class="table table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th>الرقم</th>
-                        <th>الصف</th>
-                        <th>عدد الطلاب</th>
-                        <th>اسم المربي</th>
-                        <th>هاتف المربي</th>
+                        <th>ط§ظ„ط±ظ‚ظ…</th>
+                        <th>ط§ظ„طµظپ</th>
+                        <th>ط¹ط¯ط¯ ط§ظ„ط·ظ„ط§ط¨</th>
+                        <th>ط§ط³ظ… ط§ظ„ظ…ط±ط¨ظٹ</th>
+                        <th>ظ‡ط§طھظپ ط§ظ„ظ…ط±ط¨ظٹ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,7 +45,7 @@
                         <td>{{ row.num }}</td>
                         <td><strong>{{ row.name }}</strong></td>
                         <td>{{ row.students_count }}</td>
-                        <td>{% if row.guardian %}{{ row.guardian.full_name }}{% else %}<span class="text-danger">بدون مربي</span>{% endif %}</td>
+                        <td>{% if row.guardian %}{{ row.guardian.full_name }}{% else %}<span class="text-danger">ط¨ط¯ظˆظ† ظ…ط±ط¨ظٹ</span>{% endif %}</td>
                         <td dir="ltr">{% if row.guardian %}{{ row.guardian.phone|default:'---' }}{% else %}---{% endif %}</td>
                     </tr>
                     {% endfor %}
@@ -53,11 +53,11 @@
             </table>
         </div>
         {% else %}
-        <p class="text-muted text-center py-4">لا توجد صفوف دراسية بعد</p>
+        <p class="text-muted text-center py-4">ظ„ط§ طھظˆط¬ط¯ طµظپظˆظپ ط¯ط±ط§ط³ظٹط© ط¨ط¹ط¯</p>
         {% endif %}
         {% if unassigned %}
         <div class="mt-4">
-            <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> معلمون لم يُخصص لهم صف بعد ({{ unassigned|length }})</h6>
+            <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> ظ…ط¹ظ„ظ…ظˆظ† ظ„ظ… ظٹظڈط®طµطµ ظ„ظ‡ظ… طµظپ ط¨ط¹ط¯ ({{ unassigned|length }})</h6>
             <ul class="mb-0">
                 {% for t in unassigned %}
                 <li>{{ t.full_name }}{% if t.phone %} - <span dir="ltr">{{ t.phone }}</span>{% endif %}</li>
@@ -67,13 +67,13 @@
         {% endif %}
         {% if info %}
         <div class="mt-4 pt-3 border-top">
-            <p><strong>المدير: {{ info.principal_name }}</strong></p>
+            <p><strong>ط§ظ„ظ…ط¯ظٹط±: {{ info.principal_name }}</strong></p>
         </div>
         {% endif %}
     </div>
 </div>
 <div class="mt-3 no-print">
-    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
-    <a href="{% url 'guardian_assign' %}" class="btn btn-outline-secondary">العودة</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط©</button>
+    <a href="{% url 'guardian_assign' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
 </div>
 {% endblock %}

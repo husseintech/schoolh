@@ -1,14 +1,14 @@
-{% extends 'school/base.html' %}
-{% block title %}سجل الوارد{% endblock %}
-{% block page_heading %}سجل الوارد - السكرتير{% endblock %}
+﻿{% extends 'school/base.html' %}
+{% block title %}ط³ط¬ظ„ ط§ظ„ظˆط§ط±ط¯{% endblock %}
+{% block page_heading %}ط³ط¬ظ„ ط§ظ„ظˆط§ط±ط¯ - ط§ظ„ط³ظƒط±طھظٹط±{% endblock %}
 {% block content %}
 
 <div class="card mb-4 no-print">
-    <div class="card-header"><i class="bi bi-inbox-fill"></i> إدخال وارد جديد</div>
+    <div class="card-header"><i class="bi bi-inbox-fill"></i> ط¥ط¯ط®ط§ظ„ ظˆط§ط±ط¯ ط¬ط¯ظٹط¯</div>
     <div class="card-body">
         <form method="get" class="row g-2 mb-3 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">العام الدراسي</label>
+                <label class="form-label">ط§ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ</label>
                 <select name="year" class="form-select" onchange="this.form.submit()">
                     {% for y in years %}
                     <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
@@ -16,45 +16,45 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-outline-primary">عرض السجل</button>
+                <button type="submit" class="btn btn-outline-primary">ط¹ط±ط¶ ط§ظ„ط³ط¬ظ„</button>
             </div>
         </form>
         <form method="post" class="row g-3">
             {% csrf_token %}
             <div class="col-md-4">
-                <label class="form-label">العام الدراسي</label>
+                <label class="form-label">ط§ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ</label>
                 <input type="text" name="academic_year" class="form-control" value="{{ year }}" dir="ltr">
             </div>
             <div class="col-md-4">
-                <label class="form-label">رقم الوارد</label>
+                <label class="form-label">ط±ظ‚ظ… ط§ظ„ظˆط§ط±ط¯</label>
                 <input type="text" name="number" class="form-control" required dir="ltr">
             </div>
             <div class="col-md-4">
-                <label class="form-label">التاريخ</label>
+                <label class="form-label">ط§ظ„طھط§ط±ظٹط®</label>
                 <input type="date" name="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">النوع</label>
+                <label class="form-label">ط§ظ„ظ†ظˆط¹</label>
                 <input type="text" name="letter_type" class="form-control">
             </div>
             <div class="col-md-4">
-                <label class="form-label">الجهة الصادرة</label>
+                <label class="form-label">ط§ظ„ط¬ظ‡ط© ط§ظ„طµط§ط¯ط±ط©</label>
                 <input type="text" name="source_entity" class="form-control">
             </div>
             <div class="col-md-4">
-                <label class="form-label">المرفقات</label>
+                <label class="form-label">ط§ظ„ظ…ط±ظپظ‚ط§طھ</label>
                 <input type="text" name="attachments" class="form-control">
             </div>
             <div class="col-md-8">
-                <label class="form-label">الموضوع</label>
+                <label class="form-label">ط§ظ„ظ…ظˆط¶ظˆط¹</label>
                 <input type="text" name="subject" class="form-control">
             </div>
             <div class="col-md-4">
-                <label class="form-label">رقم الملف</label>
+                <label class="form-label">ط±ظ‚ظ… ط§ظ„ظ…ظ„ظپ</label>
                 <input type="text" name="file_number" class="form-control" dir="ltr">
             </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة الوارد</button>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> ط¥ط¶ط§ظپط© ط§ظ„ظˆط§ط±ط¯</button>
             </div>
         </form>
     </div>
@@ -62,20 +62,20 @@
 
 <div class="card">
     <div class="card-body" id="reportArea">
-        <h2 class="text-center fw-bold mb-1" style="font-size: 1.6rem;">سجل الوارد للعام الدراسي {{ year }}</h2>
-        <p class="text-start mb-2" style="font-size: 1rem;">اسم النموذج: سجل الوارد</p>
+        <h2 class="text-center fw-bold mb-1" style="font-size: 1.6rem;">ط³ط¬ظ„ ط§ظ„ظˆط§ط±ط¯ ظ„ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ {{ year }}</h2>
+        <p class="text-start mb-2" style="font-size: 1rem;">ط§ط³ظ… ط§ظ„ظ†ظ…ظˆط°ط¬: ط³ط¬ظ„ ط§ظ„ظˆط§ط±ط¯</p>
         <div class="table-responsive">
             <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
                 <thead class="table-light">
                     <tr>
-                        <th>رقم الوارد</th>
-                        <th>التاريخ</th>
-                        <th>النوع</th>
-                        <th>الجهة الصادرة</th>
-                        <th>المرفقات</th>
-                        <th>الموضوع</th>
-                        <th>رقم الملف</th>
-                        <th class="no-print">حذف</th>
+                        <th>ط±ظ‚ظ… ط§ظ„ظˆط§ط±ط¯</th>
+                        <th>ط§ظ„طھط§ط±ظٹط®</th>
+                        <th>ط§ظ„ظ†ظˆط¹</th>
+                        <th>ط§ظ„ط¬ظ‡ط© ط§ظ„طµط§ط¯ط±ط©</th>
+                        <th>ط§ظ„ظ…ط±ظپظ‚ط§طھ</th>
+                        <th>ط§ظ„ظ…ظˆط¶ظˆط¹</th>
+                        <th>ط±ظ‚ظ… ط§ظ„ظ…ظ„ظپ</th>
+                        <th class="no-print">ط­ط°ظپ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,12 +90,12 @@
                         <td>{{ l.file_number|default:'---' }}</td>
                         <td class="no-print">
                             <a href="{% url 'incoming_delete' l.id %}" class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('هل أنت متأكد من حذف هذا الوارد؟')"><i class="bi bi-trash"></i></a>
+                               onclick="return confirm('ظ‡ظ„ ط£ظ†طھ ظ…طھط£ظƒط¯ ظ…ظ† ط­ط°ظپ ظ‡ط°ط§ ط§ظ„ظˆط§ط±ط¯طں')"><i class="bi bi-trash"></i></a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">لا توجد واردات مسجلة لهذا العام الدراسي</td>
+                        <td colspan="8" class="text-center text-muted py-4">ظ„ط§ طھظˆط¬ط¯ ظˆط§ط±ط¯ط§طھ ظ…ط³ط¬ظ„ط© ظ„ظ‡ط°ط§ ط§ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -103,7 +103,7 @@
         </div>
     </div>
     <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„طھظ‚ط±ظٹط±</button>
     </div>
 </div>
 {% endblock %}

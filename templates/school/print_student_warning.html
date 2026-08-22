@@ -1,21 +1,21 @@
-{% extends 'school/base.html' %}
+﻿{% extends 'school/base.html' %}
 {% load static %}
 {% load school_tags %}
-{% block title %}إنذار - {{ warning.student.full_name }}{% endblock %}
-{% block page_heading %}تقرير الإنذار{% endblock %}
+{% block title %}ط¥ظ†ط°ط§ط± - {{ warning.student.full_name }}{% endblock %}
+{% block page_heading %}طھظ‚ط±ظٹط± ط§ظ„ط¥ظ†ط°ط§ط±{% endblock %}
 {% block content %}
 <div class="card">
     <div class="card-body" id="reportArea">
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -26,56 +26,56 @@
         {% endif %}
 
         <div class="text-center mb-4">
-            <h4 class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> إنذار رسمي</h4>
-            <p class="text-muted">رقم الإنذار: {{ warning.id }} | تاريخ الحادثة: {{ warning.incident_date|date:"Y/m/d" }}</p>
+            <h4 class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> ط¥ظ†ط°ط§ط± ط±ط³ظ…ظٹ</h4>
+            <p class="text-muted">ط±ظ‚ظ… ط§ظ„ط¥ظ†ط°ط§ط±: {{ warning.id }} | طھط§ط±ظٹط® ط§ظ„ط­ط§ط¯ط«ط©: {{ warning.incident_date|date:"Y/m/d" }}</p>
         </div>
 
         <table class="table table-bordered" style="font-size: 1.05rem;">
             <tr>
-                <th class="col-4 bg-light">اسم الطالب</th>
+                <th class="col-4 bg-light">ط§ط³ظ… ط§ظ„ط·ط§ظ„ط¨</th>
                 <td>{{ warning.student.full_name }}</td>
             </tr>
             <tr>
-                <th class="bg-light">الصف</th>
+                <th class="bg-light">ط§ظ„طµظپ</th>
                 <td>{{ warning.student.student_class.name|default:"-" }}</td>
             </tr>
             <tr>
-                <th class="bg-light">رقم الهوية</th>
+                <th class="bg-light">ط±ظ‚ظ… ط§ظ„ظ‡ظˆظٹط©</th>
                 <td>{{ warning.student.student_id }}</td>
             </tr>
             <tr>
-                <th class="bg-light">ولي الأمر</th>
+                <th class="bg-light">ظˆظ„ظٹ ط§ظ„ط£ظ…ط±</th>
                 <td>{{ warning.student.parent_name|default:"-" }}</td>
             </tr>
             <tr>
-                <th class="bg-light">تاريخ الحادثة</th>
+                <th class="bg-light">طھط§ط±ظٹط® ط§ظ„ط­ط§ط¯ط«ط©</th>
                 <td>{{ warning.incident_date|date:"Y/m/d" }}</td>
             </tr>
             <tr>
-                <th class="bg-light">وقائع الحادثة</th>
+                <th class="bg-light">ظˆظ‚ط§ط¦ط¹ ط§ظ„ط­ط§ط¯ط«ط©</th>
                 <td style="white-space: pre-wrap;">{{ warning.incident_facts }}</td>
             </tr>
             <tr>
-                <th class="bg-light">طريقة تسليم الإنذار</th>
+                <th class="bg-light">ط·ط±ظٹظ‚ط© طھط³ظ„ظٹظ… ط§ظ„ط¥ظ†ط°ط§ط±</th>
                 <td>{{ warning.get_delivery_method_display }}</td>
             </tr>
         </table>
 
         <div class="row mt-5" style="font-size: 1rem;">
             <div class="col-6">
-                <p><strong>توقيع ولي الأمر:</strong></p>
+                <p><strong>طھظˆظ‚ظٹط¹ ظˆظ„ظٹ ط§ظ„ط£ظ…ط±:</strong></p>
                 <div style="height: 60px;"></div>
-                <p class="text-muted">الاسم: ______________________</p>
+                <p class="text-muted">ط§ظ„ط§ط³ظ…: ______________________</p>
             </div>
             <div class="col-6 text-start">
-                <p><strong>مدير المدرسة: {{ info.principal_name|default:'______________' }}</strong></p>
+                <p><strong>ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©: {{ info.principal_name|default:'______________' }}</strong></p>
             </div>
         </div>
-        <p class="text-muted small mt-3">تاريخ الإصدار: {{ warning.created_at|date:"Y/m/d" }} | أصدر بواسطة: {{ warning.created_by|by_name }}</p>
+        <p class="text-muted small mt-3">طھط§ط±ظٹط® ط§ظ„ط¥طµط¯ط§ط±: {{ warning.created_at|date:"Y/m/d" }} | ط£طµط¯ط± ط¨ظˆط§ط³ط·ط©: {{ warning.created_by|by_name }}</p>
     </div>
     <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الإنذار</button>
-        <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">العودة</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„ط¥ظ†ط°ط§ط±</button>
+        <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
     </div>
 </div>
 {% endblock %}
