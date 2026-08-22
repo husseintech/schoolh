@@ -1,24 +1,24 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}ط¨ط±ط§ظ…ط¬ ط§ظ„طµظپظˆظپ{% endblock %}
-{% block page_heading %}ط·ط¨ط§ط¹ط© ط¨ط±ط§ظ…ط¬ ط§ظ„طµظپظˆظپ{% endblock %}
+{% block title %}برامج الصفوف{% endblock %}
+{% block page_heading %}طباعة برامج الصفوف{% endblock %}
 {% block content %}
 <div id="printArea">
     {% if info %}
     <div class="print-header d-flex align-items-center justify-content-between mb-3">
         <div style="width: 120px;">
             {% if info.ministry_logo %}
-            <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 70px; width: auto;">
+            <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 70px; width: auto;">
             {% else %}
-            <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 70px; width: auto;">
+            <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 70px; width: auto;">
             {% endif %}
         </div>
         <div class="text-center">
-            <h5 class="mb-0">{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h5>
-            <div class="small">ط¨ط±ط§ظ…ط¬ ط§ظ„طµظپظˆظپ ط§ظ„ظٹظˆظ…ظٹط©</div>
+            <h5 class="mb-0">{{ info.name_ar|default:'اسم المدرسة' }}</h5>
+            <div class="small">برامج الصفوف اليومية</div>
         </div>
         <div style="width: 120px;" class="text-center">
-            <div class="small">ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©</div>
+            <div class="small">مدير المدرسة</div>
             <div class="fw-bold">{{ info.principal_name|default:'---' }}</div>
         </div>
     </div>
@@ -26,13 +26,13 @@
     {% endif %}
     {% for c in classes %}
     <div class="schedule-card mb-4">
-        <div class="schedule-card-title">ط§ظ„طµظپ {{ c.name }}</div>
+        <div class="schedule-card-title">الصف {{ c.name }}</div>
         <table class="table table-bordered table-sm text-center align-middle mb-0">
             <thead>
                 <tr>
-                    <th class="bg-light">ط§ظ„ظٹظˆظ…</th>
+                    <th class="bg-light">اليوم</th>
                     {% for p in period_range %}
-                    <th class="bg-light">ط­طµط© {{ p }}</th>
+                    <th class="bg-light">حصة {{ p }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -54,12 +54,12 @@
         </table>
     </div>
     {% empty %}
-    <p class="text-muted text-center">ظ„ط§ طھظˆط¬ط¯ طµظپظˆظپ ظ…ط³ط¬ظ„ط©.</p>
+    <p class="text-muted text-center">لا توجد صفوف مسجلة.</p>
     {% endfor %}
 </div>
 <div class="mt-3 no-print">
-    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط©</button>
-    <a href="{% url 'schedule_edit' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+    <a href="{% url 'schedule_edit' %}" class="btn btn-outline-secondary">العودة</a>
 </div>
 <style>
 @media print {

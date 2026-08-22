@@ -1,36 +1,36 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load school_tags %}
-{% block title %}ط³ط¬ظ„ ط§ظ„طµط§ط¯ط±{% endblock %}
-{% block page_heading %}ط³ط¬ظ„ ط§ظ„طµط§ط¯ط± - ط§ظ„ط³ظƒط±طھظٹط±{% endblock %}
+{% block title %}سجل الصادر{% endblock %}
+{% block page_heading %}سجل الصادر - السكرتير{% endblock %}
 {% block content %}
 
 <div class="card mb-4 no-print">
-    <div class="card-header"><i class="bi bi-box-arrow-up"></i> ط¥ط¯ط®ط§ظ„ طµط§ط¯ط± ط¬ط¯ظٹط¯</div>
+    <div class="card-header"><i class="bi bi-box-arrow-up"></i> إدخال صادر جديد</div>
     <div class="card-body">
         <form method="post" class="row g-3">
             {% csrf_token %}
             <div class="col-md-4">
-                <label class="form-label">ط±ظ‚ظ… ط§ظ„ظƒطھط§ط¨</label>
+                <label class="form-label">رقم الكتاب</label>
                 <input type="text" name="book_number" class="form-control" required dir="ltr">
             </div>
             <div class="col-md-4">
-                <label class="form-label">طھط§ط±ظٹط® ط§ظ„ظƒطھط§ط¨</label>
+                <label class="form-label">تاريخ الكتاب</label>
                 <input type="date" name="book_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">ط§ط³ظ… ط§ظ„ط¯ط§ط¦ط±ط© ط§ظ„طµط§ط¯ط± ط§ظ„ظٹظ‡ط§ ط§ظ„ظƒطھط§ط¨</label>
+                <label class="form-label">اسم الدائرة الصادر اليها الكتاب</label>
                 <input type="text" name="department" class="form-control">
             </div>
             <div class="col-md-8">
-                <label class="form-label">ط§ظ„ظ…ظˆط¶ظˆط¹</label>
+                <label class="form-label">الموضوع</label>
                 <input type="text" name="subject" class="form-control">
             </div>
             <div class="col-md-4">
-                <label class="form-label">ط§ظ„ط¬ظ‡ط© ط§ظ„ظ…ط­ط±ط±ط©</label>
+                <label class="form-label">الجهة المحررة</label>
                 <input type="text" name="issuing_entity" class="form-control">
             </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> ط¥ط¶ط§ظپط© ط§ظ„طµط§ط¯ط±</button>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة الصادر</button>
             </div>
         </form>
     </div>
@@ -39,24 +39,24 @@
 <div class="card">
     <div class="card-body" id="reportArea">
         <div style="background: #000; color: #fff; text-align: center; padding: 10px; font-size: 1.4rem; font-weight: 700;">
-            ط³ط¬ظ„ ط§ظ„طµط§ط¯ط± ط§ظ„ط¹ط§ظ…
+            سجل الصادر العام
         </div>
         <div class="table-responsive mt-3">
             <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
                 <thead class="table-light">
                     <tr>
-                        <th>ط±ظ‚ظ… ط§ظ„ظƒطھط§ط¨</th>
-                        <th colspan="3">طھط§ط±ظٹط® ط§ظ„ظƒطھط§ط¨</th>
-                        <th>ط§ط³ظ… ط§ظ„ط¯ط§ط¦ط±ط© ط§ظ„طµط§ط¯ط± ط§ظ„ظٹظ‡ط§ ط§ظ„ظƒطھط§ط¨</th>
-                        <th>ط§ظ„ظ…ظˆط¶ظˆط¹</th>
-                        <th>ط§ظ„ط¬ظ‡ط© ط§ظ„ظ…ط­ط±ط±ط©</th>
-                        <th class="no-print">ط­ط°ظپ</th>
+                        <th>رقم الكتاب</th>
+                        <th colspan="3">تاريخ الكتاب</th>
+                        <th>اسم الدائرة الصادر اليها الكتاب</th>
+                        <th>الموضوع</th>
+                        <th>الجهة المحررة</th>
+                        <th class="no-print">حذف</th>
                     </tr>
                     <tr>
                         <th></th>
-                        <th>ط§ظ„ظٹظˆظ…</th>
-                        <th>ط§ظ„ط´ظ‡ط±</th>
-                        <th>ط§ظ„ط³ظ†ط©</th>
+                        <th>اليوم</th>
+                        <th>الشهر</th>
+                        <th>السنة</th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -75,12 +75,12 @@
                         <td>{{ l.issuing_entity|default:'---' }}</td>
                         <td class="no-print">
                             <a href="{% url 'outgoing_delete' l.id %}" class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('ظ‡ظ„ ط£ظ†طھ ظ…طھط£ظƒط¯ ظ…ظ† ط­ط°ظپ ظ‡ط°ط§ ط§ظ„طµط§ط¯ط±طں')"><i class="bi bi-trash"></i></a>
+                               onclick="return confirm('هل أنت متأكد من حذف هذا الصادر؟')"><i class="bi bi-trash"></i></a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">ظ„ط§ طھظˆط¬ط¯ طµط§ط¯ط±ط§طھ ظ…ط³ط¬ظ„ط© ط¨ط¹ط¯</td>
+                        <td colspan="8" class="text-center text-muted py-4">لا توجد صادرات مسجلة بعد</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -88,7 +88,7 @@
         </div>
     </div>
     <div class="card-footer no-print text-center">
-        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„طھظ‚ط±ظٹط±</button>
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
     </div>
 </div>
 {% endblock %}

@@ -1,18 +1,18 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}ط§ظ„ظ…ط¹ظ„ظ…ظˆظ† ط؛ظٹط± ط§ظ„ظ…طھط§ط¨ظژط¹ظٹظ†{% endblock %}
-{% block page_heading %}ط§ظ„ظ…ط¹ظ„ظ…ظˆظ† ط؛ظٹط± ط§ظ„ظ…طھط§ط¨ظژط¹ظٹظ†{% endblock %}
+{% block title %}المعلمون غير المتابَعين{% endblock %}
+{% block page_heading %}المعلمون غير المتابَعين{% endblock %}
 {% block content %}
 <div class="card mb-4 no-print">
     <div class="card-body">
         <form method="get" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">ط§ط®طھط± ط§ظ„ط´ظ‡ط±</label>
+                <label class="form-label">اختر الشهر</label>
                 <input type="month" name="month" class="form-control" value="{% if not is_all %}{{ month_value }}{% endif %}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-primary">ط¹ط±ط¶ ط§ظ„طھظ‚ط±ظٹط±</button>
-                <a href="{% url 'teacher_followup_missing' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %} ms-2">ظƒظ„ ط§ظ„ط´ظ‡ظˆط±</a>
+                <button class="btn btn-outline-primary">عرض التقرير</button>
+                <a href="{% url 'teacher_followup_missing' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %} ms-2">كل الشهور</a>
             </div>
         </form>
     </div>
@@ -23,13 +23,13 @@
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -39,8 +39,8 @@
         <hr>
         {% endif %}
         <div class="text-center mb-4">
-            <h5>ط§ظ„ظ…ط¹ظ„ظ…ظˆظ† ط؛ظٹط± ط§ظ„ظ…طھط§ط¨ظژط¹ظٹظ†</h5>
-            <p class="text-muted">{% if is_all %}ظ„ظ… ظٹطھظ… ط¥ط¯ط®ط§ظ„ ط£ظٹ ظ…طھط§ط¨ط¹ط© ظ„ظ‡ظ… ظ…ظ†ط° ط¨ط¯ط§ظٹط© ط§ظ„طھط³ط¬ظٹظ„{% else %}ط´ظ‡ط± {{ month_label }} â€” ظ„ظ… ظٹطھظ… ط¥ط¯ط®ط§ظ„ ط£ظٹ ظ…طھط§ط¨ط¹ط© ظ„ظ‡ظ… ظپظٹ ط£ظٹ ظ…ظ† ط§ظ„ط£ظ…ظˆط± ط§ظ„ط´ظ‡ط±ظٹط©{% endif %}</p>
+            <h5>المعلمون غير المتابَعين</h5>
+            <p class="text-muted">{% if is_all %}لم يتم إدخال أي متابعة لهم منذ بداية التسجيل{% else %}شهر {{ month_label }} — لم يتم إدخال أي متابعة لهم في أي من الأمور الشهرية{% endif %}</p>
         </div>
         {% if missing %}
         <div class="table-responsive">
@@ -48,9 +48,9 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
-                        <th>ط§ط³ظ… ط§ظ„ظ…ط¹ظ„ظ…</th>
-                        <th>ط±ظ‚ظ… ط§ظ„ظ‡ظˆظٹط©</th>
-                        <th>ط§ظ„طھط®طµطµ</th>
+                        <th>اسم المعلم</th>
+                        <th>رقم الهوية</th>
+                        <th>التخصص</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -65,17 +65,17 @@
                 </tbody>
             </table>
         </div>
-        <p class="text-center mt-3"><strong>ط¥ط¬ظ…ط§ظ„ظٹ ط؛ظٹط± ط§ظ„ظ…طھط§ط¨ظژط¹ظٹظ†: {{ missing|length }} ظ…ظ† ط£طµظ„ {{ total_teachers }} ظ…ط¹ظ„ظ…ط§ظ‹</strong></p>
+        <p class="text-center mt-3"><strong>إجمالي غير المتابَعين: {{ missing|length }} من أصل {{ total_teachers }} معلماً</strong></p>
         {% else %}
         <div class="text-center py-4">
             <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-            <p class="mt-2">ط¬ظ…ظٹط¹ ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ({{ total_teachers }}) طھظ…طھ ظ…طھط§ط¨ط¹طھظ‡ظ… ظپظٹ ظ‡ط°ط§ ط§ظ„ط´ظ‡ط±</p>
+            <p class="mt-2">جميع المعلمين ({{ total_teachers }}) تمت متابعتهم في هذا الشهر</p>
         </div>
         {% endif %}
     </div>
     <div class="card-footer no-print text-center">
-        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„طھظ‚ط±ظٹط±</button>
-        <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>
 {% endblock %}

@@ -1,7 +1,7 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}ط¥ط¹ظ„ط§ظ† ط²ظٹط§ط±ط© طھط¨ط§ط¯ظ„ظٹط©{% endblock %}
-{% block page_heading %}ط¥ط¹ظ„ط§ظ† ط²ظٹط§ط±ط© طھط¨ط§ط¯ظ„ظٹط©{% endblock %}
+{% block title %}إعلان زيارة تبادلية{% endblock %}
+{% block page_heading %}إعلان زيارة تبادلية{% endblock %}
 {% block content %}
 
 <div class="card">
@@ -9,13 +9,13 @@
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -26,19 +26,19 @@
         {% endif %}
 
         <div class="text-center mb-4">
-            <h5>ط¥ط¹ظ„ط§ظ† ط²ظٹط§ط±ط© طھط¨ط§ط¯ظ„ظٹط© ط¨ظٹظ† ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†</h5>
-            <p class="text-muted">ط¥ط¹ظ„ط§ظ† طھط¹ظ„ظ‘ظ‚ ط¹ظ„ظ‰ ظ„ظˆط­ط© ط§ظ„ط¥ط¹ظ„ط§ظ†ط§طھ ظپظٹ ط§ظ„ظ…ط¯ط±ط³ط©</p>
+            <h5>إعلان زيارة تبادلية بين المعلمين</h5>
+            <p class="text-muted">إعلان تعلّق على لوحة الإعلانات في المدرسة</p>
         </div>
 
         <div class="row g-4 mb-4" style="font-size: 1.05rem;">
             <div class="col-md-6">
                 <table class="table table-bordered">
                     <tr>
-                        <th class="table-light" style="width: 40%;">ط§ظ„ظ…ط¹ظ„ظ… ط§ظ„ط²ط§ط¦ط±</th>
+                        <th class="table-light" style="width: 40%;">المعلم الزائر</th>
                         <td><strong>{{ visit.visitor.full_name }}</strong></td>
                     </tr>
                     <tr>
-                        <th class="table-light">ط§ظ„ظ…ط¹ظ„ظ… ط§ظ„ظ…ط²ط§ط±</th>
+                        <th class="table-light">المعلم المزار</th>
                         <td><strong>{{ visit.host.full_name }}</strong></td>
                     </tr>
                 </table>
@@ -46,29 +46,29 @@
             <div class="col-md-6">
                 <table class="table table-bordered">
                     <tr>
-                        <th class="table-light" style="width: 40%;">طھط§ط±ظٹط® ط§ظ„ط²ظٹط§ط±ط©</th>
+                        <th class="table-light" style="width: 40%;">تاريخ الزيارة</th>
                         <td><strong>{{ visit.visit_date|date:'Y/m/d' }}</strong></td>
                     </tr>
                     <tr>
-                        <th class="table-light">ط§ظ„طµظپ</th>
+                        <th class="table-light">الصف</th>
                         <td><strong>{{ visit.student_class.name|default:'---' }}</strong></td>
                     </tr>
                     <tr>
-                        <th class="table-light">ط±ظ‚ظ… ط§ظ„ط­طµط©</th>
-                        <td><strong>ط§ظ„ط­طµط© {{ visit.period }}</strong></td>
+                        <th class="table-light">رقم الحصة</th>
+                        <td><strong>الحصة {{ visit.period }}</strong></td>
                     </tr>
                 </table>
             </div>
         </div>
 
         <div class="text-center mt-4">
-            <p class="fw-bold mb-1">ط­ط¶ظˆط± ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„طھط¨ط§ط¯ظ„ظٹط© ط¬ط²ط، ظ…ظ† ط®ط·ط© ط§ظ„طھط·ظˆظٹط± ط§ظ„ظ…ظ‡ظ†ظٹ ظ„ظ„ظ…ط¹ظ„ظ…ظٹظ†</p>
-            <p class="text-muted small">ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط¯ط±ط³ط©</p>
+            <p class="fw-bold mb-1">حضور الزيارات التبادلية جزء من خطة التطوير المهني للمعلمين</p>
+            <p class="text-muted small">إدارة المدرسة</p>
         </div>
     </div>
     <div class="card-footer no-print text-center">
-        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„ط¥ط¹ظ„ط§ظ†</button>
-        <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الإعلان</button>
+        <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>
 {% endblock %}

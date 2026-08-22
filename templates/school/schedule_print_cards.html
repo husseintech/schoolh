@@ -1,6 +1,6 @@
-﻿{% extends 'school/base.html' %}
-{% block title %}ط¨ط±ط§ظ…ط¬ ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† - ط¨ط·ط§ظ‚ط§طھ{% endblock %}
-{% block page_heading %}ط·ط¨ط§ط¹ط© ط¨ط±ط§ظ…ط¬ ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† (ط¨ط·ط§ظ‚ط§طھ ظ„ظ„ظ‚طµ){% endblock %}
+{% extends 'school/base.html' %}
+{% block title %}برامج المعلمين - بطاقات{% endblock %}
+{% block page_heading %}طباعة برامج المعلمين (بطاقات للقص){% endblock %}
 {% block content %}
 <style>
 @page { size: A4 landscape; margin: 8mm; }
@@ -58,13 +58,13 @@
 <div class="cards-grid">
     {% for t in teachers %}
     <div class="schedule-card">
-        <div class="card-title">ط§ظ„ظ…ط¹ظ„ظ…: {{ t.full_name }}</div>
+        <div class="card-title">المعلم: {{ t.full_name }}</div>
         <table>
             <thead>
                 <tr>
-                    <th style="width: 16%;">ط§ظ„ظٹظˆظ…</th>
+                    <th style="width: 16%;">اليوم</th>
                     {% for p in period_range %}
-                    <th>ط­طµط© {{ p }}</th>
+                    <th>حصة {{ p }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -86,11 +86,11 @@
         </table>
     </div>
     {% empty %}
-    <p class="text-muted text-center">ظ„ط§ ظٹظˆط¬ط¯ ظ…ط¹ظ„ظ…ظˆظ† ظ…ط³ط¬ظ„ظˆظ†.</p>
+    <p class="text-muted text-center">لا يوجد معلمون مسجلون.</p>
     {% endfor %}
 </div>
 <div class="mt-3 no-print">
-    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط©</button>
-    <a href="{% url 'schedule_edit' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+    <a href="{% url 'schedule_edit' %}" class="btn btn-outline-secondary">العودة</a>
 </div>
 {% endblock %}

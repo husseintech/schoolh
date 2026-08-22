@@ -1,7 +1,7 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}ظ„ط§ ظ…ط§ظ†ط¹ - {{ obj.student_name }}{% endblock %}
-{% block page_heading %}ظ„ط§ ظ…ط§ظ†ط¹{% endblock %}
+{% block title %}لا مانع - {{ obj.student_name }}{% endblock %}
+{% block page_heading %}لا مانع{% endblock %}
 {% block content %}
 
 <div class="card">
@@ -9,13 +9,13 @@
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -27,19 +27,19 @@
 
         <div class="text-center my-5 px-4" style="font-size: 1.1rem; line-height: 2.5;">
             <p>
-                ط­ط¶ط±ط© ظ…ط¯ظٹط± ظ…ط¯ط±ط³ط© <strong>{{ obj.sending_school }}</strong><br>
-                ظ„ط§ ظ…ط§ظ†ط¹ ظ„ط¯ظٹظ†ط§ ظ…ظ† ظ‚ط¨ظˆظ„ ط§ظ„ط·ط§ظ„ط¨ <strong>{{ obj.student_name }}</strong> ظپظٹ ط§ظ„طµظپ <strong>{{ obj.student_class }}</strong>
+                حضرة مدير مدرسة <strong>{{ obj.sending_school }}</strong><br>
+                لا مانع لدينا من قبول الطالب <strong>{{ obj.student_name }}</strong> في الصف <strong>{{ obj.student_class }}</strong>
             </p>
-            <p class="mt-4">ظˆطھظ‚ط¨ظ„ظˆط§ ظپط§ط¦ظ‚ ط§ظ„ط§ط­طھط±ط§ظ… طŒطŒطŒ</p>
+            <p class="mt-4">وتقبلوا فائق الاحترام ،،،</p>
         </div>
 
         <div class="text-start" style="font-size: 1rem;">
-            <p><strong>ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©: {{ info.principal_name|default:'---' }}</strong></p>
+            <p><strong>مدير المدرسة: {{ info.principal_name|default:'---' }}</strong></p>
         </div>
     </div>
     <div class="card-footer no-print text-center">
-        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ظ„ط§ ظ…ط§ظ†ط¹</button>
-        <a href="{% url 'no_objection_list' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة لا مانع</button>
+        <a href="{% url 'no_objection_list' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>
 {% endblock %}

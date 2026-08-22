@@ -1,21 +1,21 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load static %}
 {% load school_tags %}
-{% block title %}ط§ط³طھط¯ط¹ط§ط، ظˆظ„ظٹ ط£ظ…ط± - {{ summons.student.full_name }}{% endblock %}
-{% block page_heading %}طھظ‚ط±ظٹط± ط§ط³طھط¯ط¹ط§ط، ظˆظ„ظٹ ط§ظ„ط£ظ…ط±{% endblock %}
+{% block title %}استدعاء ولي أمر - {{ summons.student.full_name }}{% endblock %}
+{% block page_heading %}تقرير استدعاء ولي الأمر{% endblock %}
 {% block content %}
 <div class="card">
     <div class="card-body" id="reportArea">
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -26,33 +26,33 @@
         {% endif %}
 
         <div class="text-center mb-4">
-            <h4 class="text-warning"><i class="bi bi-person-lines-fill"></i> ط§ط³طھط¯ط¹ط§ط، ظˆظ„ظٹ ط§ظ„ط£ظ…ط±</h4>
-            <p class="text-muted">ط±ظ‚ظ… ط§ظ„ط§ط³طھط¯ط¹ط§ط،: {{ summons.id }} | طھط§ط±ظٹط® ط§ظ„ط§ط³طھط¯ط¹ط§ط،: {{ summons.summons_date|date:"Y/m/d" }}</p>
+            <h4 class="text-warning"><i class="bi bi-person-lines-fill"></i> استدعاء ولي الأمر</h4>
+            <p class="text-muted">رقم الاستدعاء: {{ summons.id }} | تاريخ الاستدعاء: {{ summons.summons_date|date:"Y/m/d" }}</p>
         </div>
 
         <div class="px-4" style="font-size: 1.15rem; line-height: 2.5;">
             <p>
-                ط­ط¶ط±ط© ظˆظ„ظٹ ط£ظ…ط± ط§ظ„ط·ط§ظ„ط¨ <strong>{{ summons.student.full_name }}</strong> (ط§ظ„طµظپ <strong>{{ summons.student.student_class.name|default:"-" }}</strong>) ط­ظپط¸ظƒظ… ط§ظ„ظ„ظ‡طŒ
+                حضرة ولي أمر الطالب <strong>{{ summons.student.full_name }}</strong> (الصف <strong>{{ summons.student.student_class.name|default:"-" }}</strong>) حفظكم الله،
             </p>
             <p style="white-space: pre-wrap;">{{ summons.summons_text }}</p>
-            <p class="mt-4">ظˆطھظپط¶ظ„ظˆط§ ط¨ظ‚ط¨ظˆظ„ ظپط§ط¦ظ‚ ط§ظ„ط§ط­طھط±ط§ظ… ظˆط§ظ„طھظ‚ط¯ظٹط±طŒطŒطŒ</p>
+            <p class="mt-4">وتفضلوا بقبول فائق الاحترام والتقدير،،،</p>
         </div>
 
         <div class="row mt-4" style="font-size: 1rem;">
             <div class="col-6">
-                <p><strong>طھظˆظ‚ظٹط¹ ظˆظ„ظٹ ط§ظ„ط£ظ…ط±:</strong></p>
+                <p><strong>توقيع ولي الأمر:</strong></p>
                 <div style="height: 60px;"></div>
-                <p class="text-muted">ط§ظ„ط§ط³ظ…: ______________________</p>
+                <p class="text-muted">الاسم: ______________________</p>
             </div>
             <div class="col-6 text-start">
-                <p><strong>ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©: {{ info.principal_name|default:'______________' }}</strong></p>
+                <p><strong>مدير المدرسة: {{ info.principal_name|default:'______________' }}</strong></p>
             </div>
         </div>
-        <p class="text-muted small mt-3">طھط§ط±ظٹط® ط§ظ„ط¥طµط¯ط§ط±: {{ summons.created_at|date:"Y/m/d" }} | ط£طµط¯ط± ط¨ظˆط§ط³ط·ط©: {{ summons.created_by|by_name }}</p>
+        <p class="text-muted small mt-3">تاريخ الإصدار: {{ summons.created_at|date:"Y/m/d" }} | أصدر بواسطة: {{ summons.created_by|by_name }}</p>
     </div>
     <div class="card-footer no-print text-center">
-        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„ط§ط³طھط¯ط¹ط§ط،</button>
-        <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الاستدعاء</button>
+        <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>
 {% endblock %}

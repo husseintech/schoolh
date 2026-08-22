@@ -1,7 +1,7 @@
-﻿{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}
 {% load static %}
-{% block title %}طھظ‚ط±ظٹط± ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„طھط¨ط§ط¯ظ„ظٹط© - ط؛ط±ظپط© ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†{% endblock %}
-{% block page_heading %}طھظ‚ط±ظٹط± ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„طھط¨ط§ط¯ظ„ظٹط© - ط؛ط±ظپط© ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†{% endblock %}
+{% block title %}تقرير الزيارات التبادلية - غرفة المعلمين{% endblock %}
+{% block page_heading %}تقرير الزيارات التبادلية - غرفة المعلمين{% endblock %}
 {% block content %}
 
 <div class="card">
@@ -9,13 +9,13 @@
         {% if info %}
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">ط¯ظˆظ„ط© ظپظ„ط³ط·ظٹظ†<br>ظˆط²ط§ط±ط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… ط§ظ„ط¹ط§ظ„ظٹ<br>ظ…ط¯ظٹط±ظٹط© ط§ظ„طھط±ط¨ظٹط© ظˆط§ظ„طھط¹ظ„ظٹظ… / ظٹط·ط§<br>{{ info.name_ar|default:'ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©' }}</h6>
+                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
             </div>
             <div class="col-2 text-center">
                 {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="ط´ط¹ط§ط± ط§ظ„ظˆط²ط§ط±ط©" style="height: 60px; width: auto;">
+                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
                 {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="ط´ط¹ط§ط± ظپظ„ط³ط·ظٹظ†" style="height: 60px; width: auto;">
+                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
                 {% endif %}
             </div>
             <div class="col-5 text-end" dir="ltr">
@@ -26,21 +26,21 @@
         {% endif %}
 
         <div class="text-center mb-4">
-            <h5>ط¬ط¯ظˆظ„ ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„طھط¨ط§ط¯ظ„ظٹط© ط¨ظٹظ† ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†</h5>
-            <p class="text-muted">ظٹظڈط¹ظ„ظ‘ظ‚ ظ‡ط°ط§ ط§ظ„طھظ‚ط±ظٹط± ظپظٹ ط؛ط±ظپط© ط§ظ„ظ…ط¹ظ„ظ…ظٹظ† ظ„ظ„ط§ط·ظ„ط§ط¹ ط¹ظ„ظ‰ ظ…ظˆط§ط¹ظٹط¯ ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„ظ‚ط§ط¯ظ…ط©</p>
+            <h5>جدول الزيارات التبادلية بين المعلمين</h5>
+            <p class="text-muted">يُعلّق هذا التقرير في غرفة المعلمين للاطلاع على مواعيد الزيارات القادمة</p>
         </div>
 
-        <h6 class="fw-bold mb-3"><i class="bi bi-calendar-event"></i> ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„ظ…ظ‚ط±ط±ط© (ط¨ط§ظ†طھط¸ط§ط± ط§ظ„ظ…طھط§ط¨ط¹ط©)</h6>
+        <h6 class="fw-bold mb-3"><i class="bi bi-calendar-event"></i> الزيارات المقررة (بانتظار المتابعة)</h6>
         <div class="table-responsive">
             <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
                 <thead class="table-light">
                     <tr>
                         <th style="width: 5%;">#</th>
-                        <th>ط§ظ„ظ…ط¹ظ„ظ… ط§ظ„ط²ط§ط¦ط±</th>
-                        <th>ط§ظ„ظ…ط¹ظ„ظ… ط§ظ„ظ…ط²ط§ط±</th>
-                        <th>طھط§ط±ظٹط® ط§ظ„ط²ظٹط§ط±ط©</th>
-                        <th>ط§ظ„طµظپ</th>
-                        <th>ط±ظ‚ظ… ط§ظ„ط­طµط©</th>
+                        <th>المعلم الزائر</th>
+                        <th>المعلم المزار</th>
+                        <th>تاريخ الزيارة</th>
+                        <th>الصف</th>
+                        <th>رقم الحصة</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,7 +55,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-3">ظ„ط§ طھظˆط¬ط¯ ط²ظٹط§ط±ط§طھ ظ…ظ‚ط±ط±ط©</td>
+                        <td colspan="6" class="text-center text-muted py-3">لا توجد زيارات مقررة</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -63,17 +63,17 @@
         </div>
 
         {% if done %}
-        <h6 class="fw-bold mb-3 mt-4"><i class="bi bi-check-circle"></i> ط§ظ„ط²ظٹط§ط±ط§طھ ط§ظ„ظ…ظƒطھظ…ظ„ط©</h6>
+        <h6 class="fw-bold mb-3 mt-4"><i class="bi bi-check-circle"></i> الزيارات المكتملة</h6>
         <div class="table-responsive">
             <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
                 <thead class="table-light">
                     <tr>
                         <th style="width: 5%;">#</th>
-                        <th>ط§ظ„ظ…ط¹ظ„ظ… ط§ظ„ط²ط§ط¦ط±</th>
-                        <th>ط§ظ„ظ…ط¹ظ„ظ… ط§ظ„ظ…ط²ط§ط±</th>
-                        <th>طھط§ط±ظٹط® ط§ظ„ط²ظٹط§ط±ط©</th>
-                        <th>ط§ظ„طµظپ</th>
-                        <th>ط±ظ‚ظ… ط§ظ„ط­طµط©</th>
+                        <th>المعلم الزائر</th>
+                        <th>المعلم المزار</th>
+                        <th>تاريخ الزيارة</th>
+                        <th>الصف</th>
+                        <th>رقم الحصة</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,11 +92,11 @@
         </div>
         {% endif %}
 
-        <p class="text-muted text-center mt-4 small">ط·ظڈط¨ط¹ ط¨طھط§ط±ظٹط® {{ today|date:'Y-m-d' }}</p>
+        <p class="text-muted text-center mt-4 small">طُبع بتاريخ {{ today|date:'Y-m-d' }}</p>
     </div>
     <div class="card-footer no-print text-center">
-        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> ط·ط¨ط§ط¹ط© ط§ظ„طھظ‚ط±ظٹط±</button>
-        <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">ط§ظ„ط¹ظˆط¯ط©</a>
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>
 {% endblock %}
