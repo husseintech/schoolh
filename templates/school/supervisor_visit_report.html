@@ -83,7 +83,7 @@
     </div>
 </div>
 <div class="mt-3 no-print">
-    <button type="button" class="btn btn-primary" onclick="printReport()"><i class="bi bi-printer"></i> طباعة</button>
+    <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
     <a href="{% url 'supervisor_visit_list' %}?teacher_id={{ visit.teacher_id }}" class="btn btn-outline-secondary">العودة</a>
 </div>
 {% endblock %}

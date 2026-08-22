@@ -1,10 +1,10 @@
-{% extends 'school/base.html' %}{% load static %}
+{% extends 'school/base.html' %}
 {% load school_tags %}
 {% block title %}تقرير تحليل الامتحان{% endblock %}
 {% block page_heading %}تقرير تحليل الامتحان{% endblock %}
 {% block content %}
 <div class="d-print-none text-center mb-3">
-    <button type="button" onclick="printReport()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
     <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary ms-1">العودة</a>
 </div>
 
@@ -108,7 +108,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'vendor/chart.js/chart.umd.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var ctx = document.getElementById('passChart');

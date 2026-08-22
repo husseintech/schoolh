@@ -36,9 +36,11 @@ td.cnt { width: 14mm; text-align: center; }
     font-family: Arial, sans-serif; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 @media print { .toolbar { display: none; } }
+.word-export .toolbar { display: none !important; }
+.word-export body { background: #fff; }
 </style>
 </head>
-<body>
+<body{% if word_export %} class="word-export"{% endif %}>
 <div class="bismillah">بسم الله الرحمن الرحيم</div>
 <div class="center">
     <div class="title-frame">
@@ -91,7 +93,8 @@ td.cnt { width: 14mm; text-align: center; }
     </div>
 </div>
 <div class="toolbar">
-    <a href="printReport()">طباعة التقرير</a>
+    <a href="javascript:window.print()">طباعة التقرير</a>
+    <a href="?export=word" style="background:#059669;">تصدير Word</a>
 </div>
 </body>
 </html>

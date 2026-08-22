@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'school.middleware.WordExportMiddleware',
 ]
 
 ROOT_URLCONF = 'school_management.urls'
@@ -146,11 +147,10 @@ STORAGES = {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
-WHITENOISE_MAX_AGE = 31536000
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 

@@ -4,21 +4,11 @@
       "src": "school_management/wsgi.py",
       "use": "@vercel/python",
       "config": { "maxLambdaSize": "15mb" }
-    },
-    {
-      "src": "static/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/(?!static/)(.*)",
+      "src": "/(.*)",
       "dest": "school_management/wsgi.py"
     }
   ]

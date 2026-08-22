@@ -3,7 +3,7 @@
 {% block page_heading %}نتائج المسح الصحي والاجتماعي{% endblock %}
 {% block content %}
 <div class="text-center mb-3 no-print">
-    <button type="button" onclick="printReport()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
     <a href="{% url 'survey_stats_print' 'students' %}" class="btn btn-outline-primary ms-1" target="_blank"><i class="bi bi-list-ol"></i> طباعة قائمة الطلاب</a>
     <a href="{% url 'survey_stats_print' 'groups' %}" class="btn btn-outline-danger ms-1" target="_blank"><i class="bi bi-diagram-3"></i> طباعة التقسيمات</a>
     <a href="{% url 'survey_report' %}" class="btn btn-outline-primary ms-1"><i class="bi bi-table"></i> تقرير الإنجاز (من لم يملأ)</a>

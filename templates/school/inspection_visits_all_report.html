@@ -19,7 +19,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">جميع المعلمين الذين تمت زيارتهم ({{ visits|length }})</h5>
         <div>
-            <button type="button" class="btn btn-danger" onclick="printReport()"><i class="bi bi-printer"></i> طباعة جميع التقارير</button>
+            <button class="btn btn-danger" onclick="window.print()"><i class="bi bi-printer"></i> طباعة جميع التقارير</button>
             <a href="{% url 'inspection_visit_list' %}" class="btn btn-outline-secondary">العودة</a>
         </div>
     </div>

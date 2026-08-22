@@ -1,5 +1,6 @@
 from django.conf import settings
 from .models import has_perm, Notification, Message, SchoolInfo
+from .services import send_visit_reminders
 
 
 def user_permissions(request):
@@ -10,6 +11,7 @@ def user_permissions(request):
     unread_messages_count = 0
     recent_messages = []
     if request.user.is_authenticated:
+        send_visit_reminders()
         modules_actions = [
             ('students', 'view'), ('students', 'add'), ('students', 'edit'),
             ('students', 'delete'), ('students', 'import'), ('students', 'export'),
@@ -61,4 +63,5 @@ def user_permissions(request):
         'unread_messages_count': unread_messages_count,
         'recent_messages': recent_messages,
         'vapid_public_key': settings.VAPID_PUBLIC_KEY,
+        'word_export': request.GET.get('export') == 'word',
     }
