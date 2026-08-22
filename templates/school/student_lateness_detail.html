@@ -6,7 +6,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-clock-history"></i> سجل تأخيرات: {{ student.full_name }} - {{ student.student_id }}</span>
-        <button type="button" onclick="setTimeout(window.print,0)" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+        <button type="button" onclick="printReport()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
     </div>
     <div class="card-body">
         <div class="d-none d-print-block text-center mb-3">

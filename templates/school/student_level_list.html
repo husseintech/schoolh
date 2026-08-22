@@ -8,7 +8,7 @@
         <span><i class="bi bi-graph-up-arrow"></i> {% if is_teacher %}إدخال مستويات طلابي{% else %}المستويات المسجلة ({{ levels.count }}){% endif %}</span>
         <div>
             {% if not is_teacher %}
-            <button type="button" onclick="setTimeout(window.print,0)" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+            <button type="button" onclick="printReport()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
             <a href="{% url 'add_student_level' %}" class="btn btn-primary btn-sm no-print"><i class="bi bi-plus-lg"></i> إضافة مستوى</a>
             {% endif %}
         </div>

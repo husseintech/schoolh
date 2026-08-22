@@ -8,7 +8,7 @@
         <span><i class="bi bi-file-text-fill"></i> تقرير الصف: {{ class_obj.name }}</span>
         <div>
             <a href="{% url 'reports' %}" class="btn btn-outline-secondary btn-sm">جميع الصفوف</a>
-            <button type="button" onclick="setTimeout(window.print,0)" class="btn btn-outline-primary btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+            <button type="button" onclick="printReport()" class="btn btn-outline-primary btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
         </div>
     </div>
     <div class="card-body">

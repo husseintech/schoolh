@@ -4,7 +4,7 @@
 {% block page_heading %}تقرير تحليل الامتحان{% endblock %}
 {% block content %}
 <div class="d-print-none text-center mb-3">
-    <button type="button" onclick="setTimeout(window.print,0)" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <button type="button" onclick="printReport()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
     <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary ms-1">العودة</a>
 </div>
 

@@ -947,5 +947,23 @@
         })();
     </script>
     {% block extra_js %}{% endblock %}
+    <script>
+        function printReport() {
+            try {
+                var w = window.open('', '_blank');
+                if (!w) { window.print(); return; }
+                var styles = document.head.querySelectorAll('style, link[rel="stylesheet"]');
+                w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">');
+                styles.forEach(function (s) { w.document.write(s.outerHTML); });
+                w.document.write('</head><body>');
+                w.document.write(document.body.innerHTML);
+                w.document.close();
+                w.focus();
+                w.print();
+            } catch (e) {
+                window.print();
+            }
+        }
+    </script>
 </body>
 </html>
