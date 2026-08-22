@@ -3,7 +3,7 @@
 {% block page_heading %}تقرير المسح الصحي والاجتماعي{% endblock %}
 {% block content %}
 <div class="text-center mb-3 no-print">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <button type="button" onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
     <a href="{% url 'survey_stats' %}" class="btn btn-primary ms-1"><i class="bi bi-bar-chart-fill"></i> نتائج المسح (إحصاءات)</a>
     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-1">العودة</a>
 </div>

@@ -26,7 +26,7 @@
 </div>
 
 <div class="mb-3 no-print">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> {% if selected_teacher %}طباعة البطاقة{% else %}طباعة جميع البطاقات{% endif %}</button>
+    <button type="button" onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> {% if selected_teacher %}طباعة البطاقة{% else %}طباعة جميع البطاقات{% endif %}</button>
     <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">العودة للمعلمين</a>
 </div>
 

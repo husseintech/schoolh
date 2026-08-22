@@ -3,7 +3,7 @@
 {% block page_heading %}{% if mode == 'students' %}قائمة الطلاب (تقرير){% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
 {% block content %}
 <div class="d-print-none text-center mb-3">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
+    <button type="button" onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
     <a href="{% url 'survey_stats' %}" class="btn btn-outline-secondary ms-1">العودة للنتائج</a>
 </div>
 

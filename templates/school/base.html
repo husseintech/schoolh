@@ -327,8 +327,9 @@
         }
 
         @media print {
-            .sidebar, .top-bar, .no-print, .toast-container, .footer { display: none !important; }
+            .sidebar, .top-bar, .no-print, .toast-container, .footer, .toolbar { display: none !important; }
             .main-content { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+            html, body { width: 100% !important; overflow: visible !important; }
             * {
                 box-shadow: none !important;
                 text-shadow: none !important;
@@ -339,10 +340,15 @@
                 transition: none !important;
                 animation: none !important;
                 background-image: none !important;
+                will-change: auto !important;
+                contain: none !important;
             }
             body { background: #fff !important; }
             .card { box-shadow: none !important; border: 1px solid #ddd !important; }
-            * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            table { border-collapse: separate !important; border-spacing: 0 !important; width: 100% !important; }
+            .table-responsive { overflow: visible !important; }
+            tr, td, th { break-inside: avoid !important; }
+            img { max-width: 100% !important; height: auto !important; }
         }
 
         .select2-container--bootstrap-5 .select2-selection {
