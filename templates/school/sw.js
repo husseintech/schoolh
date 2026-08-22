@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'schoolm-v1';
+const CACHE = 'schoolm-v2';
 const CORE = ['/dashboard/', '/static/pwa/icon-192.png', '/static/pwa/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -17,10 +17,28 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
     const url = new URL(e.request.url);
     if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+    // Static assets are immutable (hashed by WhiteNoise) -> cache-first so the browser
+    // serves them instantly. This is what makes print preview fast on slow connections.
+    if (url.pathname.startsWith('/static/')) {
+        e.respondWith(
+            caches.match(e.request).then((cached) => {
+                if (cached) return cached;
+                return fetch(e.request).then((resp) => {
+                    if (resp.ok) {
+                        const copy = resp.clone();
+                        caches.open(CACHE).then((c) => c.put(e.request, copy));
+                    }
+                    return resp;
+                }).catch(() => cached);
+            })
+        );
+        return;
+    }
+    // Navigations and other requests: network-first with cache fallback (keeps data fresh).
     e.respondWith(
         fetch(e.request)
             .then((resp) => {
-                if (resp.ok && url.pathname.startsWith('/static/')) {
+                if (resp.ok) {
                     const copy = resp.clone();
                     caches.open(CACHE).then((c) => c.put(e.request, copy));
                 }
