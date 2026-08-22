@@ -20,7 +20,7 @@
                         <th>#</th>
                         <th>الاسم</th>
                         <th>رقم الهوية</th>
-                        <th>ولي الأمر</th>
+                        <th>حالة اليوم</th>
                         <th>هاتف ولي الأمر</th>
                         <th>عدد الملاحظات</th>
                     </tr>
@@ -31,7 +31,7 @@
                         <td>{{ forloop.counter }}</td>
                         <td><a href="{% url 'student_detail' s.id %}">{{ s.full_name }}</a></td>
                         <td>{{ s.student_id }}</td>
-                        <td>{{ s.parent_name|default:"-" }}</td>
+                        <td>{% if s.id in absent_today_ids %}غائب اليوم{% else %}حاضر{% endif %}</td>
                         <td>{{ s.parent_phone|default:"-" }}</td>
                         <td>{{ s.notes.count }}</td>
                     </tr>
@@ -42,33 +42,6 @@
             </table>
         </div>
 
-        {% if levels %}
-        <h5 class="mt-4 mb-3">المستويات المسجلة</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th>الطالب</th>
-                        <th>المادة</th>
-                        <th>المستوى</th>
-                        <th>بواسطة</th>
-                        <th>التاريخ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lvl in levels %}
-                    <tr>
-                        <td>{{ lvl.student.full_name }}</td>
-                        <td>{{ lvl.subject.name|default:"-" }}</td>
-                        <td><span class="badge bg-{% if lvl.level == 'excellent' %}success{% elif lvl.level == 'very_good' %}info{% elif lvl.level == 'good' %}primary{% elif lvl.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ lvl.get_level_display }}</span></td>
-                        <td>{{ lvl.created_by|by_name }}</td>
-                        <td>{{ lvl.created_at|date:"Y-m-d" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

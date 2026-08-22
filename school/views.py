@@ -1846,13 +1846,17 @@ def class_report(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     students = sort_students(Student.objects.filter(student_class=class_obj))
     notes = Note.objects.filter(student__student_class=class_obj).order_by('-created_at')
-    levels = sort_by_student_name(StudentLevel.objects.filter(student__student_class=class_obj).select_related('subject'))
+    today = date.today()
+    absent_today_ids = list(StudentAbsence.objects.filter(
+        absence_date=today, student__student_class=class_obj
+    ).values_list('student_id', flat=True))
 
     context = {
         'class_obj': class_obj,
         'students': students,
         'notes_count': notes.count(),
-        'levels': levels,
+        'today': today,
+        'absent_today_ids': absent_today_ids,
 }
     return render(request, 'school/class_report.html', context)
 
