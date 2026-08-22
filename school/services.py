@@ -30,6 +30,7 @@ def send_push(user, title, body='', url='/'):
                 vapid_private_key=settings.VAPID_PRIVATE_KEY,
                 vapid_claims={'sub': settings.VAPID_SUBJECT},
                 ttl=86400,
+                timeout=5,
             )
             sent = True
         except WebPushException as e:
@@ -45,35 +46,41 @@ def send_push(user, title, body='', url='/'):
 
 
 def send_visit_reminders():
-    """Create reminders exactly one day before a teacher's scheduled visit (runs lazily with every request)."""
-    try:
-        tomorrow = date.today() + timedelta(days=1)
-        due = VisitProgram.objects.filter(visit_date=tomorrow, reminder_sent=False).select_related('teacher')
-        if not due.exists():
-            return
-        manager_users = User.objects.filter(profile__role='admin')
-        for entry in due:
-            text = f'غداً موعد حضور المعلم {entry.teacher.full_name} للحصة'
-            if entry.lesson:
-                text += f' ({entry.lesson})'
-            teacher_user = entry.teacher.user
-            if teacher_user:
+    """Create reminders exactly one day before a teacher's scheduled visit.
+
+    ملاحظة: لا تستدعَ هذه الدالة من مسار الطلب (context processor) لأنها
+    تُجري اتصال شبكة حجب (web push). استخدم أمر الإدارة send_reminders بدلاً من ذلك.
+    """
+    tomorrow = date.today() + timedelta(days=1)
+    due = VisitProgram.objects.filter(visit_date=tomorrow, reminder_sent=False).select_related('teacher')
+    if not due.exists():
+        return
+    manager_users = User.objects.filter(profile__role='admin')
+    for entry in due:
+        text = f'غداً موعد حضور المعلم {entry.teacher.full_name} للحصة'
+        if entry.lesson:
+            text += f' ({entry.lesson})'
+        if entry.teacher.user:
+            try:
                 Notification.objects.get_or_create(
-                    user=teacher_user,
+                    user=entry.teacher.user,
                     link=f'/visit-program/{entry.id}/',
                     defaults={'title': 'تذكير بموعد حضور الحصة', 'message': text},
                 )
-                send_push(teacher_user, 'تذكير بموعد حضور الحصة', text, f'/visit-program/{entry.id}/')
-            for manager in manager_users:
+                send_push(entry.teacher.user, 'تذكير بموعد حضور الحصة', text, f'/visit-program/{entry.id}/')
+            except Exception as e:
+                logger.error(f'خطأ في إرسال تذكير للمعلم: {e}')
+        for manager in manager_users:
+            try:
                 Notification.objects.get_or_create(
                     user=manager,
                     link=f'/visit-program/{entry.id}/',
                     defaults={'title': 'قرب موعد حضور معلم', 'message': text},
                 )
                 send_push(manager, 'قرب موعد حضور معلم', text, f'/visit-program/{entry.id}/')
-            VisitProgram.objects.filter(id=entry.id).update(reminder_sent=True)
-    except Exception as e:
-        logger.error(f'خطأ في إرسال تذكيرات الزيارات: {e}')
+            except Exception as e:
+                logger.error(f'خطأ في إرسال تذكير للمدير: {e}')
+        VisitProgram.objects.filter(id=entry.id).update(reminder_sent=True)
 
 
 def send_whatsapp_message(phone_number, message):
