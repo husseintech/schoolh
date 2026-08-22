@@ -95,7 +95,7 @@
         <p class="text-muted text-center mt-4 small">طُبع بتاريخ {{ today|date:'Y-m-d' }}</p>
     </div>
     <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
         <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>

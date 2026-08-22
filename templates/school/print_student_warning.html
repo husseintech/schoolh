@@ -74,7 +74,7 @@
         <p class="text-muted small mt-3">تاريخ الإصدار: {{ warning.created_at|date:"Y/m/d" }} | أصدر بواسطة: {{ warning.created_by|by_name }}</p>
     </div>
     <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الإنذار</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الإنذار</button>
         <a href="{% url 'student_discipline' %}" class="btn btn-outline-secondary">العودة</a>
     </div>
 </div>
