@@ -12,6 +12,12 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "/(?!static/)(.*)",
       "dest": "school_management/wsgi.py"
     }
