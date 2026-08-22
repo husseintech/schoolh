@@ -345,19 +345,6 @@
             * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
         }
 
-        .word-export .sidebar, .word-export .top-bar, .word-export .no-print,
-        .word-export .word-export-hidden, .word-export .footer { display: none !important; }
-        .word-export .main-content { margin-right: 0 !important; padding: 0 !important; }
-        .word-export .card { box-shadow: none !important; border: 1px solid #ddd !important; }
-        .word-export body { background: #fff !important; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .word-export table { border-collapse: collapse; width: 100%; }
-        .word-export table th, .word-export table td { border: 1px solid #000; padding: 5px; }
-        .word-export table th { background: #eee; }
-        .word-export .d-print-block { display: block !important; }
-        .word-export .text-center { text-align: center !important; }
-        .word-export .text-start { text-align: right !important; }
-        .word-export .text-end { text-align: left !important; }
-
         .select2-container--bootstrap-5 .select2-selection {
             min-height: 42px;
         }
@@ -373,7 +360,7 @@
         }
     </style>
 </head>
-<body{% if word_export %} class="word-export"{% endif %}>
+<body>
     {% if user.is_authenticated %}
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
@@ -942,24 +929,6 @@
                 for (var i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i);
                 return output;
             }
-        })();
-    </script>
-    <script>
-        (function () {
-            if (document.body && document.body.classList.contains('word-export')) return;
-            document.querySelectorAll('button[onclick="window.print()"], a[onclick="window.print()"]').forEach(function (printBtn) {
-                var a = document.createElement('a');
-                a.href = '?export=word';
-                a.className = 'btn btn-outline-primary btn-sm no-print';
-                a.innerHTML = '<i class="bi bi-file-earmark-word"></i> تصدير Word';
-                a.title = 'تصدير التقرير إلى برنامج Word';
-                a.addEventListener('click', function () {
-                    var url = new URL(window.location.href);
-                    url.searchParams.set('export', 'word');
-                    a.href = url.toString();
-                });
-                printBtn.parentNode.insertBefore(a, printBtn.nextSibling);
-            });
         })();
     </script>
     {% block extra_js %}{% endblock %}
