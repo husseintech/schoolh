@@ -7,7 +7,7 @@
         <a href="{% url 'survey_report' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> العودة للتقرير</a>
         <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-info ms-1"><i class="bi bi-person"></i> بطاقة الطالب</a>
     </div>
-    <button type="button" onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
+    <button type="button" onclick="setTimeout(window.print,0)" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
 </div>
 
 <div class="d-none d-print-block text-center mb-3">
