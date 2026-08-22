@@ -1,4 +1,4 @@
-{% extends 'school/base.html' %}
+{% extends 'school/base.html' %}{% load static %}
 {% load school_tags %}
 {% block title %}تقرير تحليل الامتحان{% endblock %}
 {% block page_heading %}تقرير تحليل الامتحان{% endblock %}
@@ -108,7 +108,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{% static 'vendor/chart.js/chart.umd.min.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var ctx = document.getElementById('passChart');
