@@ -4468,6 +4468,24 @@ def schedule_generate(request, plan_id):
         if not has_loads:
             messages.error(request, 'لا توجد أنصبة مسجلة بعد. سجّل الأنصبة أولًا.')
             return redirect('schedule_generate', plan_id=plan.id)
+        days = plan.active_days
+        periods = plan.active_periods
+        ndays = len(days)
+        nperiods = len(periods)
+        cap = ndays * nperiods
+        per_class = defaultdict(int)
+        for tl in plan.teaching_loads.all():
+            per_class[tl.student_class_id] += tl.weekly_periods
+        cmap = {c.id: c.name for c in Class.objects.all()}
+        over = [(cid, req) for cid, req in per_class.items() if req > cap]
+        if over:
+            parts = []
+            for cid, req in over:
+                parts.append('%s يحتاج %d حصة لكن سعة الخطة %d (أيام %d × حصص %d)' % (
+                    cmap.get(cid, cid), req, cap, ndays, nperiods))
+            messages.warning(request, 'سعة الخطة غير كافية لبعض الصفوف ولهذا تبقى حصص غير مجدولة: '
+                                + ' | '.join(parts)
+                                + ' — أضف أيامًا أو حصصًا نشطة في إعدادات الخطة، أو قلّل أنصبة هذه الصفوف.')
         try:
             result = generate_schedule(plan)
         except Exception as ex:

@@ -98,8 +98,6 @@ def _eff(groups, t, c):
             avoid_first_last = True
     if max_consecutive is None:
         max_consecutive = 2
-    if max_per_day is None:
-        max_per_day = 6
     return {'max_per_day': max_per_day, 'max_consecutive': max_consecutive,
             'spread_max': spread_max, 'max_gap': max_gap,
             'period_repeat': period_repeat, 'avoid_first_last': avoid_first_last}
