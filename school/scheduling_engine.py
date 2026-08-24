@@ -350,12 +350,14 @@ def _attempt(plan, seed, iterations, day_names, period_ids, avail, fixed_by_cell
             continue
         if not _swap_ok(a, b):
             continue
+        c1, d1, p1 = a
+        c2, d2, p2 = b
         _do_swap(a, b)
         new_pen = _grid_penalty(grid, eff, period_ids)
         if new_pen <= base_pen or random.random() < 0.03:
             base_pen = new_pen
         else:
-            _do_swap(a, b)
+            _do_swap((c1, d2, p2), (c2, d1, p1))
 
     # 4) حساب الدرجات
     total = len(lessons) + len(fixed_by_cell)

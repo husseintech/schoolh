@@ -63,6 +63,26 @@ class ScheduleEngineTests(TestCase):
         self.assertEqual(len(keys), len(set(keys)))
         self.assertEqual(len(res['entries']), 6)
 
+    def test_hillclimb_no_crash(self):
+        days = [{'idx': i, 'name': 'يوم%d' % i, 'active': True} for i in range(5)]
+        periods = [{'idx': i, 'name': 'حصة%d' % i, 'active': True} for i in range(6)]
+        plan = SchedulePlan.objects.create(name='كبيرة', academic_year='2025',
+                                            days=days, periods=periods)
+        subs = [Subject.objects.create(name='م%d' % i) for i in range(3)]
+        clss = [Class.objects.create(name='ص%d' % i) for i in range(3)]
+        teachers = []
+        for i in range(3):
+            u = User.objects.create_user('ht%d' % i, password='x')
+            teachers.append(Teacher.objects.create(full_name='معلم%d' % i, user=u))
+        for t in teachers:
+            for c in clss:
+                TeachingLoad.objects.create(plan=plan, teacher=t, subject=subs[0],
+                                            student_class=c, weekly_periods=2)
+        res = generate_schedule(plan)
+        self.assertTrue(isinstance(len(res['entries']), int))
+        keys = [(e['class'], e['day'], e['period']) for e in res['entries']]
+        self.assertEqual(len(keys), len(set(keys)))
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
