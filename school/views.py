@@ -4243,7 +4243,7 @@ def availability_grid(request, plan_id):
             cells = []
             for p in periods:
                 cells.append({'day': d['name'], 'period': p['idx'],
-                              'avail': existing.get((t.id, d['name'], p['idx']), False)})
+                              'avail': existing.get((t.id, d['name'], p['idx']), True)})
             rows.append({'day': d['name'], 'cells': cells})
         teacher_data.append({'teacher': t, 'rows': rows})
     if request.method == 'POST':
