@@ -4109,6 +4109,7 @@ from .models import (SchedulePlan, TeachingLoad, TeacherAvailability,
                      ScheduleConstraint, FixedLesson, ScheduleEntry,
                      Teacher, Class, Subject)
 from .scheduling_engine import generate_schedule, evaluate_plan
+from .scheduling import ScheduleValidator
 from .constraint_nlp import parse_constraint_text
 
 DEFAULT_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
@@ -4491,7 +4492,16 @@ def schedule_generate(request, plan_id):
         except Exception as ex:
             messages.error(request, 'خطأ أثناء التوليد: %s' % ex)
             return redirect('schedule_generate', plan_id=plan.id)
-        ScheduleEntry.objects.filter(plan=plan).delete()
+
+        if result.get('status') == 'INFEASIBLE':
+            diags = result.get('diagnostics') or []
+            for d in diags:
+                messages.error(request, 'تعذّر التوليد: ' + d)
+            if not diags:
+                messages.error(request,
+                    'لا يوجد جدول ممكن بالقيود الحالية (مستحيل). خفّف القيود أو راجع الأنصبة/التوفّر/الحصص المثبتة.')
+            return redirect('schedule_generate', plan_id=plan.id)
+
         color_map = _subject_colors(Subject.objects.all())
         entries = []
         for e in result['entries']:
@@ -4499,12 +4509,17 @@ def schedule_generate(request, plan_id):
                 plan=plan, day=e['day'], period=e['period'], teacher_id=e['teacher'],
                 subject_id=e['subject'], student_class_id=e['class'],
                 fixed=e['fixed'], color=color_map.get(e['subject'], '')))
-        ScheduleEntry.objects.bulk_create(entries)
-        plan.hard_score = result['hard_score']
-        plan.soft_score = result['soft_score']
-        plan.generated_at = timezone.now()
-        plan.status = 'active'
-        plan.save()
+        with transaction.atomic():
+            ScheduleEntry.objects.filter(plan=plan).delete()
+            ScheduleEntry.objects.bulk_create(entries)
+            plan.hard_score = result['hard_score']
+            plan.soft_score = result['soft_score']
+            plan.generated_at = timezone.now()
+            plan.status = 'active'
+            plan.save()
+        v = ScheduleValidator(plan)
+        if not v['valid']:
+            messages.warning(request, 'تم الحفظ لكن كشف التحقق رصد تعارضات: ' + ' | '.join(v['violations'][:5]))
         if result['unscheduled']:
             tmap = {t.id: t.full_name for t in Teacher.objects.all()}
             smap = {s.id: s.name for s in Subject.objects.all()}
@@ -4520,8 +4535,9 @@ def schedule_generate(request, plan_id):
         elif result['hard_score'] < 100:
             messages.warning(request, 'تم الإنشاء لكن توجد تعارضات صلبة (صلب %s%%). راجع التقرير أدناه.' % result['hard_score'])
         else:
-            messages.success(request, 'تم إنشاء البرنامج (صلب %s%% / ناعم %s%%).' % (
-                result['hard_score'], result['soft_score']))
+            messages.success(request, 'تم إنشاء البرنامج (حالة Solver: %s، صلب %s%% / ناعم %s%%， زمن %.2fs).' % (
+                result.get('solver_status'), result['hard_score'], result['soft_score'],
+                result.get('solver_time', 0)))
         return redirect('schedule_grid', plan_id=plan.id)
     return render(request, 'school/schedule_generate.html', {'plan': plan, 'has_loads': has_loads})
 

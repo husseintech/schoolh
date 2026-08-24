@@ -3,8 +3,9 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from school.models import (SchedulePlan, TeachingLoad, TeacherAvailability,
                            ScheduleEntry, Teacher, Class, Subject, Profile,
-                           ScheduleConstraint)
+                           ScheduleConstraint, FixedLesson)
 from school.scheduling_engine import generate_schedule, evaluate_plan
+from school.scheduling import ScheduleValidator
 
 
 class ScheduleEngineTests(TestCase):
@@ -237,3 +238,103 @@ class NLPTests(TestCase):
         self.assertEqual(r['scope'],'teachers')
         self.assertIn(t.id,r['teacher_ids'])
         self.assertEqual(r['weight'],3.0)
+
+
+class CpSatSolverTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('cp', password='x')
+        self.subj = Subject.objects.create(name='عربي')
+        self.cls = Class.objects.create(name='تاسع')
+        self.teacher = Teacher.objects.create(full_name='م ع', user=self.user)
+
+    def _make_plan(self, ndays=2, nperiods=2):
+        days = [{'idx': i, 'name': 'يوم%d' % i, 'active': True} for i in range(ndays)]
+        periods = [{'idx': i, 'name': 'حصة%d' % i, 'active': True} for i in range(nperiods)]
+        return SchedulePlan.objects.create(name='cp', academic_year='2025', days=days, periods=periods)
+
+    def _fill_availability(self, plan):
+        for d in plan.active_days:
+            for p in plan.active_periods:
+                TeacherAvailability.objects.create(plan=plan, teacher=self.teacher,
+                                                   day=d['name'], period=p['idx'], available=True)
+
+    def test_cp_solver_success(self):
+        plan = self._make_plan(2, 2)
+        TeachingLoad.objects.create(plan=plan, teacher=self.teacher, subject=self.subj,
+                                    student_class=self.cls, weekly_periods=3)
+        self._fill_availability(plan)
+        res = generate_schedule(plan)
+        self.assertEqual(res['status'], 'SUCCESS')
+        self.assertEqual(len(res['entries']), 3)
+        self.assertEqual(res['hard_score'], 100.0)
+
+    def test_cp_infeasible_capacity(self):
+        plan = self._make_plan(2, 2)  # السعة = 4
+        TeachingLoad.objects.create(plan=plan, teacher=self.teacher, subject=self.subj,
+                                    student_class=self.cls, weekly_periods=5)  # > السعة
+        self._fill_availability(plan)
+        res = generate_schedule(plan)
+        self.assertEqual(res['status'], 'INFEASIBLE')
+        self.assertTrue(res['diagnostics'])
+
+    def test_validator_detects_availability(self):
+        plan = self._make_plan(2, 2)
+        TeacherAvailability.objects.create(plan=plan, teacher=self.teacher,
+                                           day='يوم0', period=0, available=False)
+        ScheduleEntry.objects.create(plan=plan, day='يوم0', period=0,
+                                     teacher=self.teacher, subject=self.subj, student_class=self.cls)
+        v = ScheduleValidator(plan)
+        self.assertFalse(v['valid'])
+        self.assertTrue(any('توفّر' in x for x in v['violations']))
+
+    def test_fixed_lesson_enforced(self):
+        plan = self._make_plan(2, 2)
+        TeachingLoad.objects.create(plan=plan, teacher=self.teacher, subject=self.subj,
+                                    student_class=self.cls, weekly_periods=2)
+        self._fill_availability(plan)
+        FixedLesson.objects.create(plan=plan, day='يوم0', period=0, teacher=self.teacher,
+                                   subject=self.subj, student_class=self.cls)
+        res = generate_schedule(plan)
+        self.assertEqual(res['status'], 'SUCCESS')
+        fixed = [e for e in res['entries'] if e['day'] == 'يوم0' and e['period'] == 0]
+        self.assertEqual(len(fixed), 1)
+        self.assertTrue(fixed[0]['fixed'])
+
+    def test_realistic_school_fixture(self):
+        plan = self._make_plan(5, 7)
+        teachers, classes, subjects = [], [], []
+        for i in range(10):
+            u = User.objects.create_user('rt%d' % i, password='x')
+            teachers.append(Teacher.objects.create(full_name='معلم%d' % i, user=u))
+        for i in range(5):
+            classes.append(Class.objects.create(name='ش%d' % i))
+        for i in range(6):
+            subjects.append(Subject.objects.create(name='مادة%d' % i))
+        for t in teachers:
+            for c in classes[:3]:
+                TeachingLoad.objects.create(plan=plan, teacher=t, subject=subjects[t.id % 6],
+                                            student_class=c, weekly_periods=3)
+        self._fill_availability(plan)
+        for t in teachers:
+            for c in classes[3:]:
+                TeachingLoad.objects.create(plan=plan, teacher=t, subject=subjects[(t.id + 1) % 6],
+                                            student_class=c, weekly_periods=2)
+        res = generate_schedule(plan)
+        self.assertEqual(res['status'], 'SUCCESS')
+        self.assertEqual(res['hard_score'], 100.0)
+        from collections import Counter
+        ccls = Counter((e['class'], e['day'], e['period']) for e in res['entries'])
+        cteach = Counter((e['teacher'], e['day'], e['period']) for e in res['entries'])
+        self.assertEqual([k for k, v in ccls.items() if v > 1], [],
+                         msg='class-double: %s' % [k for k, v in ccls.items() if v > 1])
+        self.assertEqual([k for k, v in cteach.items() if v > 1], [],
+                         msg='teacher-double: %s' % [k for k, v in cteach.items() if v > 1])
+        total = sum(t.weekly_periods for t in TeachingLoad.objects.filter(plan=plan))
+        self.assertEqual(len(res['entries']), total)
+        ScheduleEntry.objects.bulk_create([
+            ScheduleEntry(plan=plan, day=e['day'], period=e['period'], teacher_id=e['teacher'],
+                          subject_id=e['subject'], student_class_id=e['class'], fixed=e['fixed'])
+            for e in res['entries']
+        ])
+        v = ScheduleValidator(plan)
+        self.assertTrue(v['valid'], msg=v['violations'])

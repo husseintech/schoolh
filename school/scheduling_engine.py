@@ -104,49 +104,44 @@ def _eff(groups, t, c):
 
 
 def generate_schedule(plan, seed=0, iterations=3000, restarts=12):
-    """يولّد الجدول عبر عدّة محاولات عشوائية ويُبقي الأفضل (أسلوب مشابه لـ aSCTimetable).
+    """يولّد الجدول عبر OR-Tools CP-SAT (محرك أمثل صلب+تفضيلي).
 
-    النموذج: كل صف له شبكته الخاصة (موازٍ لصفوف أخرى)، ويمنع أن يدرّس المعلم
-    صفّين في آن واحد عبر teacher_busy.
+    يحافظ على شكل المخرج القديم لإبقاء الواجهات/الاختبارات سليمة، مع إضافة
+    الحقول الجديدة: status, diagnostics, solver_status, solver_time.
     """
-    days = plan.active_days
-    periods = plan.active_periods
-    day_names = [d['name'] for d in days]
-    period_ids = [p['idx'] for p in periods]
+    from school.scheduling.solver import generate_schedule_cp
 
-    groups = _prepare_constraints(plan)
-    eff_cache = {}
-
-    def eff(t, c):
-        k = (t, c)
-        if k not in eff_cache:
-            eff_cache[k] = _eff(groups, t, c)
-        return eff_cache[k]
-
-    avail = {}
-    for a in plan.availabilities.all():
-        avail[(a.teacher_id, a.day, a.period)] = a.available
-
-    fixed_by_cell = {}
-    for fl in plan.fixed_lessons.select_related('teacher', 'subject', 'student_class').all():
-        key = (fl.student_class_id, fl.day, fl.period)
-        fixed_by_cell[key] = {'teacher': fl.teacher_id, 'subject': fl.subject_id,
-                              'class': fl.student_class_id}
-
-    lessons = _build_lessons(plan, fixed_by_cell)
-
-    best = None
-    for r in range(restarts):
-        res = _attempt(plan, seed + r * 7919, iterations, day_names, period_ids,
-                       avail, fixed_by_cell, lessons, eff)
-        if best is None:
-            best = res
-        else:
-            key_new = (len(res['unscheduled']), -res['hard_score'], -res['soft_score'])
-            key_best = (len(best['unscheduled']), -best['hard_score'], -best['soft_score'])
-            if key_new < key_best:
-                best = res
-    return best
+    res = generate_schedule_cp(plan, max_time=30, seed=seed)
+    if res['status'] == 'INFEASIBLE':
+        return {
+            'entries': [],
+            'unscheduled': [],
+            'conflicts': [],
+            'hard_score': 0.0,
+            'soft_score': 0.0,
+            'scheduled': 0,
+            'total': res['stats']['required'],
+            'fixed_violation': False,
+            'status': 'INFEASIBLE',
+            'diagnostics': res['diagnostics'],
+            'solver_status': res['solver_status'],
+            'solver_time': res['solver_time'],
+        }
+    entries = res['entries']
+    return {
+        'entries': entries,
+        'unscheduled': [],
+        'conflicts': [],
+        'hard_score': 100.0,
+        'soft_score': res['soft_score'],
+        'scheduled': len(entries),
+        'total': res['stats']['required'],
+        'fixed_violation': False,
+        'status': res['status'],
+        'diagnostics': [],
+        'solver_status': res['solver_status'],
+        'solver_time': res['solver_time'],
+    }
 
 
 def _attempt(plan, seed, iterations, day_names, period_ids, avail, fixed_by_cell,
