@@ -124,6 +124,16 @@ class ScheduleViewTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(TeachingLoad.objects.filter(plan=self.plan).count(), 0)
 
+    def test_fixed_delete(self):
+        from school.models import FixedLesson
+        self.client.login(username='admin', password='pw')
+        fl = FixedLesson.objects.create(plan=self.plan, day='الأحد', period=1,
+            teacher=self.teacher, subject=self.subj, student_class=self.cls)
+        r = self.client.post(reverse('fixed_lessons', args=[self.plan.id]), {
+            'action': 'delete', 'fixed_id': fl.id})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(FixedLesson.objects.filter(plan=self.plan).count(), 0)
+
 class ScheduleConstraintTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('cuser', password='pw')

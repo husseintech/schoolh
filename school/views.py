@@ -4425,12 +4425,21 @@ def fixed_lessons(request, plan_id):
         return redirect('schedule_plan_list')
     plan = get_object_or_404(SchedulePlan, id=plan_id)
     if request.method == 'POST':
+        action = request.POST.get('action', 'save')
+        if action == 'delete':
+            fid = request.POST.get('fixed_id')
+            plan.fixed_lessons.filter(id=fid).delete()
+            messages.success(request, 'تم حذف التثبيت.')
+            return redirect('fixed_lessons', plan_id=plan.id)
         day = request.POST.get('day')
         period = int(request.POST.get('period') or 0)
         tid = request.POST.get('teacher')
         sid = request.POST.get('subject')
         cid = request.POST.get('student_class')
+        fid = request.POST.get('fixed_id')
         if day and period and tid and sid and cid:
+            if fid:
+                plan.fixed_lessons.filter(id=fid).delete()
             FixedLesson.objects.update_or_create(
                 plan=plan, day=day, period=period,
                 defaults={'teacher_id': tid, 'subject_id': sid, 'student_class_id': cid})
