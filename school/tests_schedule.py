@@ -95,6 +95,21 @@ class ScheduleViewTests(TestCase):
             r = self.client.get(u)
             self.assertEqual(r.status_code, 200, u)
 
+    def test_edit_constraint(self):
+        from school.models import ScheduleConstraint
+        c = ScheduleConstraint.objects.create(plan=self.plan, type='soft', code='max_consecutive',
+                                               label='قديم', weight=2, scope='all', params={})
+        self.client.login(username='admin', password='pw')
+        r = self.client.post(reverse('schedule_constraints', args=[self.plan.id]), {
+            'action': 'edit', 'cid': c.id, 'code': 'max_consecutive',
+            'label': 'جديد', 'type': 'hard', 'weight': 5, 'scope': 'all',
+        })
+        self.assertEqual(r.status_code, 302)
+        c.refresh_from_db()
+        self.assertEqual(c.label, 'جديد')
+        self.assertEqual(c.type, 'hard')
+        self.assertEqual(c.weight, 5.0)
+
 class ScheduleConstraintTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('cuser', password='pw')

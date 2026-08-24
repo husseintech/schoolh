@@ -4328,6 +4328,35 @@ def schedule_constraints(request, plan_id):
                     obj.classes.set(parsed['class_ids'])
                 messages.success(request,
                     'تم فهم الشرط وتطبيقه: %s (النطاق: %s).' % (obj.label, obj.get_scope_display()))
+        elif action == 'edit':
+            obj = get_object_or_404(ScheduleConstraint, id=request.POST.get('cid'), plan=plan)
+            code = request.POST.get('code', '').strip()
+            label = request.POST.get('label', '').strip()
+            params = {}
+            if code == 'spread_subject':
+                params = {'max_per_day': int(request.POST.get('max_per_day', 1) or 1)}
+            elif code == 'max_consecutive_gap':
+                params = {'max_gap': int(request.POST.get('max_gap', 1) or 1)}
+            elif code == 'period_repeat':
+                params = {'period': int(request.POST.get('period', 1) or 1),
+                          'max_days': int(request.POST.get('max_days', 1) or 1)}
+            obj.type = request.POST.get('type', obj.type)
+            obj.code = code
+            obj.label = label
+            obj.weight = float(request.POST.get('weight', obj.weight) or obj.weight)
+            obj.scope = request.POST.get('scope', obj.scope)
+            obj.params = params
+            obj.save()
+            if obj.scope == 'teachers':
+                obj.teachers.set([int(x) for x in request.POST.getlist('teachers') if x])
+                obj.classes.clear()
+            elif obj.scope == 'classes':
+                obj.classes.set([int(x) for x in request.POST.getlist('classes') if x])
+                obj.teachers.clear()
+            else:
+                obj.teachers.clear()
+                obj.classes.clear()
+            messages.success(request, 'تم تعديل الشرط.')
         elif action == 'toggle':
             c = get_object_or_404(ScheduleConstraint, id=request.POST.get('cid'))
             c.enabled = not c.enabled

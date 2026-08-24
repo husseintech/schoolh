@@ -32,7 +32,8 @@
         </div>
         <form method="post" id="consForm">
             {% csrf_token %}
-            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="action" id="form_action" value="add">
+            <input type="hidden" name="cid" id="form_cid" value="">
             <div class="row g-2">
                 <div class="col-md-4">
                     <label class="form-label">قالب جاهز</label>
@@ -107,7 +108,8 @@
                 </div>
             </div>
             <div class="mt-3">
-                <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة الشرط</button>
+                <button type="submit" id="submitBtn" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة الشرط</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-outline-warning d-none" onclick="resetForm()">إلغاء التعديل</button>
                 <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary">رجوع</a>
             </div>
         </form>
@@ -140,10 +142,25 @@
                         </td>
                         <td>{% if c.enabled %}<span class="text-success">نعم</span>{% else %}<span class="text-muted">لا</span>{% endif %}</td>
                         <td>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="startEdit(this)"
+                                data-id="{{ c.id }}"
+                                data-code="{{ c.code }}"
+                                data-label="{{ c.label }}"
+                                data-type="{{ c.type }}"
+                                data-weight="{{ c.weight }}"
+                                data-scope="{{ c.scope }}"
+                                data-teachers="{% for t in c.teachers.all %}{{ t.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                data-classes="{% for cl in c.classes.all %}{{ cl.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                data-mpd="{{ c.params.max_per_day|default:1 }}"
+                                data-gap="{{ c.params.max_gap|default:1 }}"
+                                data-period="{{ c.params.period|default:7 }}"
+                                data-maxdays="{{ c.params.max_days|default:3 }}">
+                                تعديل
+                            </button>
                             <form method="post" class="d-inline">{% csrf_token %}
                                 <input type="hidden" name="action" value="toggle">
                                 <input type="hidden" name="cid" value="{{ c.id }}">
-                                <button class="btn btn-outline-secondary btn-sm">تبديل</button>
+                                <button class="btn btn-outline-secondary btn-sm">{% if c.enabled %}إيقاف{% else %}تفعيل{% endif %}</button>
                             </form>
                             <form method="post" class="d-inline">{% csrf_token %}
                                 <input type="hidden" name="action" value="delete">
@@ -186,5 +203,49 @@ scopeSel.addEventListener('change', function(){
     if(this.value === 'teachers') document.getElementById('box_teachers').classList.remove('d-none');
     if(this.value === 'classes') document.getElementById('box_classes').classList.remove('d-none');
 });
+
+function startEdit(btn){
+    const d = btn.dataset;
+    document.getElementById('form_action').value = 'edit';
+    document.getElementById('form_cid').value = d.id;
+    document.getElementById('id_code').value = d.code;
+    document.getElementById('id_label').value = d.label;
+    document.getElementById('id_type').value = d.type;
+    document.getElementById('id_scope').value = d.scope;
+    document.getElementById('box_teachers').classList.toggle('d-none', d.scope !== 'teachers');
+    document.getElementById('box_classes').classList.toggle('d-none', d.scope !== 'classes');
+    document.querySelector('input[name="weight"]').value = d.weight;
+    document.querySelectorAll('#paramBox .d-none').forEach(b => b.classList.add('d-none'));
+    if(d.code === 'spread_subject'){
+        document.getElementById('box_max_per_day').classList.remove('d-none');
+        document.querySelector('input[name="max_per_day"]').value = d.mpd;
+    }
+    if(d.code === 'max_consecutive_gap'){
+        document.getElementById('box_max_gap').classList.remove('d-none');
+        document.querySelector('input[name="max_gap"]').value = d.gap;
+    }
+    if(d.code === 'period_repeat'){
+        document.getElementById('box_period').classList.remove('d-none');
+        document.getElementById('box_max_days').classList.remove('d-none');
+        document.querySelector('input[name="period"]').value = d.period;
+        document.querySelector('input[name="max_days"]').value = d.maxdays;
+    }
+    const tSel = document.querySelector('select[name="teachers"]');
+    const cSel = document.querySelector('select[name="classes"]');
+    if(tSel){ tSel.value = (d.teachers || '').split(',').filter(Boolean); if(window.jQuery) $(tSel).trigger('change'); }
+    if(cSel){ cSel.value = (d.classes || '').split(',').filter(Boolean); if(window.jQuery) $(cSel).trigger('change'); }
+    document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-lg"></i> حفظ التعديل';
+    document.getElementById('cancelEditBtn').classList.remove('d-none');
+    document.getElementById('id_code').scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+function resetForm(){
+    document.getElementById('form_action').value = 'add';
+    document.getElementById('form_cid').value = '';
+    document.getElementById('consForm').reset();
+    document.getElementById('submitBtn').innerHTML = '<i class="bi bi-plus-lg"></i> إضافة الشرط';
+    document.getElementById('cancelEditBtn').classList.add('d-none');
+    document.getElementById('box_teachers').classList.add('d-none');
+    document.getElementById('box_classes').classList.add('d-none');
+}
 </script>
 {% endblock %}
