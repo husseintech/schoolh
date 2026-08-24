@@ -4701,19 +4701,3 @@ def schedule_entry_move(request, plan_id, entry_id):
         messages.success(request, 'تم نقل الحصة.')
     return redirect('schedule_grid', plan_id=plan.id)
 
-
-@login_required
-def schedule_push_legacy(request, plan_id):
-    if not _sch_perm(request, 'edit'):
-        return redirect('schedule_plan_list')
-    plan = get_object_or_404(SchedulePlan, id=plan_id)
-    if request.method == 'POST':
-        entries = plan.entries.select_related('teacher', 'subject', 'student_class').all()
-        TeacherScheduleEntry.objects.all().delete()
-        bulk = [TeacherScheduleEntry(teacher=e.teacher, day=e.day, period=e.period,
-                                     subject=e.subject, student_class=e.student_class,
-                                     updated_by=request.user) for e in entries]
-        TeacherScheduleEntry.objects.bulk_create(bulk)
-        messages.success(request, 'تمت مزامنة الجدول المولّد مع الجدول اليدوي للمعلمين.')
-    return redirect('schedule_plan_detail', plan_id=plan.id)
-

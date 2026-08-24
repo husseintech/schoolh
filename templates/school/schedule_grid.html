@@ -16,12 +16,6 @@
             {% if 'schedule_generate' in user_perms %}
             <a href="{% url 'schedule_generate' plan.id %}" class="btn btn-outline-warning btn-sm"><i class="bi bi-arrow-repeat"></i> إعادة التوليد</a>
             {% endif %}
-            {% if 'schedule_edit' in user_perms %}
-            <form method="post" action="{% url 'schedule_push_legacy' plan.id %}" class="d-inline" onsubmit="return confirm('استبدال الجدول اليدوي الحالي بهذا البرنامج؟');">
-                {% csrf_token %}
-                <button class="btn btn-outline-dark btn-sm"><i class="bi bi-arrow-down-up"></i> مزامنة الجدول اليدوي</button>
-            </form>
-            {% endif %}
         </div>
     </div>
 </div>
