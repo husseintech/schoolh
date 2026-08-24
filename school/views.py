@@ -4236,6 +4236,16 @@ def availability_grid(request, plan_id):
     existing = {}
     for a in plan.availabilities.all():
         existing[(a.teacher_id, a.day, a.period)] = a.available
+    teacher_data = []
+    for t in teachers:
+        rows = []
+        for d in days:
+            cells = []
+            for p in periods:
+                cells.append({'day': d['name'], 'period': p['idx'],
+                              'avail': existing.get((t.id, d['name'], p['idx']), False)})
+            rows.append({'day': d['name'], 'cells': cells})
+        teacher_data.append({'teacher': t, 'rows': rows})
     if request.method == 'POST':
         plan.availabilities.all().delete()
         bulk = []
@@ -4250,8 +4260,7 @@ def availability_grid(request, plan_id):
         messages.success(request, 'تم حفظ تفريغ المعلمين.')
         return redirect('availability_grid', plan_id=plan.id)
     return render(request, 'school/availability_grid.html',
-                  {'plan': plan, 'teachers': teachers, 'days': days,
-                   'periods': periods, 'existing': existing})
+                  {'plan': plan, 'teacher_data': teacher_data, 'periods': periods})
 
 
 @login_required
@@ -4403,9 +4412,18 @@ def availability_report(request, plan_id):
     placed = {}
     for e in plan.entries.all():
         placed[(e.teacher_id, e.day, e.period)] = True
+    teacher_data = []
+    for t in teachers:
+        rows = []
+        for d in days:
+            cells = []
+            for p in periods:
+                cells.append({'avail': existing.get((t.id, d['name'], p['idx'])),
+                              'placed': placed.get((t.id, d['name'], p['idx'], False))})
+            rows.append({'day': d['name'], 'cells': cells})
+        teacher_data.append({'teacher': t, 'rows': rows})
     return render(request, 'school/availability_report.html',
-                  {'plan': plan, 'teachers': teachers, 'days': days,
-                   'periods': periods, 'existing': existing, 'placed': placed})
+                  {'plan': plan, 'teacher_data': teacher_data, 'periods': periods})
 
 
 @login_required
