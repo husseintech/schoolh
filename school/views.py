@@ -4276,6 +4276,7 @@ def teaching_loads(request, plan_id):
         class_agg[k]['total'] += l.weekly_periods
         class_agg[k]['items'].append(l)
     class_summary = [class_agg[k] for k in class_order]
+    class_summary.sort(key=lambda x: x['cls'].name)
     teachers = Teacher.objects.all().order_by('full_name')
     subjects = Subject.objects.all().order_by('name')
     classes = Class.objects.all().order_by('name')
