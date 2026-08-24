@@ -4467,7 +4467,11 @@ def schedule_generate(request, plan_id):
         if not has_loads:
             messages.error(request, 'لا توجد أنصبة مسجلة بعد. سجّل الأنصبة أولًا.')
             return redirect('schedule_generate', plan_id=plan.id)
-        result = generate_schedule(plan)
+        try:
+            result = generate_schedule(plan)
+        except Exception as ex:
+            messages.error(request, 'خطأ أثناء التوليد: %s' % ex)
+            return redirect('schedule_generate', plan_id=plan.id)
         ScheduleEntry.objects.filter(plan=plan).delete()
         color_map = _subject_colors(Subject.objects.all())
         entries = []
@@ -4483,7 +4487,16 @@ def schedule_generate(request, plan_id):
         plan.status = 'active'
         plan.save()
         if result['unscheduled']:
-            messages.warning(request, 'تعذّر جدولة %d حصة (أنصبة زائدة أو تعارضات صلبة). راجع التفريغ والقيود.' % len(result['unscheduled']))
+            tmap = {t.id: t.full_name for t in Teacher.objects.all()}
+            smap = {s.id: s.name for s in Subject.objects.all()}
+            cmap = {c.id: c.name for c in Class.objects.all()}
+            details = []
+            for u in result['unscheduled']:
+                details.append('%s — %s (%s)' % (tmap.get(u['teacher'], u['teacher']),
+                                                 smap.get(u['subject'], u['subject']),
+                                                 cmap.get(u['class'], u['class'])))
+            messages.warning(request, 'تعذّر جدولة %d حصة (أنصبة زائدة أو تعارضات صلبة): %s' % (
+                len(details), ' | '.join(details)))
         elif result['hard_score'] < 100:
             messages.warning(request, 'تم الإنشاء لكن توجد تعارضات صلبة (صلب %s%%). راجع التقرير أدناه.' % result['hard_score'])
         else:
