@@ -136,3 +136,21 @@ class ScheduleConstraintTests(TestCase):
         bad = [c for c in ev['conflicts'] if c['type'] in ('spread', 'gap', 'period_repeat')]
         self.assertEqual(bad, [], msg=ev['conflicts'])
         self.assertEqual(len(res['entries']), 3)
+
+class NLPTests(TestCase):
+    def test_parse_teacher_consecutive(self):
+        from school.constraint_nlp import parse_constraint_text
+        u=User.objects.create_user('nlp',password='x')
+        Profile.objects.create(user=u,role='admin')
+        t=Teacher.objects.create(full_name='احمد علي',user=u)
+        c=Class.objects.create(name='الصف الاول')
+        subj=Subject.objects.create(name='رياضيات')
+        plan=SchedulePlan.objects.create(name='p',academic_year='2025',
+            days=[{'idx':0,'name':'الاحد','active':True}],periods=[{'idx':1,'name':'1','active':True}])
+        TeachingLoad.objects.create(plan=plan,teacher=t,subject=subj,student_class=c,weekly_periods=2)
+        r=parse_constraint_text('المعلم احمد علي لا يزيد عن 3 حصص متتالية',plan)
+        self.assertIsNotNone(r)
+        self.assertEqual(r['code'],'max_consecutive')
+        self.assertEqual(r['scope'],'teachers')
+        self.assertIn(t.id,r['teacher_ids'])
+        self.assertEqual(r['weight'],3.0)

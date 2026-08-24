@@ -1057,6 +1057,12 @@ class ScheduleConstraint(models.Model):
     enabled = models.BooleanField('مفعل', default=True)
     weight = models.FloatField('الوزن', default=1.0)
     params = models.JSONField('معاملات', default=dict, blank=True)
+    SCOPE_CHOICES = [('all', 'الكل'), ('teachers', 'معلمون محددون'), ('classes', 'صفوف محددة')]
+    scope = models.CharField('النطاق', max_length=10, choices=SCOPE_CHOICES, default='all')
+    teachers = models.ManyToManyField(Teacher, blank=True, related_name='schedule_constraints',
+                                      verbose_name='المعلمون')
+    classes = models.ManyToManyField(Class, blank=True, related_name='schedule_constraints',
+                                     verbose_name='الصفوف')
 
     class Meta:
         verbose_name = 'شرط'

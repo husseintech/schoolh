@@ -9,12 +9,6 @@ def _cons(cons, code, ctype):
     return None
 
 
-def _param(c, key, default):
-    if c is None:
-        return default
-    return c.params.get(key, default)
-
-
 def _max_gap_run(occupied, all_periods):
     """أطول سلسلة فراغات متتالية بين الحصص المتاحة."""
     occ = set(occupied)
@@ -46,6 +40,67 @@ def _build_lessons(plan, fixed_keys):
     return lessons
 
 
+def _prepare_constraints(plan):
+    """يحمّل القيود المفعّلة مع مجموعات المعلمين/الصفوف المستهدفة."""
+    cons = list(plan.constraints.filter(enabled=True).prefetch_related('teachers', 'classes'))
+    groups = defaultdict(list)
+    for c in cons:
+        c._tids = set(c.teachers.values_list('id', flat=True))
+        c._cids = set(c.classes.values_list('id', flat=True))
+        groups[c.code].append(c)
+    return groups
+
+
+def _eff(groups, t, c):
+    """القيم الفعّالة لقيد (معلم t، صف c) مع مراعاة النطاق."""
+    max_per_day = None
+    max_consecutive = None
+    spread_max = None
+    max_gap = None
+    period_repeat = []
+    avoid_first_last = False
+
+    def applies(con):
+        if con.scope == 'teachers':
+            return t in con._tids
+        if con.scope == 'classes':
+            return c in con._cids
+        return True
+
+    for con in groups.get('max_periods_per_day', []):
+        if applies(con):
+            v = int(con.weight)
+            max_per_day = v if max_per_day is None else min(max_per_day, v)
+    for con in groups.get('max_consecutive', []):
+        if applies(con):
+            v = int(con.weight)
+            max_consecutive = v if max_consecutive is None else min(max_consecutive, v)
+    for con in groups.get('spread_subject', []):
+        if applies(con):
+            v = int((con.params or {}).get('max_per_day', 1))
+            spread_max = v if spread_max is None else min(spread_max, v)
+    for con in groups.get('max_consecutive_gap', []):
+        if applies(con):
+            v = int((con.params or {}).get('max_gap', 1))
+            max_gap = v if max_gap is None else min(max_gap, v)
+    for con in groups.get('period_repeat', []):
+        if applies(con):
+            p = (con.params or {}).get('period')
+            m = (con.params or {}).get('max_days', 1)
+            if p is not None:
+                period_repeat.append((int(p), int(m)))
+    for con in groups.get('avoid_first_last', []):
+        if applies(con):
+            avoid_first_last = True
+    if max_consecutive is None:
+        max_consecutive = 2
+    if max_per_day is None:
+        max_per_day = 6
+    return {'max_per_day': max_per_day, 'max_consecutive': max_consecutive,
+            'spread_max': spread_max, 'max_gap': max_gap,
+            'period_repeat': period_repeat, 'avoid_first_last': avoid_first_last}
+
+
 def generate_schedule(plan, seed=0, iterations=3000, restarts=12):
     """يولّد الجدول عبر عدّة محاولات عشوائية ويُبقي الأفضل (أسلوب مشابه لـ aSCTimetable)."""
     days = plan.active_days
@@ -53,22 +108,14 @@ def generate_schedule(plan, seed=0, iterations=3000, restarts=12):
     day_names = [d['name'] for d in days]
     period_ids = [p['idx'] for p in periods]
 
-    cons = {c.code: c for c in plan.constraints.all()}
-    c_mpd = _cons(cons, 'max_periods_per_day', 'hard')
-    max_per_day = int(c_mpd.weight) if c_mpd else 6
-    c_mc = _cons(cons, 'max_consecutive', 'soft')
-    max_consecutive = int(c_mc.weight) if c_mc else 2
-    avoid_first_last = _cons(cons, 'avoid_first_last', 'soft') is not None
-    spread_c = _cons(cons, 'spread_subject', 'soft')
-    spread_max = int(spread_c.params.get('max_per_day', 1)) if spread_c else None
-    gap_c = _cons(cons, 'max_consecutive_gap', 'soft')
-    max_gap = int(gap_c.params.get('max_gap', 1)) if gap_c else None
-    period_repeat = []
-    for c in plan.constraints.filter(code='period_repeat', enabled=True):
-        try:
-            period_repeat.append((int(c.params.get('period')), int(c.params.get('max_days', 1))))
-        except (TypeError, ValueError):
-            pass
+    groups = _prepare_constraints(plan)
+    eff_cache = {}
+
+    def eff(t, c):
+        k = (t, c)
+        if k not in eff_cache:
+            eff_cache[k] = _eff(groups, t, c)
+        return eff_cache[k]
 
     avail = {}
     for a in plan.availabilities.all():
@@ -87,8 +134,7 @@ def generate_schedule(plan, seed=0, iterations=3000, restarts=12):
     best = None
     for r in range(restarts):
         res = _attempt(plan, seed + r * 7919, iterations, days, day_names, period_ids,
-                       max_per_day, max_consecutive, avoid_first_last, spread_max,
-                       max_gap, period_repeat, avail, fixed_by_cell, lessons)
+                       avail, fixed_by_cell, lessons, eff)
         if best is None:
             best = res
         else:
@@ -99,9 +145,8 @@ def generate_schedule(plan, seed=0, iterations=3000, restarts=12):
     return best
 
 
-def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
-             max_consecutive, avoid_first_last, spread_max, max_gap, period_repeat,
-             avail, fixed_by_cell, lessons):
+def _attempt(plan, seed, iterations, days, day_names, period_ids, avail, fixed_by_cell,
+             lessons, eff):
     random.seed(seed)
     teacher_busy = defaultdict(set)   # (teacher, day, period)
     class_busy = defaultdict(set)     # (class, day, period)
@@ -120,26 +165,27 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
 
     def can_place(lesson, day, period, locked=False):
         t, s, c = lesson['teacher'], lesson['subject'], lesson['class']
+        ep = eff(t, c)
         if (t, day, period) in teacher_busy:
             return False
         if (c, day, period) in class_busy:
             return False
         if avail.get((t, day, period), True) is False:
             return False
-        if max_per_day is not None:
-            if teacher_day[(t, day)] >= max_per_day:
+        if ep['max_per_day'] is not None:
+            if teacher_day[(t, day)] >= ep['max_per_day']:
                 return False
-            if class_day[(c, day)] >= max_per_day:
+            if class_day[(c, day)] >= ep['max_per_day']:
                 return False
-        if spread_max is not None:
-            if lesson_day_count[(t, s, c, day)] >= spread_max:
+        if ep['spread_max'] is not None:
+            if lesson_day_count[(t, s, c, day)] >= ep['spread_max']:
                 return False
-        if max_gap is not None:
+        if ep['max_gap'] is not None:
             occ = teacher_day_periods[(t, day)] + [period]
-            if _max_gap_run(occ, period_ids) > max_gap:
+            if _max_gap_run(occ, period_ids) > ep['max_gap']:
                 return False
-        if period_repeat:
-            for (pr_period, pr_max) in period_repeat:
+        if ep['period_repeat']:
+            for (pr_period, pr_max) in ep['period_repeat']:
                 if period == pr_period:
                     days_set = teacher_period_days[(t, period)]
                     if day not in days_set and len(days_set) >= pr_max:
@@ -174,21 +220,18 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
 
     def slot_cost(lesson, day, period):
         t, s, c = lesson['teacher'], lesson['subject'], lesson['class']
+        ep = eff(t, c)
         cost = 0
-        # فراغات للمعلم: إن كانت هناك حصص قبل وبعد مع فراغ هنا
         seq = sorted(teacher_day_seq[(t, day)] + [period])
         if period in seq:
             i = seq.index(period)
             if i > 0 and i < len(seq) - 1:
                 if seq[i] - seq[i - 1] > 1:
                     cost += 3
-        # تكرار المادة بنفس اليوم للمعلم
-        if spread_max is not None and len(teacher_day_subs[(t, day)][s]) >= spread_max:
+        if ep['spread_max'] is not None and len(teacher_day_subs[(t, day)][s]) >= ep['spread_max']:
             cost += 4
-        # موازنة: تفضيل الأيام الأقل حصصًا للمعلم
         cost += teacher_day[(t, day)] * 1
-        # المتتالية
-        if max_consecutive:
+        if ep['max_consecutive']:
             if period - 1 in teacher_day_seq[(t, day)] or period + 1 in teacher_day_seq[(t, day)]:
                 run = 1
                 p = period - 1
@@ -197,23 +240,20 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
                 p = period + 1
                 while p in teacher_day_seq[(t, day)]:
                     run += 1; p += 1
-                if run + 1 > max_consecutive:
+                if run + 1 > ep['max_consecutive']:
                     cost += 5
-        # أقصى فراغ متتالٍ للمعلم
-        if max_gap is not None:
+        if ep['max_gap'] is not None:
             occ = sorted(teacher_day_periods[(t, day)] + [period])
-            excess = _max_gap_run(occ, period_ids) - max_gap
+            excess = _max_gap_run(occ, period_ids) - ep['max_gap']
             if excess > 0:
                 cost += 6 * excess
-        # تكرار حصة معيّنة للمعلم بحد أيام
-        if period_repeat:
-            for (pr_period, pr_max) in period_repeat:
+        if ep['period_repeat']:
+            for (pr_period, pr_max) in ep['period_repeat']:
                 if period == pr_period:
                     days_set = teacher_period_days[(t, period)]
                     if day not in days_set and len(days_set) >= pr_max:
                         cost += 6
-        # الحصة الأولى/الأخيرة
-        if avoid_first_last and (period == period_ids[0] or period == period_ids[-1]):
+        if ep['avoid_first_last'] and (period == period_ids[0] or period == period_ids[-1]):
             cost += 2
         return cost
 
@@ -244,7 +284,7 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
 
     # 3) تحسين محلّي (صعود تلّي) يقلّل العقوبة الكلية لقيود المعلمين
     keys = list(grid.keys())
-    base_pen = _grid_penalty(grid, max_gap, period_repeat, period_ids, spread_max, max_consecutive, avoid_first_last)
+    base_pen = _grid_penalty(grid, eff, period_ids)
     for _ in range(iterations):
         if not keys:
             break
@@ -265,7 +305,7 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
         if not _swap_ok(grid, teacher_busy, class_busy, (d1, p1), (d2, p2)):
             continue
         _do_swap(grid, teacher_busy, class_busy, (d1, p1), (d2, p2))
-        new_pen = _grid_penalty(grid, max_gap, period_repeat, period_ids, spread_max, max_consecutive, avoid_first_last)
+        new_pen = _grid_penalty(grid, eff, period_ids)
         if new_pen <= base_pen or random.random() < 0.03:
             base_pen = new_pen
         else:
@@ -277,9 +317,7 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, max_per_day,
     hard_ok = (len(unscheduled) == 0) and (not fixed_violation)
     hard_score = 100.0 if hard_ok else round(100.0 * scheduled / total, 1) if total else 100.0
 
-    soft_score = _soft_score(grid, teacher_day, class_day, max_consecutive,
-                             day_names, period_ids, spread_max is not None,
-                             avoid_first_last, max_gap, period_repeat)
+    soft_score = _soft_score(grid, eff, period_ids)
 
     entries = []
     for (day, period), cell in grid.items():
@@ -341,10 +379,7 @@ def _do_swap(grid, teacher_busy, class_busy, a, b):
     class_busy[(ca_cls, db, pb)].add((ca_cls, db, pb))
 
 
-def _soft_score(grid, teacher_day, class_day, max_consecutive, day_names, period_ids,
-                spread_subject, avoid_first_last, max_gap=None, period_repeat=None):
-    if period_repeat is None:
-        period_repeat = []
+def _soft_score(grid, eff, period_ids):
     if not grid:
         return 100.0
     penalties = 0.0
@@ -352,11 +387,11 @@ def _soft_score(grid, teacher_day, class_day, max_consecutive, day_names, period
     teacher_day_subs = defaultdict(lambda: defaultdict(set))
     for (day, period), cell in grid.items():
         if not cell.get('fixed'):
-            teacher_day_periods[cell['teacher']][day].append(period)
-            teacher_day_subs[cell['teacher']][day].add(cell['subject'])
-    for t, by_day in teacher_day_periods.items():
-        for day, ps in by_day.items():
-            ps = sorted(ps)
+            t = cell['teacher']; c = cell['class']; s = cell['subject']
+            ep = eff(t, c)
+            teacher_day_periods[t][day].append(period)
+            teacher_day_subs[t][day].add(s)
+            ps = sorted(teacher_day_periods[t][day])
             if len(ps) >= 2:
                 gaps = (ps[-1] - ps[0] + 1) - len(ps)
                 penalties += gaps * 2
@@ -366,14 +401,16 @@ def _soft_score(grid, teacher_day, class_day, max_consecutive, day_names, period
                     run += 1
                 else:
                     run = 1
-                if run > max_consecutive:
+                if run > ep['max_consecutive']:
                     penalties += 1
-            if max_gap is not None:
-                excess = _max_gap_run(ps, period_ids) - max_gap
+            if ep['max_gap'] is not None:
+                excess = _max_gap_run(ps, period_ids) - ep['max_gap']
                 if excess > 0:
                     penalties += 3 * excess
-            if avoid_first_last and (ps[0] == period_ids[0] or ps[-1] == period_ids[-1]):
+            if ep['avoid_first_last'] and (ps[0] == period_ids[0] or ps[-1] == period_ids[-1]):
                 penalties += 1
+            if ep['spread_max'] is not None and len(teacher_day_subs[t][day]) > ep['spread_max']:
+                penalties += 2 * (len(teacher_day_subs[t][day]) - ep['spread_max'])
     class_day_subs = defaultdict(lambda: defaultdict(set))
     for (day, period), cell in grid.items():
         class_day_subs[cell['class']][day].add(cell['subject'])
@@ -387,7 +424,7 @@ def _soft_score(grid, teacher_day, class_day, max_consecutive, day_names, period
             teacher_period_days[cell['teacher']][period].add(day)
     for t, by_p in teacher_period_days.items():
         for period, days in by_p.items():
-            for (pr_period, pr_max) in period_repeat:
+            for (pr_period, pr_max) in eff(t, t_classes_of(grid, t)).get('period_repeat', []):
                 if period == pr_period and len(days) > pr_max:
                     penalties += 2 * (len(days) - pr_max)
     for t, by_day in teacher_day_periods.items():
@@ -399,7 +436,15 @@ def _soft_score(grid, teacher_day, class_day, max_consecutive, day_names, period
     return round(max(0.0, 100.0 - (penalties / max_pen) * 100.0), 1)
 
 
-def _grid_penalty(grid, max_gap, period_repeat, period_ids, spread_max, max_consecutive, avoid_first_last):
+def t_classes_of(grid, t):
+    """يستنتج الصفّ المرتبط بمعلم ضمن الشبكة (لتطبيق قيود النطاق على الصف)."""
+    for (day, period), cell in grid.items():
+        if cell['teacher'] == t:
+            return cell['class']
+    return None
+
+
+def _grid_penalty(grid, eff, period_ids):
     """عقوبة كلية لقيود المعلمين (تُقلّل أثناء البحث المحلّي)."""
     tdp = defaultdict(lambda: defaultdict(list))   # teacher -> day -> [periods]
     tpd = defaultdict(lambda: defaultdict(set))    # teacher -> period -> {days}
@@ -407,17 +452,19 @@ def _grid_penalty(grid, max_gap, period_repeat, period_ids, spread_max, max_cons
     for (day, period), cell in grid.items():
         if cell.get('fixed'):
             continue
-        t = cell['teacher']; s = cell['subject']
+        t = cell['teacher']; s = cell['subject']; c = cell['class']
         tdp[t][day].append(period)
         tpd[t][period].add(day)
         tds[t][day].add(s)
     pen = 0.0
     for t, by_day in tdp.items():
         for day, ps in by_day.items():
+            c = t_classes_of(grid, t)
+            ep = eff(t, c)
             ps = sorted(ps)
             if len(ps) >= 2:
                 pen += ((ps[-1] - ps[0] + 1) - len(ps)) * 2
-            mc = max_consecutive or 99
+            mc = ep['max_consecutive'] or 99
             run = 1
             for i in range(1, len(ps)):
                 if ps[i] == ps[i - 1] + 1:
@@ -426,17 +473,19 @@ def _grid_penalty(grid, max_gap, period_repeat, period_ids, spread_max, max_cons
                     run = 1
                 if run > mc:
                     pen += 1
-            if avoid_first_last and (ps[0] == period_ids[0] or ps[-1] == period_ids[-1]):
+            if ep['avoid_first_last'] and (ps[0] == period_ids[0] or ps[-1] == period_ids[-1]):
                 pen += 1
-            if max_gap is not None:
-                excess = _max_gap_run(ps, period_ids) - max_gap
+            if ep['max_gap'] is not None:
+                excess = _max_gap_run(ps, period_ids) - ep['max_gap']
                 if excess > 0:
                     pen += 3 * excess
-            if spread_max is not None and len(tds[t][day]) > spread_max:
-                pen += 2 * (len(tds[t][day]) - spread_max)
+            if ep['spread_max'] is not None and len(tds[t][day]) > ep['spread_max']:
+                pen += 2 * (len(tds[t][day]) - ep['spread_max'])
     for t, by_p in tpd.items():
+        c = t_classes_of(grid, t)
+        ep = eff(t, c)
         for period, days in by_p.items():
-            for (pr_period, pr_max) in period_repeat:
+            for (pr_period, pr_max) in ep['period_repeat']:
                 if period == pr_period and len(days) > pr_max:
                     pen += 2 * (len(days) - pr_max)
     return pen
@@ -449,22 +498,8 @@ def grid_by_class_day(grid, c, day):
 def evaluate_plan(plan):
     """يعيد تقييم القيود الصلبة والناعمة لبرنامج مولّد أو معدّل يدويًا."""
     entries = list(plan.entries.select_related('teacher', 'subject', 'student_class').all())
-    cons = {c.code: c for c in plan.constraints.all()}
+    groups = _prepare_constraints(plan)
     period_ids = [p['idx'] for p in plan.active_periods]
-    c_mpd = _cons(cons, 'max_periods_per_day', 'hard')
-    max_per_day = int(c_mpd.weight) if c_mpd else 6
-    c_mc = _cons(cons, 'max_consecutive', 'soft')
-    max_consecutive = int(c_mc.weight) if c_mc else 2
-    spread_c = _cons(cons, 'spread_subject', 'soft')
-    spread_max = int(spread_c.params.get('max_per_day', 1)) if spread_c else None
-    gap_c = _cons(cons, 'max_consecutive_gap', 'soft')
-    max_gap = int(gap_c.params.get('max_gap', 1)) if gap_c else None
-    period_repeat = []
-    for c in plan.constraints.filter(code='period_repeat', enabled=True):
-        try:
-            period_repeat.append((int(c.params.get('period')), int(c.params.get('max_days', 1))))
-        except (TypeError, ValueError):
-            pass
     avail = {}
     for a in plan.availabilities.all():
         avail[(a.teacher_id, a.day, a.period)] = a.available
@@ -483,56 +518,79 @@ def evaluate_plan(plan):
     conflicts = []
 
     for e in entries:
-        key = (e.teacher_id, e.day, e.period)
+        t, c = e.teacher_id, e.student_class_id
+        ep = _eff(groups, t, c)
+        key = (t, e.day, e.period)
         if key in teacher_busy:
             conflicts.append({'type': 'teacher_double', 'day': e.day, 'period': e.period,
-                              'teacher': e.teacher_id})
-        if (e.student_class_id, e.day, e.period) in class_busy:
+                              'teacher': t})
+        if (c, e.day, e.period) in class_busy:
             conflicts.append({'type': 'class_double', 'day': e.day, 'period': e.period,
-                              'student_class': e.student_class_id})
+                              'student_class': c})
         teacher_busy.add(key)
-        class_busy.add((e.student_class_id, e.day, e.period))
+        class_busy.add((c, e.day, e.period))
         if avail.get(key, True) is False:
             conflicts.append({'type': 'availability', 'day': e.day, 'period': e.period,
-                              'teacher': e.teacher_id})
+                              'teacher': t})
         fk = fixed.get((e.day, e.period))
-        if fk and (fk[0] != e.teacher_id or fk[1] != e.subject_id or fk[2] != e.student_class_id):
+        if fk and (fk[0] != t or fk[1] != e.subject_id or fk[2] != c):
             conflicts.append({'type': 'fixed_violation', 'day': e.day, 'period': e.period})
-        teacher_day[(e.teacher_id, e.day)] += 1
-        class_day[(e.student_class_id, e.day)] += 1
-        if teacher_day[(e.teacher_id, e.day)] > max_per_day:
-            conflicts.append({'type': 'max_per_day', 'day': e.day, 'teacher': e.teacher_id})
-        if class_day[(e.student_class_id, e.day)] > max_per_day:
-            conflicts.append({'type': 'max_per_day', 'day': e.day, 'student_class': e.student_class_id})
-        teacher_day_seq[(e.teacher_id, e.day)].append(e.period)
-        lesson_day_count[(e.teacher_id, e.subject_id, e.student_class_id, e.day)] += 1
-        teacher_period_days[(e.teacher_id, e.period)].add(e.day)
-        teacher_day_periods[(e.teacher_id, e.day)].append(e.period)
+        teacher_day[(t, e.day)] += 1
+        class_day[(c, e.day)] += 1
+        if teacher_day[(t, e.day)] > ep['max_per_day']:
+            conflicts.append({'type': 'max_per_day', 'day': e.day, 'teacher': t})
+        if class_day[(c, e.day)] > ep['max_per_day']:
+            conflicts.append({'type': 'max_per_day', 'day': e.day, 'student_class': c})
+        teacher_day_seq[(t, e.day)].append(e.period)
+        lesson_day_count[(t, e.subject_id, c, e.day)] += 1
+        teacher_period_days[(t, e.period)].add(e.day)
+        teacher_day_periods[(t, e.day)].append(e.period)
 
     soft_pen = 0
-    for (t, day), seq in teacher_day_seq.items():
-        seq = sorted(seq)
+    seq_by_td = defaultdict(list)
+    for e in entries:
+        seq_by_td[(e.teacher_id, e.student_class_id, e.day)].append(e.period)
+    for (t, c, day), ps in seq_by_td.items():
+        ep = _eff(groups, t, c)
+        ps = sorted(ps)
         run = 1
-        for i in range(1, len(seq)):
-            if seq[i] == seq[i - 1] + 1:
+        for i in range(1, len(ps)):
+            if ps[i] == ps[i - 1] + 1:
                 run += 1
             else:
                 run = 1
-            if run > max_consecutive:
+            if run > ep['max_consecutive']:
                 soft_pen += 1
 
-    if spread_max is not None:
-        for (t, s, c, day), cnt in lesson_day_count.items():
-            if cnt > spread_max:
-                conflicts.append({'type': 'spread', 'day': day, 'teacher': t, 'subject': s})
-    if max_gap is not None:
-        for (t, day), ps in teacher_day_periods.items():
-            if _max_gap_run(ps, period_ids) > max_gap:
+    if True:
+        spread_map = defaultdict(int)
+        for e in entries:
+            ep = _eff(groups, e.teacher_id, e.student_class_id)
+            if ep['spread_max'] is not None:
+                k = (e.teacher_id, e.subject_id, e.student_class_id, e.day)
+                spread_map[k] += 1
+                if spread_map[k] > ep['spread_max']:
+                    conflicts.append({'type': 'spread', 'day': e.day, 'teacher': e.teacher_id,
+                                      'subject': e.subject_id})
+        gap_map = defaultdict(list)
+        for e in entries:
+            gap_map[(e.teacher_id, e.student_class_id, e.day)].append(e.period)
+        for (t, c, day), ps in gap_map.items():
+            ep = _eff(groups, t, c)
+            if ep['max_gap'] is not None and _max_gap_run(ps, period_ids) > ep['max_gap']:
                 conflicts.append({'type': 'gap', 'day': day, 'teacher': t})
-    for (pr_period, pr_max) in period_repeat:
-        for (t, period), days_set in teacher_period_days.items():
-            if period == pr_period and len(days_set) > pr_max:
-                conflicts.append({'type': 'period_repeat', 'period': period, 'teacher': t})
+        pr_map = defaultdict(set)
+        for e in entries:
+            pr_map[(e.teacher_id, e.period)].add(e.student_class_id)
+        for (t, period), cs in pr_map.items():
+            for c in cs:
+                ep = _eff(groups, t, c)
+                for (pr_period, pr_max) in ep['period_repeat']:
+                    if period == pr_period:
+                        days_count = sum(1 for e in entries
+                                         if e.teacher_id == t and e.period == period)
+                        if days_count > pr_max:
+                            conflicts.append({'type': 'period_repeat', 'period': period, 'teacher': t})
 
     total = len(entries)
     hard = len(conflicts)

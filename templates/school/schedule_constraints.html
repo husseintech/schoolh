@@ -3,15 +3,31 @@
 {% block title %}الشروط والقيود{% endblock %}
 {% block page_heading %}الشروط والقيود — {{ plan.name }}{% endblock %}
 {% block content %}
+
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">أمر بلغة طبيعية (مثل الذكاء الاصطناعي)</div>
+    <div class="card-body">
+        <p class="text-muted">اكتب الشرط بكلماتك وسيفهمه النظام ويطبّقه. مثال: «المعلم أحمد لا يزيد عن 3 حصص متتالية» أو «تكرار الحصة السابعة للمعلم خالد بحد يومين» أو «أقصى 4 حصص في اليوم للصف الأول».</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="command">
+            <div class="input-group">
+                <input name="command" class="form-control" placeholder="اكتب الشرط هنا...">
+                <button class="btn btn-primary">فهم وتطبيق</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card mb-4">
     <div class="card-header">إضافة شرط (من قالب جاهز أو مخصّص)</div>
     <div class="card-body">
         <div class="alert alert-light border">
             <b>معنى الحقول:</b>
             <ul class="mb-0">
-                <li><b>النوع:</b> «إلزامي» يُطبَّق دائمًا، «تفضيلي» يحاول المحرك الالتزام به قدر الإمكان.</li>
-                <li><b>القالب الجاهز:</b> يملأ الرمز والوصف تلقائيًا — لا تعدّل الرمز إلا إذا كنت خبيرًا.</li>
-                <li><b>القيمة/الوزن:</b> رقم يحدّد الحد (مثل 6 حصص، أو يومان).</li>
+                <li><b>النطاق:</b> «الكل» يطبّق الشرط على الجميع؛ «معلمون محددون» أو «صفوف محددة» تطبّقه على من تختارهم فقط.</li>
+                <li><b>القالب الجاهز:</b> يملأ الرمز والوصف تلقائيًا.</li>
+                <li><b>العدد/القيمة:</b> هو الرقم الذي تضعه للقيود «أقصى حصص في اليوم» و«أقصى حصص متتالية» (مثلاً 3 أو 4). أما بقية القوالب فلها حقولها الإضافية أسفل.</li>
             </ul>
         </div>
         <form method="post" id="consForm">
@@ -46,6 +62,32 @@
                     <input name="label" id="id_label" class="form-control" placeholder="مثال: توزيع مادة الرياضيات">
                 </div>
             </div>
+            <div class="row g-2 mt-1">
+                <div class="col-md-3">
+                    <label class="form-label">النطاق</label>
+                    <select name="scope" id="id_scope" class="form-select">
+                        <option value="all">الكل</option>
+                        <option value="teachers">معلمون محددون</option>
+                        <option value="classes">صفوف محددة</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">العدد/القيمة (الوزن)</label>
+                    <input type="number" step="0.1" name="weight" class="form-control" value="1" min="0">
+                </div>
+                <div class="col-md-6 d-none" id="box_teachers">
+                    <label class="form-label">المعلمون</label>
+                    <select name="teachers" class="form-select" multiple size="3">
+                        {% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 d-none" id="box_classes">
+                    <label class="form-label">الصفوف</label>
+                    <select name="classes" class="form-select" multiple size="3">
+                        {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
             <div class="row g-2 mt-1" id="paramBox">
                 <div class="col-md-3 d-none" id="box_max_per_day">
                     <label class="form-label">أقصى حصة باليوم للمادة</label>
@@ -77,19 +119,23 @@
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-bordered">
-                <thead><tr><th>النوع</th><th>الرمز</th><th>الوصف</th><th>القيمة</th><th>مفعل</th><th>إجراء</th></tr></thead>
+                <thead><tr><th>النوع</th><th>النطاق</th><th>الرمز</th><th>الوصف</th><th>القيمة</th><th>مفعل</th><th>إجراء</th></tr></thead>
                 <tbody>
                     {% for c in constraints %}
                     <tr>
                         <td>{% if c.type == 'hard' %}<span class="badge bg-danger">إلزامي</span>{% else %}<span class="badge bg-info">تفضيلي</span>{% endif %}</td>
+                        <td>
+                            {% if c.scope == 'all' %}الكل
+                            {% elif c.scope == 'teachers' %}{% for t in c.teachers.all %}{{ t.full_name }}{% if not forloop.last %}، {% endif %}{% endfor %}
+                            {% elif c.scope == 'classes' %}{% for cl in c.classes.all %}{{ cl.name }}{% if not forloop.last %}، {% endif %}{% endfor %}{% endif %}
+                        </td>
                         <td>{{ c.code }}</td>
                         <td>{{ c.label }}</td>
                         <td>
                             {% if c.code == 'spread_subject' %}بحد {{ c.params.max_per_day }} باليوم
                             {% elif c.code == 'max_consecutive_gap' %}بحد {{ c.params.max_gap }}
                             {% elif c.code == 'period_repeat' %}حصة {{ c.params.period }} بحد {{ c.params.max_days }} يومًا
-                            {% elif c.code == 'max_periods_per_day' %}{{ c.weight }}
-                            {% elif c.code == 'max_consecutive' %}{{ c.weight }}
+                            {% elif c.code == 'max_periods_per_day' or c.code == 'max_consecutive' %}{{ c.weight }}
                             {% else %}-{% endif %}
                         </td>
                         <td>{% if c.enabled %}<span class="text-success">نعم</span>{% else %}<span class="text-muted">لا</span>{% endif %}</td>
@@ -107,7 +153,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center text-muted">لا توجد شروط.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted">لا توجد شروط.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -132,6 +178,13 @@ document.getElementById('preset').addEventListener('change', function(){
     document.getElementById('id_label').value = p.label;
     document.getElementById('id_type').value = p.type;
     p.boxes.forEach(id=>document.getElementById(id).classList.remove('d-none'));
+});
+const scopeSel = document.getElementById('id_scope');
+scopeSel.addEventListener('change', function(){
+    document.getElementById('box_teachers').classList.add('d-none');
+    document.getElementById('box_classes').classList.add('d-none');
+    if(this.value === 'teachers') document.getElementById('box_teachers').classList.remove('d-none');
+    if(this.value === 'classes') document.getElementById('box_classes').classList.remove('d-none');
 });
 </script>
 {% endblock %}

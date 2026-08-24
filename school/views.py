@@ -4108,6 +4108,7 @@ from .models import (SchedulePlan, TeachingLoad, TeacherAvailability,
                      ScheduleConstraint, FixedLesson, ScheduleEntry,
                      Teacher, Class, Subject)
 from .scheduling_engine import generate_schedule, evaluate_plan
+from .constraint_nlp import parse_constraint_text
 
 DEFAULT_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 
@@ -4301,12 +4302,32 @@ def schedule_constraints(request, plan_id):
             elif code == 'period_repeat':
                 params = {'period': int(request.POST.get('period', 1) or 1),
                           'max_days': int(request.POST.get('max_days', 1) or 1)}
-            ScheduleConstraint.objects.create(
+            scope = request.POST.get('scope', 'all')
+            obj = ScheduleConstraint.objects.create(
                 plan=plan, type=request.POST.get('type', 'hard'),
-                code=code, label=label, enabled=True,
+                code=code, label=label, enabled=True, scope=scope,
                 weight=float(request.POST.get('weight', 1) or 1),
                 params=params)
+            if scope == 'teachers':
+                obj.teachers.set([int(x) for x in request.POST.getlist('teachers') if x])
+            elif scope == 'classes':
+                obj.classes.set([int(x) for x in request.POST.getlist('classes') if x])
             messages.success(request, 'تمت إضافة الشرط.')
+        elif action == 'command':
+            parsed = parse_constraint_text(request.POST.get('command', ''), plan)
+            if not parsed:
+                messages.error(request, 'لم أفهم الشرط. جرّب صياغة أوضح مثل: «المعلم أحمد لا يزيد عن 3 حصص متتالية».')
+            else:
+                obj = ScheduleConstraint.objects.create(
+                    plan=plan, type=parsed['type'], code=parsed['code'],
+                    label=parsed['label'], enabled=True, scope=parsed['scope'],
+                    weight=parsed['weight'], params=parsed['params'])
+                if parsed['scope'] == 'teachers':
+                    obj.teachers.set(parsed['teacher_ids'])
+                elif parsed['scope'] == 'classes':
+                    obj.classes.set(parsed['class_ids'])
+                messages.success(request,
+                    'تم فهم الشرط وتطبيقه: %s (النطاق: %s).' % (obj.label, obj.get_scope_display()))
         elif action == 'toggle':
             c = get_object_or_404(ScheduleConstraint, id=request.POST.get('cid'))
             c.enabled = not c.enabled
@@ -4315,8 +4336,11 @@ def schedule_constraints(request, plan_id):
             get_object_or_404(ScheduleConstraint, id=request.POST.get('cid')).delete()
         return redirect('schedule_constraints', plan_id=plan.id)
     constraints = plan.constraints.all().order_by('type', 'code')
+    teachers = Teacher.objects.filter(teaching_loads__plan=plan).distinct().order_by('full_name')
+    classes = Class.objects.filter(teaching_loads__plan=plan).distinct().order_by('name')
     return render(request, 'school/schedule_constraints.html',
-                  {'plan': plan, 'constraints': constraints})
+                  {'plan': plan, 'constraints': constraints,
+                   'teachers': teachers, 'classes': classes})
 
 
 @login_required
