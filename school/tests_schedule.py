@@ -110,6 +110,20 @@ class ScheduleViewTests(TestCase):
         self.assertEqual(c.type, 'hard')
         self.assertEqual(c.weight, 5.0)
 
+    def test_load_add_and_delete(self):
+        from school.models import TeachingLoad
+        self.client.login(username='admin', password='pw')
+        r = self.client.post(reverse('teaching_loads', args=[self.plan.id]), {
+            'action': 'save', 'teacher': self.teacher.id, 'subject': self.subj.id,
+            'student_class': self.cls.id, 'weekly_periods': 4, 'semester': ''})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(TeachingLoad.objects.filter(plan=self.plan).count(), 1)
+        lid = TeachingLoad.objects.filter(plan=self.plan).first().id
+        r = self.client.post(reverse('teaching_loads', args=[self.plan.id]), {
+            'action': 'delete', 'load_id': lid})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(TeachingLoad.objects.filter(plan=self.plan).count(), 0)
+
 class ScheduleConstraintTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('cuser', password='pw')

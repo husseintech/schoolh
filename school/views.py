@@ -4226,23 +4226,52 @@ def teaching_loads(request, plan_id):
                                                 semester='الثاني')
                 messages.success(request, 'تم تقسيم النصاب على الفصلين الدراسيين.')
             return redirect('teaching_loads', plan_id=plan.id)
+        if action == 'delete':
+            lid = request.POST.get('load_id')
+            plan.teaching_loads.filter(id=lid).delete()
+            messages.success(request, 'تم حذف النصاب.')
+            return redirect('teaching_loads', plan_id=plan.id)
         tid = request.POST.get('teacher')
         sid = request.POST.get('subject')
         cid = request.POST.get('student_class')
         wp = int(request.POST.get('weekly_periods', 1) or 1)
         sem = request.POST.get('semester', '')
+        lid = request.POST.get('load_id')
         if tid and sid and cid:
-            TeachingLoad.objects.update_or_create(
-                plan=plan, teacher_id=tid, subject_id=sid, student_class_id=cid,
-                defaults={'weekly_periods': wp, 'semester': sem})
-            messages.success(request, 'تم حفظ النصاب.')
+            if lid:
+                tl = plan.teaching_loads.filter(id=lid).first()
+                if tl:
+                    tl.teacher_id = tid
+                    tl.subject_id = sid
+                    tl.student_class_id = cid
+                    tl.weekly_periods = wp
+                    tl.semester = sem
+                    tl.save()
+                    messages.success(request, 'تم تحديث النصاب.')
+            else:
+                TeachingLoad.objects.update_or_create(
+                    plan=plan, teacher_id=tid, subject_id=sid, student_class_id=cid,
+                    defaults={'weekly_periods': wp, 'semester': sem})
+                messages.success(request, 'تم حفظ النصاب.')
         return redirect('teaching_loads', plan_id=plan.id)
     loads = plan.teaching_loads.select_related('teacher', 'subject', 'student_class').all()
+    agg = {}
+    order = []
+    for l in loads:
+        k = l.teacher_id
+        if k not in agg:
+            agg[k] = {'teacher': l.teacher, 'total': 0, 'items': []}
+            order.append(k)
+        agg[k]['total'] += l.weekly_periods
+        agg[k]['items'].append(l)
+    teacher_data = [agg[k] for k in order]
+    total_periods = sum(t['total'] for t in teacher_data)
     teachers = Teacher.objects.all().order_by('full_name')
     subjects = Subject.objects.all().order_by('name')
     classes = Class.objects.all().order_by('name')
     return render(request, 'school/teaching_loads.html',
-                  {'plan': plan, 'loads': loads, 'teachers': teachers,
+                  {'plan': plan, 'loads': loads, 'teacher_data': teacher_data,
+                   'total_periods': total_periods, 'teachers': teachers,
                    'subjects': subjects, 'classes': classes})
 
 
