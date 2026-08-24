@@ -4291,12 +4291,21 @@ def schedule_constraints(request, plan_id):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'add':
+            code = request.POST.get('code', '').strip()
+            label = request.POST.get('label', '').strip()
+            params = {}
+            if code == 'spread_subject':
+                params = {'max_per_day': int(request.POST.get('max_per_day', 1) or 1)}
+            elif code == 'max_consecutive_gap':
+                params = {'max_gap': int(request.POST.get('max_gap', 1) or 1)}
+            elif code == 'period_repeat':
+                params = {'period': int(request.POST.get('period', 1) or 1),
+                          'max_days': int(request.POST.get('max_days', 1) or 1)}
             ScheduleConstraint.objects.create(
                 plan=plan, type=request.POST.get('type', 'hard'),
-                code=request.POST.get('code', '').strip(),
-                label=request.POST.get('label', '').strip(),
-                enabled=True, weight=float(request.POST.get('weight', 1) or 1),
-                params={})
+                code=code, label=label, enabled=True,
+                weight=float(request.POST.get('weight', 1) or 1),
+                params=params)
             messages.success(request, 'تمت إضافة الشرط.')
         elif action == 'toggle':
             c = get_object_or_404(ScheduleConstraint, id=request.POST.get('cid'))

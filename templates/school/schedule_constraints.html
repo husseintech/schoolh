@@ -4,56 +4,94 @@
 {% block page_heading %}الشروط والقيود — {{ plan.name }}{% endblock %}
 {% block content %}
 <div class="card mb-4">
-    <div class="card-header">إضافة شرط</div>
+    <div class="card-header">إضافة شرط (من قالب جاهز أو مخصّص)</div>
     <div class="card-body">
-        <form method="post" class="row g-2 align-items-end">
+        <div class="alert alert-light border">
+            <b>معنى الحقول:</b>
+            <ul class="mb-0">
+                <li><b>النوع:</b> «إلزامي» يُطبَّق دائمًا، «تفضيلي» يحاول المحرك الالتزام به قدر الإمكان.</li>
+                <li><b>القالب الجاهز:</b> يملأ الرمز والوصف تلقائيًا — لا تعدّل الرمز إلا إذا كنت خبيرًا.</li>
+                <li><b>القيمة/الوزن:</b> رقم يحدّد الحد (مثل 6 حصص، أو يومان).</li>
+            </ul>
+        </div>
+        <form method="post" id="consForm">
             {% csrf_token %}
             <input type="hidden" name="action" value="add">
-            <div class="col-md-2">
-                <label class="form-label">النوع</label>
-                <select name="type" class="form-select">
-                    <option value="hard">إلزامي</option>
-                    <option value="soft">تفضيلي</option>
-                </select>
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">قالب جاهز</label>
+                    <select id="preset" class="form-select">
+                        <option value="">— مخصّص —</option>
+                        <option value="max_periods_per_day">أقصى عدد حصص للمعلم في اليوم</option>
+                        <option value="max_consecutive">أقصى حصص متتالية للمعلم</option>
+                        <option value="spread_subject">توزيع المادة: أقصى حصة باليوم للمادة</option>
+                        <option value="max_consecutive_gap">أقصى فراغات متتالية للمعلم</option>
+                        <option value="period_repeat">تكرار حصة معيّنة للمعلم (بحد أيام)</option>
+                        <option value="avoid_first_last">تجنّب الحصة الأولى/الأخيرة</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">النوع</label>
+                    <select name="type" id="id_type" class="form-select">
+                        <option value="hard">إلزامي</option>
+                        <option value="soft" selected>تفضيلي</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الرمز (لا تعدّله)</label>
+                    <input name="code" id="id_code" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الوصف المقروء</label>
+                    <input name="label" id="id_label" class="form-control" placeholder="مثال: توزيع مادة الرياضيات">
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">الرمز</label>
-                <input name="code" class="form-control" list="codesList" placeholder="مثال: max_periods_per_day">
-                <datalist id="codesList">
-                    <option value="max_periods_per_day">
-                    <option value="max_consecutive">
-                    <option value="spread_subject">
-                    <option value="avoid_first_last">
-                </datalist>
+            <div class="row g-2 mt-1" id="paramBox">
+                <div class="col-md-3 d-none" id="box_max_per_day">
+                    <label class="form-label">أقصى حصة باليوم للمادة</label>
+                    <input type="number" name="max_per_day" class="form-control" value="1" min="1">
+                </div>
+                <div class="col-md-3 d-none" id="box_max_gap">
+                    <label class="form-label">أقصى فراغات متتالية</label>
+                    <input type="number" name="max_gap" class="form-control" value="1" min="0">
+                </div>
+                <div class="col-md-3 d-none" id="box_period">
+                    <label class="form-label">رقم الحصة (مثل 7)</label>
+                    <input type="number" name="period" class="form-control" value="7" min="1">
+                </div>
+                <div class="col-md-3 d-none" id="box_max_days">
+                    <label class="form-label">أقصى أيام تكرارها للمعلم</label>
+                    <input type="number" name="max_days" class="form-control" value="3" min="1">
+                </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">الوصف</label>
-                <input name="label" class="form-control" placeholder="مثال: الحد الأقصى 6 حصص يوميًا">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">الوزن (تفضيلي)</label>
-                <input name="weight" type="number" step="0.1" value="1" class="form-control">
-            </div>
-            <div class="col-md-1">
-                <button class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i></button>
+            <div class="mt-3">
+                <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة الشرط</button>
+                <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary">رجوع</a>
             </div>
         </form>
     </div>
 </div>
 
 <div class="card">
-    <div class="card-header">الشروط</div>
+    <div class="card-header">الشروط الحالية</div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-bordered">
-                <thead><tr><th>النوع</th><th>الرمز</th><th>الوصف</th><th>الوزن</th><th>مفعل</th><th>إجراء</th></tr></thead>
+                <thead><tr><th>النوع</th><th>الرمز</th><th>الوصف</th><th>القيمة</th><th>مفعل</th><th>إجراء</th></tr></thead>
                 <tbody>
                     {% for c in constraints %}
                     <tr>
                         <td>{% if c.type == 'hard' %}<span class="badge bg-danger">إلزامي</span>{% else %}<span class="badge bg-info">تفضيلي</span>{% endif %}</td>
                         <td>{{ c.code }}</td>
                         <td>{{ c.label }}</td>
-                        <td>{{ c.weight }}</td>
+                        <td>
+                            {% if c.code == 'spread_subject' %}بحد {{ c.params.max_per_day }} باليوم
+                            {% elif c.code == 'max_consecutive_gap' %}بحد {{ c.params.max_gap }}
+                            {% elif c.code == 'period_repeat' %}حصة {{ c.params.period }} بحد {{ c.params.max_days }} يومًا
+                            {% elif c.code == 'max_periods_per_day' %}{{ c.weight }}
+                            {% elif c.code == 'max_consecutive' %}{{ c.weight }}
+                            {% else %}-{% endif %}
+                        </td>
                         <td>{% if c.enabled %}<span class="text-success">نعم</span>{% else %}<span class="text-muted">لا</span>{% endif %}</td>
                         <td>
                             <form method="post" class="d-inline">{% csrf_token %}
@@ -74,7 +112,26 @@
                 </tbody>
             </table>
         </div>
-        <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary btn-sm">رجوع</a>
     </div>
 </div>
+
+<script>
+const PRESETS = {
+    max_periods_per_day: {type:'hard', label:'أقصى عدد حصص للمعلم في اليوم', boxes:[]},
+    max_consecutive: {type:'soft', label:'أقصى حصص متتالية للمعلم', boxes:[]},
+    spread_subject: {type:'soft', label:'توزيع المادة: أقصى حصة باليوم للمادة', boxes:['box_max_per_day']},
+    max_consecutive_gap: {type:'soft', label:'أقصى فراغات متتالية للمعلم', boxes:['box_max_gap']},
+    period_repeat: {type:'soft', label:'تكرار حصة معيّنة للمعلم بحد أيام', boxes:['box_period','box_max_days']},
+    avoid_first_last: {type:'soft', label:'تجنّب وضع حصة في بداية أو نهاية اليوم', boxes:[]},
+};
+document.getElementById('preset').addEventListener('change', function(){
+    const p = PRESETS[this.value];
+    document.querySelectorAll('#paramBox .d-none').forEach(b=>b.classList.add('d-none'));
+    if(!p){ return; }
+    document.getElementById('id_code').value = this.value;
+    document.getElementById('id_label').value = p.label;
+    document.getElementById('id_type').value = p.type;
+    p.boxes.forEach(id=>document.getElementById(id).classList.remove('d-none'));
+});
+</script>
 {% endblock %}
