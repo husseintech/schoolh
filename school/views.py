@@ -4206,14 +4206,34 @@ def teaching_loads(request, plan_id):
         return redirect('schedule_plan_list')
     plan = get_object_or_404(SchedulePlan, id=plan_id)
     if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'split':
+            lid = request.POST.get('load_id')
+            tl = plan.teaching_loads.filter(id=lid).first()
+            if tl:
+                n = tl.weekly_periods
+                first = (n + 1) // 2
+                second = n - first
+                tl.delete()
+                if first:
+                    TeachingLoad.objects.create(plan=plan, teacher=tl.teacher, subject=tl.subject,
+                                                student_class=tl.student_class, weekly_periods=first,
+                                                semester='الأول')
+                if second:
+                    TeachingLoad.objects.create(plan=plan, teacher=tl.teacher, subject=tl.subject,
+                                                student_class=tl.student_class, weekly_periods=second,
+                                                semester='الثاني')
+                messages.success(request, 'تم تقسيم النصاب على الفصلين الدراسيين.')
+            return redirect('teaching_loads', plan_id=plan.id)
         tid = request.POST.get('teacher')
         sid = request.POST.get('subject')
         cid = request.POST.get('student_class')
         wp = int(request.POST.get('weekly_periods', 1) or 1)
+        sem = request.POST.get('semester', '')
         if tid and sid and cid:
             TeachingLoad.objects.update_or_create(
                 plan=plan, teacher_id=tid, subject_id=sid, student_class_id=cid,
-                defaults={'weekly_periods': wp})
+                defaults={'weekly_periods': wp, 'semester': sem})
             messages.success(request, 'تم حفظ النصاب.')
         return redirect('teaching_loads', plan_id=plan.id)
     loads = plan.teaching_loads.select_related('teacher', 'subject', 'student_class').all()
@@ -4358,12 +4378,24 @@ def _grid_context(plan, teacher=None, student_class=None):
     cells = {}
     for e in q:
         cells[(e.day, e.period)] = e
+    conflict_cells = set()
+    try:
+        for c in evaluate_plan(plan)['conflicts']:
+            if 'day' in c and 'period' in c:
+                conflict_cells.add((c['day'], c['period']))
+    except Exception:
+        pass
+    for (day, period), cell in cells.items():
+        if (day, period) in conflict_cells:
+            cell.conflict_flag = True
     grid_data = []
     for p in periods:
-        row = [cells.get((d['name'], p['idx'])) for d in days]
+        row = [{'day': d['name'], 'period': p['idx'], 'cell': cells.get((d['name'], p['idx']))}
+               for d in days]
         grid_data.append((p, row))
     return {'plan': plan, 'days': days, 'periods': periods,
-            'cells': cells, 'grid_data': grid_data, 'color_map': color_map}
+            'cells': cells, 'grid_data': grid_data, 'color_map': color_map,
+            'conflict_cells': conflict_cells}
 
 
 @login_required
@@ -4596,15 +4628,40 @@ def schedule_edit_grid(request, plan_id):
     periods = plan.active_periods
     if request.method == 'POST':
         delete_ids = set(request.POST.getlist('delete'))
+        new_vals = {}
+        for e in entries:
+            if e.id in delete_ids:
+                continue
+            new_vals[e.id] = {
+                'teacher': int(request.POST.get('teacher_%d' % e.id, e.teacher_id)),
+                'subject': int(request.POST.get('subject_%d' % e.id, e.subject_id)),
+                'class': int(request.POST.get('class_%d' % e.id, e.student_class_id)),
+                'day': request.POST.get('day_%d' % e.id, e.day),
+                'period': int(request.POST.get('period_%d' % e.id, e.period)),
+            }
+        seen_t = {}
+        seen_c = {}
+        conflict = False
+        for eid, v in new_vals.items():
+            kt = (v['teacher'], v['day'], v['period'])
+            kc = (v['class'], v['day'], v['period'])
+            if kt in seen_t or kc in seen_c:
+                conflict = True
+            seen_t[kt] = eid
+            seen_c[kc] = eid
+        if conflict:
+            messages.error(request, 'يوجد تعارض: حصتان في نفس المعلم أو نفس الصف والحصة. راجع الإدخالات.')
+            return redirect('schedule_edit_grid', plan_id=plan.id)
         for e in entries:
             if e.id in delete_ids:
                 e.delete()
                 continue
-            e.teacher_id = int(request.POST.get('teacher_%d' % e.id, e.teacher_id))
-            e.subject_id = int(request.POST.get('subject_%d' % e.id, e.subject_id))
-            e.student_class_id = int(request.POST.get('class_%d' % e.id, e.student_class_id))
-            e.day = request.POST.get('day_%d' % e.id, e.day)
-            e.period = int(request.POST.get('period_%d' % e.id, e.period))
+            v = new_vals[e.id]
+            e.teacher_id = v['teacher']
+            e.subject_id = v['subject']
+            e.student_class_id = v['class']
+            e.day = v['day']
+            e.period = v['period']
             e.save()
         res = evaluate_plan(plan)
         plan.hard_score = res['hard_score']
@@ -4618,4 +4675,45 @@ def schedule_edit_grid(request, plan_id):
     return render(request, 'school/schedule_edit_grid.html',
                   {'plan': plan, 'entries': entries, 'teachers': teachers,
                    'subjects': subjects, 'classes': classes, 'days': days, 'periods': periods})
+
+@login_required
+def schedule_entry_move(request, plan_id, entry_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        e = get_object_or_404(ScheduleEntry, id=entry_id, plan=plan)
+        day = request.POST.get('day')
+        period = int(request.POST.get('period', e.period) or e.period)
+        if day:
+            e.day = day
+            e.period = period
+            e.save()
+        res = evaluate_plan(plan)
+        plan.hard_score = res['hard_score']
+        plan.soft_score = res['soft_score']
+        plan.generated_at = timezone.now()
+        plan.status = 'active'
+        plan.save()
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True, 'hard_score': res['hard_score'],
+                                 'soft_score': res['soft_score']})
+        messages.success(request, 'تم نقل الحصة.')
+    return redirect('schedule_grid', plan_id=plan.id)
+
+
+@login_required
+def schedule_push_legacy(request, plan_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        entries = plan.entries.select_related('teacher', 'subject', 'student_class').all()
+        TeacherScheduleEntry.objects.all().delete()
+        bulk = [TeacherScheduleEntry(teacher=e.teacher, day=e.day, period=e.period,
+                                     subject=e.subject, student_class=e.student_class,
+                                     updated_by=request.user) for e in entries]
+        TeacherScheduleEntry.objects.bulk_create(bulk)
+        messages.success(request, 'تمت مزامنة الجدول المولّد مع الجدول اليدوي للمعلمين.')
+    return redirect('schedule_plan_detail', plan_id=plan.id)
 

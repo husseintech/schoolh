@@ -37,8 +37,11 @@ def _param(c, key, default):
 
 def _build_lessons(plan, fixed_keys):
     """يبني وحدات الحصص المطلوبة من الأنصبة بعد خصم الحصص المثبتة."""
+    sem = (plan.semester or '').strip()
     remaining = defaultdict(int)
     for tl in plan.teaching_loads.select_related('teacher', 'subject', 'student_class').all():
+        if sem and tl.semester and tl.semester != sem:
+            continue
         remaining[(tl.teacher_id, tl.subject_id, tl.student_class_id)] += tl.weekly_periods
     for key in fixed_keys:
         if key in remaining and remaining[key] > 0:

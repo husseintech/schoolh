@@ -10,7 +10,7 @@
             {% for it in items %}
             <div class="col-md-3">
                 <a href="{% if kind == 'teacher' %}{% url 'schedule_teacher' plan.id it.id %}{% else %}{% url 'schedule_class' plan.id it.id %}{% endif %}"
-                   class="btn btn-outline-primary w-100">{{ it.full_name|default:it.name }}</a>
+                   class="btn btn-outline-primary w-100">{{ it.full_name }}</a>
             </div>
             {% endfor %}
         </div>

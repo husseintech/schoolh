@@ -1006,8 +1006,11 @@ class TeachingLoad(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE,
                                  related_name='teaching_loads', verbose_name='المادة')
     student_class = models.ForeignKey(Class, on_delete=models.CASCADE,
-                                       related_name='teaching_loads', verbose_name='الصف/الشعبة')
+                                        related_name='teaching_loads', verbose_name='الصف/الشعبة')
     weekly_periods = models.PositiveIntegerField('عدد الحصص أسبوعيًا', default=1)
+    SEMESTER_CHOICES = [('', 'كل الفصول'), ('الأول', 'الفصل الأول'), ('الثاني', 'الفصل الثاني')]
+    semester = models.CharField('الفصل الدراسي', max_length=20, choices=SEMESTER_CHOICES,
+                                blank=True, default='')
 
     class Meta:
         verbose_name = 'نصيب مادة'
