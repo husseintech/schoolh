@@ -62,6 +62,13 @@ class ScheduleEngineTests(TestCase):
         keys = [(e['class'], e['day'], e['period']) for e in res['entries']]
         self.assertEqual(len(keys), len(set(keys)))
         self.assertEqual(len(res['entries']), 6)
+        ScheduleEntry.objects.bulk_create([
+            ScheduleEntry(plan=self.plan, day=e['day'], period=e['period'],
+                          teacher_id=e['teacher'], subject_id=e['subject'],
+                          student_class_id=e['class'], fixed=e['fixed'])
+            for e in res['entries']
+        ])
+        self.assertEqual(ScheduleEntry.objects.filter(plan=self.plan).count(), 6)
 
     def test_hillclimb_no_crash(self):
         days = [{'idx': i, 'name': 'يوم%d' % i, 'active': True} for i in range(5)]

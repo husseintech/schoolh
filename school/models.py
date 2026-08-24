@@ -1116,8 +1116,6 @@ class ScheduleEntry(models.Model):
         verbose_name_plural = 'حصص البرنامج'
         ordering = ['day', 'period']
         constraints = [
-            models.UniqueConstraint(fields=['plan', 'day', 'period'],
-                                     name='unique_plan_cell'),
             models.UniqueConstraint(fields=['plan', 'teacher', 'day', 'period'],
                                      name='unique_plan_teacher_cell'),
             models.UniqueConstraint(fields=['plan', 'student_class', 'day', 'period'],
