@@ -49,18 +49,20 @@
                 <tr>
                     <th>{{ period.name }}{% if period.start %}<br><small class="text-muted">{{ period.start }}-{{ period.end }}</small>{% endif %}</th>
                     {% for c in row %}
-                        {% with cell=c.cell day=c.day pidx=c.period %}
-                        <td style="background:{{ cell.color|default:'' }};{% if cell.conflict_flag %}outline:3px solid #dc3545;{% endif %}"
-                            {% if not cell %}ondragover="event.preventDefault()" ondrop="onDrop(event, '{{ day }}', {{ pidx }})"{% endif %}>
-                            {% if cell %}
-                                <div class="fw-bold">{{ cell.subject.name }}</div>
-                                <div class="small">{{ cell.teacher.full_name }}</div>
-                                <div class="small text-muted">{{ cell.student_class.name }}</div>
-                                {% if cell.fixed %}<i class="bi bi-pin-fill text-danger"></i>{% endif %}
-                                <span class="drag-handle" draggable="true"
-                                      ondragstart="event.dataTransfer.setData('text/plain','{{ cell.id }}')"
-                                      style="cursor:grab; font-size:0.8rem;">⠿</span>
-                            {% else %}<span class="text-muted">-</span>{% endif %}
+                        {% with celllist=c.cell day=c.day pidx=c.period %}
+                        <td style="vertical-align:top;{% if not celllist %}background:#fafafa;{% endif %}"
+                            {% if not celllist %}ondragover="event.preventDefault()" ondrop="onDrop(event, '{{ day }}', {{ pidx }})"{% endif %}>
+                            {% for cell in celllist %}
+                                <div class="lesson-cell mb-1 p-1 rounded" style="background:{{ cell.color|default:'' }};{% if cell.conflict_flag %}outline:3px solid #dc3545;{% endif %}">
+                                    <div class="fw-bold">{{ cell.subject.name }}</div>
+                                    <div class="small">{{ cell.teacher.full_name }}</div>
+                                    <div class="small text-muted">{{ cell.student_class.name }}</div>
+                                    {% if cell.fixed %}<i class="bi bi-pin-fill text-danger"></i>{% endif %}
+                                    <span class="drag-handle" draggable="true"
+                                          ondragstart="event.dataTransfer.setData('text/plain','{{ cell.id }}')"
+                                          style="cursor:grab; font-size:0.8rem;">⠿</span>
+                                </div>
+                            {% empty %}<span class="text-muted">-</span>{% endfor %}
                         </td>
                         {% endwith %}
                     {% endfor %}

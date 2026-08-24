@@ -1,4 +1,5 @@
 import os, io, csv, re
+from collections import defaultdict
 from datetime import date, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -4551,26 +4552,27 @@ def _grid_context(plan, teacher=None, student_class=None):
         q = q.filter(teacher=teacher)
     if student_class is not None:
         q = q.filter(student_class=student_class)
-    cells = {}
+    cells = defaultdict(list)
     for e in q:
-        cells[(e.day, e.period)] = e
-    conflict_cells = set()
-    conflict_texts = []
+        cells[(e.day, e.period)].append(e)
+    conflict_keys = set()
     try:
         for c in evaluate_plan(plan)['conflicts']:
             if 'day' in c and 'period' in c:
-                conflict_cells.add((c['day'], c['period']))
+                conflict_keys.add((c['day'], c['period'], c.get('teacher'), c.get('student_class')))
     except Exception:
         pass
     conflict_texts = _conflict_texts(plan)
-    for (day, period), cell in cells.items():
-        if (day, period) in conflict_cells:
-            cell.conflict_flag = True
+    for lst in cells.values():
+        for cell in lst:
+            if (cell.day, cell.period, cell.teacher_id, cell.student_class_id) in conflict_keys:
+                cell.conflict_flag = True
     grid_data = []
     for p in periods:
-        row = [{'day': d['name'], 'period': p['idx'], 'cell': cells.get((d['name'], p['idx']))}
+        row = [{'day': d['name'], 'period': p['idx'], 'cell': cells.get((d['name'], p['idx']), [])}
                for d in days]
         grid_data.append((p, row))
+    conflict_cells = {(k[0], k[1]) for k in conflict_keys}
     return {'plan': plan, 'days': days, 'periods': periods,
             'cells': cells, 'grid_data': grid_data, 'color_map': color_map,
             'conflict_cells': conflict_cells, 'conflict_texts': conflict_texts}

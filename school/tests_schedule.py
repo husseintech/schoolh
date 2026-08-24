@@ -46,6 +46,23 @@ class ScheduleEngineTests(TestCase):
         self.assertLess(res['hard_score'], 100.0)
         self.assertTrue(any(c['type'] == 'availability' for c in res['conflicts']))
 
+    def test_parallel_classes_both_scheduled(self):
+        cls2 = Class.objects.create(name='أولى ب')
+        u2 = User.objects.create_user('tuser2', password='x')
+        t2 = Teacher.objects.create(full_name='معلم2', user=u2)
+        sub2 = Subject.objects.create(name='علوم')
+        TeachingLoad.objects.create(plan=self.plan, teacher=t2, subject=sub2,
+                                    student_class=cls2, weekly_periods=3)
+        for d in self.plan.active_days:
+            for p in self.plan.active_periods:
+                TeacherAvailability.objects.create(plan=self.plan, teacher=t2,
+                                                   day=d['name'], period=p['idx'], available=True)
+        res = generate_schedule(self.plan)
+        self.assertEqual(len(res['unscheduled']), 0)
+        keys = [(e['class'], e['day'], e['period']) for e in res['entries']]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertEqual(len(res['entries']), 6)
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
