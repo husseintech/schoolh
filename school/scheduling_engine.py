@@ -257,6 +257,35 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, avail, fixed_b
             cost += 2
         return cost
 
+    def block_reason(lesson):
+        t, s, c = lesson['teacher'], lesson['subject'], lesson['class']
+        ep = eff(t, c)
+        reasons = defaultdict(int)
+        for day in day_names:
+            for period in period_ids:
+                if (t, day, period) in teacher_busy:
+                    reasons['المعلم مشغول في نفس الخانة'] += 1; continue
+                if (c, day, period) in class_busy:
+                    reasons['الصف مشغول في نفس الخانة (تجاوز سعة الصف = الأيام × الحصص/اليوم)'] += 1; continue
+                if avail.get((t, day, period), True) is False:
+                    reasons['المعلم غير متاح (التفريغ) في هذه الخانة'] += 1; continue
+                if ep['max_per_day'] is not None and teacher_day[(t, day)] >= ep['max_per_day']:
+                    reasons['تجاوز أقصى حصص للمعلم في اليوم (%s)' % ep['max_per_day']] += 1; continue
+                if ep['max_per_day'] is not None and class_day[(c, day)] >= ep['max_per_day']:
+                    reasons['تجاوز أقصى حصص للصف في اليوم'] += 1; continue
+                if ep['spread_max'] is not None and lesson_day_count[(t, s, c, day)] >= ep['spread_max']:
+                    reasons['تكرار المادة بنفس اليوم أكثر من المسموح'] += 1; continue
+                if ep['max_gap'] is not None and _max_gap_run(teacher_day_periods[(t, day)] + [period], period_ids) > ep['max_gap']:
+                    reasons['تجاوز أقصى فراغات متتالية للمعلم'] += 1; continue
+                if ep['period_repeat']:
+                    for (pr_period, pr_max) in ep['period_repeat']:
+                        if period == pr_period and day not in teacher_period_days[(t, period)] and len(teacher_period_days[(t, period)]) >= pr_max:
+                            reasons['تكرار الحصة بحد أيام للمعلم'] += 1; continue
+                return None
+        if reasons:
+            return max(reasons.items(), key=lambda kv: kv[1])[0]
+        return 'لا توجد خانة متاحة مطلقًا'
+
     unscheduled = []
     for lesson in lessons:
         candidates = []
@@ -265,7 +294,7 @@ def _attempt(plan, seed, iterations, days, day_names, period_ids, avail, fixed_b
                 if can_place(lesson, day, period):
                     candidates.append((slot_cost(lesson, day, period), day, period))
         if not candidates:
-            unscheduled.append(lesson)
+            unscheduled.append(dict(lesson, reason=block_reason(lesson)))
             continue
         candidates.sort(key=lambda x: (x[0], random.random()))
         _, day, period = candidates[0]

@@ -4492,9 +4492,10 @@ def schedule_generate(request, plan_id):
             cmap = {c.id: c.name for c in Class.objects.all()}
             details = []
             for u in result['unscheduled']:
-                details.append('%s — %s (%s)' % (tmap.get(u['teacher'], u['teacher']),
+                details.append('%s — %s (%s): %s' % (tmap.get(u['teacher'], u['teacher']),
                                                  smap.get(u['subject'], u['subject']),
-                                                 cmap.get(u['class'], u['class'])))
+                                                 cmap.get(u['class'], u['class']),
+                                                 u.get('reason', '')))
             messages.warning(request, 'تعذّر جدولة %d حصة (أنصبة زائدة أو تعارضات صلبة): %s' % (
                 len(details), ' | '.join(details)))
         elif result['hard_score'] < 100:
