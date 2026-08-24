@@ -1,0 +1,38 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}برنامج المعلم{% endblock %}
+{% block page_heading %}برنامج المعلم: {{ teacher.full_name }} — {{ plan.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4 no-print">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-badge"></i> {{ teacher.full_name }}</span>
+        <div>
+            <a href="{% url 'schedule_teachers' plan.id %}" class="btn btn-outline-secondary btn-sm">المعلمون</a>
+            <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary btn-sm">رجوع</a>
+            <button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i> طباعة</button>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table table-bordered text-center align-middle" style="min-width:800px;">
+            <thead><tr><th>الحصة</th>{% for d in days %}<th>{{ d.name }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for period, row in grid_data %}
+                <tr>
+                    <th>{{ period.name }}</th>
+                    {% for cell in row %}
+                        <td style="background:{{ cell.color|default:'' }};">
+                            {% if cell %}
+                                <div class="fw-bold">{{ cell.subject.name }}</div>
+                                <div class="small text-muted">{{ cell.student_class.name }}</div>
+                            {% else %}<span class="text-muted">-</span>{% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

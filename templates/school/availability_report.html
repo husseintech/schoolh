@@ -1,0 +1,40 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}كشف تفريغ المعلمين{% endblock %}
+{% block page_heading %}كشف تفريغ المعلمين — {{ plan.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4 no-print">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-check"></i> كشف التفريغ</span>
+        <div>
+            <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary btn-sm">رجوع</a>
+            <button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i> طباعة</button>
+        </div>
+    </div>
+</div>
+{% for t in teachers %}
+<div class="card mb-3">
+    <div class="card-header">{{ t.full_name }}</div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered text-center" style="min-width:700px;">
+            <thead><tr><th>اليوم \\ الحصة</th>{% for p in periods %}<th>{{ p.name }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for d in days %}
+                <tr>
+                    <th>{{ d.name }}</th>
+                    {% for p in periods %}
+                        {% with av=existing.get((t.id, d.name, p.idx) %}
+                        {% with pl=placed.get((t.id, d.name, p.idx) %}
+                        <td class="{% if pl %}table-primary{% elif av %}table-success{% elif av is False %}table-danger{% endif %}">
+                            {% if pl %}حصة{% elif av %}متاح{% elif av is False %}غير متاح{% else %}فراغ{% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

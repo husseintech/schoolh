@@ -4095,3 +4095,509 @@ def no_objection_delete(request, obj_id):
     messages.success(request, 'تم حذف لا مانع')
     return redirect('no_objection_list')
 
+# ===================== نظام البرامج الأسبوعية =====================
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.http import HttpResponse
+from django.utils import timezone
+import json
+from datetime import date, datetime
+from .models import (SchedulePlan, TeachingLoad, TeacherAvailability,
+                     ScheduleConstraint, FixedLesson, ScheduleEntry,
+                     Teacher, Class, Subject)
+from .scheduling_engine import generate_schedule, evaluate_plan
+
+DEFAULT_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+
+
+def _sch_perm(request, action):
+    if not has_perm(request.user, 'schedule', action):
+        messages.error(request, 'ليس لديك صلاحية كافية لهذا القسم.')
+        return False
+    return True
+
+
+def _subject_colors(subjects):
+    colors = {}
+    n = max(1, len(subjects))
+    for i, s in enumerate(subjects):
+        hue = int(360 * i / n)
+        colors[s.id] = 'hsl(%d,60%%,52%%)' % hue
+    return colors
+
+
+@login_required
+def schedule_plan_list(request):
+    if not _sch_perm(request, 'view'):
+        return redirect('dashboard')
+    plans = SchedulePlan.objects.all()
+    return render(request, 'school/schedule_plans.html', {'plans': plans})
+
+
+@login_required
+def schedule_plan_detail(request, plan_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    return render(request, 'school/schedule_plan_detail.html', {'plan': plan})
+
+
+@login_required
+def schedule_plan_settings(request, plan_id=None):
+    if plan_id:
+        if not _sch_perm(request, 'edit'):
+            return redirect('schedule_plan_list')
+        plan = get_object_or_404(SchedulePlan, id=plan_id)
+    else:
+        if not _sch_perm(request, 'add'):
+            return redirect('schedule_plan_list')
+        plan = None
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        year = request.POST.get('academic_year', '').strip()
+        sem = request.POST.get('semester', '').strip()
+        if not name:
+            messages.error(request, 'الرجاء إدخال اسم البرنامج.')
+            return redirect(request.path)
+        days = []
+        day_names = request.POST.getlist('day_name')
+        day_active = request.POST.getlist('day_active')
+        for i, dn in enumerate(day_names):
+            days.append({'idx': i, 'name': dn.strip() or DEFAULT_DAYS[i % 7],
+                         'active': str(i) in day_active})
+        periods = []
+        per_names = request.POST.getlist('period_name')
+        per_start = request.POST.getlist('period_start')
+        per_end = request.POST.getlist('period_end')
+        per_active = request.POST.getlist('period_active')
+        for i, pn in enumerate(per_names):
+            periods.append({'idx': i + 1, 'name': pn.strip() or ('الحصة %d' % (i + 1)),
+                            'start': (per_start[i] if i < len(per_start) else ''),
+                            'end': (per_end[i] if i < len(per_end) else ''),
+                            'active': str(i) in per_active})
+        if plan is None:
+            plan = SchedulePlan.objects.create(name=name, academic_year=year,
+                                               semester=sem, created_by=request.user)
+        plan.name = name
+        plan.academic_year = year
+        plan.semester = sem
+        plan.days = days
+        plan.periods = periods
+        plan.save()
+        messages.success(request, 'تم حفظ إعدادات البرنامج.')
+        return redirect('schedule_plan_detail', plan_id=plan.id)
+
+    if plan is None:
+        days = [{'idx': i, 'name': DEFAULT_DAYS[i], 'active': True} for i in range(5)]
+        periods = [{'idx': i + 1, 'name': 'الحصة %d' % (i + 1), 'start': '', 'end': '', 'active': True} for i in range(7)]
+    else:
+        days = plan.days or []
+        periods = plan.periods or []
+    return render(request, 'school/schedule_settings.html',
+                  {'plan': plan, 'days': days, 'periods': periods})
+
+
+@login_required
+def teaching_loads(request, plan_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        tid = request.POST.get('teacher')
+        sid = request.POST.get('subject')
+        cid = request.POST.get('student_class')
+        wp = int(request.POST.get('weekly_periods', 1) or 1)
+        if tid and sid and cid:
+            TeachingLoad.objects.update_or_create(
+                plan=plan, teacher_id=tid, subject_id=sid, student_class_id=cid,
+                defaults={'weekly_periods': wp})
+            messages.success(request, 'تم حفظ النصاب.')
+        return redirect('teaching_loads', plan_id=plan.id)
+    loads = plan.teaching_loads.select_related('teacher', 'subject', 'student_class').all()
+    teachers = Teacher.objects.all().order_by('full_name')
+    subjects = Subject.objects.all().order_by('name')
+    classes = Class.objects.all().order_by('name')
+    return render(request, 'school/teaching_loads.html',
+                  {'plan': plan, 'loads': loads, 'teachers': teachers,
+                   'subjects': subjects, 'classes': classes})
+
+
+@login_required
+def availability_grid(request, plan_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    teachers = Teacher.objects.all().order_by('full_name')
+    days = plan.active_days
+    periods = plan.active_periods
+    existing = {}
+    for a in plan.availabilities.all():
+        existing[(a.teacher_id, a.day, a.period)] = a.available
+    if request.method == 'POST':
+        plan.availabilities.all().delete()
+        bulk = []
+        for t in teachers:
+            for d in days:
+                for p in periods:
+                    key = 'avail_%d_%s_%s' % (t.id, d['name'], p['idx'])
+                    bulk.append(TeacherAvailability(
+                        plan=plan, teacher=t, day=d['name'], period=p['idx'],
+                        available=(key in request.POST)))
+        TeacherAvailability.objects.bulk_create(bulk)
+        messages.success(request, 'تم حفظ تفريغ المعلمين.')
+        return redirect('availability_grid', plan_id=plan.id)
+    return render(request, 'school/availability_grid.html',
+                  {'plan': plan, 'teachers': teachers, 'days': days,
+                   'periods': periods, 'existing': existing})
+
+
+@login_required
+def schedule_constraints(request, plan_id):
+    if not _sch_perm(request, 'manage_constraints'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            ScheduleConstraint.objects.create(
+                plan=plan, type=request.POST.get('type', 'hard'),
+                code=request.POST.get('code', '').strip(),
+                label=request.POST.get('label', '').strip(),
+                enabled=True, weight=float(request.POST.get('weight', 1) or 1),
+                params={})
+            messages.success(request, 'تمت إضافة الشرط.')
+        elif action == 'toggle':
+            c = get_object_or_404(ScheduleConstraint, id=request.POST.get('cid'))
+            c.enabled = not c.enabled
+            c.save()
+        elif action == 'delete':
+            get_object_or_404(ScheduleConstraint, id=request.POST.get('cid')).delete()
+        return redirect('schedule_constraints', plan_id=plan.id)
+    constraints = plan.constraints.all().order_by('type', 'code')
+    return render(request, 'school/schedule_constraints.html',
+                  {'plan': plan, 'constraints': constraints})
+
+
+@login_required
+def fixed_lessons(request, plan_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        day = request.POST.get('day')
+        period = int(request.POST.get('period') or 0)
+        tid = request.POST.get('teacher')
+        sid = request.POST.get('subject')
+        cid = request.POST.get('student_class')
+        if day and period and tid and sid and cid:
+            FixedLesson.objects.update_or_create(
+                plan=plan, day=day, period=period,
+                defaults={'teacher_id': tid, 'subject_id': sid, 'student_class_id': cid})
+            messages.success(request, 'تم تثبيت الحصة.')
+        return redirect('fixed_lessons', plan_id=plan.id)
+    fixed = plan.fixed_lessons.select_related('teacher', 'subject', 'student_class').all()
+    days = plan.active_days
+    periods = plan.active_periods
+    teachers = Teacher.objects.all().order_by('full_name')
+    subjects = Subject.objects.all().order_by('name')
+    classes = Class.objects.all().order_by('name')
+    return render(request, 'school/fixed_lessons.html',
+                  {'plan': plan, 'fixed': fixed, 'days': days, 'periods': periods,
+                   'teachers': teachers, 'subjects': subjects, 'classes': classes})
+
+
+@login_required
+@transaction.atomic
+def schedule_generate(request, plan_id):
+    if not _sch_perm(request, 'generate'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        result = generate_schedule(plan)
+        ScheduleEntry.objects.filter(plan=plan).delete()
+        color_map = _subject_colors(Subject.objects.all())
+        entries = []
+        for e in result['entries']:
+            entries.append(ScheduleEntry(
+                plan=plan, day=e['day'], period=e['period'], teacher_id=e['teacher'],
+                subject_id=e['subject'], student_class_id=e['class'],
+                fixed=e['fixed'], color=color_map.get(e['subject'], '')))
+        ScheduleEntry.objects.bulk_create(entries)
+        plan.hard_score = result['hard_score']
+        plan.soft_score = result['soft_score']
+        plan.generated_at = timezone.now()
+        plan.status = 'active'
+        plan.save()
+        messages.success(request, 'تم إنشاء البرنامج (صلب %s%% / ناعم %s%%).' % (
+            result['hard_score'], result['soft_score']))
+        return redirect('schedule_grid', plan_id=plan.id)
+    return render(request, 'school/schedule_generate.html', {'plan': plan})
+
+
+def _grid_context(plan, teacher=None, student_class=None):
+    days = plan.active_days
+    periods = plan.active_periods
+    color_map = _subject_colors(Subject.objects.all())
+    q = plan.entries.select_related('teacher', 'subject', 'student_class').all()
+    if teacher is not None:
+        q = q.filter(teacher=teacher)
+    if student_class is not None:
+        q = q.filter(student_class=student_class)
+    cells = {}
+    for e in q:
+        cells[(e.day, e.period)] = e
+    grid_data = []
+    for p in periods:
+        row = [cells.get((d['name'], p['idx'])) for d in days]
+        grid_data.append((p, row))
+    return {'plan': plan, 'days': days, 'periods': periods,
+            'cells': cells, 'grid_data': grid_data, 'color_map': color_map}
+
+
+@login_required
+def schedule_grid(request, plan_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    ctx = _grid_context(plan)
+    ctx['plan'] = plan
+    return render(request, 'school/schedule_grid.html', ctx)
+
+
+@login_required
+def schedule_teacher(request, plan_id, teacher_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    ctx = _grid_context(plan, teacher=teacher)
+    ctx['teacher'] = teacher
+    return render(request, 'school/schedule_teacher.html', ctx)
+
+
+@login_required
+def schedule_class(request, plan_id, class_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    cls = get_object_or_404(Class, id=class_id)
+    ctx = _grid_context(plan, student_class=cls)
+    ctx['class'] = cls
+    return render(request, 'school/schedule_class.html', ctx)
+
+
+@login_required
+def availability_report(request, plan_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    teachers = Teacher.objects.all().order_by('full_name')
+    days = plan.active_days
+    periods = plan.active_periods
+    existing = {}
+    for a in plan.availabilities.all():
+        existing[(a.teacher_id, a.day, a.period)] = a.available
+    placed = {}
+    for e in plan.entries.all():
+        placed[(e.teacher_id, e.day, e.period)] = True
+    return render(request, 'school/availability_report.html',
+                  {'plan': plan, 'teachers': teachers, 'days': days,
+                   'periods': periods, 'existing': existing, 'placed': placed})
+
+
+@login_required
+def schedule_plan_copy(request, plan_id):
+    if not _sch_perm(request, 'add'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        np = SchedulePlan.objects.create(
+            name=plan.name + ' (نسخة)', academic_year=plan.academic_year,
+            semester=plan.semester, days=plan.days, periods=plan.periods,
+            created_by=request.user, parent=plan)
+        for tl in plan.teaching_loads.all():
+            TeachingLoad.objects.create(plan=np, teacher=tl.teacher, subject=tl.subject,
+                                        student_class=tl.student_class, weekly_periods=tl.weekly_periods)
+        for a in plan.availabilities.all():
+            TeacherAvailability.objects.create(plan=np, teacher=a.teacher, day=a.day,
+                                               period=a.period, available=a.available)
+        for c in plan.constraints.all():
+            ScheduleConstraint.objects.create(plan=np, type=c.type, code=c.code,
+                                               label=c.label, enabled=c.enabled, weight=c.weight, params=c.params)
+        for f in plan.fixed_lessons.all():
+            FixedLesson.objects.create(plan=np, day=f.day, period=f.period, teacher=f.teacher,
+                                       subject=f.subject, student_class=f.student_class)
+        messages.success(request, 'تم نسخ البرنامج.')
+        return redirect('schedule_plan_detail', plan_id=np.id)
+    return redirect('schedule_plan_detail', plan_id=plan.id)
+
+
+@login_required
+def schedule_plan_activate(request, plan_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    SchedulePlan.objects.filter(status='active').update(status='archived')
+    plan.status = 'active'
+    plan.save()
+    messages.success(request, 'تم تفعيل البرنامج.')
+    return redirect('schedule_plan_list')
+
+
+@login_required
+def schedule_plan_delete(request, plan_id):
+    if not _sch_perm(request, 'delete'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    if request.method == 'POST':
+        plan.delete()
+        messages.success(request, 'تم حذف البرنامج.')
+    return redirect('schedule_plan_list')
+
+@login_required
+def schedule_export_excel(request, plan_id):
+    if not _sch_perm(request, 'export'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
+    wb = Workbook()
+    days = plan.active_days
+    periods = plan.active_periods
+    color_map = _subject_colors(Subject.objects.all())
+    thin = Side(style='thin', color='CCCCCC')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    hdr_fill = PatternFill('solid', fgColor='3498DB')
+    hdr_font = Font(bold=True, color='FFFFFF')
+
+    entries = {}
+    for e in plan.entries.select_related('subject', 'teacher', 'student_class').all():
+        entries[(e.day, e.period)] = e
+
+    # ورقة البرنامج المدرسي
+    ws = wb.active
+    ws.title = 'البرنامج'
+    ws.append(['الحصة'] + [d['name'] for d in days])
+    for p in periods:
+        row = [p['name']]
+        for d in days:
+            e = entries.get((d['name'], p['idx']))
+            row.append(('%s\n%s\n%s' % (e.subject.name, e.teacher.full_name, e.student_class.name)) if e else '')
+        ws.append(row)
+    for c in range(1, len(days) + 2):
+        cell = ws.cell(row=1, column=c)
+        cell.fill = hdr_fill
+        cell.font = hdr_font
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    for r in range(2, len(periods) + 2):
+        for c in range(1, len(days) + 2):
+            cell = ws.cell(row=r, column=c)
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    for i in range(len(periods) + 1):
+        ws.column_dimensions[get_column_letter(1)].width = 14
+    for c in range(2, len(days) + 2):
+        ws.column_dimensions[get_column_letter(c)].width = 22
+
+    # ورقة لكل معلم
+    for teacher in Teacher.objects.all().order_by('full_name'):
+        ws2 = wb.create_sheet(name=teacher.full_name[:28] or 'معلم')
+        ws2.append(['الحصة'] + [d['name'] for d in days])
+        te = {}
+        for e in plan.entries.filter(teacher=teacher).select_related('subject', 'student_class'):
+            te[(e.day, e.period)] = e
+        for p in periods:
+            row = [p['name']]
+            for d in days:
+                e = te.get((d['name'], p['idx']))
+                row.append(('%s\n%s' % (e.subject.name, e.student_class.name)) if e else '')
+            ws2.append(row)
+        for c in range(1, len(days) + 2):
+            cell = ws2.cell(row=1, column=c)
+            cell.fill = hdr_fill
+            cell.font = hdr_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        for r in range(2, len(periods) + 2):
+            for c in range(1, len(days) + 2):
+                cell = ws2.cell(row=r, column=c)
+                cell.border = border
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    from urllib.parse import quote
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="%s.xlsx"' % quote(plan.name)
+    wb.save(response)
+    return response
+
+
+@login_required
+def schedule_print_grid(request, plan_id):
+    if not _sch_perm(request, 'print'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    ctx = _grid_context(plan)
+    ctx['plan'] = plan
+    ctx['print_mode'] = True
+    return render(request, 'school/schedule_grid.html', ctx)
+
+@login_required
+def schedule_teachers(request, plan_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    teachers = Teacher.objects.all().order_by('full_name')
+    return render(request, 'school/schedule_picker.html',
+                  {'plan': plan, 'items': teachers, 'kind': 'teacher'})
+
+
+@login_required
+def schedule_classes(request, plan_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    classes = Class.objects.all().order_by('name')
+    return render(request, 'school/schedule_picker.html',
+                  {'plan': plan, 'items': classes, 'kind': 'class'})
+
+
+@login_required
+def schedule_edit_grid(request, plan_id):
+    if not _sch_perm(request, 'edit'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    entries = plan.entries.select_related('teacher', 'subject', 'student_class').order_by('day', 'period')
+    teachers = Teacher.objects.all().order_by('full_name')
+    subjects = Subject.objects.all().order_by('name')
+    classes = Class.objects.all().order_by('name')
+    days = plan.active_days
+    periods = plan.active_periods
+    if request.method == 'POST':
+        delete_ids = set(request.POST.getlist('delete'))
+        for e in entries:
+            if e.id in delete_ids:
+                e.delete()
+                continue
+            e.teacher_id = int(request.POST.get('teacher_%d' % e.id, e.teacher_id))
+            e.subject_id = int(request.POST.get('subject_%d' % e.id, e.subject_id))
+            e.student_class_id = int(request.POST.get('class_%d' % e.id, e.student_class_id))
+            e.day = request.POST.get('day_%d' % e.id, e.day)
+            e.period = int(request.POST.get('period_%d' % e.id, e.period))
+            e.save()
+        res = evaluate_plan(plan)
+        plan.hard_score = res['hard_score']
+        plan.soft_score = res['soft_score']
+        plan.generated_at = timezone.now()
+        plan.status = 'active'
+        plan.save()
+        messages.success(request, 'تم حفظ التعديل اليدوي (صلب %s%% / ناعم %s%%).' % (
+            res['hard_score'], res['soft_score']))
+        return redirect('schedule_edit_grid', plan_id=plan.id)
+    return render(request, 'school/schedule_edit_grid.html',
+                  {'plan': plan, 'entries': entries, 'teachers': teachers,
+                   'subjects': subjects, 'classes': classes, 'days': days, 'periods': periods})
+

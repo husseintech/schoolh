@@ -36,7 +36,7 @@ def user_permissions(request):
             ('inspection_visits', 'view'), ('inspection_visits', 'add'),
             ('visit_program', 'view'), ('visit_program', 'add'), ('visit_program', 'delete'),
             ('absence', 'view'), ('absence', 'add'),
-            ('schedule', 'view'), ('schedule', 'add'),
+            ('schedule', 'view'), ('schedule', 'add'), ('schedule', 'edit'), ('schedule', 'delete'), ('schedule', 'generate'), ('schedule', 'export'), ('schedule', 'print'), ('schedule', 'manage_constraints'), ('schedule', 'manage_settings'),
             ('survey', 'view'), ('survey', 'add'),
             ('certificates', 'view'), ('certificates', 'add'), ('certificates', 'delete'),
             ('guardians', 'view'), ('guardians', 'add'),

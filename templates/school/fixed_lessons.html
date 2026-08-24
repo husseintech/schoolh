@@ -1,0 +1,69 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}الحصص المثبتة{% endblock %}
+{% block page_heading %}الحصص المثبتة — {{ plan.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">تثبيت حصة</div>
+    <div class="card-body">
+        <form method="post" class="row g-2 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-2">
+                <label class="form-label">اليوم</label>
+                <select name="day" class="form-select" required>
+                    {% for d in days %}<option value="{{ d.name }}">{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">الحصة</label>
+                <select name="period" class="form-select" required>
+                    {% for p in periods %}<option value="{{ p.idx }}">{{ p.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">المعلم</label>
+                <select name="teacher" class="form-select" required>
+                    {% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">المادة</label>
+                <select name="subject" class="form-select" required>
+                    {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">الصف/الشعبة</label>
+                <select name="student_class" class="form-select" required>
+                    {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary w-100"><i class="bi bi-pin"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">الحصص المثبتة</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead><tr><th>اليوم</th><th>الحصة</th><th>المعلم</th><th>المادة</th><th>الصف</th></tr></thead>
+                <tbody>
+                    {% for f in fixed %}
+                    <tr>
+                        <td>{{ f.day }}</td><td>{{ f.period }}</td>
+                        <td>{{ f.teacher.full_name }}</td><td>{{ f.subject.name }}</td><td>{{ f.student_class.name }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted">لا حصص مثبتة.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary btn-sm">رجوع</a>
+    </div>
+</div>
+{% endblock %}

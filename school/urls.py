@@ -174,12 +174,35 @@ urlpatterns = [
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:notification_id>/read/', views.notification_read, name='notification_read'),
 
-    # Teacher schedule
+    # Teacher schedule (اليدوي القائم)
     path('schedule/', views.schedule_edit, name='schedule_edit'),
     path('schedule/print/cards/', views.schedule_print_cards, name='schedule_print_cards'),
     path('schedule/print/all/', views.schedule_print_all, name='schedule_print_all'),
     path('schedule/print/classes/', views.schedule_print_classes, name='schedule_print_classes'),
     path('schedule/print/admin/', views.schedule_print_admin, name='schedule_print_admin'),
+
+    # البرامج الأسبوعية (المولّد)
+    path('schedule/plans/', views.schedule_plan_list, name='schedule_plan_list'),
+    path('schedule/plan/new/', views.schedule_plan_settings, name='schedule_plan_settings_new'),
+    path('schedule/plan/<int:plan_id>/', views.schedule_plan_detail, name='schedule_plan_detail'),
+    path('schedule/plan/<int:plan_id>/settings/', views.schedule_plan_settings, name='schedule_plan_settings'),
+    path('schedule/plan/<int:plan_id>/loads/', views.teaching_loads, name='teaching_loads'),
+    path('schedule/plan/<int:plan_id>/availability/', views.availability_grid, name='availability_grid'),
+    path('schedule/plan/<int:plan_id>/constraints/', views.schedule_constraints, name='schedule_constraints'),
+    path('schedule/plan/<int:plan_id>/fixed/', views.fixed_lessons, name='fixed_lessons'),
+    path('schedule/plan/<int:plan_id>/generate/', views.schedule_generate, name='schedule_generate'),
+    path('schedule/plan/<int:plan_id>/grid/', views.schedule_grid, name='schedule_grid'),
+    path('schedule/plan/<int:plan_id>/edit/', views.schedule_edit_grid, name='schedule_edit_grid'),
+    path('schedule/plan/<int:plan_id>/teacher/<int:teacher_id>/', views.schedule_teacher, name='schedule_teacher'),
+    path('schedule/plan/<int:plan_id>/class/<int:class_id>/', views.schedule_class, name='schedule_class'),
+    path('schedule/plan/<int:plan_id>/availability-report/', views.availability_report, name='availability_report'),
+    path('schedule/plan/<int:plan_id>/teachers/', views.schedule_teachers, name='schedule_teachers'),
+    path('schedule/plan/<int:plan_id>/classes/', views.schedule_classes, name='schedule_classes'),
+    path('schedule/plan/<int:plan_id>/export/excel/', views.schedule_export_excel, name='schedule_export_excel'),
+    path('schedule/plan/<int:plan_id>/print/', views.schedule_print_grid, name='schedule_print_grid'),
+    path('schedule/plan/<int:plan_id>/copy/', views.schedule_plan_copy, name='schedule_plan_copy'),
+    path('schedule/plan/<int:plan_id>/activate/', views.schedule_plan_activate, name='schedule_plan_activate'),
+    path('schedule/plan/<int:plan_id>/delete/', views.schedule_plan_delete, name='schedule_plan_delete'),
 
     # Absence
     path('absence/', views.absence_list, name='absence_list'),

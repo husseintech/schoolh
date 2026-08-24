@@ -1,0 +1,89 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}تفاصيل البرنامج{% endblock %}
+{% block page_heading %}البرنامج: {{ plan.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-info-circle"></i> نظرة عامة</span>
+        <div>
+            {% if 'schedule_add' in user_perms %}
+            <form method="post" action="{% url 'schedule_plan_copy' plan.id %}" class="d-inline">{% csrf_token %}
+                <button class="btn btn-outline-primary btn-sm"><i class="bi bi-files"></i> نسخ</button>
+            </form>
+            {% endif %}
+            {% if 'schedule_delete' in user_perms %}
+            <form method="post" action="{% url 'schedule_plan_delete' plan.id %}" class="d-inline">{% csrf_token %}
+                <button class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف البرنامج؟')"><i class="bi bi-trash"></i> حذف</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3"><b>الاسم:</b> {{ plan.name }}</div>
+            <div class="col-md-3"><b>العام:</b> {{ plan.academic_year|default:'-' }}</div>
+            <div class="col-md-3"><b>الفصل:</b> {{ plan.semester|default:'-' }}</div>
+            <div class="col-md-3"><b>الحالة:</b> {{ plan.get_status_display }}</div>
+        </div>
+        {% if plan.hard_score is not None %}
+        <div class="alert alert-info">
+            نسبة الالتزام بالقيود الصلبة: <b>{{ plan.hard_score }}%</b> |
+            نسبة القيود التفضيلية: <b>{{ plan.soft_score }}%</b>
+            {% if plan.generated_at %} | وقت التوليد: {{ plan.generated_at|date:"Y-m-d H:i" }}{% endif %}
+        </div>
+        {% endif %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="card-title">1) إعدادات الأسبوع</h6>
+                    <p class="text-muted small">أيام الدوام، الحصص، الأوقات، الاستراحة.</p>
+                    <a href="{% url 'schedule_plan_settings' plan.id %}" class="btn btn-outline-primary btn-sm">فتح</a>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="card-title">2) أنصبة المواد</h6>
+                    <p class="text-muted small">المعلم، المادة، الصف، عدد الحصص أسبوعيًا.</p>
+                    <a href="{% url 'teaching_loads' plan.id %}" class="btn btn-outline-primary btn-sm">فتح</a>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="card-title">3) تفريغ المعلمين</h6>
+                    <p class="text-muted small">شبكة توفّر المعلمين (متاح/غير متاح).</p>
+                    <a href="{% url 'availability_grid' plan.id %}" class="btn btn-outline-primary btn-sm">فتح</a>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="card-title">5) الشروط والقيود</h6>
+                    <p class="text-muted small">إلزامية وتفضيلية بأوزان.</p>
+                    <a href="{% url 'schedule_constraints' plan.id %}" class="btn btn-outline-primary btn-sm">فتح</a>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="card-title">7) الحصص المثبتة</h6>
+                    <p class="text-muted small">تثبيت حصص محددة لا تتغير.</p>
+                    <a href="{% url 'fixed_lessons' plan.id %}" class="btn btn-outline-primary btn-sm">فتح</a>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="card-title">6) إنشاء البرنامج</h6>
+                    <p class="text-muted small">تشغيل المحرك وعرض النتيجة.</p>
+                    <a href="{% url 'schedule_generate' plan.id %}" class="btn btn-success btn-sm">إنشاء</a>
+                </div></div>
+            </div>
+        </div>
+        <hr>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'schedule_grid' plan.id %}" class="btn btn-primary"><i class="bi bi-grid-1x2"></i> الجدول الرئيسي</a>
+            <a href="{% url 'availability_report' plan.id %}" class="btn btn-outline-secondary">كشف التفريغ</a>
+            <a href="{% url 'schedule_export_excel' plan.id %}" class="btn btn-outline-success"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
+            <a href="{% url 'schedule_print_grid' plan.id %}" class="btn btn-outline-dark"><i class="bi bi-printer"></i> طباعة</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

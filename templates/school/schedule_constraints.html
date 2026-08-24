@@ -1,0 +1,80 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}الشروط والقيود{% endblock %}
+{% block page_heading %}الشروط والقيود — {{ plan.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">إضافة شرط</div>
+    <div class="card-body">
+        <form method="post" class="row g-2 align-items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="col-md-2">
+                <label class="form-label">النوع</label>
+                <select name="type" class="form-select">
+                    <option value="hard">إلزامي</option>
+                    <option value="soft">تفضيلي</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">الرمز</label>
+                <input name="code" class="form-control" list="codesList" placeholder="مثال: max_periods_per_day">
+                <datalist id="codesList">
+                    <option value="max_periods_per_day">
+                    <option value="max_consecutive">
+                    <option value="spread_subject">
+                    <option value="avoid_first_last">
+                </datalist>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">الوصف</label>
+                <input name="label" class="form-control" placeholder="مثال: الحد الأقصى 6 حصص يوميًا">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">الوزن (تفضيلي)</label>
+                <input name="weight" type="number" step="0.1" value="1" class="form-control">
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">الشروط</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead><tr><th>النوع</th><th>الرمز</th><th>الوصف</th><th>الوزن</th><th>مفعل</th><th>إجراء</th></tr></thead>
+                <tbody>
+                    {% for c in constraints %}
+                    <tr>
+                        <td>{% if c.type == 'hard' %}<span class="badge bg-danger">إلزامي</span>{% else %}<span class="badge bg-info">تفضيلي</span>{% endif %}</td>
+                        <td>{{ c.code }}</td>
+                        <td>{{ c.label }}</td>
+                        <td>{{ c.weight }}</td>
+                        <td>{% if c.enabled %}<span class="text-success">نعم</span>{% else %}<span class="text-muted">لا</span>{% endif %}</td>
+                        <td>
+                            <form method="post" class="d-inline">{% csrf_token %}
+                                <input type="hidden" name="action" value="toggle">
+                                <input type="hidden" name="cid" value="{{ c.id }}">
+                                <button class="btn btn-outline-secondary btn-sm">تبديل</button>
+                            </form>
+                            <form method="post" class="d-inline">{% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="cid" value="{{ c.id }}">
+                                <button class="btn btn-outline-danger btn-sm">حذف</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted">لا توجد شروط.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="{% url 'schedule_plan_detail' plan.id %}" class="btn btn-outline-secondary btn-sm">رجوع</a>
+    </div>
+</div>
+{% endblock %}
