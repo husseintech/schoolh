@@ -4266,13 +4266,23 @@ def teaching_loads(request, plan_id):
         agg[k]['items'].append(l)
     teacher_data = [agg[k] for k in order]
     total_periods = sum(t['total'] for t in teacher_data)
+    class_agg = {}
+    class_order = []
+    for l in loads:
+        k = l.student_class_id
+        if k not in class_agg:
+            class_agg[k] = {'cls': l.student_class, 'total': 0, 'items': []}
+            class_order.append(k)
+        class_agg[k]['total'] += l.weekly_periods
+        class_agg[k]['items'].append(l)
+    class_summary = [class_agg[k] for k in class_order]
     teachers = Teacher.objects.all().order_by('full_name')
     subjects = Subject.objects.all().order_by('name')
     classes = Class.objects.all().order_by('name')
     return render(request, 'school/teaching_loads.html',
                   {'plan': plan, 'loads': loads, 'teacher_data': teacher_data,
-                   'total_periods': total_periods, 'teachers': teachers,
-                   'subjects': subjects, 'classes': classes})
+                   'class_summary': class_summary, 'total_periods': total_periods,
+                   'teachers': teachers, 'subjects': subjects, 'classes': classes})
 
 
 @login_required
@@ -4442,7 +4452,11 @@ def schedule_generate(request, plan_id):
     if not _sch_perm(request, 'generate'):
         return redirect('schedule_plan_list')
     plan = get_object_or_404(SchedulePlan, id=plan_id)
+    has_loads = plan.teaching_loads.exists()
     if request.method == 'POST':
+        if not has_loads:
+            messages.error(request, 'لا توجد أنصبة مسجلة بعد. سجّل الأنصبة أولًا.')
+            return redirect('schedule_generate', plan_id=plan.id)
         result = generate_schedule(plan)
         ScheduleEntry.objects.filter(plan=plan).delete()
         color_map = _subject_colors(Subject.objects.all())
@@ -4458,10 +4472,50 @@ def schedule_generate(request, plan_id):
         plan.generated_at = timezone.now()
         plan.status = 'active'
         plan.save()
-        messages.success(request, 'تم إنشاء البرنامج (صلب %s%% / ناعم %s%%).' % (
-            result['hard_score'], result['soft_score']))
+        if result['unscheduled']:
+            messages.warning(request, 'تعذّر جدولة %d حصة (أنصبة زائدة أو تعارضات صلبة). راجع التفريغ والقيود.' % len(result['unscheduled']))
+        elif result['hard_score'] < 100:
+            messages.warning(request, 'تم الإنشاء لكن توجد تعارضات صلبة (صلب %s%%). راجع التقرير أدناه.' % result['hard_score'])
+        else:
+            messages.success(request, 'تم إنشاء البرنامج (صلب %s%% / ناعم %s%%).' % (
+                result['hard_score'], result['soft_score']))
         return redirect('schedule_grid', plan_id=plan.id)
-    return render(request, 'school/schedule_generate.html', {'plan': plan})
+    return render(request, 'school/schedule_generate.html', {'plan': plan, 'has_loads': has_loads})
+
+
+def _conflict_texts(plan):
+    try:
+        conflicts = evaluate_plan(plan)['conflicts']
+    except Exception:
+        return []
+    teachers = {t.id: t.full_name for t in Teacher.objects.all()}
+    classes = {c.id: c.name for c in Class.objects.all()}
+    subjects = {s.id: s.name for s in Subject.objects.all()}
+    out = []
+    for c in conflicts:
+        t = c.get('teacher'); cl = c.get('student_class'); s = c.get('subject')
+        day = c.get('day'); period = c.get('period')
+        tp = 'يوم %s حصة %s' % (day, period)
+        if c['type'] == 'teacher_double':
+            out.append('تعارض: المعلم %s مسجّل مرتين (%s).' % (teachers.get(t, t), tp))
+        elif c['type'] == 'class_double':
+            out.append('تعارض: الصف %s مسجّل مرتين (%s).' % (classes.get(cl, cl), tp))
+        elif c['type'] == 'availability':
+            out.append('تعارض توفّر: المعلم %s غير متاح (%s).' % (teachers.get(t, t), tp))
+        elif c['type'] == 'fixed_violation':
+            out.append('مخالفة حصة مثبّتة (%s).' % tp)
+        elif c['type'] == 'max_per_day':
+            who = teachers.get(t, t) or classes.get(cl, cl)
+            out.append('تجاوز أقصى حصص في اليوم لـ %s (%s).' % (who, tp))
+        elif c['type'] == 'spread':
+            out.append('تكرار المادة %s للمعلم %s أكثر من المسموح يوم %s.' % (subjects.get(s, s), teachers.get(t, t), day))
+        elif c['type'] == 'gap':
+            out.append('تجاوز أقصى فراغات متتالية للمعلم %s يوم %s.' % (teachers.get(t, t), day))
+        elif c['type'] == 'period_repeat':
+            out.append('تكرار الحصة %s للمعلم %s أكثر من الأيام المسموحة.' % (period, teachers.get(t, t)))
+        else:
+            out.append('تعارض غير مصنّف (%s).' % tp)
+    return out
 
 
 def _grid_context(plan, teacher=None, student_class=None):
@@ -4477,12 +4531,14 @@ def _grid_context(plan, teacher=None, student_class=None):
     for e in q:
         cells[(e.day, e.period)] = e
     conflict_cells = set()
+    conflict_texts = []
     try:
         for c in evaluate_plan(plan)['conflicts']:
             if 'day' in c and 'period' in c:
                 conflict_cells.add((c['day'], c['period']))
     except Exception:
         pass
+    conflict_texts = _conflict_texts(plan)
     for (day, period), cell in cells.items():
         if (day, period) in conflict_cells:
             cell.conflict_flag = True
@@ -4493,7 +4549,7 @@ def _grid_context(plan, teacher=None, student_class=None):
         grid_data.append((p, row))
     return {'plan': plan, 'days': days, 'periods': periods,
             'cells': cells, 'grid_data': grid_data, 'color_map': color_map,
-            'conflict_cells': conflict_cells}
+            'conflict_cells': conflict_cells, 'conflict_texts': conflict_texts}
 
 
 @login_required

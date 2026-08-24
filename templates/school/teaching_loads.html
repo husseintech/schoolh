@@ -129,6 +129,38 @@
 <div class="alert alert-info">لا توجد أنصبة مسجلة بعد. أضف نصابًا من النموذج أعلاه.</div>
 {% endfor %}
 
+<div class="mt-4 mb-2 text-muted small">تقرير الشعب: عدد الحصص الكلي لكل شعبة (للتحقق من توازن الأحمال وحل التعارضات):</div>
+<div class="row g-2">
+    {% for cs in class_summary %}
+    <div class="col-md-4">
+        <div class="card border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center bg-secondary text-white">
+                <span><i class="bi bi-diagram-3"></i> {{ cs.cls.name }}</span>
+                <span class="badge bg-light text-dark rounded-pill">إجمالي الحصص: {{ cs.total }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>المعلم</th><th>المادة</th><th class="text-center">حصص</th></tr></thead>
+                        <tbody>
+                            {% for l in cs.items %}
+                            <tr>
+                                <td>{{ l.teacher.full_name }}</td>
+                                <td>{{ l.subject.name }}</td>
+                                <td class="text-center"><span class="badge bg-info">{{ l.weekly_periods }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12"><div class="alert alert-info">لا توجد شعب مسجلة بعد.</div></div>
+    {% endfor %}
+</div>
+
 <script>
 function startEdit(btn){
     const d = btn.dataset;

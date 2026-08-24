@@ -21,8 +21,17 @@
 </div>
 
 {% if conflict_cells %}
-<div class="alert alert-warning no-print"><i class="bi bi-exclamation-triangle"></i>
-    يوجد {{ conflict_cells|length }} خانة متعارضة (محددة بإطار أحمر). حرّكها أو عدّلها يدويًا لحل التعارض.
+<div class="alert alert-warning no-print">
+    <i class="bi bi-exclamation-triangle"></i>
+    يوجد {{ conflict_cells|length }} خانة متعارضة (محددة بإطار أحمر).
+    <button class="btn btn-sm btn-outline-dark ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#conflictDetails">عرض أسباب التعارض</button>
+    <div class="collapse mt-2" id="conflictDetails">
+        <ul class="mb-0">
+            {% for txt in conflict_texts %}
+            <li>{{ txt }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 {% endif %}
 
