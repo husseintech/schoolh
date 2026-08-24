@@ -4336,8 +4336,15 @@ def schedule_constraints(request, plan_id):
             get_object_or_404(ScheduleConstraint, id=request.POST.get('cid')).delete()
         return redirect('schedule_constraints', plan_id=plan.id)
     constraints = plan.constraints.all().order_by('type', 'code')
-    teachers = Teacher.objects.filter(teaching_loads__plan=plan).distinct().order_by('full_name')
-    classes = Class.objects.filter(teaching_loads__plan=plan).distinct().order_by('name')
+    tl_qs = TeachingLoad.objects.filter(plan=plan)
+    teacher_ids = tl_qs.values_list('teacher_id', flat=True)
+    class_ids = tl_qs.values_list('student_class_id', flat=True)
+    teachers = Teacher.objects.filter(id__in=teacher_ids).order_by('full_name')
+    classes = Class.objects.filter(id__in=class_ids).order_by('name')
+    if not teachers.exists():
+        teachers = Teacher.objects.all().order_by('full_name')
+    if not classes.exists():
+        classes = Class.objects.all().order_by('name')
     return render(request, 'school/schedule_constraints.html',
                   {'plan': plan, 'constraints': constraints,
                    'teachers': teachers, 'classes': classes})
