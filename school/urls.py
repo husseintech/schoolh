@@ -201,6 +201,7 @@ urlpatterns = [
     path('schedule/plan/<int:plan_id>/classes/', views.schedule_classes, name='schedule_classes'),
     path('schedule/plan/<int:plan_id>/export/excel/', views.schedule_export_excel, name='schedule_export_excel'),
     path('schedule/plan/<int:plan_id>/print/', views.schedule_print_grid, name='schedule_print_grid'),
+    path('schedule/plan/<int:plan_id>/print/general/', views.schedule_print_general, name='schedule_print_general'),
     path('schedule/plan/<int:plan_id>/copy/', views.schedule_plan_copy, name='schedule_plan_copy'),
     path('schedule/plan/<int:plan_id>/activate/', views.schedule_plan_activate, name='schedule_plan_activate'),
     path('schedule/plan/<int:plan_id>/delete/', views.schedule_plan_delete, name='schedule_plan_delete'),

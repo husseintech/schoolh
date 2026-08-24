@@ -4809,6 +4809,35 @@ def schedule_print_grid(request, plan_id):
     ctx['print_mode'] = True
     return render(request, 'school/schedule_grid.html', ctx)
 
+
+@login_required
+def schedule_print_general(request, plan_id):
+    if not _sch_perm(request, 'print'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    days = plan.active_days
+    periods = sorted(plan.active_periods, key=lambda p: p['idx'])
+    classes = list(Class.objects.all().order_by('name'))
+    cell_map = {}
+    for e in plan.entries.select_related('subject', 'teacher', 'student_class').all():
+        if not e.student_class_id:
+            continue
+        fn = (e.teacher.full_name or '').split(' ')[0] if e.teacher else ''
+        cell_map[(e.student_class_id, e.day, e.period)] = (
+            e.subject.name if e.subject else '', fn)
+    rows = []
+    for day in days:
+        period_rows = []
+        for p in periods:
+            cells = [cell_map.get((c.id, day['name'], p['idx'])) for c in classes]
+            period_rows.append({'period': p['idx'], 'cells': cells})
+        rows.append({'day': day['name'], 'periods': period_rows})
+    return render(request, 'school/schedule_print_general.html', {
+        'plan': plan,
+        'classes': classes,
+        'rows': rows,
+    })
+
 @login_required
 def schedule_teachers(request, plan_id):
     if not _sch_perm(request, 'view'):

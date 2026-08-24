@@ -83,6 +83,9 @@
             <a href="{% url 'availability_report' plan.id %}" class="btn btn-outline-secondary">كشف التفريغ</a>
             <a href="{% url 'schedule_export_excel' plan.id %}" class="btn btn-outline-success"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
             <a href="{% url 'schedule_print_grid' plan.id %}" class="btn btn-outline-dark"><i class="bi bi-printer"></i> طباعة</a>
+            <a href="{% url 'schedule_print_general' plan.id %}" class="btn btn-outline-dark"><i class="bi bi-table"></i> طباعة البرنامج العام</a>
+            <a href="{% url 'schedule_teachers' plan.id %}" class="btn btn-outline-primary"><i class="bi bi-person-badge"></i> برامج المعلمين</a>
+            <a href="{% url 'schedule_classes' plan.id %}" class="btn btn-outline-primary"><i class="bi bi-collection"></i> برامج الصفوف</a>
         </div>
     </div>
 </div>
