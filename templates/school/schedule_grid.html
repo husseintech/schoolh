@@ -40,14 +40,14 @@
         <table class="table table-bordered text-center align-middle" style="min-width:800px;">
             <thead>
                 <tr>
-                    <th>الحصة</th>
-                    {% for d in days %}<th>{{ d.name }}</th>{% endfor %}
+                    <th>{% if orient == 'day' %}اليوم{% else %}الحصة{% endif %}</th>
+                    {% for ci in col_items %}<th>{% if ci.start %}{{ ci.name }}<br><small class="text-muted">{{ ci.start }}-{{ ci.end }}</small>{% else %}{{ ci.name }}{% endif %}</th>{% endfor %}
                 </tr>
             </thead>
             <tbody>
-                {% for period, row in grid_data %}
+                {% for item, row in grid_data %}
                 <tr>
-                    <th>{{ period.name }}{% if period.start %}<br><small class="text-muted">{{ period.start }}-{{ period.end }}</small>{% endif %}</th>
+                    <th>{{ item.name }}{% if item.start %}<br><small class="text-muted">{{ item.start }}-{{ item.end }}</small>{% endif %}</th>
                     {% for c in row %}
                         {% with celllist=c.cell day=c.day pidx=c.period %}
                         <td style="vertical-align:top;{% if not celllist %}background:#fafafa;{% endif %}"

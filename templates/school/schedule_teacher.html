@@ -16,11 +16,11 @@
 <div class="card">
     <div class="card-body table-responsive">
         <table class="table table-bordered text-center align-middle" style="min-width:800px;">
-            <thead><tr><th>الحصة</th>{% for d in days %}<th>{{ d.name }}</th>{% endfor %}</tr></thead>
+            <thead><tr><th>{% if orient == 'day' %}اليوم{% else %}الحصة{% endif %}</th>{% for ci in col_items %}<th>{{ ci.name }}</th>{% endfor %}</tr></thead>
             <tbody>
-                {% for period, row in grid_data %}
+                {% for item, row in grid_data %}
                 <tr>
-                    <th>{{ period.name }}</th>
+                    <th>{{ item.name }}</th>
                     {% for col in row %}
                         <td style="vertical-align:top;">
                             {% for cell in col.cell %}

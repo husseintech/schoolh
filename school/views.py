@@ -4577,7 +4577,7 @@ def _conflict_texts(plan):
     return out
 
 
-def _grid_context(plan, teacher=None, student_class=None):
+def _grid_context(plan, teacher=None, student_class=None, orient='period'):
     days = plan.active_days
     periods = plan.active_periods
     color_map = _subject_colors(Subject.objects.all())
@@ -4602,13 +4602,22 @@ def _grid_context(plan, teacher=None, student_class=None):
             if (cell.day, cell.period, cell.teacher_id, cell.student_class_id) in conflict_keys:
                 cell.conflict_flag = True
     grid_data = []
-    for p in periods:
-        row = [{'day': d['name'], 'period': p['idx'], 'cell': cells.get((d['name'], p['idx']), [])}
-               for d in days]
-        grid_data.append((p, row))
+    if orient == 'day':
+        row_items, col_items = days, periods
+        for r in row_items:
+            row = [{'day': r['name'], 'period': c['idx'], 'cell': cells.get((r['name'], c['idx']), [])}
+                   for c in col_items]
+            grid_data.append((r, row))
+    else:
+        row_items, col_items = periods, days
+        for r in row_items:
+            row = [{'day': c['name'], 'period': r['idx'], 'cell': cells.get((c['name'], r['idx']), [])}
+                   for c in col_items]
+            grid_data.append((r, row))
     conflict_cells = {(k[0], k[1]) for k in conflict_keys}
     return {'plan': plan, 'days': days, 'periods': periods,
             'cells': cells, 'grid_data': grid_data, 'color_map': color_map,
+            'orient': orient, 'col_items': col_items,
             'conflict_cells': conflict_cells, 'conflict_texts': conflict_texts}
 
 
@@ -4628,7 +4637,7 @@ def schedule_teacher(request, plan_id, teacher_id):
         return redirect('schedule_plan_list')
     plan = get_object_or_404(SchedulePlan, id=plan_id)
     teacher = get_object_or_404(Teacher, id=teacher_id)
-    ctx = _grid_context(plan, teacher=teacher)
+    ctx = _grid_context(plan, teacher=teacher, orient='day')
     ctx['teacher'] = teacher
     return render(request, 'school/schedule_teacher.html', ctx)
 
@@ -4639,7 +4648,7 @@ def schedule_class(request, plan_id, class_id):
         return redirect('schedule_plan_list')
     plan = get_object_or_404(SchedulePlan, id=plan_id)
     cls = get_object_or_404(Class, id=class_id)
-    ctx = _grid_context(plan, student_class=cls)
+    ctx = _grid_context(plan, student_class=cls, orient='day')
     ctx['class'] = cls
     return render(request, 'school/schedule_class.html', ctx)
 
