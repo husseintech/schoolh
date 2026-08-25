@@ -38,4 +38,10 @@ urlpatterns = [
     path('plans/<int:plan_id>/', plans_views.weekly_plan_detail, name='ol_weekly_plan_detail'),
     path('plans/<int:plan_id>/review/', plans_views.weekly_plan_review, name='ol_weekly_plan_review'),
     path('plans/<int:plan_id>/delete/', plans_views.weekly_plan_delete, name='ol_weekly_plan_delete'),
+
+    # ── خطط المعلمين المرفوعة (صور/ملفات إلى Google Drive) ──
+    path('teacher-plans/', views.teacher_plans_list, name='ol_teacher_plans'),
+    path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plan_add'),
+    path('teacher-plans/<int:plan_id>/delete/', views.teacher_plan_delete, name='ol_teacher_plan_delete'),
+    path('teacher-plans/files/<int:file_id>/open/', views.teacher_plan_file_open, name='ol_teacher_plan_file_open'),
 ]

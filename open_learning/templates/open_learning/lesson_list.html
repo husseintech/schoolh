@@ -21,10 +21,16 @@
     <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary">
         <i class="bi bi-calendar-week"></i> خطتي الأسبوعية
     </a>
+    <a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-primary">
+        <i class="bi bi-file-earmark-image"></i> خططي المرفوعة
+    </a>
     {% endif %}
     {% if is_admin %}
     <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary">
         <i class="bi bi-calendar-week"></i> متابعة الخطط الأسبوعية
+    </a>
+    <a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark-image"></i> خطط المعلمين
     </a>
     <a href="{% url 'ol_storage_settings' %}" class="btn btn-outline-secondary">
         <i class="bi bi-google"></i> إعدادات التخزين

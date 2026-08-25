@@ -1,0 +1,46 @@
+{% extends 'school/base.html' %}
+{% block title %}رفع خطة معلم{% endblock %}
+{% block page_heading %}رفع خطة معلم{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if is_admin %}
+            <div class="mb-3">
+                <label class="form-label">المعلم <span class="text-danger">*</span></label>
+                <select name="teacher" class="form-select" required>
+                    <option value="">اختر المعلم</option>
+                    {% for t in teachers %}<option value="{{ t.pk }}">{{ t.full_name }}</option>{% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label">الصف <span class="text-danger">*</span></label>
+                <select name="student_class" class="form-select" required>
+                    <option value="">اختر الصف</option>
+                    {% for c in classes %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">المادة <span class="text-danger">*</span></label>
+                <select name="subject" class="form-select" required>
+                    <option value="">اختر المادة</option>
+                    {% for s in subjects %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">ملاحظة (اختياري)</label>
+                <input type="text" name="note" class="form-control" maxlength="300">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">الملفات (صور أو PDF — يمكن اختيار أكثر من ملف) <span class="text-danger">*</span></label>
+                <input type="file" name="files" class="form-control" multiple required accept="image/*,application/pdf">
+                <div class="form-text">كل صورة تظهر كـ «صورة 1، صورة 2…» في سجل الخطة. تُرفع إلى مجلد «خطط المعلمين» في Google Drive الخاص بالمدير.</div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> رفع</button>
+            <a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

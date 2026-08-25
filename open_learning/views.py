@@ -5,7 +5,7 @@ from django.core.exceptions import SuspiciousOperation
 from django.utils.crypto import get_random_string
 
 from school.models import Class, Subject, Teacher
-from .models import LearningLesson, LearningResource
+from .models import LearningLesson, LearningResource, TeacherPlan, TeacherPlanFile
 from .google_drive import GoogleDriveService
 
 
@@ -493,3 +493,179 @@ def google_drive_disconnect(request):
         GoogleDriveToken.objects.all().delete()
         messages.success(request, 'تم قطع الاتصال بـ Google Drive')
     return redirect('ol_storage_settings')
+
+
+TEACHER_PLANS_FOLDER = 'خطط المعلمين'
+
+
+@login_required
+def teacher_plans_list(request):
+    role = _role(request)
+    if role == 'student':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('open_learning_list')
+    teacher = _teacher_of(request.user)
+    if role == 'teacher' and not teacher:
+        messages.error(request, 'لا يوجد ملف معلم مرتبط بحسابك')
+        return redirect('home')
+
+    plans = TeacherPlan.objects.select_related('teacher', 'student_class', 'subject').prefetch_related('files')
+    if role == 'teacher':
+        plans = plans.filter(teacher=teacher)
+    else:
+        teacher_id = request.GET.get('teacher', '')
+        class_id = request.GET.get('class', '')
+        subject_id = request.GET.get('subject', '')
+        if teacher_id:
+            plans = plans.filter(teacher_id=teacher_id)
+        if class_id:
+            plans = plans.filter(student_class_id=class_id)
+        if subject_id:
+            plans = plans.filter(subject_id=subject_id)
+
+    ctx = {
+        'plans': plans,
+        'role': role,
+        'is_admin': _is_admin(request),
+        'can_add': bool(teacher) or _is_admin(request),
+    }
+    if _is_admin(request):
+        ctx['teachers'] = Teacher.objects.all()
+        ctx['classes'] = Class.objects.all()
+        ctx['subjects'] = Subject.objects.all()
+        ctx['sel'] = {'teacher': teacher_id, 'class': class_id, 'subject': subject_id}
+    return render(request, 'open_learning/teacher_plans.html', ctx)
+
+
+@login_required
+def teacher_plan_add(request):
+    role = _role(request)
+    if role == 'student':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('open_learning_list')
+    teacher = _teacher_of(request.user)
+    if role == 'teacher' and not teacher:
+        messages.error(request, 'لا يوجد ملف معلم مرتبط بحسابك')
+        return redirect('home')
+
+    if request.method == 'POST':
+        student_class = request.POST.get('student_class', '')
+        subject = request.POST.get('subject', '')
+        note = request.POST.get('note', '').strip()
+        target_teacher = teacher
+        if _is_admin(request) and request.POST.get('teacher'):
+            target_teacher = Teacher.objects.filter(pk=request.POST.get('teacher')).first()
+        svc = GoogleDriveService()
+        if not svc.is_connected():
+            messages.error(request, 'يجب على المدير ربط حساب Google Drive أولاً لرفع الخطط')
+            return redirect('ol_teacher_plans')
+        if not target_teacher or not student_class or not subject:
+            messages.error(request, 'يرجى تعبئة المعلم والصف والمادة')
+        else:
+            class_obj = Class.objects.filter(pk=student_class).first()
+            subject_obj = Subject.objects.filter(pk=subject).first()
+            if not class_obj or not subject_obj:
+                messages.error(request, 'الصف أو المادة غير موجود')
+            elif role == 'teacher' and (class_obj not in teacher.classes.all() or subject_obj not in teacher.subjects.all()):
+                messages.error(request, 'يمكنك الرفع لصفوفك وموادك فقط')
+            else:
+                plan = TeacherPlan.objects.create(
+                    teacher=target_teacher,
+                    student_class=class_obj,
+                    subject=subject_obj,
+                    note=note,
+                )
+                files = request.FILES.getlist('files')
+                order = 0
+                saved = 0
+                for f in files:
+                    try:
+                        data = f.read()
+                        if not data:
+                            continue
+                        result = svc.upload_to_folder(
+                            f.name,
+                            data,
+                            f.content_type or 'application/octet-stream',
+                            TEACHER_PLANS_FOLDER,
+                        )
+                        TeacherPlanFile.objects.create(
+                            plan=plan,
+                            file_name=f.name,
+                            file_type=f.content_type or '',
+                            google_drive_file_id=result.get('id', ''),
+                            google_drive_url=result.get('webViewLink', ''),
+                            order=order,
+                        )
+                        order += 1
+                        saved += 1
+                    except Exception as exc:
+                        messages.error(request, f'تعذّر رفع الملف {f.name}: {exc}')
+                if saved:
+                    messages.success(request, f'تم رفع {saved} ملفًا إلى مجلد «{TEACHER_PLANS_FOLDER}» في درايف المدير')
+                else:
+                    plan.delete()
+                    messages.error(request, 'لم يتم رفع أي ملف')
+                return redirect('ol_teacher_plans')
+
+    if role == 'teacher':
+        classes = teacher.classes.all()
+        subjects = teacher.subjects.all()
+        teachers = Teacher.objects.none()
+    else:
+        classes = Class.objects.all()
+        subjects = Subject.objects.all()
+        teachers = Teacher.objects.all()
+    return render(request, 'open_learning/teacher_plan_form.html', {
+        'classes': classes,
+        'subjects': subjects,
+        'teachers': teachers,
+        'is_admin': _is_admin(request),
+        'role': role,
+    })
+
+
+@login_required
+def teacher_plan_delete(request, plan_id):
+    plan = get_object_or_404(TeacherPlan, pk=plan_id)
+    role = _role(request)
+    teacher = _teacher_of(request.user)
+    if not (_is_admin(request) or (role == 'teacher' and teacher and plan.teacher_id == teacher.pk)):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('ol_teacher_plans')
+    if request.method == 'POST':
+        for f in plan.files.all():
+            if f.google_drive_file_id:
+                try:
+                    GoogleDriveService().delete_file(f.google_drive_file_id)
+                except Exception:
+                    pass
+        plan.delete()
+        messages.success(request, 'تم حذف الخطة وملفاتها')
+    return redirect('ol_teacher_plans')
+
+
+@login_required
+def teacher_plan_file_open(request, file_id):
+    f = get_object_or_404(TeacherPlanFile, pk=file_id)
+    plan = f.plan
+    role = _role(request)
+    teacher = _teacher_of(request.user)
+    if role == 'student':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('open_learning_list')
+    if not (_is_admin(request) or (role == 'teacher' and teacher and plan.teacher_id == teacher.pk)):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('ol_teacher_plans')
+    if f.google_drive_file_id:
+        try:
+            data, mime, name = GoogleDriveService().download_file(f.google_drive_file_id)
+        except Exception as exc:
+            messages.error(request, f'تعذّر فتح الملف: {exc}')
+            return redirect('ol_teacher_plans')
+        from django.http import HttpResponse
+        from django.utils.encoding import escape_uri_path
+        resp = HttpResponse(data, content_type=mime or 'application/octet-stream')
+        resp['Content-Disposition'] = f'inline; filename="{escape_uri_path(name)}"'
+        return resp
+    return redirect(f.google_drive_url or 'ol_teacher_plans')

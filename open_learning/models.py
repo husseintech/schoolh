@@ -402,3 +402,37 @@ class WeeklyPlanReviewItem(models.Model):
 
     def __str__(self):
         return f'{self.axis} - {self.indicator[:40]}'
+
+
+class TeacherPlan(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='teacher_plans', verbose_name='المعلم')
+    student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='teacher_plans', verbose_name='الصف')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='teacher_plans', verbose_name='المادة')
+    note = models.CharField('ملاحظة', max_length=300, blank=True)
+    created_at = models.DateTimeField('تاريخ الرفع', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'خطة معلم مرفوعة'
+        verbose_name_plural = 'خطط المعلمين المرفوعة'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'خطة {self.teacher.full_name} - {self.student_class.name} - {self.subject.name}'
+
+
+class TeacherPlanFile(models.Model):
+    plan = models.ForeignKey(TeacherPlan, on_delete=models.CASCADE, related_name='files', verbose_name='الخطة')
+    file_name = models.CharField('اسم الملف', max_length=300, blank=True)
+    file_type = models.CharField('نوع الملف', max_length=100, blank=True)
+    google_drive_file_id = models.CharField('معرّف ملف Google Drive', max_length=200, blank=True)
+    google_drive_url = models.TextField('رابط الملف في Drive', blank=True)
+    order = models.PositiveSmallIntegerField('الترتيب', default=0)
+    uploaded_at = models.DateTimeField('تاريخ الرفع', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'ملف خطة معلم'
+        verbose_name_plural = 'ملفات خطط المعلمين'
+        ordering = ['order', 'uploaded_at']
+
+    def __str__(self):
+        return self.file_name or 'ملف'

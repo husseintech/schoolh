@@ -165,6 +165,39 @@ class GoogleDriveService:
         resp.raise_for_status()
         return resp.json()
 
+    def ensure_folder(self, name, parent_id=None):
+        parent = parent_id or self.root_folder_id
+        if not parent:
+            return None
+        return self._build_folder(name, parent)
+
+    def upload_to_folder(self, filename, data, mimetype, folder_name):
+        parent = self.ensure_folder(folder_name)
+        metadata = {'name': filename}
+        if parent:
+            metadata['parents'] = [parent]
+        boundary = '----schoolh_drive_boundary'
+        head = (
+            f'--{boundary}\r\n'
+            f'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+            f'{json.dumps(metadata)}\r\n'
+            f'--{boundary}\r\n'
+            f'Content-Type: {mimetype}\r\n\r\n'
+        ).encode('utf-8')
+        tail = f'\r\n--{boundary}--\r\n'.encode('utf-8')
+        payload = head + data + tail
+        headers = self._auth_headers()
+        headers['Content-Type'] = f'multipart/related; boundary={boundary}'
+        resp = requests.post(
+            'https://www.googleapis.com/upload/drive/v3/files',
+            params={'uploadType': 'multipart', 'fields': 'id,webViewLink,name,mimeType,size'},
+            headers=headers,
+            data=payload,
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def delete_file(self, file_id):
         resp = requests.delete(
             f'https://www.googleapis.com/drive/v3/files/{file_id}',

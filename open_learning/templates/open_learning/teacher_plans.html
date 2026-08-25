@@ -1,0 +1,81 @@
+{% extends 'school/base.html' %}
+{% block title %}خطط المعلمين{% endblock %}
+{% block page_heading %}{% if is_admin %}خطط المعلمين المرفوعة{% else %}خططي المرفوعة{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        {% if is_admin %}
+        <p class="text-muted mb-0">خطط المعلمين المصوّرة المرفوعة إلى Google Drive</p>
+        {% else %}
+        <p class="text-muted mb-0">خططك الورقية المصوّرة</p>
+        {% endif %}
+    </div>
+    {% if can_add %}
+    <a href="{% url 'ol_teacher_plan_add' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> رفع خطة</a>
+    {% endif %}
+</div>
+
+{% if is_admin %}
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="teacher" class="form-select">
+            <option value="">كل المعلمين</option>
+            {% for t in teachers %}<option value="{{ t.pk }}" {% if sel.teacher == t.pk|stringformat:"i" %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="class" class="form-select">
+            <option value="">كل الصفوف</option>
+            {% for c in classes %}<option value="{{ c.pk }}" {% if sel.class == c.pk|stringformat:"i" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="subject" class="form-select">
+            <option value="">كل المواد</option>
+            {% for s in subjects %}<option value="{{ s.pk }}" {% if sel.subject == s.pk|stringformat:"i" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-auto"><button class="btn btn-outline-secondary">تصفية</button></div>
+</form>
+{% endif %}
+
+{% if plans %}
+{% for plan in plans %}
+<div class="card mb-3 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <h6 class="mb-1"><i class="bi bi-person-badge text-primary"></i> {{ plan.teacher.full_name }}</h6>
+            <span class="text-muted small">{{ plan.created_at|date:"Y/m/d H:i" }}</span>
+        </div>
+        <div class="small text-muted mb-2">
+            <span><i class="bi bi-easel"></i> {{ plan.subject.name }}</span> |
+            <span><i class="bi bi-people"></i> {{ plan.student_class.name }}</span>
+        </div>
+        {% if plan.note %}<div class="small mb-2">{{ plan.note }}</div>{% endif %}
+        <div class="d-flex flex-wrap gap-3">
+            {% for file in plan.files.all %}
+            <div class="text-center">
+                {% if file.file_type|slice:":5" == "image" %}
+                <a href="{% url 'ol_teacher_plan_file_open' file.id %}" target="_blank">
+                    <img src="{% url 'ol_teacher_plan_file_open' file.id %}" alt="{{ file.file_name }}" style="max-width:160px;max-height:160px;border:1px solid #ddd;border-radius:8px;">
+                </a>
+                {% else %}
+                <a href="{% url 'ol_teacher_plan_file_open' file.id %}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark"></i> فتح الملف</a>
+                {% endif %}
+                <div class="small mt-1">{% if file.file_type|slice:":5" == "image" %}صورة {{ forloop.counter }}{% else %}ملف {{ forloop.counter }}{% endif %} - {{ file.file_name|truncatechars:18 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if can_add %}
+        <form method="post" action="{% url 'ol_teacher_plan_delete' plan.id %}" class="mt-2" onsubmit="return confirm('حذف الخطة وملفاتها؟');">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info"><i class="bi bi-info-circle"></i> لا توجد خطط مرفوعة بعد.</div>
+{% endif %}
+{% endblock %}
