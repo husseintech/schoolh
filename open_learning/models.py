@@ -155,6 +155,14 @@ class LearningResource(models.Model):
     is_ai_generated = models.BooleanField('أُضيف بواسطة الذكاء الاصطناعي', default=False)
     ai_generated_at = models.DateTimeField('تاريخ الإضافة الذكية', null=True, blank=True)
     library = models.ForeignKey(LearningResourceLibrary, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_links', verbose_name='المصدر المركزي')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='أضافه')
+    source_kind = models.CharField('مصدر المورد', max_length=20, choices=[('link', 'رابط خارجي'), ('google_drive', 'Google Drive')], default='link', blank=True)
+    google_drive_file_id = models.CharField('معرّف ملف Google Drive', max_length=200, blank=True)
+    google_drive_url = models.TextField('رابط Google Drive', blank=True)
+    file_name = models.CharField('اسم الملف', max_length=300, blank=True)
+    file_type = models.CharField('نوع الملف', max_length=100, blank=True)
+    file_size = models.PositiveIntegerField('حجم الملف (بايت)', null=True, blank=True)
+    storage_provider = models.CharField('مزوّد التخزين', max_length=20, choices=[('', '—'), ('google_drive', 'Google Drive')], blank=True, default='')
     created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
 
     class Meta:
@@ -252,3 +260,145 @@ class GoogleDriveToken(models.Model):
             return json.loads(Signer().unsign(self.token_json))
         except (BadSignature, json.JSONDecodeError):
             return {}
+
+
+PLAN_WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
+
+
+class WeeklyPlan(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'مسودة'),
+        ('completed', 'مكتملة'),
+        ('sent', 'مرسلة للمتابعة'),
+        ('reviewed', 'تمت مراجعتها'),
+        ('needs_improvement', 'تحتاج تحسين'),
+    ]
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='weekly_plans', verbose_name='المعلم')
+    student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='weekly_plans', verbose_name='الصف')
+    week_start = models.DateField('بداية الأسبوع')
+    week_end = models.DateField('نهاية الأسبوع')
+    status = models.CharField('الحالة', max_length=20, choices=STATUS_CHOICES, default='draft')
+    submitted_at = models.DateTimeField('تاريخ الإرسال', null=True, blank=True)
+    reviewed_at = models.DateTimeField('تاريخ المراجعة', null=True, blank=True)
+    created_at = models.DateTimeField('تاريخ الإنشاء', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تعديل', auto_now=True)
+
+    class Meta:
+        verbose_name = 'خطة أسبوعية'
+        verbose_name_plural = 'الخطط الأسبوعية'
+        ordering = ['-week_start']
+
+    def __str__(self):
+        return f'خطة {self.teacher.full_name} - {self.student_class.name} - {self.week_start}'
+
+    @property
+    def is_editable(self):
+        return self.status in ('draft', 'needs_improvement')
+
+    @property
+    def is_submitted(self):
+        return self.status in ('sent', 'reviewed', 'needs_improvement')
+
+
+class WeeklyPlanDay(models.Model):
+    weekly_plan = models.ForeignKey(WeeklyPlan, on_delete=models.CASCADE, related_name='days', verbose_name='الخطة')
+    day_of_week = models.CharField('يوم الأسبوع', max_length=20, choices=[(d, d) for d in PLAN_WEEKDAYS])
+    date = models.DateField('التاريخ')
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='المادة')
+    lesson = models.ForeignKey(LearningLesson, on_delete=models.SET_NULL, null=True, blank=True, related_name='plan_days', verbose_name='الدرس')
+    lesson_title = models.CharField('عنوان الدرس', max_length=200, blank=True)
+    objectives = models.TextField('الأهداف', blank=True)
+    homework = models.TextField('الواجبات', blank=True)
+    notes = models.TextField('ملاحظات', blank=True)
+    order = models.PositiveSmallIntegerField('الترتيب', default=0)
+
+    class Meta:
+        verbose_name = 'يوم في الخطة الأسبوعية'
+        verbose_name_plural = 'أيام الخطة الأسبوعية'
+        ordering = ['order', 'date']
+
+    def __str__(self):
+        return f'{self.day_of_week} - {self.date}'
+
+    @property
+    def linked_resources(self):
+        if self.lesson_id:
+            return self.lesson.resources.all()
+        return []
+
+
+QUALITY_AXES = [
+    ('عنوان الدرس', 'واضح ومرتبط بالمحتوى والأهداف التعليمية.'),
+    ('الأهداف التعليمية', 'مناسب لخصائص الطلبة ومرحلتهم العمرية.'),
+    ('الأهداف التعليمية', 'مصاغة بلغة واضحة ومفهومة للطالب وولي الأمر.'),
+    ('الأهداف التعليمية', 'مناسبة للمستوى النمائي والمعرفي للطلبة.'),
+    ('الأهداف التعليمية', 'قابلة للتحقق والقياس من خلال المهمات التعليمية.'),
+    ('الأهداف التعليمية', 'مرتبطة بالأهداف التعليمية وتدعم تحقيقها.'),
+    ('مصادر التعليم المفتوحة', 'جاذبة لانتباه الطلبة.'),
+    ('مصادر التعليم المفتوحة', 'آمنة وموثوقة وملائمة لعمر الطلبة.'),
+    ('مصادر التعليم المفتوحة', 'تتضمن بدائل ورقية أو ملموسة عند الحاجة.'),
+    ('المهمات والواجبات', 'واضحة ومحددة ويمكن للطالب تنفيذها.'),
+    ('المهمات والواجبات', 'تراعي الوقت والجهد المناسبين للطلبة.'),
+    ('المهمات والواجبات', 'تعزز مشاركة الأسرة دون تحميلها عبئاً تعليمياً.'),
+    ('النشر والتواصل', 'نُشرت الخطة قبل بدء الأسبوع بوقت كافٍ.'),
+    ('النشر والتواصل', 'جميع الروابط والمرفقات تعمل بصورة صحيحة.'),
+    ('النشر والتواصل', 'الخطة مكتوبة بلغة واضحة وسهلة لأولياء الأمور.'),
+]
+
+
+class WeeklyPlanReview(models.Model):
+    STATUS_CHOICES = [
+        ('needs_improvement', 'تحتاج تحسين'),
+        ('approved', 'معتمدة'),
+    ]
+
+    weekly_plan = models.OneToOneField(WeeklyPlan, on_delete=models.CASCADE, related_name='review', verbose_name='الخطة')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='راجعها')
+    status = models.CharField('النتيجة', max_length=20, choices=STATUS_CHOICES, default='needs_improvement')
+    general_note = models.TextField('ملاحظة عامة', blank=True)
+    reviewed_at = models.DateTimeField('تاريخ المراجعة', auto_now=True)
+    created_at = models.DateTimeField('تاريخ الإنشاء', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'مراجعة الخطة الأسبوعية'
+        verbose_name_plural = 'مراجعات الخطط الأسبوعية'
+
+    def __str__(self):
+        return f'مراجعة {self.weekly_plan}'
+
+    @property
+    def total(self):
+        return self.items.count()
+
+    @property
+    def met_count(self):
+        return self.items.filter(is_met=True).count()
+
+    @property
+    def needs_count(self):
+        return self.items.filter(needs_improvement=True).count()
+
+    @property
+    def percentage(self):
+        if not self.total:
+            return 0
+        return round(self.met_count * 100 / self.total)
+
+
+class WeeklyPlanReviewItem(models.Model):
+    review = models.ForeignKey(WeeklyPlanReview, on_delete=models.CASCADE, related_name='items', verbose_name='المراجعة')
+    axis = models.CharField('المحور', max_length=100)
+    indicator = models.TextField('مؤشر الجودة')
+    is_met = models.BooleanField('متحقق', default=False)
+    needs_improvement = models.BooleanField('يحتاج تحسين', default=False)
+    note = models.TextField('ملاحظات المدير', blank=True)
+    order = models.PositiveSmallIntegerField('الترتيب', default=0)
+
+    class Meta:
+        verbose_name = 'مؤشر جودة'
+        verbose_name_plural = 'مؤشرات الجودة'
+        ordering = ['order']
+
+    def __str__(self):
+        return f'{self.axis} - {self.indicator[:40]}'

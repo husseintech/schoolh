@@ -1,4 +1,5 @@
 import os
+import json
 
 import requests
 from django.utils import timezone
@@ -95,17 +96,102 @@ class GoogleDriveService:
         token = GoogleDriveToken.objects.filter(pk=1).first()
         return bool(token and token.get_tokens().get('refresh_token'))
 
-    def upload_file(self, *args, **kwargs):
-        raise NotImplementedError('upload_file سيُنفَّذ في مرحلة رفع الملفات')
+    def _auth_headers(self):
+        creds = self.get_credentials()
+        if not creds or not creds.get('access_token'):
+            raise RuntimeError('Google Drive غير متصل. يجب على المدير ربط الحساب أولاً')
+        return {'Authorization': f'Bearer {creds["access_token"]}'}
 
-    def delete_file(self, *args, **kwargs):
-        raise NotImplementedError('delete_file سيُنفَّذ في مرحلة رفع الملفات')
+    def _find_folder(self, name, parent_id):
+        q = "mimeType='application/vnd.google-apps.folder' and name=%s and '%s' in parents and trashed=false" % (repr(name), parent_id)
+        resp = requests.get(
+            'https://www.googleapis.com/drive/v3/files',
+            headers=self._auth_headers(),
+            params={'q': q, 'fields': 'files(id,name)', 'pageSize': '1'},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        files = resp.json().get('files', [])
+        return files[0]['id'] if files else None
 
-    def get_file(self, *args, **kwargs):
-        raise NotImplementedError('get_file سيُنفَّذ في مرحلة رفع الملفات')
+    def _build_folder(self, name, parent_id):
+        existing = self._find_folder(name, parent_id)
+        if existing:
+            return existing
+        meta = {'name': name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parent_id]}
+        resp = requests.post(
+            'https://www.googleapis.com/drive/v3/files',
+            headers=self._auth_headers(),
+            json=meta,
+            params={'fields': 'id'},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()['id']
 
-    def create_folder(self, *args, **kwargs):
-        raise NotImplementedError('create_folder سيُنفَّذ في مرحلة رفع الملفات')
+    def ensure_lesson_folder(self, class_name, subject_name, lesson_title):
+        parent = self.root_folder_id
+        if not parent:
+            return None
+        parent = self._build_folder(class_name or 'بدون صف', parent)
+        parent = self._build_folder(subject_name or 'بدون مادة', parent)
+        parent = self._build_folder(lesson_title or 'بدون درس', parent)
+        return parent
 
-    def get_file_url(self, *args, **kwargs):
-        raise NotImplementedError('get_file_url سيُنفَّذ في مرحلة رفع الملفات')
+    def upload_file(self, filename, data, mimetype, class_name=None, subject_name=None, lesson_title=None):
+        parent = self.ensure_lesson_folder(class_name, subject_name, lesson_title) or self.root_folder_id
+        metadata = {'name': filename}
+        if parent:
+            metadata['parents'] = [parent]
+        boundary = '----schoolh_drive_boundary'
+        head = (
+            f'--{boundary}\r\n'
+            f'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+            f'{json.dumps(metadata)}\r\n'
+            f'--{boundary}\r\n'
+            f'Content-Type: {mimetype}\r\n\r\n'
+        ).encode('utf-8')
+        tail = f'\r\n--{boundary}--\r\n'.encode('utf-8')
+        payload = head + data + tail
+        headers = self._auth_headers()
+        headers['Content-Type'] = f'multipart/related; boundary={boundary}'
+        resp = requests.post(
+            'https://www.googleapis.com/upload/drive/v3/files',
+            params={'uploadType': 'multipart', 'fields': 'id,webViewLink,name,mimeType,size'},
+            headers=headers,
+            data=payload,
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def delete_file(self, file_id):
+        resp = requests.delete(
+            f'https://www.googleapis.com/drive/v3/files/{file_id}',
+            headers=self._auth_headers(),
+            timeout=30,
+        )
+        if resp.status_code not in (204, 200):
+            resp.raise_for_status()
+        return True
+
+    def get_file(self, file_id):
+        resp = requests.get(
+            f'https://www.googleapis.com/drive/v3/files/{file_id}',
+            headers=self._auth_headers(),
+            params={'fields': 'id,name,mimeType,size,webViewLink'},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def download_file(self, file_id):
+        meta = self.get_file(file_id)
+        resp = requests.get(
+            f'https://www.googleapis.com/drive/v3/files/{file_id}',
+            headers=self._auth_headers(),
+            params={'alt': 'media'},
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.content, meta.get('mimeType', 'application/octet-stream'), meta.get('name', 'file')

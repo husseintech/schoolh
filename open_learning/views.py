@@ -305,30 +305,79 @@ def resource_add(request, lesson_id):
     if lesson.status in ('published', 'pending'):
         messages.warning(request, 'لا يمكن إضافة موارد في الحالة الحالية')
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
+
+    def _ctx():
+        return {
+            'lesson': lesson,
+            'resource_types': LearningResource.RESOURCE_TYPES,
+            'gdrive_connected': GoogleDriveService().is_connected(),
+        }
+
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         resource_type = request.POST.get('resource_type', '')
-        url = request.POST.get('url', '').strip()
         description = request.POST.get('description', '').strip()
+        source_kind = request.POST.get('source_kind', 'link')
         valid_types = dict(LearningResource.RESOURCE_TYPES)
-        if not title or not url:
-            messages.error(request, 'يرجى تعبئة العنوان والرابط')
-        elif resource_type not in valid_types:
+        if not title:
+            messages.error(request, 'يرجى تعبئة عنوان المورد')
+            return render(request, 'open_learning/resource_form.html', _ctx())
+        if resource_type not in valid_types:
             messages.error(request, 'نوع المورد غير صحيح')
+            return render(request, 'open_learning/resource_form.html', _ctx())
+
+        resource = LearningResource(
+            lesson=lesson,
+            title=title,
+            resource_type=resource_type,
+            description=description,
+            created_by=request.user,
+            source_kind=source_kind,
+        )
+        if source_kind == 'google_drive':
+            uploaded = request.FILES.get('file')
+            if uploaded:
+                svc = GoogleDriveService()
+                if not svc.is_connected():
+                    messages.error(request, 'يجب على المدير ربط Google Drive أولاً قبل رفع الملفات')
+                    return render(request, 'open_learning/resource_form.html', _ctx())
+                try:
+                    data = uploaded.read()
+                    result = svc.upload_file(
+                        uploaded.name,
+                        data,
+                        uploaded.content_type or 'application/octet-stream',
+                        class_name=lesson.student_class.name,
+                        subject_name=lesson.subject.name,
+                        lesson_title=lesson.title,
+                    )
+                except Exception as exc:
+                    messages.error(request, f'فشل رفع الملف إلى Google Drive: {exc}')
+                    return render(request, 'open_learning/resource_form.html', _ctx())
+                resource.google_drive_file_id = result.get('id', '')
+                resource.google_drive_url = result.get('webViewLink', '')
+                resource.url = result.get('webViewLink', '')
+                resource.file_name = uploaded.name
+                resource.file_type = uploaded.content_type or ''
+                resource.file_size = len(data)
+                resource.storage_provider = 'google_drive'
+            else:
+                gd_url = request.POST.get('url', '').strip()
+                if not gd_url:
+                    messages.error(request, 'يرجى إرفاق ملف أو وضع رابط Google Drive')
+                    return render(request, 'open_learning/resource_form.html', _ctx())
+                resource.google_drive_url = gd_url
+                resource.url = gd_url
+        elif not request.POST.get('url', '').strip():
+            messages.error(request, 'يرجى تعبئة الرابط')
+            return render(request, 'open_learning/resource_form.html', _ctx())
         else:
-            LearningResource.objects.create(
-                lesson=lesson,
-                title=title,
-                resource_type=resource_type,
-                url=url,
-                description=description,
-            )
-            messages.success(request, 'تمت إضافة المورد')
-            return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
-    return render(request, 'open_learning/resource_form.html', {
-        'lesson': lesson,
-        'resource_types': LearningResource.RESOURCE_TYPES,
-    })
+            resource.url = request.POST.get('url', '').strip()
+
+        resource.save()
+        messages.success(request, 'تمت إضافة المورد')
+        return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
+    return render(request, 'open_learning/resource_form.html', _ctx())
 
 
 @login_required
@@ -337,9 +386,45 @@ def resource_delete(request, lesson_id, resource_id):
     if not _can_manage(request, resource.lesson):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('open_learning_list')
+    gd_file = resource.google_drive_file_id
+    if gd_file:
+        try:
+            GoogleDriveService().delete_file(gd_file)
+        except Exception:
+            pass
     resource.delete()
     messages.success(request, 'تم حذف المورد')
     return redirect('open_learning_lesson_detail', lesson_id=lesson_id)
+
+
+@login_required
+def resource_open(request, lesson_id, resource_id):
+    resource = get_object_or_404(LearningResource, pk=resource_id, lesson_id=lesson_id)
+    lesson = resource.lesson
+    role = _role(request)
+    if role == 'student':
+        if lesson.student_class_id != request.user.student_profile.student_class_id or lesson.status != 'published':
+            messages.error(request, 'لا يمكنك الاطلاع على هذا الدرس')
+            return redirect('open_learning_list')
+        if resource.status != 'approved':
+            messages.error(request, 'المورد غير متاح')
+            return redirect('open_learning_list')
+    elif role == 'teacher' and not _can_manage(request, lesson):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('open_learning_list')
+
+    if resource.source_kind == 'google_drive' and resource.storage_provider == 'google_drive' and resource.google_drive_file_id:
+        try:
+            data, mime, name = GoogleDriveService().download_file(resource.google_drive_file_id)
+        except Exception as exc:
+            messages.error(request, f'تعذّر فتح الملف: {exc}')
+            return redirect('open_learning_lesson_detail', lesson_id=lesson_id)
+        from django.http import HttpResponse
+        resp = HttpResponse(data, content_type=mime or 'application/octet-stream')
+        from django.utils.encoding import escape_uri_path
+        resp['Content-Disposition'] = f'inline; filename="{escape_uri_path(name)}"'
+        return resp
+    return redirect(resource.url or resource.google_drive_url or 'open_learning_lesson_detail')
 
 
 @login_required

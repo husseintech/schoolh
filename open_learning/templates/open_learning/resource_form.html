@@ -5,7 +5,7 @@
 <div class="card">
     <div class="card-body">
         <h6><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}</h6>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="mb-3">
                 <label class="form-label">عنوان المورد <span class="text-danger">*</span></label>
@@ -20,17 +20,56 @@
                     {% endfor %}
                 </select>
             </div>
+
             <div class="mb-3">
-                <label class="form-label">الرابط <span class="text-danger">*</span></label>
-                <input type="url" name="url" class="form-control" required placeholder="https://example.com/... (يوتيوب، درايف، PDF، واتساب...)">
+                <label class="form-label d-block">مصدر المورد</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="source_kind" id="sk_link" value="link" checked>
+                    <label class="form-check-label" for="sk_link">رابط خارجي</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="source_kind" id="sk_gd" value="google_drive">
+                    <label class="form-check-label" for="sk_gd">Google Drive</label>
+                </div>
             </div>
+
+            <div class="mb-3" id="url_box">
+                <label class="form-label">الرابط <span class="text-danger">*</span></label>
+                <input type="url" name="url" class="form-control" placeholder="https://example.com/... (يوتيوب، PDF، رابط درايف...)">
+            </div>
+
+            <div class="mb-3 d-none" id="gdrive_box">
+                {% if gdrive_connected %}
+                <label class="form-label">اختر ملفًا من جهازك (يُرفع إلى Google Drive الخاص بالمدير)</label>
+                <input type="file" name="file" class="form-control">
+                <div class="form-text">أو ضع رابط ملف Google Drive مباشر:</div>
+                <input type="url" name="url" class="form-control mt-1" placeholder="https://drive.google.com/...">
+                {% else %}
+                <div class="alert alert-warning small mb-0">
+                    لم يربط المدير حساب Google Drive بعد. يمكنك وضع رابط ملف Google Drive مباشر، أو الانتظار حتى يربط المدير لرفع الملفات تلقائيًا.
+                </div>
+                <input type="url" name="url" class="form-control" placeholder="https://drive.google.com/...">
+                {% endif %}
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">وصف مختصر</label>
                 <input type="text" name="description" class="form-control" maxlength="500" placeholder="مثال: مدة الفيديو 10 دقائق">
             </div>
+
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> إضافة</button>
             <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary">إلغاء</a>
         </form>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('input[name="source_kind"]').forEach(function (el) {
+    el.addEventListener('change', function () {
+        var isGd = document.getElementById('sk_gd').checked;
+        document.getElementById('url_box').classList.toggle('d-none', isGd);
+        document.getElementById('gdrive_box').classList.toggle('d-none', !isGd);
+    });
+});
+</script>
 {% endblock %}

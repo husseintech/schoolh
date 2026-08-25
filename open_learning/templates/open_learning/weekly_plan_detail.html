@@ -1,0 +1,177 @@
+{% extends 'school/base.html' %}
+{% block title %}الخطة الأسبوعية{% endblock %}
+{% block page_heading %}الخطة الأسبوعية{% endblock %}
+{% block content %}
+<div class="container py-3">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-1"><i class="bi bi-calendar-week-fill text-primary"></i> خطة المعلم: {{ plan.teacher.full_name }}</h5>
+                    <div class="small text-muted">
+                        <div>الصف: <strong>{{ plan.student_class.name }}</strong></div>
+                        <div>الأسبوع: {{ plan.week_start }} → {{ plan.week_end }}</div>
+                    </div>
+                </div>
+                <div class="text-start">
+                    <span class="badge
+                        {% if plan.status == 'draft' %}bg-secondary
+                        {% elif plan.status == 'completed' %}bg-info
+                        {% elif plan.status == 'sent' %}bg-warning text-dark
+                        {% elif plan.status == 'reviewed' %}bg-success
+                        {% elif plan.status == 'needs_improvement' %}bg-danger{% endif %} fs-6">
+                        {{ plan.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            {% if editable %}
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <form method="post">{% csrf_token %}
+                    <input type="hidden" name="action" value="submit">
+                    <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('إرسال الخطة للمدير؟')">
+                        <i class="bi bi-send"></i> إرسال الخطة للمدير
+                    </button>
+                </form>
+                {% if plan.status == 'draft' %}
+                <form method="post" action="{% url 'ol_weekly_plan_delete' plan.id %}">{% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف الخطة نهائياً؟')">
+                        <i class="bi bi-trash"></i> حذف
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% elif is_admin %}
+            <div class="mt-3">
+                {% if plan.is_submitted %}
+                <a href="{% url 'ol_weekly_plan_review' plan.id %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-clipboard-check"></i> بطاقة متابعة جودة الخطة
+                </a>
+                {% else %}
+                <span class="text-muted small">الخطة لم تُرسل بعد من المعلم.</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if editable %}
+    <div class="card mb-3 border-primary">
+        <div class="card-header">إضافة يوم جديد</div>
+        <div class="card-body">
+            <form method="post" class="row g-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_day">
+                <div class="col-md-2">
+                    <select name="day_of_week" class="form-select" required>
+                        <option value="">اليوم</option>
+                        {% for d in PLAN_WEEKDAYS %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2"><input type="date" name="date" class="form-control" required></div>
+                <div class="col-md-2">
+                    <select name="subject" class="form-select">
+                        <option value="">المادة</option>
+                        {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="lesson" class="form-select">
+                        <option value="">ربط بدرس من التعلم المفتوح (اختياري)</option>
+                        {% for l in lessons %}<option value="{{ l.id }}">{{ l.title }} ({{ l.subject.name }})</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3"><input type="text" name="lesson_title" class="form-control" placeholder="عنوان الدرس"></div>
+                <div class="col-12"><textarea name="objectives" class="form-control" rows="2" placeholder="الأهداف"></textarea></div>
+                <div class="col-12"><textarea name="homework" class="form-control" rows="2" placeholder="الواجبات"></textarea></div>
+                <div class="col-12"><textarea name="notes" class="form-control" rows="2" placeholder="ملاحظات (يمكن إدراج روابط يدويًا)"></textarea></div>
+                <div class="col-12"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة اليوم</button></div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <h6 class="mt-3 mb-2">أيام الخطة</h6>
+    {% for day in days %}
+    <div class="card mb-2">
+        <div class="card-body">
+            {% if editable %}
+            <form method="post" class="row g-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_day">
+                <input type="hidden" name="day_id" value="{{ day.id }}">
+                <div class="col-md-2">
+                    <select name="day_of_week" class="form-select">
+                        {% for d in PLAN_WEEKDAYS %}<option value="{{ d }}" {% if day.day_of_week == d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2"><input type="date" name="date" class="form-control" value="{{ day.date }}"></div>
+                <div class="col-md-2">
+                    <select name="subject" class="form-select">
+                        <option value="">المادة</option>
+                        {% for s in subjects %}<option value="{{ s.id }}" {% if day.subject_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="lesson" class="form-select">
+                        <option value="">ربط بدرس (اختياري)</option>
+                        {% for l in lessons %}<option value="{{ l.id }}" {% if day.lesson_id == l.id %}selected{% endif %}>{{ l.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3"><input type="text" name="lesson_title" class="form-control" value="{{ day.lesson_title }}" placeholder="عنوان الدرس"></div>
+                <div class="col-12"><textarea name="objectives" class="form-control" rows="2" placeholder="الأهداف">{{ day.objectives }}</textarea></div>
+                <div class="col-12"><textarea name="homework" class="form-control" rows="2" placeholder="الواجبات">{{ day.homework }}</textarea></div>
+                <div class="col-12"><textarea name="notes" class="form-control" rows="2" placeholder="ملاحظات">{{ day.notes }}</textarea></div>
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> حفظ</button>
+                    <form method="post" class="d-inline">{% csrf_token %}
+                        <input type="hidden" name="action" value="delete_day">
+                        <input type="hidden" name="day_id" value="{{ day.id }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف هذا اليوم؟')"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </form>
+            {% else %}
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+                <div>
+                    <span class="badge bg-light text-dark border">{{ day.day_of_week }}</span>
+                    <span class="text-muted small">{{ day.date }}</span>
+                    {% if day.subject %}<span class="badge bg-light text-dark border">{{ day.subject.name }}</span>{% endif %}
+                    {% if day.lesson_title %}<strong class="ms-1">{{ day.lesson_title }}</strong>{% endif %}
+                </div>
+            </div>
+            {% if day.objectives %}<div class="small mt-1"><span class="text-primary">الأهداف:</span> {{ day.objectives|linebreaksbr }}</div>{% endif %}
+            {% if day.homework %}<div class="small"><span class="text-primary">الواجبات:</span> {{ day.homework|linebreaksbr }}</div>{% endif %}
+            {% if day.notes %}<div class="small"><span class="text-primary">ملاحظات:</span> {{ day.notes|linebreaksbr }}</div>{% endif %}
+            {% endif %}
+
+            {% if day.linked_resources %}
+            <div class="mt-2 p-2 bg-light rounded">
+                <div class="small text-primary fw-bold mb-1">📎 روابط الموارد المرتبطة بالدرس</div>
+                {% for r in day.linked_resources %}
+                <div class="small">
+                    {% if r.is_ai_generated %}🤖{% else %}👨‍🏫{% endif %}
+                    <a href="{% url 'ol_resource_open' day.lesson.id r.id %}" target="_blank" rel="noopener">{{ r.title }}</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">لا توجد أيام في الخطة بعد.</div>
+    {% endfor %}
+
+    {% if review and is_admin %}
+    <div class="alert alert-secondary mt-3">
+        نتيجة المتابعة السابقة:
+        {% if review.status == 'approved' %}<span class="badge bg-success">معتمدة</span>{% else %}<span class="badge bg-danger">تحتاج تحسين</span>{% endif %}
+        — متحقق {{ review.met_count }} / {{ review.total }} ({{ review.percentage }}%)
+    </div>
+    {% endif %}
+
+    <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-secondary mt-2">
+        <i class="bi bi-arrow-right"></i> العودة للقائمة
+    </a>
+</div>
+{% endblock %}

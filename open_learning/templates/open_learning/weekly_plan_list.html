@@ -1,0 +1,101 @@
+{% extends 'school/base.html' %}
+{% block title %}الخطط الأسبوعية{% endblock %}
+{% block page_heading %}{% if is_admin %}متابعة الخطط الأسبوعية{% else %}خطتي الأسبوعية{% endif %}{% endblock %}
+{% block content %}
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <p class="text-muted mb-0">
+                {% if is_admin %}عرض وتقييم خطط المعلمين{% else %}خططك الأسبوعية للصفوف التي تدرّسها{% endif %}
+            </p>
+        </div>
+        {% if not is_admin %}
+        <a href="{% url 'ol_weekly_plan_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> خطة جديدة
+        </a>
+        {% endif %}
+    </div>
+
+    {% if is_admin %}
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-auto">
+            <select name="teacher" class="form-select">
+                <option value="">كل المعلمين</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}" {% if filters.teacher == t.id|stringformat:"i" %}selected{% endif %}>{{ t.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="class" class="form-select">
+                <option value="">كل الصفوف</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}" {% if filters.class == c.id|stringformat:"i" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <input type="date" name="week" class="form-control" value="{{ filters.week }}">
+        </div>
+        <div class="col-auto">
+            <select name="status" class="form-select">
+                <option value="">كل الحالات</option>
+                {% for s in statuses %}
+                <option value="{{ s.0 }}" {% if filters.status == s.0 %}selected{% endif %}>{{ s.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> بحث</button>
+        </div>
+    </form>
+    {% endif %}
+
+    {% if plans %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    {% if is_admin %}<th>المعلم</th>{% endif %}
+                    <th>الصف</th>
+                    <th>الأسبوع</th>
+                    <th>الحالة</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in plans %}
+                <tr>
+                    {% if is_admin %}<td>{{ p.teacher.full_name }}</td>{% endif %}
+                    <td>{{ p.student_class.name }}</td>
+                    <td>{{ p.week_start }} → {{ p.week_end }}</td>
+                    <td>
+                        <span class="badge
+                            {% if p.status == 'draft' %}bg-secondary
+                            {% elif p.status == 'completed' %}bg-info
+                            {% elif p.status == 'sent' %}bg-warning text-dark
+                            {% elif p.status == 'reviewed' %}bg-success
+                            {% elif p.status == 'needs_improvement' %}bg-danger{% endif %}">
+                            {{ p.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'ol_weekly_plan_detail' p.id %}" class="btn btn-sm btn-outline-primary">فتح</a>
+                        {% if is_admin and p.is_submitted %}
+                        <a href="{% url 'ol_weekly_plan_review' p.id %}" class="btn btn-sm btn-outline-success">بطاقة المتابعة</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">لا توجد خطط أسبوعية بعد.</div>
+    {% endif %}
+
+    <a href="{% url 'open_learning_list' %}" class="btn btn-outline-secondary mt-2">
+        <i class="bi bi-arrow-right"></i> العودة للتعلم المفتوح
+    </a>
+</div>
+{% endblock %}

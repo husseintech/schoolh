@@ -1,0 +1,32 @@
+{% extends 'school/base.html' %}
+{% block title %}خطة أسبوعية جديدة{% endblock %}
+{% block page_heading %}إنشاء خطة أسبوعية{% endblock %}
+{% block content %}
+<div class="container py-3">
+    <div class="card">
+        <div class="card-body">
+            <p class="text-muted">المعلم: <strong>{{ request.user.teacher_profile.full_name }}</strong></p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">الصف <span class="text-danger">*</span></label>
+                    <select name="student_class" class="form-select" required>
+                        <option value="">اختر الصف</option>
+                        {% for c in classes %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">تظهر فقط الصفوف التي تدرّسها.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">بداية الأسبوع (الأحد) <span class="text-danger">*</span></label>
+                    <input type="date" name="week_start" class="form-control" required>
+                    <div class="form-text">يُنشئ النظام تلقائياً أيام الأحد–الخميس لنفس الأسبوع.</div>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> إنشاء الخطة</button>
+                <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -182,11 +182,17 @@
         {% if visible_resources %}
         <div class="list-group">
             {% for r in visible_resources %}
-            <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
+                    {% if r.is_ai_generated %}
+                        <span class="badge bg-info text-dark mb-1">🤖 مورد الذكاء الاصطناعي</span>
+                    {% else %}
+                        <span class="badge bg-primary-subtle text-primary mb-1">👨‍🏫 أضافه المعلم</span>
+                    {% endif %}
                     <i class="bi {{ r.type_icon }} text-primary"></i>
                     <strong>{{ r.title }}</strong>
                     <span class="badge bg-light text-dark border ms-1">{{ r.get_resource_type_display }}</span>
+                    {% if r.source_kind == 'google_drive' %}<span class="badge bg-light text-dark border">Google Drive</span>{% else %}<span class="badge bg-light text-dark border">رابط خارجي</span>{% endif %}
                     {% if r.language == 'en' %}<span class="badge bg-secondary">EN</span>{% endif %}
                     {% if r.relevance_score %}<span class="badge bg-info text-dark">ملاءمة {{ r.relevance_score }}</span>{% endif %}
                     {% if r.source_name %}<span class="badge bg-light text-dark border">{{ r.source_name }}</span>{% endif %}
@@ -194,11 +200,12 @@
                         {% if r.status == 'pending' %}<span class="badge bg-warning text-dark">بانتظار الاعتماد</span>{% endif %}
                         {% if r.status == 'archived' %}<span class="badge bg-secondary">مرفوض</span>{% endif %}
                     {% endif %}
+                    {% if r.file_name %}<div class="small text-muted">{{ r.file_name }}{% if r.file_size %} — {{ r.file_size|filesizeformat }}{% endif %}</div>{% endif %}
                     {% if r.description %}<div class="small text-muted">{{ r.description }}</div>{% endif %}
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{{ r.url }}" target="_blank" rel="noopener" class="btn btn-sm btn-success">
-                        <i class="bi bi-box-arrow-up-right"></i> فتح
+                    <a href="{% url 'ol_resource_open' lesson.id r.id %}" target="_blank" rel="noopener" class="btn btn-sm btn-success">
+                        <i class="bi bi-box-arrow-up-right"></i> {% if r.source_kind == 'google_drive' %}فتح في Google Drive{% else %}فتح المورد{% endif %}
                     </a>
                     {% if can_manage %}
                         {% if r.status == 'pending' %}

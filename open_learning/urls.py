@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, ai_views
+from . import views, ai_views, plans_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -14,6 +14,7 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/archive/', views.lesson_archive, name='open_learning_lesson_archive'),
     path('lessons/<int:lesson_id>/resources/add/', views.resource_add, name='open_learning_resource_add'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/delete/', views.resource_delete, name='open_learning_resource_delete'),
+    path('lessons/<int:lesson_id>/resources/<int:resource_id>/open/', views.resource_open, name='ol_resource_open'),
 
     # ── طبقة الذكاء الاصطناعي (أفعال يدوية فقط، بدون استدعاء تلقائي) ──
     path('ai/generate/<int:lesson_id>/', ai_views.ai_generate_content, name='open_learning_ai_generate'),
@@ -30,4 +31,11 @@ urlpatterns = [
     path('google-drive/connect/', views.google_drive_connect, name='ol_gdrive_connect'),
     path('google-drive/callback/', views.google_drive_callback, name='ol_gdrive_callback'),
     path('google-drive/disconnect/', views.google_drive_disconnect, name='ol_gdrive_disconnect'),
+
+    # ── الخطة الأسبوعية ──
+    path('plans/', plans_views.weekly_plan_list, name='ol_weekly_plan_list'),
+    path('plans/add/', plans_views.weekly_plan_add, name='ol_weekly_plan_add'),
+    path('plans/<int:plan_id>/', plans_views.weekly_plan_detail, name='ol_weekly_plan_detail'),
+    path('plans/<int:plan_id>/review/', plans_views.weekly_plan_review, name='ol_weekly_plan_review'),
+    path('plans/<int:plan_id>/delete/', plans_views.weekly_plan_delete, name='ol_weekly_plan_delete'),
 ]

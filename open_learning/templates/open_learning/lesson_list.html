@@ -17,6 +17,19 @@
         <i class="bi bi-plus-lg"></i> درس جديد
     </a>
     {% endif %}
+    {% if role == 'teacher' %}
+    <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary">
+        <i class="bi bi-calendar-week"></i> خطتي الأسبوعية
+    </a>
+    {% endif %}
+    {% if is_admin %}
+    <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary">
+        <i class="bi bi-calendar-week"></i> متابعة الخطط الأسبوعية
+    </a>
+    <a href="{% url 'ol_storage_settings' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-google"></i> إعدادات التخزين
+    </a>
+    {% endif %}
 </div>
 
 {% if is_admin %}
