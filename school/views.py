@@ -1836,6 +1836,10 @@ def reports(request):
     return render(request, 'school/reports.html', {
         'classes': classes,
         'login_counter': login_counter,
+        'total_students': Student.objects.count(),
+        'total_teachers': Teacher.objects.count(),
+        'total_classes': classes.count(),
+        'total_notes': Note.objects.count(),
     })
 
 
