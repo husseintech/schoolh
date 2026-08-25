@@ -24,4 +24,10 @@ urlpatterns = [
     path('ai/approve-resource/<int:lesson_id>/<int:resource_id>/', ai_views.ai_approve_resource, name='open_learning_ai_approve_resource'),
     path('ai/reject-resource/<int:lesson_id>/<int:resource_id>/', ai_views.ai_reject_resource, name='open_learning_ai_reject_resource'),
     path('ai/dashboard/', ai_views.ai_dashboard, name='open_learning_ai_dashboard'),
+
+    # ── تخزين Google Drive (للمدير فقط) ──
+    path('storage-settings/', views.storage_settings, name='ol_storage_settings'),
+    path('google-drive/connect/', views.google_drive_connect, name='ol_gdrive_connect'),
+    path('google-drive/callback/', views.google_drive_callback, name='ol_gdrive_callback'),
+    path('google-drive/disconnect/', views.google_drive_disconnect, name='ol_gdrive_disconnect'),
 ]

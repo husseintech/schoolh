@@ -1,0 +1,93 @@
+{% extends 'school/base.html' %}
+{% block title %}إعدادات التخزين - Google Drive{% endblock %}
+{% block page_heading %}إعدادات التخزين{% endblock %}
+{% block content %}
+<div class="container py-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'open_learning_list' %}">التعلم المفتوح</a></li>
+            <li class="breadcrumb-item active" aria-current="page">إعدادات التخزين</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">
+                    <i class="bi bi-google"></i> تخزين Google Drive
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="text-muted">الحالة:</span>
+                        {% if connected %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fs-6">
+                                <i class="bi bi-check-circle-fill"></i> متصل
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-6">
+                                <i class="bi bi-x-circle-fill"></i> غير متصل
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted">إعدادات العميل (Client ID/Secret):</span>
+                        {% if configured %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">معيّنة</span>
+                        {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">غير معيّنة</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted">مجلد التخزين الرئيسي (SchoolH Learning Resources):</span>
+                        {% if configured_root %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">معيّن</span>
+                        {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">غير معيّن</span>
+                        {% endif %}
+                        {% if configured_root %}
+                            <div class="small text-muted mt-1"><code>{{ root_folder_id }}</code></div>
+                        {% endif %}
+                    </div>
+
+                    {% if not configured %}
+                        <div class="alert alert-warning small">
+                            يجب تعيين متغيرات البيئة التالية في إعدادات Vercel قبل الربط:
+                            <ul class="mb-0 mt-1">
+                                <li><code>GOOGLE_CLIENT_ID</code></li>
+                                <li><code>GOOGLE_CLIENT_SECRET</code></li>
+                                <li><code>GOOGLE_OAUTH_REDIRECT_URI</code></li>
+                                <li><code>GOOGLE_DRIVE_ROOT_FOLDER_ID</code></li>
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        {% if not connected %}
+                            <a href="{% url 'ol_gdrive_connect' %}" class="btn btn-primary">
+                                <i class="bi bi-link-45deg"></i> ربط Google Drive
+                            </a>
+                        {% else %}
+                            <form method="post" action="{% url 'ol_gdrive_disconnect' %}" onsubmit="return confirm('هل تريد قطع الاتصال بـ Google Drive؟');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-unlink"></i> قطع الاتصال
+                                </button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'open_learning_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right"></i> العودة للتعلم المفتوح
+                        </a>
+                    </div>
+
+                    <p class="text-muted small mt-4 mb-0">
+                        الحساب المربوط هو حساب المدير فقط. لا يرى المعلمون Google Drive ولا بيانات الاعتماد.
+                        تُخزَّن الرموز في قاعدة البيانات بشكل مشفّر ولا تُعرض للمتصفح.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

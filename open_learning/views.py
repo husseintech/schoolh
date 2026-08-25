@@ -1,9 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.exceptions import SuspiciousOperation
+from django.utils.crypto import get_random_string
 
 from school.models import Class, Subject, Teacher
 from .models import LearningLesson, LearningResource
+from .google_drive import GoogleDriveService
 
 
 def _role(request):
@@ -337,3 +340,71 @@ def resource_delete(request, lesson_id, resource_id):
     resource.delete()
     messages.success(request, 'تم حذف المورد')
     return redirect('open_learning_lesson_detail', lesson_id=lesson_id)
+
+
+@login_required
+def storage_settings(request):
+    if not _is_admin(request):
+        messages.error(request, 'هذه الصفحة متاحة للمدير فقط')
+        return redirect('open_learning_list')
+    svc = GoogleDriveService()
+    return render(request, 'open_learning/storage_settings.html', {
+        'connected': svc.is_connected(),
+        'configured': svc.is_configured(),
+        'root_folder_id': svc.root_folder_id,
+        'configured_root': bool(svc.root_folder_id),
+        'role': _role(request),
+        'is_admin': True,
+    })
+
+
+@login_required
+def google_drive_connect(request):
+    if not _is_admin(request):
+        messages.error(request, 'هذه الصفحة متاحة للمدير فقط')
+        return redirect('open_learning_list')
+    svc = GoogleDriveService()
+    if not svc.is_configured():
+        messages.error(request, 'إعدادات Google Drive غير مكتملة. عيّن GOOGLE_CLIENT_ID وGOOGLE_CLIENT_SECRET في متغيرات البيئة')
+        return redirect('ol_storage_settings')
+    state = get_random_string(32)
+    request.session['gdrive_oauth_state'] = state
+    return redirect(svc.authorization_url(state))
+
+
+@login_required
+def google_drive_callback(request):
+    if not _is_admin(request):
+        messages.error(request, 'هذه الصفحة متاحة للمدير فقط')
+        return redirect('open_learning_list')
+    if request.GET.get('error'):
+        messages.error(request, f'تم رفض الربط: {request.GET.get("error")}')
+        return redirect('ol_storage_settings')
+    state = request.GET.get('state', '')
+    if not state or state != request.session.get('gdrive_oauth_state', ''):
+        raise SuspiciousOperation('حالة OAuth غير صحيحة')
+    code = request.GET.get('code')
+    if not code:
+        messages.error(request, 'رمز التفويض غير موجود')
+        return redirect('ol_storage_settings')
+    svc = GoogleDriveService()
+    try:
+        token = svc.exchange_code(code)
+    except Exception as exc:
+        messages.error(request, f'فشل تبادل الرمز: {exc}')
+        return redirect('ol_storage_settings')
+    svc.save_tokens(token)
+    request.session.pop('gdrive_oauth_state', None)
+    messages.success(request, 'تم ربط Google Drive بنجاح ✅')
+    return redirect('ol_storage_settings')
+
+
+@login_required
+def google_drive_disconnect(request):
+    if not _is_admin(request):
+        messages.error(request, 'هذه الصفحة متاحة للمدير فقط')
+        return redirect('open_learning_list')
+    if request.method == 'POST':
+        GoogleDriveToken.objects.all().delete()
+        messages.success(request, 'تم قطع الاتصال بـ Google Drive')
+    return redirect('ol_storage_settings')

@@ -1,4 +1,9 @@
+import json
+from datetime import timedelta
+
 from django.db import models
+from django.core.signing import Signer, BadSignature
+from django.utils import timezone
 from django.contrib.auth.models import User
 from school.models import Class, Subject, Teacher
 
@@ -212,3 +217,38 @@ class AIUsageLog(models.Model):
 
     def __str__(self):
         return f'{self.operation} - {self.created_at}'
+
+
+class GoogleDriveToken(models.Model):
+    token_json = models.TextField('بيانات الرمز المشفّرة', blank=True,
+                                  help_text='رمز الوصول ورمز التحديث مشفّران (موقّعان) ولا يظهران في الكود أو نظام الملفات')
+    token_expiry = models.DateTimeField('انتهاء صلاحية رمز الوصول', null=True, blank=True)
+    scope = models.TextField('النطاق المصرّح به', blank=True)
+    created_at = models.DateTimeField('تاريخ الإنشاء', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تعديل', auto_now=True)
+
+    class Meta:
+        verbose_name = 'رمز Google Drive'
+        verbose_name_plural = 'رموز Google Drive'
+
+    def __str__(self):
+        return 'Google Drive Token'
+
+    def set_tokens(self, token_dict):
+        signer = Signer()
+        self.token_json = signer.sign(json.dumps(token_dict, ensure_ascii=False))
+        self.token_expiry = None
+        if token_dict.get('expires_in'):
+            try:
+                self.token_expiry = timezone.now() + timedelta(seconds=int(token_dict['expires_in']))
+            except (TypeError, ValueError):
+                self.token_expiry = None
+        self.scope = token_dict.get('scope', '')
+
+    def get_tokens(self):
+        if not self.token_json:
+            return {}
+        try:
+            return json.loads(Signer().unsign(self.token_json))
+        except (BadSignature, json.JSONDecodeError):
+            return {}
