@@ -1934,11 +1934,11 @@ def account_list(request):
     if not has_perm(request.user, 'settings', 'accounts'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    admins = User.objects.filter(is_superuser=False, profile__role='admin').select_related('profile')
-    vice_principals = User.objects.filter(is_superuser=False, profile__role='vice_principal').select_related('profile')
-    secretaries = User.objects.filter(is_superuser=False, profile__role='secretary').select_related('profile')
-    teachers = User.objects.filter(is_superuser=False, profile__role='teacher').select_related('profile')
-    students = User.objects.filter(is_superuser=False, profile__role='student').select_related('profile')
+    admins = User.objects.filter(is_superuser=False, profile__role='admin').select_related('profile').prefetch_related('teacher_profile', 'student_profile')
+    vice_principals = User.objects.filter(is_superuser=False, profile__role='vice_principal').select_related('profile').prefetch_related('teacher_profile', 'student_profile')
+    secretaries = User.objects.filter(is_superuser=False, profile__role='secretary').select_related('profile').prefetch_related('teacher_profile', 'student_profile')
+    teachers = User.objects.filter(is_superuser=False, profile__role='teacher').select_related('profile').prefetch_related('teacher_profile', 'student_profile')
+    students = User.objects.filter(is_superuser=False, profile__role='student').select_related('profile').prefetch_related('teacher_profile', 'student_profile')
     return render(request, 'school/account_list.html', {
         'admins': admins,
         'vice_principals': vice_principals,

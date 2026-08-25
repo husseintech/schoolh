@@ -20,7 +20,11 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td><strong dir="ltr">{{ u.username }}</strong></td>
-                    <td>{{ u.first_name }}</td>
+                    <td>
+                        {% if role == 'teacher' %}{{ u.teacher_profile.full_name|default:u.first_name|default:"-" }}
+                        {% elif role == 'student' %}{{ u.student_profile.full_name|default:u.first_name|default:"-" }}
+                        {% else %}{{ u.first_name|default:"-" }}{% endif %}
+                    </td>
                     <td>{{ u.profile.phone|default:"-" }}</td>
                     <td>
                         <div class="btn-group btn-group-sm">
