@@ -28,6 +28,7 @@
   .c-purple{background:#8e44ad;} .c-orange{background:#f39c12;} .c-teal{background:#17a2b8;}
   .c-mint{background:#20c997;} .c-dark{background:#2c3e50;} .c-sea{background:#16a085;}
   .c-whats{background:#25d366;} .c-deep{background:#c0392b;}
+  .ic-sm { width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; }
 </style>
 
 <div class="report-hero d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -81,7 +82,7 @@
     {% for class_obj in classes %}
     <div class="col-6 col-md-4 col-lg-3">
         <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-sea"><i class="bi bi-building"></i></div>
+            <div class="ic c-sea ic-sm"><i class="bi bi-building"></i></div>
             <h6 class="mb-1">{{ class_obj.name }}</h6>
             <div class="text-muted small mb-3">طلاب: {{ class_obj.students.count }}</div>
             <a href="{% url 'class_report' class_obj.id %}" class="btn btn-primary btn-sm w-100"><i class="bi bi-file-text"></i> التقرير</a>
