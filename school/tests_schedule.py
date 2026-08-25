@@ -71,6 +71,22 @@ class ScheduleEngineTests(TestCase):
         self.assertEqual(c.get(reverse('schedule_teacher', args=[self.plan.id, self.teacher.id])).status_code, 200)
         self.assertEqual(c.get(reverse('schedule_class', args=[self.plan.id, self.cls.id])).status_code, 200)
 
+    def test_teacher_report_renders(self):
+        from django.test import Client
+        from django.urls import reverse
+        res = generate_schedule(self.plan)
+        ScheduleEntry.objects.bulk_create([
+            ScheduleEntry(plan=self.plan, day=e['day'], period=e['period'], teacher_id=e['teacher'],
+                          subject_id=e['subject'], student_class_id=e['class'], fixed=e['fixed'])
+            for e in res['entries']
+        ])
+        Profile.objects.create(user=self.user, role='admin')
+        c = Client()
+        c.force_login(self.user)
+        r = c.get(reverse('schedule_teacher_report', args=[self.plan.id]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'عدد الحصص')
+
     def test_evaluate_detects_availability_conflict(self):
         ScheduleEntry.objects.create(plan=self.plan, day='الأحد', period=1,
                                      teacher=self.teacher, subject=self.subj,

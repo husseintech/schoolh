@@ -71,9 +71,9 @@
             </div>
             <div class="col-md-4">
                 <div class="card h-100"><div class="card-body">
-                    <h6 class="card-title">6) إنشاء البرنامج</h6>
-                    <p class="text-muted small">تشغيل المحرك وعرض النتيجة.</p>
-                    <a href="{% url 'schedule_generate' plan.id %}" class="btn btn-success btn-sm">إنشاء</a>
+                    <h6 class="card-title">6) إدخال الجدول يدويًا</h6>
+                    <p class="text-muted small">إدخال/تعديل الحصص في الشبكة يدويًا.</p>
+                    <a href="{% url 'schedule_edit_grid' plan.id %}" class="btn btn-success btn-sm">إدخال يدوي</a>
                 </div></div>
             </div>
         </div>
@@ -86,6 +86,7 @@
             <a href="{% url 'schedule_print_general' plan.id %}" class="btn btn-outline-dark"><i class="bi bi-table"></i> طباعة البرنامج العام</a>
             <a href="{% url 'schedule_teachers' plan.id %}" class="btn btn-outline-primary"><i class="bi bi-person-badge"></i> برامج المعلمين</a>
             <a href="{% url 'schedule_classes' plan.id %}" class="btn btn-outline-primary"><i class="bi bi-collection"></i> برامج الصفوف</a>
+            <a href="{% url 'schedule_teacher_report' plan.id %}" class="btn btn-outline-primary"><i class="bi bi-card-list"></i> تقرير المعلمين</a>
         </div>
     </div>
 </div>

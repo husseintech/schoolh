@@ -4847,6 +4847,27 @@ def schedule_print_general(request, plan_id):
         'rows': rows,
     })
 
+
+@login_required
+def schedule_teacher_report(request, plan_id):
+    if not _sch_perm(request, 'view'):
+        return redirect('schedule_plan_list')
+    plan = get_object_or_404(SchedulePlan, id=plan_id)
+    rows = []
+    for t in Teacher.objects.all().order_by('full_name'):
+        entries = plan.entries.filter(teacher=t).select_related('subject', 'student_class')
+        grouped = {}
+        for e in entries:
+            key = (e.subject.name if e.subject else '-',
+                   e.student_class.name if e.student_class else '-')
+            grouped[key] = grouped.get(key, 0) + 1
+        for (subj, cls), cnt in grouped.items():
+            rows.append({'tid': t.id, 'teacher': t.full_name, 'subject': subj,
+                         'class': cls, 'count': cnt})
+    return render(request, 'school/schedule_teacher_report.html', {
+        'plan': plan, 'rows': rows,
+    })
+
 @login_required
 def schedule_teachers(request, plan_id):
     if not _sch_perm(request, 'view'):

@@ -13,9 +13,6 @@
             {% if 'schedule_edit' in user_perms %}
             <a href="{% url 'schedule_edit_grid' plan.id %}" class="btn btn-outline-info btn-sm"><i class="bi bi-pencil-square"></i> تعديل يدوي</a>
             {% endif %}
-            {% if 'schedule_generate' in user_perms %}
-            <a href="{% url 'schedule_generate' plan.id %}" class="btn btn-outline-warning btn-sm"><i class="bi bi-arrow-repeat"></i> إعادة التوليد</a>
-            {% endif %}
         </div>
     </div>
 </div>
