@@ -264,6 +264,11 @@ class GoogleDriveToken(models.Model):
 
 PLAN_WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
 
+DELIVERY_CHOICES = [
+    ('presence', 'وجاهي'),
+    ('tasks', 'مهمات'),
+]
+
 
 class WeeklyPlan(models.Model):
     STATUS_CHOICES = [
@@ -278,6 +283,8 @@ class WeeklyPlan(models.Model):
     student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='weekly_plans', verbose_name='الصف')
     week_start = models.DateField('بداية الأسبوع')
     week_end = models.DateField('نهاية الأسبوع')
+    delivery_mode = models.CharField('نمط التسليم', max_length=20, choices=DELIVERY_CHOICES, default='presence',
+                                     help_text='وجاهي: دروس اعتيادية، مهمات: تعليم عن بُعد بمهمات يومية')
     status = models.CharField('الحالة', max_length=20, choices=STATUS_CHOICES, default='draft')
     submitted_at = models.DateTimeField('تاريخ الإرسال', null=True, blank=True)
     reviewed_at = models.DateTimeField('تاريخ المراجعة', null=True, blank=True)
@@ -310,8 +317,15 @@ class WeeklyPlanDay(models.Model):
     lesson_title = models.CharField('عنوان الدرس', max_length=200, blank=True)
     objectives = models.TextField('الأهداف', blank=True)
     homework = models.TextField('الواجبات', blank=True)
-    notes = models.TextField('ملاحظات', blank=True)
+    notes = models.TextField('ملاحظات (روابط مصادر التعليم المفتوح)', blank=True)
+    task = models.TextField('مهمة تعليمية', blank=True, help_text='تُعبّأ في نمط المهمات')
+    task_due_date = models.DateField('موعد تسليم المهمة', null=True, blank=True)
     order = models.PositiveSmallIntegerField('الترتيب', default=0)
+
+    @property
+    def is_empty(self):
+        return not (self.lesson_title or self.objectives or self.homework
+                    or self.notes or self.subject_id or self.task)
 
     class Meta:
         verbose_name = 'يوم في الخطة الأسبوعية'

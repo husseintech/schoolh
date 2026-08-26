@@ -23,6 +23,17 @@
                     <input type="date" name="week_start" class="form-control" required>
                     <div class="form-text">يُنشئ النظام تلقائياً أيام الأحد–الخميس لنفس الأسبوع.</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">نمط التسليم</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="delivery_mode" id="dm_presence" value="presence" checked>
+                        <label class="form-check-label" for="dm_presence">وجاهي</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="delivery_mode" id="dm_tasks" value="tasks">
+                        <label class="form-check-label" for="dm_tasks">مهمات (تعليم عن بُعد بمهمات يومية)</label>
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> إنشاء الخطة</button>
                 <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-secondary">إلغاء</a>
             </form>

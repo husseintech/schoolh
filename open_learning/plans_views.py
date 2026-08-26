@@ -124,6 +124,7 @@ def weekly_plan_add(request):
             student_class=student_class,
             week_start=start,
             week_end=end,
+            delivery_mode=request.POST.get('delivery_mode') or 'presence',
         )
         _generate_days(plan)
         messages.success(request, 'تم إنشاء الخطة الأسبوعية')
@@ -142,19 +143,34 @@ def weekly_plan_detail(request, plan_id):
 
     if request.method == 'POST' and editable:
         action = request.POST.get('action')
-        if action == 'add_day':
-            _save_day(plan, request, None)
-            messages.success(request, 'تمت إضافة اليوم')
-        elif action == 'update_day':
-            day = plan.days.filter(pk=request.POST.get('day_id')).first()
-            if day:
-                _save_day(plan, request, day)
-                messages.success(request, 'تم حفظ اليوم')
-        elif action == 'delete_day':
-            day = plan.days.filter(pk=request.POST.get('day_id')).first()
-            if day:
-                day.delete()
-                messages.success(request, 'تم حذف اليوم')
+        if action == 'save':
+            plan.delivery_mode = request.POST.get('delivery_mode') or plan.delivery_mode
+            plan.save()
+            for i, dow in enumerate(PLAN_WEEKDAYS):
+                day = plan.days.filter(day_of_week=dow).first()
+                if day is None:
+                    day = WeeklyPlanDay(weekly_plan=plan, day_of_week=dow, order=i)
+                date_val = request.POST.get(f'date_{i}') or (
+                    plan.week_start + timedelta(days=i) if plan.week_start else None)
+                subject = Subject.objects.filter(pk=request.POST.get(f'subject_{i}')).first() if request.POST.get(f'subject_{i}') else None
+                lesson = LearningLesson.objects.filter(
+                    pk=request.POST.get(f'lesson_{i}'), teacher=plan.teacher,
+                    student_class=plan.student_class).first() if request.POST.get(f'lesson_{i}') else None
+                day.date = date_val
+                day.subject = subject
+                day.lesson = lesson
+                title = request.POST.get(f'lesson_title_{i}', '') or ''
+                if lesson and not title:
+                    title = lesson.title
+                day.lesson_title = title
+                day.objectives = request.POST.get(f'objectives_{i}', '') or ''
+                day.homework = request.POST.get(f'homework_{i}', '') or ''
+                day.notes = request.POST.get(f'notes_{i}', '') or ''
+                day.task = request.POST.get(f'task_{i}', '') or ''
+                day.task_due_date = request.POST.get(f'task_due_{i}') or None
+                day.order = i
+                day.save()
+            messages.success(request, 'تم حفظ الخطة الأسبوعية')
         elif action == 'submit':
             plan.status = 'sent'
             plan.submitted_at = timezone_now()
@@ -163,20 +179,31 @@ def weekly_plan_detail(request, plan_id):
         return redirect('ol_weekly_plan_detail', plan_id=plan.pk)
 
     # GET or non-editable POST
-    days = plan.days.all()
+    days = list(plan.days.all())
+    days_by_dow = {d.day_of_week: d for d in days}
+    week_rows = []
+    for i, dow in enumerate(PLAN_WEEKDAYS):
+        day = days_by_dow.get(dow)
+        default_date = (plan.week_start + timedelta(days=i)) if plan.week_start else None
+        week_rows.append({
+            'dow': dow,
+            'index': i,
+            'day': day,
+            'default_date': default_date,
+            'is_empty': (day is None) or day.is_empty,
+        })
     subjects = teacher.subjects.all() if teacher else Subject.objects.none()
     lessons = LearningLesson.objects.filter(teacher=plan.teacher, student_class=plan.student_class)
     review = plan.review if hasattr(plan, 'review') else None
     return render(request, 'open_learning/weekly_plan_detail.html', {
         'plan': plan,
-        'days': days,
+        'week_rows': week_rows,
         'subjects': subjects,
         'lessons': lessons,
         'role': role,
         'is_admin': _is_admin(request),
         'editable': editable,
         'review': review,
-        'PLAN_WEEKDAYS': PLAN_WEEKDAYS,
     })
 
 
