@@ -72,74 +72,30 @@
                 <table class="table table-bordered align-middle plan-table">
                     <thead class="table-light">
                         <tr>
-                            <th style="width:18%">ملاحظات (روابط مصادر التعليم المفتوح)</th>
-                            <th style="width:14%">الواجبات</th>
-                            <th style="width:16%">الأهداف</th>
-                            <th style="width:16%">عنوان الدرس</th>
-                            <th style="width:12%">المادة</th>
-                            <th style="width:16%">مهمة تعليمية + موعد تسليمها</th>
                             <th style="width:18%">اليوم والتاريخ + نمط التسليم</th>
+                            <th style="width:16%">مهمة تعليمية + موعد تسليمها</th>
+                            <th style="width:12%">المادة</th>
+                            <th style="width:16%">عنوان الدرس</th>
+                            <th style="width:16%">الأهداف</th>
+                            <th style="width:14%">الواجبات</th>
+                            <th style="width:18%">ملاحظات (روابط مصادر التعليم المفتوح)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in week_rows %}
                         <tr {% if row.is_empty %}class="plan-day-empty"{% endif %}>
-                            {# ملاحظات #}
+                            {# اليوم والتاريخ + نمط التسليم لليوم #}
                             <td>
+                                <div class="fw-bold">{{ row.dow }}</div>
                                 {% if editable %}
-                                <textarea name="notes_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="روابط المصادر (يمكن إدراج روابط يدويًا أو من درس مرتبط)">{{ row.day.notes|default:'' }}</textarea>
-                                {% else %}
-                                <div class="small" style="white-space:pre-wrap">{{ row.day.notes|default:''|linebreaksbr }}</div>
-                                {% endif %}
-                                {% if row.day.linked_resources %}
-                                <div class="mt-1 p-1 bg-light rounded small">
-                                    <div class="text-primary fw-bold mb-1">📎 روابط المصادر الذكية المرتبطة</div>
-                                    {% for r in row.day.linked_resources %}
-                                    <div>
-                                        {% if r.is_ai_generated %}🤖{% else %}👨‍🏫{% endif %}
-                                        <a href="{% url 'ol_resource_open' row.day.lesson.id r.id %}" target="_blank" rel="noopener">{{ r.title }}</a>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </td>
-                            {# الواجبات #}
-                            <td>
-                                {% if editable %}
-                                <textarea name="homework_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="الواجبات">{{ row.day.homework|default:'' }}</textarea>
-                                {% else %}
-                                <div class="small" style="white-space:pre-wrap">{{ row.day.homework|default:''|linebreaksbr }}</div>
-                                {% endif %}
-                            </td>
-                            {# الأهداف #}
-                            <td>
-                                {% if editable %}
-                                <textarea name="objectives_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="الأهداف (اضغط Enter للانتقال لسطر جديد)">{{ row.day.objectives|default:'' }}</textarea>
-                                {% else %}
-                                <div class="small" style="white-space:pre-wrap">{{ row.day.objectives|default:''|linebreaksbr }}</div>
-                                {% endif %}
-                            </td>
-                            {# عنوان الدرس #}
-                            <td>
-                                {% if editable %}
-                                <select name="lesson_{{ row.index }}" class="form-select form-select-sm mb-1">
-                                    <option value="">ربط بدرس من التعلم المفتوح (اختياري)</option>
-                                    {% for l in lessons %}<option value="{{ l.id }}" {% if row.day and row.day.lesson_id == l.id %}selected{% endif %}>{{ l.title }} ({{ l.subject.name }})</option>{% endfor %}
+                                <select name="delivery_mode_{{ row.index }}" class="form-select form-select-sm mt-1">
+                                    <option value="presence" {% if row.day.delivery_mode != 'tasks' %}selected{% endif %}>وجاهي</option>
+                                    <option value="tasks" {% if row.day.delivery_mode == 'tasks' %}selected{% endif %}>مهمات</option>
                                 </select>
-                                <input type="text" name="lesson_title_{{ row.index }}" class="form-control form-control-sm" placeholder="عنوان الدرس" value="{{ row.day.lesson_title|default:'' }}">
+                                <input type="date" name="date_{{ row.index }}" class="form-control form-control-sm mt-1" value="{{ row.day.date|default:row.default_date }}">
                                 {% else %}
-                                <div class="small">{{ row.day.lesson_title|default:'—' }}</div>
-                                {% endif %}
-                            </td>
-                            {# المادة #}
-                            <td>
-                                {% if editable %}
-                                <select name="subject_{{ row.index }}" class="form-select form-select-sm">
-                                    <option value="">المادة</option>
-                                    {% for s in subjects %}<option value="{{ s.id }}" {% if row.day and row.day.subject_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
-                                </select>
-                                {% else %}
-                                <div class="small">{{ row.day.subject.name|default:'—' }}</div>
+                                <span class="badge {% if row.day.delivery_mode == 'tasks' %}bg-info text-dark{% else %}bg-secondary{% endif %} mt-1">{{ row.day.get_delivery_mode_display|default:'وجاهي' }}</span>
+                                <div class="small text-muted">{{ row.day.date|default:'' }}</div>
                                 {% endif %}
                             </td>
                             {# مهمة تعليمية (تظهر لليوم المحدد كـ مهمات) #}
@@ -159,18 +115,62 @@
                                 {% endif %}
                                 {% endif %}
                             </td>
-                            {# اليوم والتاريخ + نمط التسليم لليوم #}
+                            {# المادة #}
                             <td>
-                                <div class="fw-bold">{{ row.dow }}</div>
                                 {% if editable %}
-                                <select name="delivery_mode_{{ row.index }}" class="form-select form-select-sm mt-1">
-                                    <option value="presence" {% if row.day.delivery_mode != 'tasks' %}selected{% endif %}>وجاهي</option>
-                                    <option value="tasks" {% if row.day.delivery_mode == 'tasks' %}selected{% endif %}>مهمات</option>
+                                <select name="subject_{{ row.index }}" class="form-select form-select-sm">
+                                    <option value="">المادة</option>
+                                    {% for s in subjects %}<option value="{{ s.id }}" {% if row.day and row.day.subject_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
                                 </select>
-                                <input type="date" name="date_{{ row.index }}" class="form-control form-control-sm mt-1" value="{{ row.day.date|default:row.default_date }}">
                                 {% else %}
-                                <span class="badge {% if row.day.delivery_mode == 'tasks' %}bg-info text-dark{% else %}bg-secondary{% endif %} mt-1">{{ row.day.get_delivery_mode_display|default:'وجاهي' }}</span>
-                                <div class="small text-muted">{{ row.day.date|default:'' }}</div>
+                                <div class="small">{{ row.day.subject.name|default:'—' }}</div>
+                                {% endif %}
+                            </td>
+                            {# عنوان الدرس #}
+                            <td>
+                                {% if editable %}
+                                <select name="lesson_{{ row.index }}" class="form-select form-select-sm mb-1">
+                                    <option value="">ربط بدرس من التعلم المفتوح (اختياري)</option>
+                                    {% for l in lessons %}<option value="{{ l.id }}" {% if row.day and row.day.lesson_id == l.id %}selected{% endif %}>{{ l.title }} ({{ l.subject.name }})</option>{% endfor %}
+                                </select>
+                                <input type="text" name="lesson_title_{{ row.index }}" class="form-control form-control-sm" placeholder="عنوان الدرس" value="{{ row.day.lesson_title|default:'' }}">
+                                {% else %}
+                                <div class="small">{{ row.day.lesson_title|default:'—' }}</div>
+                                {% endif %}
+                            </td>
+                            {# الأهداف #}
+                            <td>
+                                {% if editable %}
+                                <textarea name="objectives_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="الأهداف (اضغط Enter للانتقال لسطر جديد)">{{ row.day.objectives|default:'' }}</textarea>
+                                {% else %}
+                                <div class="small" style="white-space:pre-wrap">{{ row.day.objectives|default:''|linebreaksbr }}</div>
+                                {% endif %}
+                            </td>
+                            {# الواجبات #}
+                            <td>
+                                {% if editable %}
+                                <textarea name="homework_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="الواجبات">{{ row.day.homework|default:'' }}</textarea>
+                                {% else %}
+                                <div class="small" style="white-space:pre-wrap">{{ row.day.homework|default:''|linebreaksbr }}</div>
+                                {% endif %}
+                            </td>
+                            {# ملاحظات #}
+                            <td>
+                                {% if editable %}
+                                <textarea name="notes_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="روابط المصادر (يمكن إدراج روابط يدويًا أو من درس مرتبط)">{{ row.day.notes|default:'' }}</textarea>
+                                {% else %}
+                                <div class="small" style="white-space:pre-wrap">{{ row.day.notes|default:''|linebreaksbr }}</div>
+                                {% endif %}
+                                {% if row.day.linked_resources %}
+                                <div class="mt-1 p-1 bg-light rounded small">
+                                    <div class="text-primary fw-bold mb-1">📎 روابط المصادر الذكية المرتبطة</div>
+                                    {% for r in row.day.linked_resources %}
+                                    <div>
+                                        {% if r.is_ai_generated %}🤖{% else %}👨‍🏫{% endif %}
+                                        <a href="{% url 'ol_resource_open' row.day.lesson.id r.id %}" target="_blank" rel="noopener">{{ r.title }}</a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                                 {% endif %}
                             </td>
                         </tr>
