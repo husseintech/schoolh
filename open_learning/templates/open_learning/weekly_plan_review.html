@@ -3,81 +3,87 @@
 {% block page_heading %}بطاقة متابعة جودة الخطة الأسبوعية{% endblock %}
 {% block content %}
 <style>
-    .review-wrap { max-width: 1000px; margin: 0 auto; }
-    .review-title {
-        background: linear-gradient(135deg, #0d6efd, #198754);
-        color: #fff;
-        border-radius: 12px 12px 0 0;
-        padding: 14px 18px;
+    .review-card-wrap { max-width: 1000px; margin: 0 auto; }
+    .card-title {
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.25rem;
+        padding: 10px 0;
+        border: 1px solid #495057;
+        border-bottom: 0;
+        background: #f1f3f5;
+        border-radius: 8px 8px 0 0;
     }
-    .review-title h4 { margin: 0; font-weight: 700; }
-    .review-meta {
-        background: #f1f5fb;
-        border: 1px solid #dee2e6;
+    .card-meta {
+        border: 1px solid #495057;
         border-top: 0;
-        border-radius: 0 0 12px 12px;
-        padding: 10px 18px;
-        font-size: 0.92rem;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        background: #fff;
     }
-    .review-meta span { display: inline-block; margin-inline-end: 22px; }
-    .review-card { border-collapse: separate; border-spacing: 0; }
-    .review-card thead th {
-        background: #0d6efd;
-        color: #fff;
-        text-align: center;
+    .card-meta span { display: inline-block; margin-inline-end: 24px; }
+    .review-table { border-collapse: collapse; width: 100%; background: #fff; }
+    .review-table th, .review-table td {
+        border: 1px solid #495057;
+        padding: 8px 10px;
         vertical-align: middle;
-        font-weight: 700;
-        border: 1px solid #0b5ed7;
     }
-    .review-card td, .review-card th { border: 1px solid #ced4da; }
-    .axis-cell {
-        background: #e9f2ff;
-        font-weight: 700;
+    .review-table thead th {
+        background: #e9ecef;
         text-align: center;
-        vertical-align: middle;
-        width: 150px;
-        color: #0b3d91;
-        writing-mode: horizontal-tb;
+        font-weight: 700;
     }
-    .indicator-cell { vertical-align: middle; padding: 10px 12px; }
-    .chk-cell { text-align: center; vertical-align: middle; width: 110px; }
-    .chk-cell input { width: 22px; height: 22px; accent-color: #198754; cursor: pointer; }
-    .chk-cell.needs input { accent-color: #dc3545; }
-    .note-input { min-width: 180px; resize: vertical; }
-    .result-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 12px; padding: 16px; }
+    .review-table .axis-cell {
+        background: #f8f9fa;
+        font-weight: 700;
+        text-align: right;
+        width: 140px;
+    }
+    .review-table .indicator-cell { text-align: right; line-height: 1.5; }
+    .review-table .chk-cell { text-align: center; width: 95px; }
+    .review-table .chk-cell input {
+        width: 22px; height: 22px;
+        accent-color: #198754; cursor: pointer;
+    }
+    .review-table .chk-cell.needs input { accent-color: #dc3545; }
+    .review-table .note-cell textarea {
+        min-width: 150px; resize: vertical;
+    }
+    .result-box {
+        border: 1px solid #495057;
+        border-top: 0;
+        border-radius: 0 0 8px 8px;
+        padding: 14px;
+        background: #fff;
+    }
     .summary-badge {
         display: inline-flex; align-items: center; gap: 6px;
         background: #e9f2ff; color: #0b3d91;
-        border-radius: 30px; padding: 6px 14px; font-weight: 700; margin-inline-end: 8px;
+        border-radius: 30px; padding: 5px 12px; font-weight: 700; margin-inline-end: 6px;
     }
     .summary-badge.met { background: #e7f6ec; color: #157347; }
     .summary-badge.needs { background: #fdeaea; color: #b02a37; }
-    @media print {
-        .no-print { display: none !important; }
-        .review-title, .review-meta, .result-card { box-shadow: none; }
-    }
+    @media print { .no-print { display: none !important; } }
 </style>
 
-<div class="container py-3 review-wrap">
-    <div class="review-title">
-        <h4><i class="bi bi-clipboard2-check"></i> بطاقة متابعة جودة الخطة الأسبوعية</h4>
-    </div>
-    <div class="review-meta">
+<div class="container py-3 review-card-wrap">
+    <div class="card-title">بطاقة متابعة جودة الخطة الأسبوعية</div>
+    <div class="card-meta">
         <span><i class="bi bi-person-badge"></i> المعلم: <strong>{{ plan.teacher.full_name }}</strong></span>
         <span><i class="bi bi-people"></i> الصف: <strong>{{ plan.student_class.name }}</strong></span>
         <span><i class="bi bi-calendar-week"></i> الأسبوع: <strong>{{ plan.week_start }} → {{ plan.week_end }}</strong></span>
     </div>
 
-    <form method="post" class="mt-3">
+    <form method="post" class="mt-0">
         {% csrf_token %}
         <div class="table-responsive">
-            <table class="table review-card align-middle mb-0">
+            <table class="review-table">
                 <thead>
                     <tr>
-                        <th style="width:150px">المحور</th>
+                        <th style="width:140px">المحور</th>
                         <th>مؤشرات الجودة</th>
-                        <th style="width:110px">متحقق</th>
-                        <th style="width:110px">يحتاج تحسين</th>
+                        <th style="width:95px">متحقق</th>
+                        <th style="width:95px">يحتاج تحسين</th>
                         <th>ملاحظات المدير</th>
                     </tr>
                 </thead>
@@ -95,7 +101,7 @@
                             <td class="chk-cell needs">
                                 <input type="checkbox" name="needs_{{ it.id }}" class="needs-box" value="on" {% if it.needs_improvement %}checked{% endif %} title="يحتاج تحسين">
                             </td>
-                            <td><textarea name="note_{{ it.id }}" class="form-control form-control-sm note-input" rows="1" placeholder="ملاحظة">{{ it.note }}</textarea></td>
+                            <td class="note-cell"><textarea name="note_{{ it.id }}" class="form-control form-control-sm" rows="1" placeholder="ملاحظة">{{ it.note }}</textarea></td>
                         </tr>
                         {% endfor %}
                     {% endfor %}
@@ -103,7 +109,7 @@
             </table>
         </div>
 
-        <div class="result-card mt-3">
+        <div class="result-box mt-0">
             <div class="mb-2">
                 <label class="form-label fw-bold"><i class="bi bi-card-text"></i> ملاحظة عامة للمدير</label>
                 <textarea name="general_note" class="form-control" rows="2" placeholder="ملاحظة عامة على الخطة">{{ review.general_note }}</textarea>
@@ -134,7 +140,7 @@
 </div>
 
 <script>
-document.querySelectorAll('.review-card tbody tr').forEach(function (tr) {
+document.querySelectorAll('.review-table tbody tr').forEach(function (tr) {
     var met = tr.querySelector('.met-box');
     var needs = tr.querySelector('.needs-box');
     if (!met || !needs) return;
