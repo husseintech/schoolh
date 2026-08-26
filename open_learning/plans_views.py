@@ -237,10 +237,17 @@ def weekly_plan_review(request, plan_id):
         messages.success(request, 'تم حفظ مراجعة الخطة')
         return redirect('ol_weekly_plan_detail', plan_id=plan.pk)
 
+    from collections import OrderedDict
+    axis_groups = OrderedDict()
+    for it in review.items.all():
+        axis_groups.setdefault(it.axis, []).append(it)
+    axis_groups = [(axis, its) for axis, its in axis_groups.items()]
+
     return render(request, 'open_learning/weekly_plan_review.html', {
         'plan': plan,
         'review': review,
         'items': review.items.all(),
+        'axis_groups': axis_groups,
         'is_admin': True,
         'role': _role(request),
     })

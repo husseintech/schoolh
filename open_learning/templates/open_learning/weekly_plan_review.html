@@ -2,80 +2,139 @@
 {% block title %}بطاقة متابعة جودة الخطة{% endblock %}
 {% block page_heading %}بطاقة متابعة جودة الخطة الأسبوعية{% endblock %}
 {% block content %}
-<div class="container py-3">
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="mb-1"><i class="bi bi-clipboard-check text-success"></i> بطاقة متابعة جودة الخطة الأسبوعية</h5>
-            <div class="small text-muted">
-                <div>المعلم: <strong>{{ plan.teacher.full_name }}</strong></div>
-                <div>الصف: <strong>{{ plan.student_class.name }}</strong></div>
-                <div>الأسبوع: {{ plan.week_start }} → {{ plan.week_end }}</div>
-            </div>
-        </div>
+<style>
+    .review-wrap { max-width: 1000px; margin: 0 auto; }
+    .review-title {
+        background: linear-gradient(135deg, #0d6efd, #198754);
+        color: #fff;
+        border-radius: 12px 12px 0 0;
+        padding: 14px 18px;
+    }
+    .review-title h4 { margin: 0; font-weight: 700; }
+    .review-meta {
+        background: #f1f5fb;
+        border: 1px solid #dee2e6;
+        border-top: 0;
+        border-radius: 0 0 12px 12px;
+        padding: 10px 18px;
+        font-size: 0.92rem;
+    }
+    .review-meta span { display: inline-block; margin-inline-end: 22px; }
+    .review-card { border-collapse: separate; border-spacing: 0; }
+    .review-card thead th {
+        background: #0d6efd;
+        color: #fff;
+        text-align: center;
+        vertical-align: middle;
+        font-weight: 700;
+        border: 1px solid #0b5ed7;
+    }
+    .review-card td, .review-card th { border: 1px solid #ced4da; }
+    .axis-cell {
+        background: #e9f2ff;
+        font-weight: 700;
+        text-align: center;
+        vertical-align: middle;
+        width: 150px;
+        color: #0b3d91;
+        writing-mode: horizontal-tb;
+    }
+    .indicator-cell { vertical-align: middle; padding: 10px 12px; }
+    .chk-cell { text-align: center; vertical-align: middle; width: 110px; }
+    .chk-cell input { width: 22px; height: 22px; accent-color: #198754; cursor: pointer; }
+    .chk-cell.needs input { accent-color: #dc3545; }
+    .note-input { min-width: 180px; resize: vertical; }
+    .result-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 12px; padding: 16px; }
+    .summary-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #e9f2ff; color: #0b3d91;
+        border-radius: 30px; padding: 6px 14px; font-weight: 700; margin-inline-end: 8px;
+    }
+    .summary-badge.met { background: #e7f6ec; color: #157347; }
+    .summary-badge.needs { background: #fdeaea; color: #b02a37; }
+    @media print {
+        .no-print { display: none !important; }
+        .review-title, .review-meta, .result-card { box-shadow: none; }
+    }
+</style>
+
+<div class="container py-3 review-wrap">
+    <div class="review-title">
+        <h4><i class="bi bi-clipboard2-check"></i> بطاقة متابعة جودة الخطة الأسبوعية</h4>
+    </div>
+    <div class="review-meta">
+        <span><i class="bi bi-person-badge"></i> المعلم: <strong>{{ plan.teacher.full_name }}</strong></span>
+        <span><i class="bi bi-people"></i> الصف: <strong>{{ plan.student_class.name }}</strong></span>
+        <span><i class="bi bi-calendar-week"></i> الأسبوع: <strong>{{ plan.week_start }} → {{ plan.week_end }}</strong></span>
     </div>
 
-    <form method="post">
+    <form method="post" class="mt-3">
         {% csrf_token %}
         <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
+            <table class="table review-card align-middle mb-0">
+                <thead>
                     <tr>
-                        <th>المحور</th>
-                        <th>مؤشر الجودة</th>
-                        <th style="width:90px">متحقق</th>
+                        <th style="width:150px">المحور</th>
+                        <th>مؤشرات الجودة</th>
+                        <th style="width:110px">متحقق</th>
                         <th style="width:110px">يحتاج تحسين</th>
                         <th>ملاحظات المدير</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for it in items %}
-                    <tr>
-                        <td>{{ it.axis }}</td>
-                        <td>{{ it.indicator }}</td>
-                        <td class="text-center">
-                            <input type="checkbox" name="is_met_{{ it.id }}" class="met-box" value="on" {% if it.is_met %}checked{% endif %}>
-                        </td>
-                        <td class="text-center">
-                            <input type="checkbox" name="needs_{{ it.id }}" class="needs-box" value="on" {% if it.needs_improvement %}checked{% endif %}>
-                        </td>
-                        <td><textarea name="note_{{ it.id }}" class="form-control form-control-sm">{{ it.note }}</textarea></td>
-                    </tr>
+                    {% for axis, its in axis_groups %}
+                        {% for it in its %}
+                        <tr>
+                            {% if forloop.first %}
+                            <td rowspan="{{ its|length }}" class="axis-cell"><span>{{ axis }}</span></td>
+                            {% endif %}
+                            <td class="indicator-cell">{{ it.indicator }}</td>
+                            <td class="chk-cell">
+                                <input type="checkbox" name="is_met_{{ it.id }}" class="met-box" value="on" {% if it.is_met %}checked{% endif %} title="متحقق">
+                            </td>
+                            <td class="chk-cell needs">
+                                <input type="checkbox" name="needs_{{ it.id }}" class="needs-box" value="on" {% if it.needs_improvement %}checked{% endif %} title="يحتاج تحسين">
+                            </td>
+                            <td><textarea name="note_{{ it.id }}" class="form-control form-control-sm note-input" rows="1" placeholder="ملاحظة">{{ it.note }}</textarea></td>
+                        </tr>
+                        {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-body">
-                <label class="form-label">ملاحظة عامة للمدير</label>
-                <textarea name="general_note" class="form-control" rows="2">{{ review.general_note }}</textarea>
-                <div class="mt-3">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="result" id="r_needs" value="needs_improvement" {% if review.status != 'approved' %}checked{% endif %}>
-                        <label class="form-check-label" for="r_needs">تحتاج تحسين</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="result" id="r_appr" value="approved" {% if review.status == 'approved' %}checked{% endif %}>
-                        <label class="form-check-label" for="r_appr">اعتماد الخطة</label>
-                    </div>
+        <div class="result-card mt-3">
+            <div class="mb-2">
+                <label class="form-label fw-bold"><i class="bi bi-card-text"></i> ملاحظة عامة للمدير</label>
+                <textarea name="general_note" class="form-control" rows="2" placeholder="ملاحظة عامة على الخطة">{{ review.general_note }}</textarea>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="result" id="r_needs" value="needs_improvement" {% if review.status != 'approved' %}checked{% endif %}>
+                    <label class="form-check-label" for="r_needs">تحتاج تحسين</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="result" id="r_appr" value="approved" {% if review.status == 'approved' %}checked{% endif %}>
+                    <label class="form-check-label" for="r_appr">اعتماد الخطة</label>
+                </div>
+                <div class="ms-auto no-print">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> حفظ التقييم</button>
+                    <a href="{% url 'ol_weekly_plan_detail' plan.id %}" class="btn btn-outline-secondary">إلغاء</a>
                 </div>
             </div>
         </div>
-
-        <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> حفظ التقييم</button>
-        <a href="{% url 'ol_weekly_plan_detail' plan.id %}" class="btn btn-outline-secondary">إلغاء</a>
     </form>
 
-    <div class="alert alert-info mt-3">
-        نتيجة متابعة الخطة: عدد المؤشرات <strong>{{ review.total }}</strong> —
-        متحقق <strong>{{ review.met_count }}</strong> —
-        يحتاج تحسين <strong>{{ review.needs_count }}</strong> —
-        نسبة التحقق <strong>{{ review.percentage }}%</strong>
+    <div class="alert alert-info mt-3 d-flex flex-wrap align-items-center gap-2">
+        <span class="summary-badge"><i class="bi bi-list-check"></i> المؤشرات: {{ review.total }}</span>
+        <span class="summary-badge met"><i class="bi bi-check-circle"></i> متحقق: {{ review.met_count }}</span>
+        <span class="summary-badge needs"><i class="bi bi-exclamation-circle"></i> يحتاج تحسين: {{ review.needs_count }}</span>
+        <span class="summary-badge"><i class="bi bi-percent"></i> نسبة التحقق: {{ review.percentage }}%</span>
     </div>
 </div>
 
 <script>
-document.querySelectorAll('tr').forEach(function (tr) {
+document.querySelectorAll('.review-card tbody tr').forEach(function (tr) {
     var met = tr.querySelector('.met-box');
     var needs = tr.querySelector('.needs-box');
     if (!met || !needs) return;
