@@ -25,16 +25,38 @@
         <hr>
         {% endif %}
 
-        <div class="text-center my-5 px-4" style="font-size: 1.1rem; line-height: 2.5;">
-            <p>
-                حضرة مدير مدرسة <strong>{{ obj.sending_school }}</strong><br>
-                لا مانع لدينا من قبول الطالب <strong>{{ obj.student_name }}</strong> في الصف <strong>{{ obj.student_class }}</strong>
-            </p>
-            <p class="mt-4">وتقبلوا فائق الاحترام ،،،</p>
+        <div class="d-flex justify-content-between mb-2" style="font-size: 14px; line-height: 1.8;">
+            <div class="text-start">
+                <div>الرقم: <strong>{{ obj.number|default:'---' }}</strong></div>
+                <div class="mt-2">الرقم الوطني: <strong>{{ info.national_number|default:'---' }}</strong></div>
+            </div>
+            <div class="text-end">
+                <div>{{ info.name_ar|default:'اسم المدرسة' }}</div>
+                <div class="mt-2">التاريخ: <strong>{{ obj.date|date:'Y-m-d'|default:today }}</strong></div>
+            </div>
         </div>
 
-        <div class="text-start" style="font-size: 1rem;">
-            <p><strong>مدير المدرسة: {{ info.principal_name|default:'---' }}</strong></p>
+        <div class="text-center my-4 px-4" style="font-size: 1.05rem; line-height: 2.2;">
+            <p>حضرة مدير مدرسة <strong>{{ obj.sending_school }}</strong> المحترم</p>
+            <p class="mt-3">الموضوع : قبول الطلاب</p>
+        </div>
+
+        <div class="text-start mt-4" style="font-size: 1.05rem; line-height: 2.2;">
+            <p>بعد التحية ،،،</p>
+            <p class="mt-3">
+                لا مانع لدينا من قبول الطالب <strong>{{ obj.student_name }}</strong> في الصف
+                <strong>{{ obj.student_class }}</strong> للعام الدراسي الحالي
+                <strong>{{ obj.academic_year|default:'---' }}</strong>
+            </p>
+        </div>
+
+        <div class="text-center my-4" style="font-size: 1.05rem;">
+            <p>،،، مع الاحترام ،،،</p>
+        </div>
+
+        <div class="text-start mt-5" style="font-size: 1.05rem; line-height: 2.2;">
+            <p><strong>مدير المدرسة : {{ info.principal_name|default:'---' }}</strong></p>
+            <p class="mt-4" style="border: 1px dashed #999; height: 95px; width: 170px; display: inline-block; text-align: center; line-height: 95px; color: #888;">خاتم المدرسة</p>
         </div>
     </div>
     <div class="card-footer no-print text-center">

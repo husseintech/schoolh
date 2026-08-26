@@ -21,6 +21,18 @@
                 <label class="form-label">اسم المدرسة الباعثة</label>
                 <input type="text" name="sending_school" class="form-control" placeholder="اكتب اسم المدرسة الباعثة..." required>
             </div>
+            <div class="col-md-4">
+                <label class="form-label">الرقم (للصادر)</label>
+                <input type="text" name="number" class="form-control" placeholder="رقم الصادر...">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">التاريخ</label>
+                <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">العام الدراسي</label>
+                <input type="text" name="academic_year" class="form-control" value="{{ academic_year_default }}" placeholder="مثال: 2025/2026">
+            </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
             </div>

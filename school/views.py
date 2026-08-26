@@ -4048,6 +4048,11 @@ def teacher_visits(request):
 
 @login_required
 def no_objection_list(request):
+    today_date = date.today()
+    if today_date.month >= 8:
+        default_academic_year = f'{today_date.year}/{today_date.year + 1}'
+    else:
+        default_academic_year = f'{today_date.year - 1}/{today_date.year}'
     if not has_perm(request.user, 'no_objection', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
@@ -4058,12 +4063,21 @@ def no_objection_list(request):
         if not student_name or not student_class or not sending_school:
             messages.error(request, 'يرجى تعبئة جميع الحقول')
         else:
-            NoObjection.objects.create(
-                student_name=student_name,
-                student_class=student_class,
-                sending_school=sending_school,
-                created_by=request.user,
-            )
+            obj_data = {
+                'student_name': student_name,
+                'student_class': student_class,
+                'sending_school': sending_school,
+                'number': request.POST.get('number', '').strip(),
+                'academic_year': request.POST.get('academic_year', '').strip() or default_academic_year,
+                'created_by': request.user,
+            }
+            date_str = request.POST.get('date', '').strip()
+            if date_str:
+                try:
+                    obj_data['date'] = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            NoObjection.objects.create(**obj_data)
             messages.success(request, 'تم تسجيل لا مانع بنجاح')
         return redirect('no_objection_list')
     objects = NoObjection.objects.select_related('created_by').order_by('-created_at')
@@ -4071,6 +4085,7 @@ def no_objection_list(request):
     return render(request, 'school/no_objection_list.html', {
         'objects': objects,
         'info': info,
+        'academic_year_default': default_academic_year,
         'can_add': has_perm(request.user, 'no_objection', 'add'),
         'can_delete': has_perm(request.user, 'no_objection', 'delete'),
     })

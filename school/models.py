@@ -674,6 +674,9 @@ class NoObjection(models.Model):
     student_name = models.CharField('اسم الطالب', max_length=200)
     student_class = models.CharField('الصف', max_length=100)
     sending_school = models.CharField('اسم المدرسة الباعثة', max_length=200)
+    number = models.CharField('الرقم', max_length=50, blank=True, default='', verbose_name='الرقم (للصادر)')
+    date = models.DateField('التاريخ', default=date.today)
+    academic_year = models.CharField('العام الدراسي', max_length=50, blank=True, default='')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='أدخل بواسطة')
     created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
 
