@@ -211,10 +211,28 @@ def weekly_plan_review(request, plan_id):
         return redirect('ol_weekly_plan_list')
     plan = get_object_or_404(WeeklyPlan, pk=plan_id)
     review, _ = WeeklyPlanReview.objects.get_or_create(weekly_plan=plan)
-    if not review.pk or review.items.count() != len(QUALITY_AXES):
-        review.items.all().delete()
+    # Align review items with the current QUALITY_AXES (preserve existing answers)
+    current_keys = {(a, i) for a, i in QUALITY_AXES}
+    stored = list(review.items.all())
+    stored_keys = {(it.axis, it.indicator) for it in stored}
+    if stored_keys != current_keys:
+        for it in stored:
+            if (it.axis, it.indicator) not in current_keys:
+                it.delete()
         for i, (axis, indicator) in enumerate(QUALITY_AXES):
-            WeeklyPlanReviewItem.objects.create(review=review, axis=axis, indicator=indicator, order=i)
+            obj, created = WeeklyPlanReviewItem.objects.get_or_create(
+                review=review, axis=axis, indicator=indicator,
+                defaults={'order': i})
+            if not created and obj.order != i:
+                obj.order = i
+                obj.save()
+
+    from collections import OrderedDict
+    items_map = {(it.axis, it.indicator): it for it in review.items.all()}
+    groups = OrderedDict()
+    for axis, indicator in QUALITY_AXES:
+        groups.setdefault(axis, []).append(items_map[(axis, indicator)])
+    axis_groups = list(groups.items())
 
     if request.method == 'POST':
         for item in review.items.all():
@@ -236,12 +254,6 @@ def weekly_plan_review(request, plan_id):
         plan.save()
         messages.success(request, 'تم حفظ مراجعة الخطة')
         return redirect('ol_weekly_plan_detail', plan_id=plan.pk)
-
-    from collections import OrderedDict
-    axis_groups = OrderedDict()
-    for it in review.items.all():
-        axis_groups.setdefault(it.axis, []).append(it)
-    axis_groups = [(axis, its) for axis, its in axis_groups.items()]
 
     return render(request, 'open_learning/weekly_plan_review.html', {
         'plan': plan,
