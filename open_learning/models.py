@@ -283,8 +283,6 @@ class WeeklyPlan(models.Model):
     student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='weekly_plans', verbose_name='الصف')
     week_start = models.DateField('بداية الأسبوع')
     week_end = models.DateField('نهاية الأسبوع')
-    delivery_mode = models.CharField('نمط التسليم', max_length=20, choices=DELIVERY_CHOICES, default='presence',
-                                     help_text='وجاهي: دروس اعتيادية، مهمات: تعليم عن بُعد بمهمات يومية')
     status = models.CharField('الحالة', max_length=20, choices=STATUS_CHOICES, default='draft')
     submitted_at = models.DateTimeField('تاريخ الإرسال', null=True, blank=True)
     reviewed_at = models.DateTimeField('تاريخ المراجعة', null=True, blank=True)
@@ -320,6 +318,8 @@ class WeeklyPlanDay(models.Model):
     notes = models.TextField('ملاحظات (روابط مصادر التعليم المفتوح)', blank=True)
     task = models.TextField('مهمة تعليمية', blank=True, help_text='تُعبّأ في نمط المهمات')
     task_due_date = models.DateField('موعد تسليم المهمة', null=True, blank=True)
+    delivery_mode = models.CharField('نمط التسليم لليوم', max_length=20, choices=DELIVERY_CHOICES, default='presence',
+                                     help_text='وجاهي: دروس اعتيادية، مهمات: تعليم عن بُعد بمهمات يومية')
     order = models.PositiveSmallIntegerField('الترتيب', default=0)
 
     @property

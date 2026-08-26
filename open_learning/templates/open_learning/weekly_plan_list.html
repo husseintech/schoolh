@@ -80,9 +80,21 @@
                         </span>
                     </td>
                     <td>
+                        {% if not is_admin %}
+                        <a href="{% url 'ol_weekly_plan_detail' p.id %}" class="btn btn-sm btn-outline-primary">تعديل</a>
+                        <form method="post" action="{% url 'ol_weekly_plan_delete' p.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف الخطة نهائياً؟')">حذف</button>
+                        </form>
+                        {% else %}
                         <a href="{% url 'ol_weekly_plan_detail' p.id %}" class="btn btn-sm btn-outline-primary">فتح</a>
-                        {% if is_admin and p.is_submitted %}
+                        {% if p.is_submitted %}
                         <a href="{% url 'ol_weekly_plan_review' p.id %}" class="btn btn-sm btn-outline-success">بطاقة المتابعة</a>
+                        {% endif %}
+                        <form method="post" action="{% url 'ol_weekly_plan_delete' p.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف الخطة نهائياً؟')">حذف</button>
+                        </form>
                         {% endif %}
                     </td>
                 </tr>

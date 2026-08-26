@@ -25,23 +25,22 @@
                     </span>
                 </div>
             </div>
-            {% if editable %}
             <div class="d-flex flex-wrap gap-2 mt-3">
+                {% if editable %}
                 <form method="post">{% csrf_token %}
                     <input type="hidden" name="action" value="submit">
                     <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('إرسال الخطة للمدير؟')">
                         <i class="bi bi-send"></i> إرسال الخطة للمدير
                     </button>
                 </form>
-                {% if plan.status == 'draft' %}
+                {% endif %}
                 <form method="post" action="{% url 'ol_weekly_plan_delete' plan.id %}">{% csrf_token %}
                     <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف الخطة نهائياً؟')">
                         <i class="bi bi-trash"></i> حذف
                     </button>
                 </form>
-                {% endif %}
             </div>
-            {% elif is_admin %}
+            {% if is_admin %}
             <div class="mt-3">
                 {% if plan.is_submitted %}
                 <a href="{% url 'ol_weekly_plan_review' plan.id %}" class="btn btn-success btn-sm">
@@ -67,17 +66,6 @@
             <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="save">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">نمط التسليم:</label>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="delivery_mode" id="dm_presence" value="presence" {% if plan.delivery_mode != 'tasks' %}checked{% endif %}>
-                        <label class="form-check-label" for="dm_presence">وجاهي</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="delivery_mode" id="dm_tasks" value="tasks" {% if plan.delivery_mode == 'tasks' %}checked{% endif %}>
-                        <label class="form-check-label" for="dm_tasks">مهمات (تعليم عن بُعد بمهمات يومية)</label>
-                    </div>
-                </div>
             {% endif %}
 
             <div class="table-responsive">
@@ -89,8 +77,8 @@
                             <th style="width:16%">الأهداف</th>
                             <th style="width:16%">عنوان الدرس</th>
                             <th style="width:12%">المادة</th>
-                            {% if plan.delivery_mode == 'tasks' %}<th style="width:16%">مهمة تعليمية + موعد تسليمها</th>{% endif %}
-                            <th style="width:18%">اليوم والتاريخ</th>
+                            <th style="width:16%">مهمة تعليمية + موعد تسليمها</th>
+                            <th style="width:18%">اليوم والتاريخ + نمط التسليم</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -154,24 +142,34 @@
                                 <div class="small">{{ row.day.subject.name|default:'—' }}</div>
                                 {% endif %}
                             </td>
-                            {# مهمة تعليمية (نمط المهمات فقط) #}
-                            {% if plan.delivery_mode == 'tasks' %}
+                            {# مهمة تعليمية (تظهر لليوم المحدد كـ مهمات) #}
                             <td>
                                 {% if editable %}
-                                <textarea name="task_{{ row.index }}" class="form-control form-control-sm" rows="2" placeholder="المهمة التعليمية">{{ row.day.task|default:'' }}</textarea>
-                                <input type="date" name="task_due_{{ row.index }}" class="form-control form-control-sm mt-1" value="{{ row.day.task_due_date|default:'' }}">
+                                <div class="task-fields" data-index="{{ row.index }}" {% if row.day.delivery_mode != 'tasks' %}style="display:none"{% endif %}>
+                                    <textarea name="task_{{ row.index }}" class="form-control form-control-sm" rows="2" placeholder="المهمة التعليمية" {% if row.day.delivery_mode != 'tasks' %}disabled{% endif %}>{{ row.day.task|default:'' }}</textarea>
+                                    <input type="date" name="task_due_{{ row.index }}" class="form-control form-control-sm mt-1" value="{{ row.day.task_due_date|default:'' }}" {% if row.day.delivery_mode != 'tasks' %}disabled{% endif %}>
+                                </div>
+                                <span class="task-dash small text-muted" data-index="{{ row.index }}" {% if row.day.delivery_mode == 'tasks' %}style="display:none"{% endif %}>—</span>
                                 {% else %}
+                                {% if row.day.delivery_mode == 'tasks' %}
                                 <div class="small" style="white-space:pre-wrap">{{ row.day.task|default:''|linebreaksbr }}</div>
                                 {% if row.day.task_due_date %}<div class="small text-muted">موعد التسليم: {{ row.day.task_due_date }}</div>{% endif %}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
                                 {% endif %}
                             </td>
-                            {% endif %}
-                            {# اليوم والتاريخ #}
+                            {# اليوم والتاريخ + نمط التسليم لليوم #}
                             <td>
                                 <div class="fw-bold">{{ row.dow }}</div>
                                 {% if editable %}
+                                <select name="delivery_mode_{{ row.index }}" class="form-select form-select-sm mt-1">
+                                    <option value="presence" {% if row.day.delivery_mode != 'tasks' %}selected{% endif %}>وجاهي</option>
+                                    <option value="tasks" {% if row.day.delivery_mode == 'tasks' %}selected{% endif %}>مهمات</option>
+                                </select>
                                 <input type="date" name="date_{{ row.index }}" class="form-control form-control-sm mt-1" value="{{ row.day.date|default:row.default_date }}">
                                 {% else %}
+                                <span class="badge {% if row.day.delivery_mode == 'tasks' %}bg-info text-dark{% else %}bg-secondary{% endif %} mt-1">{{ row.day.get_delivery_mode_display|default:'وجاهي' }}</span>
                                 <div class="small text-muted">{{ row.day.date|default:'' }}</div>
                                 {% endif %}
                             </td>
@@ -184,6 +182,23 @@
             {% if editable %}
                 <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-lg"></i> حفظ الخطة</button>
             </form>
+            <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('select[name^="delivery_mode_"]').forEach(function (sel) {
+                    sel.addEventListener('change', function () {
+                        var idx = sel.name.split('_').pop();
+                        var fields = document.querySelector('.task-fields[data-index="' + idx + '"]');
+                        var dash = document.querySelector('.task-dash[data-index="' + idx + '"]');
+                        var isTasks = sel.value === 'tasks';
+                        if (fields) {
+                            fields.style.display = isTasks ? 'block' : 'none';
+                            fields.querySelectorAll('textarea,input').forEach(function (el) { el.disabled = !isTasks; });
+                        }
+                        if (dash) { dash.style.display = isTasks ? 'none' : 'inline'; }
+                    });
+                });
+            });
+            </script>
             {% endif %}
 
             {% if review and is_admin %}

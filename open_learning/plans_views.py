@@ -124,7 +124,6 @@ def weekly_plan_add(request):
             student_class=student_class,
             week_start=start,
             week_end=end,
-            delivery_mode=request.POST.get('delivery_mode') or 'presence',
         )
         _generate_days(plan)
         messages.success(request, 'تم إنشاء الخطة الأسبوعية')
@@ -144,8 +143,6 @@ def weekly_plan_detail(request, plan_id):
     if request.method == 'POST' and editable:
         action = request.POST.get('action')
         if action == 'save':
-            plan.delivery_mode = request.POST.get('delivery_mode') or plan.delivery_mode
-            plan.save()
             for i, dow in enumerate(PLAN_WEEKDAYS):
                 day = plan.days.filter(day_of_week=dow).first()
                 if day is None:
@@ -168,6 +165,7 @@ def weekly_plan_detail(request, plan_id):
                 day.notes = request.POST.get(f'notes_{i}', '') or ''
                 day.task = request.POST.get(f'task_{i}', '') or ''
                 day.task_due_date = request.POST.get(f'task_due_{i}') or None
+                day.delivery_mode = request.POST.get(f'delivery_mode_{i}') or 'presence'
                 day.order = i
                 day.save()
             messages.success(request, 'تم حفظ الخطة الأسبوعية')
@@ -303,10 +301,6 @@ def weekly_plan_delete(request, plan_id):
     if err:
         return err
     role = _role(request)
-    if role == 'teacher':
-        if not plan.is_editable:
-            messages.error(request, 'لا يمكن حذف خطة مُرسلة أو مُراجَعة')
-            return redirect('ol_weekly_plan_list')
     if request.method == 'POST':
         plan.delete()
         messages.success(request, 'تم حذف الخطة الأسبوعية')
