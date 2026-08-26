@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='noobjection',
             name='number',
-            field=models.CharField('الرقم', default='', max_length=50, blank=True, verbose_name='الرقم (للصادر)'),
+            field=models.CharField(default='', max_length=50, blank=True, verbose_name='الرقم (للصادر)'),
         ),
         migrations.AddField(
             model_name='noobjection',
