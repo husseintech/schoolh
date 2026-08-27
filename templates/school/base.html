@@ -14,6 +14,17 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.rtl.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script>
+        try {
+            var __splashKey = 'schoolh_splash_v1';
+            if (sessionStorage.getItem(__splashKey)) {
+                document.documentElement.classList.add('splash-done');
+            } else {
+                document.documentElement.classList.add('splash-active');
+            }
+        } catch (e) {}
+    </script>
+    <noscript><style>.splash{display:none!important}</style></noscript>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -359,9 +370,105 @@
             height: 8px;
             border-radius: 4px;
         }
+
+        /* ===== Splash Screen ===== */
+        html.splash-done .splash { display: none !important; }
+        html.splash-active, html.splash-active body { overflow: hidden; }
+        .word-export .splash { display: none !important; }
+        @media print { .splash { display: none !important; } }
+        .splash {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .splash.is-hiding { opacity: 0; }
+        .splash__bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, #2c3e50 0%, #1a252f 100%);
+            animation: splashBg 0.4s ease both;
+        }
+        @keyframes splashBg { from { opacity: 0; } to { opacity: 1; } }
+        .splash__content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 90%;
+        }
+        .splash__logo {
+            width: 160px;
+            height: 160px;
+            max-width: 42vw;
+            max-height: 42vw;
+            object-fit: contain;
+            border-radius: 14px;
+            box-shadow: 0 0 50px rgba(52, 152, 219, 0.45);
+            animation: splashLogo 0.7s ease both;
+        }
+        .splash__logo-text {
+            font-size: clamp(2rem, 8vw, 3.4rem);
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+            animation: splashLogo 0.7s ease both;
+        }
+        @keyframes splashLogo { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: scale(1); } }
+        .splash__name {
+            margin-top: 1.1rem;
+            font-size: clamp(1.3rem, 4.5vw, 2rem);
+            font-weight: 700;
+            color: #fff;
+            animation: splashName 0.6s ease both 0.35s;
+        }
+        @keyframes splashName { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) {
+            .splash__bg, .splash__logo, .splash__logo-text, .splash__name { animation: none !important; }
+        }
     </style>
 </head>
 <body{% if word_export %} class="word-export"{% endif %}>
+    <!-- Splash Screen -->
+    <div class="splash" id="splash" aria-hidden="true">
+        <div class="splash__bg"></div>
+        <div class="splash__content">
+            {% if school_info.school_logo %}
+            <img src="{{ school_info.school_logo }}" alt="شعار المدرسة" class="splash__logo">
+            <div class="splash__name">{{ school_info.name_ar|default:'النظام المدرسي' }}</div>
+            {% else %}
+            <div class="splash__logo-text">{{ school_info.name_ar|default:'النظام المدرسي' }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        (function () {
+            var KEY = 'schoolh_splash_v1';
+            var splash = document.getElementById('splash');
+            if (!splash) return;
+            function hide() {
+                document.documentElement.classList.remove('splash-active');
+                splash.classList.add('is-hiding');
+                setTimeout(function () { splash.style.display = 'none'; }, 550);
+            }
+            var already;
+            try { already = sessionStorage.getItem(KEY); } catch (e) { already = null; }
+            if (already) { hide(); return; }
+            try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            setTimeout(hide, reduce ? 700 : 1800);
+        })();
+    </script>
     {% if user.is_authenticated %}
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
