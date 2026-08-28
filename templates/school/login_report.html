@@ -1,0 +1,47 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير آخر دخول{% endblock %}
+{% block page_heading %}تقرير آخر دخول للنظام{% endblock %}
+{% block content %}
+<div class="container py-3">
+    <div class="card">
+        <div class="card-header">تقرير آخر تسجيل دخول</div>
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-8">
+                    <input type="text" name="q" class="form-control" placeholder="أدخل رقم هوية الطالب أو رقم هوية المعلم" value="{{ q }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> بحث</button>
+                </div>
+            </form>
+            {% if results %}
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>النوع</th>
+                            <th>الاسم</th>
+                            <th>رقم الهوية</th>
+                            <th>اسم المستخدم</th>
+                            <th>آخر دخول</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td>{{ r.type }}</td>
+                            <td>{{ r.name }}</td>
+                            <td>{{ r.identity }}</td>
+                            <td>{{ r.username }}</td>
+                            <td>{{ r.last_login|date:'Y-m-d H:i'|default:'لم يسجل الدخول بعد' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mt-2"><i class="bi bi-arrow-right"></i> العودة للرئيسية</a>
+</div>
+{% endblock %}

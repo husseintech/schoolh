@@ -780,6 +780,11 @@
             <i class="bi bi-building"></i> بيانات المدرسة
         </a>
         {% endif %}
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'login_report' %}" class="nav-link {% if request.resolver_match.url_name == 'login_report' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i> تقرير آخر دخول
+        </a>
+        {% endif %}
         {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms or user.profile.role == 'admin' %}
         </div>
         {% endif %}

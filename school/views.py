@@ -401,6 +401,13 @@ def add_student_warning(request, student_id):
                 delivery_method=delivery_method,
                 created_by=request.user,
             )
+            if student.user:
+                Notification.objects.create(
+                    user=student.user,
+                    title='إنذار جديد',
+                    message=f'تم توجيه إنذار لك بتاريخ {warning.incident_date}.',
+                    link='/notifications/',
+                )
             log_action(request.user, 'توجيه إنذار', f'{student.full_name} ({student.student_id})')
             messages.success(request, f'تم توجيه إنذار للطالب {student.full_name}')
             return redirect('print_student_warning', warning_id=warning.id)
@@ -427,6 +434,13 @@ def add_guardian_summons(request, student_id):
                 summons_text=summons_text,
                 created_by=request.user,
             )
+            if student.user:
+                Notification.objects.create(
+                    user=student.user,
+                    title='استدعاء ولي أمر',
+                    message=f'تم إصدار استدعاء لولي أمرك بتاريخ {summons.summons_date}.',
+                    link='/notifications/',
+                )
             log_action(request.user, 'استدعاء ولي أمر', f'{student.full_name} ({student.student_id})')
             messages.success(request, f'تم إصدار استدعاء ولي أمر للطالب {student.full_name}')
             return redirect('print_guardian_summons', summons_id=summons.id)
@@ -706,6 +720,13 @@ def add_note(request, student_id=None):
             note.created_by = request.user
             note.save()
             student = note.student
+            if student.user:
+                Notification.objects.create(
+                    user=student.user,
+                    title='ملاحظة جديدة',
+                    message=f'تمت إضافة ملاحظة ({note.get_note_type_display()}) لك: {note.content[:120]}',
+                    link='/notifications/',
+                )
             if student.parent_phone:
                 note_type = note.get_note_type_display()
                 msg = f'السلام عليكم، طالبكم {student.full_name}\nنوع الملاحظة: {note_type}\nالتفاصيل: {note.content}'
@@ -1388,7 +1409,14 @@ def add_leave(request, student_id=None):
             leave = form.save(commit=False)
             leave.approved_by = request.user
             leave.save()
-            log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.date}')
+            if leave.student.user:
+                Notification.objects.create(
+                    user=leave.student.user,
+                    title='إذن مغادرة جديد',
+                    message=f'تم تسجيل إذن مغادرة لك بتاريخ {leave.leave_date} من الساعة {leave.leave_time}.',
+                    link='/notifications/',
+                )
+            log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.leave_date}')
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
             return redirect('leave_list')
     else:
@@ -1412,7 +1440,7 @@ def delete_leave(request, leave_id):
         return redirect('dashboard')
     leave = get_object_or_404(StudentLeave, id=leave_id)
     if request.method == 'POST':
-        log_action(request.user, 'حذف إذن مغادرة', f'{leave.student.full_name} - {leave.date}')
+        log_action(request.user, 'حذف إذن مغادرة', f'{leave.student.full_name} - {leave.leave_date}')
         leave.delete()
         messages.success(request, 'تم حذف إذن المغادرة')
         return redirect('leave_list')
@@ -3387,6 +3415,37 @@ def notification_read(request, notification_id):
                 return redirect('notification_list')
         return redirect(link)
     return redirect('notification_list')
+
+
+@login_required
+def login_report(request):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        student = Student.objects.filter(student_id=q).select_related('user').first()
+        teacher = Teacher.objects.filter(id_number=q).select_related('user').first()
+        if student and student.user:
+            results.append({
+                'type': 'طالب',
+                'name': student.full_name,
+                'identity': student.student_id,
+                'username': student.user.username,
+                'last_login': student.user.last_login,
+            })
+        if teacher and teacher.user:
+            results.append({
+                'type': 'معلم',
+                'name': teacher.full_name,
+                'identity': teacher.id_number,
+                'username': teacher.user.username,
+                'last_login': teacher.user.last_login,
+            })
+        if not results:
+            messages.info(request, 'لا يوجد حساب مطابق لرقم الهوية المدخل')
+    return render(request, 'school/login_report.html', {'q': q, 'results': results})
 
 
 # ─── Inspection Visits (Principal) ─────────────────────────────────────────────
