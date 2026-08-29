@@ -232,6 +232,7 @@ def dashboard(request):
                 'leaves': leaves,
                 'warnings': student.warnings.all(),
                 'summons': student.summons.all(),
+                'levels': student.levels.all(),
                 'schedule_entries': schedule_entries,
                 'schedule_days': SCHEDULE_DAYS,
                 'period_range': range(1, SCHEDULE_PERIODS + 1),

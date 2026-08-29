@@ -71,6 +71,51 @@
         </div>
 
         <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-bar-chart-fill"></i> مستواي الأكاديمي
+                    </div>
+                    <div class="card-body">
+                        {% if levels %}
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>المادة</th>
+                                        <th>المستوى</th>
+                                        <th>ملاحظات المعلم</th>
+                                        <th>التاريخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lv in levels %}
+                                    <tr>
+                                        <td>{{ lv.subject.name|default:'عام' }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if lv.level == 'excellent' %}success{% elif lv.level == 'very_good' %}info{% elif lv.level == 'good' %}primary{% elif lv.level == 'acceptable' %}warning{% else %}danger{% endif %}">
+                                                {{ lv.get_level_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ lv.notes|default:'—'|linebreaksbr }}</td>
+                                        <td>{{ lv.created_at|date:"Y-m-d" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <p class="mt-2">لم يتم تسجيل مستوى بعد</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-header">
