@@ -2,7 +2,7 @@ import re
 
 from django.contrib import messages
 from django.http import HttpResponseNotAllowed
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
 
 class StudentRecordAccessMiddleware:
@@ -20,6 +20,16 @@ class StudentRecordAccessMiddleware:
     _no_objection_delete_re = re.compile(r'^/secretary/no-objection/\d+/delete/$')
     _reciprocal_visit_delete_re = re.compile(r'^/reciprocal-visits/\d+/delete/$')
     _agenda_mutation_re = re.compile(r'^/agenda/\d+/(?:complete|uncomplete|delete)/$')
+
+    # Legacy Open Learning actions currently use links for operations that change
+    # state. GET is converted into an explicit CSRF-protected confirmation step;
+    # the actual view is reached only by POST.
+    _open_learning_confirm_re = re.compile(
+        r'^/open-learning/lessons/\d+/(?:submit|approve|publish|archive)/$'
+    )
+    _open_learning_resource_delete_re = re.compile(
+        r'^/open-learning/lessons/\d+/resources/\d+/delete/$'
+    )
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -55,6 +65,16 @@ class StudentRecordAccessMiddleware:
         )
         if protected_mutation and request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
+
+        open_learning_mutation = (
+            self._open_learning_confirm_re.match(request.path)
+            or self._open_learning_resource_delete_re.match(request.path)
+        )
+        if open_learning_mutation:
+            if request.method == 'GET':
+                return render(request, 'school/security_confirm.html')
+            if request.method != 'POST':
+                return HttpResponseNotAllowed(['GET', 'POST'])
 
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
