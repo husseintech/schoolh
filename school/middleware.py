@@ -6,11 +6,12 @@ from django.shortcuts import redirect
 
 
 class StudentRecordAccessMiddleware:
-    """Protect direct student record URLs and sensitive destructive endpoints."""
+    """Protect direct student-record URLs and selected state-changing endpoints."""
 
     _student_record_re = re.compile(r'^/students/(\d+)/(detail|report)/$')
     _student_lateness_re = re.compile(r'^/lateness/student/(\d+)/$')
     _student_survey_re = re.compile(r'^/survey/(\d+)/$')
+
     _message_delete_re = re.compile(r'^/messages/(?:\d+/delete/|delete-all(?:-sent|-received)?/)$')
     _visit_program_delete_re = re.compile(r'^/visit-program/\d+/delete/$')
     _whatsapp_group_delete_re = re.compile(r'^/whatsapp-groups/\d+/delete/$')
@@ -18,6 +19,7 @@ class StudentRecordAccessMiddleware:
     _followup_delete_re = re.compile(r'^/followups/\d+/delete/$')
     _no_objection_delete_re = re.compile(r'^/secretary/no-objection/\d+/delete/$')
     _reciprocal_visit_delete_re = re.compile(r'^/reciprocal-visits/\d+/delete/$')
+    _agenda_mutation_re = re.compile(r'^/agenda/\d+/(?:complete|uncomplete|delete)/$')
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -41,7 +43,7 @@ class StudentRecordAccessMiddleware:
         return False
 
     def __call__(self, request):
-        protected_delete = (
+        protected_mutation = (
             self._message_delete_re.match(request.path)
             or self._visit_program_delete_re.match(request.path)
             or self._whatsapp_group_delete_re.match(request.path)
@@ -49,8 +51,9 @@ class StudentRecordAccessMiddleware:
             or self._followup_delete_re.match(request.path)
             or self._no_objection_delete_re.match(request.path)
             or self._reciprocal_visit_delete_re.match(request.path)
+            or self._agenda_mutation_re.match(request.path)
         )
-        if protected_delete and request.method != 'POST':
+        if protected_mutation and request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
 
         user = getattr(request, 'user', None)
@@ -68,7 +71,11 @@ class StudentRecordAccessMiddleware:
                     messages.error(request, 'ليس لديك صلاحية للوصول إلى بيانات هذا الطالب')
                     return redirect('dashboard')
 
-            for sensitive_match in (self._student_lateness_re.match(request.path), self._student_survey_re.match(request.path)):
+            sensitive_matches = (
+                self._student_lateness_re.match(request.path),
+                self._student_survey_re.match(request.path),
+            )
+            for sensitive_match in sensitive_matches:
                 if sensitive_match:
                     student_id = int(sensitive_match.group(1))
                     if not self._can_access_student(user, student_id):
@@ -81,6 +88,7 @@ class StudentRecordAccessMiddleware:
 
 class WordExportMiddleware:
     """يحول أي صفحة HTML تُطلب بـ ?export=word إلى ملف Word (.doc) قابل للتحميل."""
+
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -98,10 +106,12 @@ class WordExportMiddleware:
                 html = response.content.decode('utf-8')
                 head_end = html.find('</head>')
                 if head_end != -1:
-                    inject = ('<meta name="ProgId" content="Word.Document">'
-                              '<!--[if gte mso 9]><xml>'
-                              '<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>'
-                              '</xml><![endif]-->')
+                    inject = (
+                        '<meta name="ProgId" content="Word.Document">'
+                        '<!--[if gte mso 9]><xml>'
+                        '<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>'
+                        '</xml><![endif]-->'
+                    )
                     html = html[:head_end] + inject + html[head_end:]
                     response.content = html.encode('utf-8')
             except (UnicodeDecodeError, AttributeError):
