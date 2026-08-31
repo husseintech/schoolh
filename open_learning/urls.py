@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, ai_views, plans_views, progress_views
+from . import views, ai_views, plans_views, progress_views, learning_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -16,12 +16,22 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/delete/', views.resource_delete, name='open_learning_resource_delete'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/open/', views.resource_open, name='ol_resource_open'),
 
-    # ── تقدم الطالب (طبقة إضافية لا تغيّر عرض الدروس الحالي) ──
+    # تقدم الطالب والمسار التعليمي داخل الدرس
     path('my-progress/', progress_views.student_progress_dashboard, name='ol_student_progress'),
     path('my-progress/<int:lesson_id>/start/', progress_views.student_lesson_start, name='ol_student_lesson_start'),
     path('my-progress/<int:lesson_id>/complete/', progress_views.student_lesson_complete, name='ol_student_lesson_complete'),
+    path('learn/<int:lesson_id>/', learning_views.student_learning_path, name='ol_student_learning_path'),
+    path('learn/activity/<int:activity_id>/complete/', learning_views.activity_complete, name='ol_activity_complete'),
+    path('learn/quiz/<int:quiz_id>/', learning_views.quiz_take, name='ol_quiz_take'),
+    path('learn/assignment/<int:assignment_id>/', learning_views.assignment_submit, name='ol_assignment_submit'),
+    path('learn/<int:lesson_id>/complete/', learning_views.complete_learning_path, name='ol_complete_learning_path'),
 
-    # ── طبقة الذكاء الاصطناعي (أفعال يدوية فقط، بدون استدعاء تلقائي) ──
+    # أدوات المعلم والمتابعة
+    path('teacher-dashboard/', learning_views.teacher_learning_dashboard, name='ol_teacher_learning_dashboard'),
+    path('lessons/<int:lesson_id>/builder/', learning_views.lesson_builder, name='ol_lesson_builder'),
+    path('assignment-submissions/<int:submission_id>/review/', learning_views.assignment_review, name='ol_assignment_review'),
+
+    # طبقة الذكاء الاصطناعي (اختيارية ويدوية فقط)
     path('ai/generate/<int:lesson_id>/', ai_views.ai_generate_content, name='open_learning_ai_generate'),
     path('ai/section/<int:lesson_id>/', ai_views.ai_regenerate_section, name='open_learning_ai_section'),
     path('ai/search/<int:lesson_id>/', ai_views.ai_search_resources, name='open_learning_ai_search'),
@@ -31,20 +41,17 @@ urlpatterns = [
     path('ai/reject-resource/<int:lesson_id>/<int:resource_id>/', ai_views.ai_reject_resource, name='open_learning_ai_reject_resource'),
     path('ai/dashboard/', ai_views.ai_dashboard, name='open_learning_ai_dashboard'),
 
-    # ── تخزين Google Drive (للمدير فقط) ──
     path('storage-settings/', views.storage_settings, name='ol_storage_settings'),
     path('google-drive/connect/', views.google_drive_connect, name='ol_gdrive_connect'),
     path('google-drive/callback/', views.google_drive_callback, name='ol_gdrive_callback'),
     path('google-drive/disconnect/', views.google_drive_disconnect, name='ol_gdrive_disconnect'),
 
-    # ── الخطة الأسبوعية ──
     path('plans/', plans_views.weekly_plan_list, name='ol_weekly_plan_list'),
     path('plans/add/', plans_views.weekly_plan_add, name='ol_weekly_plan_add'),
     path('plans/<int:plan_id>/', plans_views.weekly_plan_detail, name='ol_weekly_plan_detail'),
     path('plans/<int:plan_id>/review/', plans_views.weekly_plan_review, name='ol_weekly_plan_review'),
     path('plans/<int:plan_id>/delete/', plans_views.weekly_plan_delete, name='ol_weekly_plan_delete'),
 
-    # ── خطط المعلمين المرفوعة (صور/ملفات إلى Google Drive) ──
     path('teacher-plans/', views.teacher_plans_list, name='ol_teacher_plans'),
     path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plan_add'),
     path('teacher-plans/<int:plan_id>/delete/', views.teacher_plan_delete, name='ol_teacher_plan_delete'),
