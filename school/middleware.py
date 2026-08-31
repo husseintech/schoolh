@@ -6,16 +6,7 @@ from django.shortcuts import redirect
 
 
 class StudentRecordAccessMiddleware:
-    """Protect direct student record URLs and sensitive destructive endpoints.
-
-    - Student reports contain sensitive administrative history, so they are
-      restricted to the admin role.
-    - Student detail pages may be viewed by administrative roles, by a teacher
-      only for students in the teacher's assigned classes, or by the student
-      for their own record.
-    - Destructive endpoints whose UI uses POST forms are refused on GET so a
-      simple link cannot trigger a deletion.
-    """
+    """Protect direct student record URLs and sensitive destructive endpoints."""
 
     _student_record_re = re.compile(r'^/students/(\d+)/(detail|report)/$')
     _message_delete_re = re.compile(r'^/messages/(?:\d+/delete/|delete-all(?:-sent|-received)?/)$')
@@ -23,19 +14,21 @@ class StudentRecordAccessMiddleware:
     _whatsapp_group_delete_re = re.compile(r'^/whatsapp-groups/\d+/delete/$')
     _secretary_delete_re = re.compile(r'^/secretary/(?:incoming|outgoing)/\d+/delete/$')
     _followup_delete_re = re.compile(r'^/followups/\d+/delete/$')
+    _no_objection_delete_re = re.compile(r'^/secretary/no-objection/\d+/delete/$')
+    _reciprocal_visit_delete_re = re.compile(r'^/reciprocal-visits/\d+/delete/$')
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # The current templates submit these operations as POST with CSRF tokens.
-        # Refuse GET/HEAD access so deletions cannot be triggered by opening a URL.
         protected_delete = (
             self._message_delete_re.match(request.path)
             or self._visit_program_delete_re.match(request.path)
             or self._whatsapp_group_delete_re.match(request.path)
             or self._secretary_delete_re.match(request.path)
             or self._followup_delete_re.match(request.path)
+            or self._no_objection_delete_re.match(request.path)
+            or self._reciprocal_visit_delete_re.match(request.path)
         )
         if protected_delete and request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
@@ -46,7 +39,6 @@ class StudentRecordAccessMiddleware:
             page_type = match.group(2)
             role = getattr(getattr(request.user, 'profile', None), 'role', None)
 
-            # Full student reports can include administrative/private history.
             if page_type == 'report':
                 if role != 'admin':
                     messages.error(request, 'ليس لديك صلاحية للوصول إلى تقرير هذا الطالب')
@@ -54,7 +46,6 @@ class StudentRecordAccessMiddleware:
 
             elif page_type == 'detail':
                 allowed = False
-
                 if role in ('admin', 'vice_principal', 'secretary'):
                     allowed = True
                 elif role == 'student':
@@ -64,10 +55,7 @@ class StudentRecordAccessMiddleware:
                     teacher = getattr(request.user, 'teacher_profile', None)
                     if teacher:
                         from .models import Student
-                        allowed = Student.objects.filter(
-                            id=student_id,
-                            student_class__in=teacher.classes.all(),
-                        ).exists()
+                        allowed = Student.objects.filter(id=student_id, student_class__in=teacher.classes.all()).exists()
 
                 if not allowed:
                     messages.error(request, 'ليس لديك صلاحية للوصول إلى بيانات هذا الطالب')
@@ -78,7 +66,6 @@ class StudentRecordAccessMiddleware:
 
 class WordExportMiddleware:
     """يحول أي صفحة HTML تُطلب بـ ?export=word إلى ملف Word (.doc) قابل للتحميل."""
-
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -96,12 +83,10 @@ class WordExportMiddleware:
                 html = response.content.decode('utf-8')
                 head_end = html.find('</head>')
                 if head_end != -1:
-                    inject = (
-                        '<meta name="ProgId" content="Word.Document">'
-                        '<!--[if gte mso 9]><xml>'
-                        '<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>'
-                        '</xml><![endif]-->'
-                    )
+                    inject = ('<meta name="ProgId" content="Word.Document">'
+                              '<!--[if gte mso 9]><xml>'
+                              '<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>'
+                              '</xml><![endif]-->')
                     html = html[:head_end] + inject + html[head_end:]
                     response.content = html.encode('utf-8')
             except (UnicodeDecodeError, AttributeError):
