@@ -80,11 +80,19 @@ class StudentRecordAccessMiddleware:
 
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
+            role = getattr(getattr(user, 'profile', None), 'role', None)
+
+            # Guardian accounts are deliberately read-only and scoped to the
+            # dedicated guardian portal. This prevents a guardian account from
+            # falling through generic "non-student" branches in legacy views.
+            if role == 'guardian' and request.path.startswith('/open-learning/'):
+                if not request.path.startswith('/open-learning/guardian/'):
+                    return redirect('ol_guardian_portal')
+
             match = self._student_record_re.match(request.path)
             if match:
                 student_id = int(match.group(1))
                 page_type = match.group(2)
-                role = getattr(getattr(user, 'profile', None), 'role', None)
                 if page_type == 'report':
                     if role != 'admin':
                         messages.error(request, 'ليس لديك صلاحية للوصول إلى تقرير هذا الطالب')
