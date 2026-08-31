@@ -1,15 +1,7 @@
 """محرك البحث عن المصادر التعليمية.
 
-يفصل البحث عن المصادر عن توليد المحتوى بالذكاء الاصطناعي:
-    - روابط حقيقية فقط من نتائج البحث الفعلية (ممنوع اختراع URLs).
-    - يتحقق من صلاحية الروابط (HTTP status) قبل الحفظ.
-    - يصنّف النتائج بالقواعد (بدون AI) ويعطي relevance_score واللغة واسم المصدر.
-    - يستعلامات متعددة حسب نوع المصدر (فيديو/شرح/محاكاة/نشاط/تجربة/صور).
-    - يحد من تكرار نفس الموقع (تنويع المصادر).
-
-المزوّدات:
-    - duckduckgo: افتراضي، بدون مفتاح.
-    - google: اختياري عبر GOOGLE_CSE_ID + GOOGLE_CSE_API_KEY (رصيد مجاني يومي).
+روابط حقيقية فقط من نتائج البحث الفعلية، مع حاجز ملاءمة إلزامي قبل إرجاع
+أي نتيجة إلى طبقة الحفظ. المحرك مجاني افتراضياً عبر DuckDuckGo.
 """
 import os
 import re
@@ -21,7 +13,6 @@ import requests
 from .ai_service import normalize_url
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
-
 ARABIC_RE = re.compile(r'[\u0600-\u06FF]')
 TITLE_FILLERS = re.compile(r'[^\w\u0600-\u06FF ]+', re.UNICODE)
 STOP_WORDS = {
@@ -55,8 +46,6 @@ def _core_lesson_words(value):
 
 
 class SearchService:
-    """يبحث ويصنف النتائج. لا يخزن في قاعدة البيانات أبداً."""
-
     def __init__(self):
         self.provider = os.getenv('SEARCH_PROVIDER', 'duckduckgo').strip().lower()
         self.google_cse_id = os.getenv('GOOGLE_CSE_ID', '').strip()
@@ -64,6 +53,7 @@ class SearchService:
         self.domain_cap = int(os.getenv('SEARCH_DOMAIN_CAP', '2'))
 
     def search_all(self, lesson_title, grade, subject, max_per_group=4):
+        """بحث متعدد، ثم رفض أي نتيجة لا تشير فعلاً إلى موضوع الدرس."""
         results = []
         seen_urls = set()
         for spec in QUERY_TEMPLATES:
@@ -77,8 +67,10 @@ class SearchService:
                 norm = normalize_url(item['url'])
                 if not norm or norm in seen_urls:
                     continue
-                seen_urls.add(norm)
                 item['group'] = group
+                if not self.is_relevant(item, lesson_title, subject):
+                    continue
+                seen_urls.add(norm)
                 results.append(item)
             time.sleep(0.4)
         return results
@@ -129,15 +121,26 @@ class SearchService:
 
     def _search_google(self, query, limit):
         url = 'https://www.googleapis.com/customsearch/v1'
-        params = {'key': self.google_api_key, 'cx': self.google_cse_id, 'q': query, 'num': min(limit, 10), 'hl': 'ar'}
+        params = {
+            'key': self.google_api_key,
+            'cx': self.google_cse_id,
+            'q': query,
+            'num': min(limit, 10),
+            'hl': 'ar',
+        }
         try:
             resp = requests.get(url, params=params, timeout=25)
             resp.raise_for_status()
             data = resp.json()
         except (requests.RequestException, ValueError) as exc:
             raise SearchUnavailable(f'تعذر البحث: {exc}') from exc
-        items = [{'title': i.get('title', ''), 'url': i.get('link', ''),
-                  'snippet': re.sub(r'\s+', ' ', i.get('snippet', '')).strip()} for i in data.get('items', [])]
+        items = []
+        for item in data.get('items', []):
+            items.append({
+                'title': item.get('title', ''),
+                'url': item.get('link', ''),
+                'snippet': re.sub(r'\s+', ' ', item.get('snippet', '')).strip(),
+            })
         if not items:
             raise SearchUnavailable('لا توجد نتائج بحث')
         return items
@@ -152,24 +155,12 @@ class SearchService:
             return False
 
     def is_relevant(self, item, lesson_title, subject=''):
-        """حاجز إلزامي قبل الحفظ: يجب أن تشير النتيجة فعلاً إلى موضوع الدرس.
-
-        نبحث في العنوان والوصف معاً. إذا كان عنوان الدرس عاماً جداً ولا يحتوي كلمات
-        دلالية، نلزم على الأقل ظهور المادة. هذا يمنع مرور نتيجة تعليمية من مادة أخرى.
-        """
+        """يشترط ظهور كلمة دلالية من موضوع الدرس في عنوان النتيجة أو وصفها."""
         haystack = ' '.join(_words((item.get('title') or '') + ' ' + (item.get('snippet') or '')))
         lesson_terms = _core_lesson_words(lesson_title)
         subject_terms = [w for w in _words(subject) if len(w) > 2 and w not in STOP_WORDS]
-
         if lesson_terms:
-            # كلمة موضوع واحدة على الأقل يجب أن تكون موجودة بوضوح في عنوان/وصف النتيجة.
-            if not any(term in haystack for term in lesson_terms):
-                return False
-            # إذا ظهرت المادة صراحة في البيانات، فهذا يعزز المطابقة؛ عدم ظهورها لا يرفض
-            # المصدر لأن كثيراً من نتائج الويب الجيدة تذكر الموضوع دون اسم المادة.
-            return True
-
-        # عناوين عامة مثل «الدرس الأول»: لا نسمح بنتيجة من مادة مختلفة.
+            return any(term in haystack for term in lesson_terms)
         if subject_terms:
             return any(term in haystack for term in subject_terms)
         return False
@@ -194,14 +185,12 @@ class SearchService:
 
         score = 35
         score += 20 if language == 'ar' else (10 if language == 'en' else 0)
-        title_text = ' '.join(_words(title))
         full_text = ' '.join(_words(text))
+        title_text = ' '.join(_words(title))
         subject_words = [w for w in _words(subject) if len(w) > 2 and w not in STOP_WORDS]
         lesson_words = _core_lesson_words(lesson_title)
-        lesson_matches = sum(1 for w in lesson_words if w in full_text)
-        subject_matches = sum(1 for w in subject_words if w in full_text)
-        score += min(30, lesson_matches * 15)
-        score += min(16, subject_matches * 8)
+        score += min(30, sum(1 for w in lesson_words if w in full_text) * 15)
+        score += min(16, sum(1 for w in subject_words if w in full_text) * 8)
         if any(w in title_text for w in lesson_words):
             score += 10
         if grade and any(w in text for w in grade.replace('الصف', '').replace('الأساسي', '').split() if w):
@@ -214,8 +203,14 @@ class SearchService:
             score += 3
         score = max(10, min(99, score))
         return {
-            'title': title[:280], 'url': url, 'resource_type': rtype, 'language': language,
-            'source_name': source_name, 'description': description[:480], 'relevance_score': score, 'group': group,
+            'title': title[:280],
+            'url': url,
+            'resource_type': rtype,
+            'language': language,
+            'source_name': source_name,
+            'description': description[:480],
+            'relevance_score': score,
+            'group': group,
         }
 
     @staticmethod
