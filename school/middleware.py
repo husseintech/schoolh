@@ -21,6 +21,7 @@ class StudentRecordAccessMiddleware:
     _message_delete_re = re.compile(r'^/messages/(?:\d+/delete/|delete-all(?:-sent|-received)?/)$')
     _visit_program_delete_re = re.compile(r'^/visit-program/\d+/delete/$')
     _whatsapp_group_delete_re = re.compile(r'^/whatsapp-groups/\d+/delete/$')
+    _secretary_delete_re = re.compile(r'^/secretary/(?:incoming|outgoing)/\d+/delete/$')
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -32,6 +33,7 @@ class StudentRecordAccessMiddleware:
             self._message_delete_re.match(request.path)
             or self._visit_program_delete_re.match(request.path)
             or self._whatsapp_group_delete_re.match(request.path)
+            or self._secretary_delete_re.match(request.path)
         )
         if protected_delete and request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
