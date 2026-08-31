@@ -6,115 +6,31 @@
 {% if can_add %}
 <div class="card mb-4 no-print">
     <div class="card-header"><i class="bi bi-arrow-left-right"></i> تسجيل زيارة تبادلية جديدة</div>
-    <div class="card-body">
-        <form method="post" class="row g-3">
-            {% csrf_token %}
-            <div class="col-md-4">
-                <label class="form-label">المعلم الزائر</label>
-                <select name="visitor_id" class="form-select" required>
-                    <option value="">اختر المعلم الزائر...</option>
-                    {% for t in teachers %}
-                    <option value="{{ t.id }}">{{ t.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">المعلم المزار</label>
-                <select name="host_id" class="form-select" required>
-                    <option value="">اختر المعلم المزار...</option>
-                    {% for t in teachers %}
-                    <option value="{{ t.id }}">{{ t.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">تاريخ الزيارة</label>
-                <input type="date" name="visit_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">الصف</label>
-                <select name="class_id" class="form-select">
-                    <option value="">اختر الصف...</option>
-                    {% for c in classes %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">رقم الحصة</label>
-                <select name="period" class="form-select">
-                    {% for p in periods %}
-                    <option value="{{ p }}">الحصة {{ p }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> تسجيل الزيارة</button>
-            </div>
-        </form>
-    </div>
+    <div class="card-body"><form method="post" class="row g-3">{% csrf_token %}
+        <div class="col-md-4"><label class="form-label">المعلم الزائر</label><select name="visitor_id" class="form-select" required><option value="">اختر المعلم الزائر...</option>{% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-4"><label class="form-label">المعلم المزار</label><select name="host_id" class="form-select" required><option value="">اختر المعلم المزار...</option>{% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-4"><label class="form-label">تاريخ الزيارة</label><input type="date" name="visit_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required></div>
+        <div class="col-md-4"><label class="form-label">الصف</label><select name="class_id" class="form-select"><option value="">اختر الصف...</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+        <div class="col-md-4"><label class="form-label">رقم الحصة</label><select name="period" class="form-select">{% for p in periods %}<option value="{{ p }}">الحصة {{ p }}</option>{% endfor %}</select></div>
+        <div class="col-md-4 d-flex align-items-end"><button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> تسجيل الزيارة</button></div>
+    </form></div>
 </div>
 {% endif %}
 
 <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><i class="bi bi-list-check"></i> الزيارات التبادلية المسجلة</span>
-        <div class="d-flex gap-2 no-print">
-            <a href="{% url 'reciprocal_visits_room_report' %}" class="btn btn-sm btn-outline-primary" target="_blank"><i class="bi bi-printer"></i> تقرير غرفة المعلمين</a>
-            <span class="badge bg-info">{{ visits|length }} زيارة</span>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover table-sm align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>المعلم الزائر</th>
-                        <th>المعلم المزار</th>
-                        <th>التاريخ</th>
-                        <th>الصف</th>
-                        <th>رقم الحصة</th>
-                        <th class="text-center">الحالة</th>
-                        <th class="text-center no-print">إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for v in visits %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ v.visitor.full_name }}</strong></td>
-                        <td><strong>{{ v.host.full_name }}</strong></td>
-                        <td>{{ v.visit_date|date:'Y-m-d' }}</td>
-                        <td>{{ v.student_class.name|default:'---' }}</td>
-                        <td class="text-center">الحصة {{ v.period }}</td>
-                        <td class="text-center">
-                            {% if v.completed %}
-                            <span class="badge bg-success">تمت المتابعة</span>
-                            {% else %}
-                            <span class="badge bg-warning text-dark">بانتظار المتابعة</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center no-print">
-                            <a href="{% url 'reciprocal_visit_print' v.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="إعلان لوحة الإعلانات"><i class="bi bi-megaphone"></i></a>
-                            <a href="{% url 'reciprocal_visit_report' v.id %}" class="btn btn-sm btn-outline-success" target="_blank" title="تقرير الزيارة"><i class="bi bi-file-earmark-text"></i></a>
-                            {% if v.completed %}
-                            <a href="{% url 'reciprocal_visit_feedback' v.id %}" class="btn btn-sm btn-outline-secondary" title="تعديل الملاحظات"><i class="bi bi-pencil"></i></a>
-                            {% endif %}
-                            {% if can_delete %}
-                            <a href="{% url 'reciprocal_visit_delete' v.id %}" class="btn btn-sm btn-outline-danger" title="حذف"
-                               onclick="return confirm('هل أنت متأكد من حذف هذه الزيارة التبادلية؟')"><i class="bi bi-trash"></i></a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">لا توجد زيارات تبادلية مسجلة</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2"><span><i class="bi bi-list-check"></i> الزيارات التبادلية المسجلة</span><div class="d-flex gap-2 no-print"><a href="{% url 'reciprocal_visits_room_report' %}" class="btn btn-sm btn-outline-primary" target="_blank"><i class="bi bi-printer"></i> تقرير غرفة المعلمين</a><span class="badge bg-info">{{ visits|length }} زيارة</span></div></div>
+    <div class="card-body"><div class="table-responsive"><table class="table table-bordered table-hover table-sm align-middle">
+        <thead class="table-light"><tr><th>#</th><th>المعلم الزائر</th><th>المعلم المزار</th><th>التاريخ</th><th>الصف</th><th>رقم الحصة</th><th class="text-center">الحالة</th><th class="text-center no-print">إجراءات</th></tr></thead>
+        <tbody>{% for v in visits %}<tr>
+            <td>{{ forloop.counter }}</td><td><strong>{{ v.visitor.full_name }}</strong></td><td><strong>{{ v.host.full_name }}</strong></td><td>{{ v.visit_date|date:'Y-m-d' }}</td><td>{{ v.student_class.name|default:'---' }}</td><td class="text-center">الحصة {{ v.period }}</td>
+            <td class="text-center">{% if v.completed %}<span class="badge bg-success">تمت المتابعة</span>{% else %}<span class="badge bg-warning text-dark">بانتظار المتابعة</span>{% endif %}</td>
+            <td class="text-center no-print">
+                <a href="{% url 'reciprocal_visit_print' v.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="إعلان لوحة الإعلانات"><i class="bi bi-megaphone"></i></a>
+                <a href="{% url 'reciprocal_visit_report' v.id %}" class="btn btn-sm btn-outline-success" target="_blank" title="تقرير الزيارة"><i class="bi bi-file-earmark-text"></i></a>
+                {% if v.completed %}<a href="{% url 'reciprocal_visit_feedback' v.id %}" class="btn btn-sm btn-outline-secondary" title="تعديل الملاحظات"><i class="bi bi-pencil"></i></a>{% endif %}
+                {% if can_delete %}<form method="post" action="{% url 'reciprocal_visit_delete' v.id %}" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذه الزيارة التبادلية؟')">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></button></form>{% endif %}
+            </td>
+        </tr>{% empty %}<tr><td colspan="8" class="text-center text-muted py-4">لا توجد زيارات تبادلية مسجلة</td></tr>{% endfor %}</tbody>
+    </table></div></div>
 </div>
 {% endblock %}
