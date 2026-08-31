@@ -1,19 +1,21 @@
 {% extends 'school/base.html' %}
+{% load dashboard_tags %}
 {% block title %}لوحة التحكم{% endblock %}
 {% block page_heading %}لوحة التحكم الرئيسية{% endblock %}
 {% block content %}
+{% dashboard_today as today %}
 <style>
     .dash-hero {
-        background: linear-gradient(120deg, #1f2d3d 0%, #2c3e50 55%, #34495e 100%);
+        background: linear-gradient(120deg, #1f2d3d 0%, #2c3e50 58%, #34495e 100%);
         border-radius: 18px;
-        padding: 28px 30px;
+        padding: 26px 28px;
         color: #fff;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
         gap: 18px;
-        box-shadow: 0 12px 30px rgba(31, 45, 61, 0.25);
+        box-shadow: 0 12px 30px rgba(31,45,61,.22);
         position: relative;
         overflow: hidden;
     }
@@ -21,103 +23,93 @@
         content: "";
         position: absolute;
         left: -40px;
-        bottom: -60px;
-        width: 220px;
-        height: 220px;
-        background: radial-gradient(circle, rgba(52, 152, 219, 0.35), transparent 70%);
+        bottom: -70px;
+        width: 230px;
+        height: 230px;
         border-radius: 50%;
+        background: radial-gradient(circle, rgba(52,152,219,.35), transparent 70%);
     }
-    .dash-hero-greet { font-size: 0.95rem; color: rgba(255,255,255,0.7); }
-    .dash-hero-name { font-size: 1.9rem; font-weight: 800; margin: 2px 0 6px; letter-spacing: -0.5px; }
-    .dash-hero-date { font-size: 0.9rem; color: rgba(255,255,255,0.75); display: inline-flex; gap: 6px; align-items: center; }
-    .role-badge {
-        background: rgba(255,255,255,0.12);
-        border: 1px solid rgba(255,255,255,0.2);
-        padding: 8px 18px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        backdrop-filter: blur(4px);
-    }
+    .dash-hero-greet { font-size:.92rem; color:rgba(255,255,255,.72); }
+    .dash-hero-name { font-size:1.8rem; font-weight:800; margin:2px 0 6px; }
+    .dash-hero-date { font-size:.9rem; color:rgba(255,255,255,.78); display:inline-flex; gap:6px; align-items:center; }
+    .role-badge { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); padding:8px 16px; border-radius:50px; font-weight:700; }
 
-    .qa-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 8px; }
+    .today-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin:24px 0 12px; }
+    .today-head h3 { margin:0; font-size:1.25rem; font-weight:800; color:#1f2d3d; }
+    .today-head p { margin:4px 0 0; color:#7b8794; font-size:.88rem; }
+
+    .today-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    @media (min-width:768px) { .today-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    @media (min-width:1200px) { .today-grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
+    .today-card {
+        background:#fff; border:1px solid #edf1f5; border-radius:15px; padding:16px;
+        text-decoration:none; color:#1f2d3d; box-shadow:0 4px 14px rgba(31,45,61,.06);
+        transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        min-height:122px; display:flex; flex-direction:column; justify-content:space-between;
+    }
+    .today-card:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,45,61,.12); color:#1f2d3d; border-color:#dce6ef; }
+    .today-card .icon { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; background:#eef4fb; color:#2f6fad; font-size:1.15rem; }
+    .today-card.attention .icon { background:#fff3e6; color:#c26b14; }
+    .today-card.danger .icon { background:#fdecec; color:#c0392b; }
+    .today-value { font-size:1.75rem; font-weight:800; line-height:1; margin-top:10px; }
+    .today-label { font-size:.82rem; color:#6f7b88; margin-top:5px; }
+
+    .qa-row { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 6px; }
     .qa-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 0.92rem;
-        color: #fff; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        display:inline-flex; align-items:center; gap:7px; padding:9px 14px; border-radius:11px;
+        font-weight:700; font-size:.88rem; text-decoration:none; background:#fff; color:#2c3e50;
+        border:1px solid #e4e9ef; box-shadow:0 3px 10px rgba(31,45,61,.05);
+        transition:all .18s ease;
     }
-    .qa-btn:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
-    .qa-primary { background: linear-gradient(135deg, #3498db, #2980b9); }
-    .qa-warning { background: linear-gradient(135deg, #f39c12, #d68910); }
-    .qa-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-    .qa-success { background: linear-gradient(135deg, #27ae60, #1e8449); }
+    .qa-btn:hover { transform:translateY(-2px); box-shadow:0 7px 16px rgba(31,45,61,.1); color:#1f2d3d; }
+    .qa-btn i { color:#3498db; }
 
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    .kpi-grid .col-6, .kpi-grid .col-xl-4, .fade-up { animation: fadeUp 0.5s ease both; }
-    .kpi-grid .col-6:nth-child(2) { animation-delay: 0.05s; }
-    .kpi-grid .col-6:nth-child(3) { animation-delay: 0.1s; }
-    .kpi-grid .col-6:nth-child(4) { animation-delay: 0.15s; }
-    .kpi-grid .col-6:nth-child(5) { animation-delay: 0.2s; }
-    .kpi-grid .col-6:nth-child(6) { animation-delay: 0.25s; }
+    .panel { background:#fff; border-radius:16px; border:1px solid #edf1f5; box-shadow:0 4px 16px rgba(31,45,61,.06); height:100%; }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid #eef1f5; }
+    .panel-head h5 { margin:0; font-weight:800; font-size:1rem; color:#1f2d3d; display:flex; align-items:center; gap:8px; }
+    .panel-head h5 i { color:#3498db; }
+    .panel-body { padding:16px 18px; }
 
-    .kpi-card {
-        background: #fff; border-radius: 16px; padding: 18px 20px;
-        display: flex; align-items: center; gap: 14px; height: 100%;
-        border-right: 5px solid var(--accent, #3498db);
-        box-shadow: 0 4px 16px rgba(31, 45, 61, 0.07);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .alert-list { display:flex; flex-direction:column; gap:9px; }
+    .alert-link {
+        display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 13px;
+        border-radius:12px; background:#fafbfc; border:1px solid #eef1f4; text-decoration:none; color:#34495e;
     }
-    .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 26px rgba(31, 45, 61, 0.14); }
-    .kpi-icon {
-        width: 54px; height: 54px; border-radius: 14px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.5rem; color: #fff;
-        background: var(--accent, #3498db);
-        box-shadow: 0 6px 14px color-mix(in srgb, var(--accent, #3498db) 40%, transparent);
-    }
-    .kpi-value { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #1f2d3d; }
-    .kpi-label { font-size: 0.88rem; color: #7b8794; margin-top: 4px; }
+    .alert-link:hover { background:#fff; color:#1f2d3d; border-color:#dbe5ee; }
+    .alert-main { display:flex; align-items:center; gap:10px; min-width:0; }
+    .alert-dot { width:34px; height:34px; flex:0 0 34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fff3e6; color:#c26b14; }
+    .alert-dot.danger { background:#fdecec; color:#c0392b; }
+    .alert-dot.info { background:#eaf2fb; color:#2f6fad; }
+    .alert-text { font-size:.87rem; font-weight:700; }
+    .alert-sub { font-size:.75rem; color:#8b96a3; margin-top:2px; }
+    .alert-count { min-width:30px; height:30px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:800; background:#edf1f5; color:#34495e; }
+    .all-good { text-align:center; padding:24px 10px; color:#6f7b88; }
+    .all-good i { display:block; font-size:1.8rem; color:#27ae60; margin-bottom:6px; }
 
-    .panel { background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(31,45,61,0.07); height: 100%; }
-    .panel-head {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 16px 20px; border-bottom: 1px solid #eef1f5;
-    }
-    .panel-head h5 { margin: 0; font-weight: 700; font-size: 1.05rem; color: #1f2d3d; display: flex; align-items: center; gap: 8px; }
-    .panel-head h5 i { color: #3498db; }
-    .panel-body { padding: 18px 20px; }
+    .module-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    @media (min-width:768px) { .module-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    .module-tile { display:flex; flex-direction:column; align-items:center; gap:7px; padding:18px 10px; border-radius:13px; text-align:center; background:#f8fafc; color:#1f2d3d; text-decoration:none; border:1px solid #edf1f5; transition:all .18s ease; }
+    .module-tile:hover { background:#fff; transform:translateY(-2px); box-shadow:0 8px 18px rgba(31,45,61,.09); color:#1f2d3d; }
+    .module-tile i { font-size:1.45rem; color:#3b78ad; }
+    .module-tile span { font-size:.84rem; font-weight:700; }
 
-    .module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-    @media (min-width: 768px) { .module-grid { grid-template-columns: repeat(3, 1fr); } }
-    .module-tile {
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
-        padding: 20px 12px; border-radius: 14px; text-align: center;
-        background: #f7f9fc; color: #1f2d3d; text-decoration: none;
-        border: 1px solid #eef1f5; transition: all 0.18s ease;
-    }
-    .module-tile:hover { background: #fff; transform: translateY(-3px); box-shadow: 0 10px 22px rgba(31,45,61,0.12); color: #1f2d3d; border-color: #d6e4f0; }
-    .module-tile i { font-size: 1.6rem; color: var(--mc, #3498db); }
-    .module-tile span { font-size: 0.85rem; font-weight: 600; }
+    .activity-item { display:flex; gap:11px; padding:11px 0; border-bottom:1px solid #f0f2f5; }
+    .activity-item:last-child { border-bottom:none; }
+    .activity-avatar { width:40px; height:40px; border-radius:50%; flex-shrink:0; background:#eaf2fb; color:#2f6fad; display:flex; align-items:center; justify-content:center; font-weight:800; }
+    .activity-body { flex:1; min-width:0; }
+    .activity-top { display:flex; justify-content:space-between; align-items:center; gap:7px; }
+    .activity-title { font-weight:800; color:#1f2d3d; font-size:.87rem; }
+    .activity-text { color:#687583; font-size:.8rem; margin:2px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .activity-meta { color:#98a2ad; font-size:.72rem; }
+    .note-type { background:#eef4fb; color:#2f6fad; padding:2px 7px; border-radius:10px; font-size:.66rem; font-weight:700; }
+    .maintenance-link { color:#8b96a3; font-size:.78rem; text-decoration:none; }
+    .maintenance-link:hover { color:#c0392b; }
 
-    .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f2f5; }
-    .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .activity-avatar {
-        width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-        background: linear-gradient(135deg, #3498db, #2980b9); color: #fff;
-        display: flex; align-items: center; justify-content: center; font-weight: 700;
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; animation:none !important; }
     }
-    .activity-body { flex: 1; min-width: 0; }
-    .activity-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .activity-title { font-weight: 700; color: #1f2d3d; font-size: 0.92rem; }
-    .activity-text { color: #5b6675; font-size: 0.85rem; margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .activity-meta { color: #9aa5b1; font-size: 0.75rem; }
-    .note-type { background: #eaf2fb; color: #2c6db5; font-size: 0.7rem; font-weight: 600; }
-    .empty-soft { text-align: center; color: #9aa5b1; padding: 30px 10px; }
-    .empty-soft i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.5; }
 </style>
 
-<!-- Hero -->
 <section class="dash-hero">
     <div>
         <div class="dash-hero-greet">مرحباً بعودتك،</div>
@@ -127,137 +119,151 @@
     <div class="role-badge"><i class="bi bi-shield-check"></i> لوحة الإدارة</div>
 </section>
 
+<div class="today-head">
+    <div>
+        <h3><i class="bi bi-sun"></i> ماذا يحدث في المدرسة اليوم؟</h3>
+        <p>ملخص سريع للحركة اليومية والحالات التي تحتاج متابعة.</p>
+    </div>
+    {% if today.attention_total %}
+    <span class="badge bg-warning text-dark">{{ today.attention_total }} تحتاج انتباه</span>
+    {% else %}
+    <span class="badge bg-success">الوضع مستقر</span>
+    {% endif %}
+</div>
+
+<section class="today-grid">
+    <a class="today-card danger" href="{% url 'absence_list' %}">
+        <div class="icon"><i class="bi bi-person-x-fill"></i></div>
+        <div><div class="today-value">{{ today.absence }}</div><div class="today-label">غياب اليوم</div></div>
+    </a>
+    <a class="today-card attention" href="{% url 'lateness_list' %}">
+        <div class="icon"><i class="bi bi-clock-history"></i></div>
+        <div><div class="today-value">{{ today.lateness }}</div><div class="today-label">تأخيرات اليوم</div></div>
+    </a>
+    <a class="today-card" href="{% url 'leave_list' %}">
+        <div class="icon"><i class="bi bi-door-open"></i></div>
+        <div><div class="today-value">{{ today.leaves }}</div><div class="today-label">أذونات المغادرة</div></div>
+    </a>
+    <a class="today-card" href="{% url 'note_list' %}">
+        <div class="icon"><i class="bi bi-sticky-fill"></i></div>
+        <div><div class="today-value">{{ today.notes }}</div><div class="today-label">ملاحظات اليوم</div></div>
+    </a>
+    <a class="today-card attention" href="{% url 'student_discipline' %}">
+        <div class="icon"><i class="bi bi-exclamation-triangle"></i></div>
+        <div><div class="today-value">{{ today.warnings|add:today.summons }}</div><div class="today-label">إنذارات واستدعاءات</div></div>
+    </a>
+    <a class="today-card" href="{% url 'agenda_list' %}">
+        <div class="icon"><i class="bi bi-list-check"></i></div>
+        <div><div class="today-value">{{ today.pending_agenda }}</div><div class="today-label">مهام معلقة</div></div>
+    </a>
+</section>
+
 {% if show_quick_actions %}
-<section class="qa-row">
-    <a class="qa-btn qa-primary" href="{% url 'student_list' %}"><i class="bi bi-people-fill"></i> جميع الطلاب</a>
-    <a class="qa-btn qa-warning" href="{% url 'lateness_list' %}"><i class="bi bi-clock-history"></i> تأخيرات الطلاب</a>
-    <a class="qa-btn qa-danger" href="{% url 'absence_list' %}"><i class="bi bi-person-x-fill"></i> غياب الطلاب</a>
-    <a class="qa-btn qa-success" href="{% url 'add_student' %}"><i class="bi bi-person-plus-fill"></i> إضافة طالب</a>
+<section class="qa-row" aria-label="إجراءات سريعة">
+    <a class="qa-btn" href="{% url 'absence_list' %}"><i class="bi bi-person-x"></i> تسجيل/متابعة الغياب</a>
+    <a class="qa-btn" href="{% url 'lateness_list' %}"><i class="bi bi-clock"></i> تسجيل/متابعة التأخير</a>
+    <a class="qa-btn" href="{% url 'add_leave' %}"><i class="bi bi-door-open"></i> إذن مغادرة</a>
+    <a class="qa-btn" href="{% url 'add_note' %}"><i class="bi bi-sticky"></i> إضافة ملاحظة</a>
+    <a class="qa-btn" href="{% url 'send_message' %}"><i class="bi bi-send"></i> إرسال رسالة</a>
 </section>
 {% endif %}
 
-<!-- KPI Cards -->
-<section class="row g-3 g-xl-4 kpi-grid mt-2">
-    <div class="col-6 col-xl-4">
-        <div class="kpi-card" style="--accent:#3498db;">
-            <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">{{ students_count }}</div>
-                <div class="kpi-label">إجمالي الطلاب</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-4">
-        <div class="kpi-card" style="--accent:#27ae60;">
-            <div class="kpi-icon"><i class="bi bi-person-badge-fill"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">{{ teachers_count }}</div>
-                <div class="kpi-label">إجمالي المعلمين</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-4">
-        <div class="kpi-card" style="--accent:#f39c12;">
-            <div class="kpi-icon"><i class="bi bi-sticky-fill"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">{{ notes_count }}</div>
-                <div class="kpi-label">إجمالي الملاحظات</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-4">
-        <div class="kpi-card" style="--accent:#17a2b8;">
-            <div class="kpi-icon"><i class="bi bi-list-check"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">{{ pending_agenda }}</div>
-                <div class="kpi-label">مهام الأجندة المعلقة</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-4">
-        <div class="kpi-card" style="--accent:#e67e22;">
-            <div class="kpi-icon"><i class="bi bi-clock-history"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">{{ today_lateness }}</div>
-                <div class="kpi-label">تأخيرات اليوم</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-4">
-        <div class="kpi-card" style="--accent:#e74c3c;">
-            <div class="kpi-icon"><i class="bi bi-person-x-fill"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">{{ today_absence }}</div>
-                <div class="kpi-label">غياب اليوم</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Lower Section -->
 <div class="row g-4 mt-1">
-    <div class="col-lg-8">
+    <div class="col-lg-5">
         <div class="panel">
             <div class="panel-head">
-                <h5><i class="bi bi-grid-1x2-fill"></i> الوحدات الإدارية</h5>
-                <a href="{% url 'reports_overview' %}" class="btn btn-sm btn-light"><i class="bi bi-bar-chart-fill"></i> التقارير</a>
+                <h5><i class="bi bi-bell-fill"></i> تنبيهات تحتاج انتباهك</h5>
+                <span class="badge bg-light text-dark">آخر 30 يوماً</span>
+            </div>
+            <div class="panel-body">
+                {% if today.attention_total %}
+                <div class="alert-list">
+                    {% if today.repeated_absence %}
+                    <a class="alert-link" href="{% url 'absence_report' %}">
+                        <div class="alert-main"><div class="alert-dot danger"><i class="bi bi-calendar-x"></i></div><div><div class="alert-text">طلاب تكرر غيابهم 3 مرات فأكثر</div><div class="alert-sub">خلال آخر 30 يوماً</div></div></div>
+                        <div class="alert-count">{{ today.repeated_absence }}</div>
+                    </a>
+                    {% endif %}
+                    {% if today.repeated_lateness %}
+                    <a class="alert-link" href="{% url 'lateness_report' %}">
+                        <div class="alert-main"><div class="alert-dot"><i class="bi bi-clock-history"></i></div><div><div class="alert-text">طلاب تكرر تأخرهم 3 مرات فأكثر</div><div class="alert-sub">خلال آخر 30 يوماً</div></div></div>
+                        <div class="alert-count">{{ today.repeated_lateness }}</div>
+                    </a>
+                    {% endif %}
+                    {% if today.warnings %}
+                    <a class="alert-link" href="{% url 'student_discipline' %}">
+                        <div class="alert-main"><div class="alert-dot danger"><i class="bi bi-exclamation-octagon"></i></div><div><div class="alert-text">إنذارات طلاب صدرت اليوم</div><div class="alert-sub">راجع الحالات الجديدة</div></div></div>
+                        <div class="alert-count">{{ today.warnings }}</div>
+                    </a>
+                    {% endif %}
+                    {% if today.summons %}
+                    <a class="alert-link" href="{% url 'student_discipline' %}">
+                        <div class="alert-main"><div class="alert-dot info"><i class="bi bi-people"></i></div><div><div class="alert-text">استدعاءات أولياء أمور اليوم</div><div class="alert-sub">حالات جديدة تحتاج متابعة</div></div></div>
+                        <div class="alert-count">{{ today.summons }}</div>
+                    </a>
+                    {% endif %}
+                    {% if today.overdue_agenda %}
+                    <a class="alert-link" href="{% url 'agenda_list' %}">
+                        <div class="alert-main"><div class="alert-dot"><i class="bi bi-list-task"></i></div><div><div class="alert-text">مهام أجندة متأخرة</div><div class="alert-sub">تجاوزت تاريخ التنفيذ ولم تغلق</div></div></div>
+                        <div class="alert-count">{{ today.overdue_agenda }}</div>
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="all-good"><i class="bi bi-check-circle-fill"></i><strong>لا توجد تنبيهات مهمة حالياً</strong><div class="small mt-1">الوضع اليومي يبدو مستقراً.</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="panel">
+            <div class="panel-head">
+                <h5><i class="bi bi-grid-1x2-fill"></i> الإدارة والتقارير</h5>
+                <a href="{% url 'reports_overview' %}" class="btn btn-sm btn-light"><i class="bi bi-bar-chart-fill"></i> كل التقارير</a>
             </div>
             <div class="panel-body">
                 <div class="module-grid">
-                    <a class="module-tile" style="--mc:#3498db;" href="{% url 'student_list' %}">
-                        <i class="bi bi-people-fill"></i><span>إدارة الطلاب</span>
-                    </a>
-                    <a class="module-tile" style="--mc:#27ae60;" href="{% url 'teacher_list' %}">
-                        <i class="bi bi-person-badge-fill"></i><span>إدارة المعلمين</span>
-                    </a>
-                    <a class="module-tile" style="--mc:#e74c3c;" href="{% url 'reports' %}">
-                        <i class="bi bi-bar-chart-fill"></i><span>تقارير الصفوف</span>
-                    </a>
-                    {% if 'survey_view' in user_perms %}
-                    <a class="module-tile" style="--mc:#8e44ad;" href="{% url 'survey_stats' %}">
-                        <i class="bi bi-clipboard2-heart-fill"></i><span>المسح الصحي</span>
-                    </a>
-                    {% endif %}
-                    <a class="module-tile" style="--mc:#16a085;" href="{% url 'backup_data' %}">
-                        <i class="bi bi-database-fill-gear"></i><span>أدوات البيانات</span>
-                    </a>
-                    <a class="module-tile" style="--mc:#c0392b;" href="{% url 'reset_data' %}">
-                        <i class="bi bi-eraser-fill"></i><span>تفريغ البيانات</span>
-                        <small class="tile-sub">بداية العام</small>
-                    </a>
-                    <a class="module-tile" style="--mc:#2c3e50;" href="{% url 'supervisor_visit_list' %}">
-                        <i class="bi bi-person-video3"></i><span>الزيارات</span>
-                    </a>
+                    <a class="module-tile" href="{% url 'student_list' %}"><i class="bi bi-people-fill"></i><span>إدارة الطلاب</span></a>
+                    <a class="module-tile" href="{% url 'teacher_list' %}"><i class="bi bi-person-badge-fill"></i><span>إدارة المعلمين</span></a>
+                    <a class="module-tile" href="{% url 'reports' %}"><i class="bi bi-bar-chart-fill"></i><span>تقارير الصفوف</span></a>
+                    {% if 'survey_view' in user_perms %}<a class="module-tile" href="{% url 'survey_stats' %}"><i class="bi bi-clipboard2-heart-fill"></i><span>المسح الصحي</span></a>{% endif %}
+                    <a class="module-tile" href="{% url 'supervisor_visit_list' %}"><i class="bi bi-person-video3"></i><span>الزيارات</span></a>
+                    <a class="module-tile" href="{% url 'backup_data' %}"><i class="bi bi-database-fill-gear"></i><span>أدوات البيانات</span></a>
                 </div>
+                {% if user.profile.role == 'admin' %}
+                <div class="text-center mt-3"><a class="maintenance-link" href="{% url 'reset_data' %}"><i class="bi bi-gear"></i> صيانة النظام وبداية العام</a></div>
+                {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-lg-4">
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-12">
         <div class="panel">
             <div class="panel-head">
-                <h5><i class="bi bi-activity"></i> أحدث الملاحظات</h5>
-                <a href="{% url 'note_list' %}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i> الكل</a>
+                <h5><i class="bi bi-activity"></i> آخر الأحداث اليوم</h5>
+                <a href="{% url 'note_list' %}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i> كل الملاحظات</a>
             </div>
             <div class="panel-body">
                 {% if recent_notes %}
-                {% for note in recent_notes %}
-                <div class="activity-item">
-                    <div class="activity-avatar">{{ note.student.full_name|first }}</div>
-                    <div class="activity-body">
-                        <div class="activity-top">
-                            <span class="activity-title">{{ note.student.full_name }}</span>
-                            <span class="note-type">{{ note.get_note_type_display }}</span>
+                <div class="row g-3">
+                    {% for note in recent_notes %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="activity-item">
+                            <div class="activity-avatar">{{ note.student.full_name|first }}</div>
+                            <div class="activity-body">
+                                <div class="activity-top"><span class="activity-title">{{ note.student.full_name }}</span><span class="note-type">{{ note.get_note_type_display }}</span></div>
+                                <div class="activity-text">{{ note.content|truncatechars:58 }}</div>
+                                <div class="activity-meta"><i class="bi bi-clock"></i> {{ note.created_at|timesince }}</div>
+                            </div>
                         </div>
-                        <div class="activity-text">{{ note.content|truncatechars:48 }}</div>
-                        <div class="activity-meta"><i class="bi bi-clock"></i> {{ note.created_at|timesince }}</div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
                 {% else %}
-                <div class="empty-soft">
-                    <i class="bi bi-inbox"></i>
-                    <div>لا توجد ملاحظات بعد</div>
-                </div>
+                <div class="all-good"><i class="bi bi-inbox"></i><div>لا توجد أحداث حديثة للعرض</div></div>
                 {% endif %}
             </div>
         </div>
