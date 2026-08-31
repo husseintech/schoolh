@@ -115,8 +115,10 @@
                         <td class="text-center">{% if f.absence_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
                         <td>{{ f.general_notes|default:'---'|truncatewords:8 }}</td>
                         <td class="text-center">
-                            <a href="{% url 'teacher_followup_delete' f.id %}" class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('هل أنت متأكد من حذف هذه المتابعة؟')"><i class="bi bi-trash"></i></a>
+                            <form method="post" action="{% url 'teacher_followup_delete' f.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه المتابعة؟')" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
