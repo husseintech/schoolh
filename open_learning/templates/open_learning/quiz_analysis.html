@@ -1,0 +1,18 @@
+{% extends 'school/base.html' %}
+{% block title %}تحليل الاختبار{% endblock %}
+{% block page_heading %}تحليل الاختبار: {{ quiz.title }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 mb-3"><a class="btn btn-outline-secondary btn-sm" href="{% url 'ol_lesson_builder' lesson.id %}">العودة لبناء الدرس</a><a class="btn btn-outline-primary btn-sm" href="{% url 'ol_quiz_results_report' quiz.id %}">نتائج الطلاب</a><a class="btn btn-outline-success btn-sm" href="{% url 'ol_quiz_results_xlsx' quiz.id %}">تصدير Excel</a></div>
+<div class="row g-3 mb-4 text-center">
+  <div class="col-6 col-md-2"><div class="card h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ total_students }}</div><small>طلاب الصف</small></div></div></div>
+  <div class="col-6 col-md-2"><div class="card h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ attempted }}</div><small>تقدموا</small></div></div></div>
+  <div class="col-6 col-md-2"><div class="card h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ passed }}</div><small>اجتازوا</small></div></div></div>
+  <div class="col-6 col-md-2"><div class="card h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ pass_rate }}%</div><small>نسبة النجاح</small></div></div></div>
+  <div class="col-6 col-md-2"><div class="card h-100"><div class="card-body"><div class="fs-4 fw-bold">{% if average != None %}{{ average|floatformat:1 }}%{% else %}-{% endif %}</div><small>المتوسط</small></div></div></div>
+  <div class="col-6 col-md-2"><div class="card h-100"><div class="card-body"><div class="fs-4 fw-bold">{% if highest != None %}{{ highest|floatformat:1 }}%{% else %}-{% endif %}</div><small>أعلى نتيجة</small></div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-7"><div class="card"><div class="card-header"><strong>تحليل الأسئلة</strong> <span class="small text-muted">مرتبة من الأصعب إلى الأسهل</span></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>السؤال</th><th>الإجابات</th><th>صحيحة</th><th>خاطئة</th><th>نسبة الصحة</th></tr></thead><tbody>{% for row in question_rows %}<tr><td>{{ row.question.text }}</td><td>{{ row.total }}</td><td>{{ row.correct }}</td><td>{{ row.incorrect }}</td><td><span class="badge {% if row.correct_percent < 50 %}bg-danger{% elif row.correct_percent < 75 %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ row.correct_percent }}%</span></td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted">لا توجد إجابات بعد.</td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-5"><div class="card"><div class="card-header"><strong>طلاب يحتاجون متابعة</strong></div><div class="card-body p-0"><div class="list-group list-group-flush">{% for row in risk_rows %}<div class="list-group-item"><strong>{{ row.student.full_name }}</strong><div class="small text-muted">{{ row.student.student_class }} — {% if row.best %}أفضل نتيجة {{ row.best.percentage|floatformat:1 }}%{% else %}لم يتقدم للاختبار{% endif %}</div></div>{% empty %}<div class="p-3 text-success">لا يوجد طلاب متعثرون حالياً.</div>{% endfor %}</div></div></div></div>
+</div>
+{% endblock %}
