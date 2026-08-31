@@ -28,7 +28,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-)ti@p9qago*$54_z%qwp5%wcv(js9z1mfp%8le($*!0jweq_yn')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.pythonanywhere.com', '.onrender.com', '.vercel.app']
 if os.getenv('ALLOWED_HOSTS'):
@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'school.middleware.StudentRecordAccessMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'school.middleware.WordExportMiddleware',
 ]
@@ -90,12 +91,9 @@ if database_url:
         'default': dj_database_url.config(default=database_url, conn_max_age=600, ssl_require=True)
     }
 elif os.getenv('VERCEL'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/tmp/db.sqlite3',
-        }
-    }
+    # Never silently fall back to an ephemeral SQLite database in production.
+    # This protects the live Supabase data path from accidental misconfiguration.
+    raise RuntimeError('DATABASE_URL is required when running on Vercel')
 else:
     DATABASES = {
         'default': {
@@ -129,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ar'
 
-TIME_ZONE = 'Asia/Riyadh'
+TIME_ZONE = 'Asia/Hebron'
 
 USE_I18N = True
 
@@ -154,7 +152,13 @@ STORAGES = {
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CSRF_TRUSTED_ORIGINS = ['https://*.pythonanywhere.com', 'https://*.onrender.com', 'https://schoolh-bay.vercel.app']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.pythonanywhere.com',
+    'https://*.onrender.com',
+    'https://*.vercel.app',
+    'https://schoolhh.vercel.app',
+    'https://schoolh-bay.vercel.app',
+]
 
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/dashboard/'
