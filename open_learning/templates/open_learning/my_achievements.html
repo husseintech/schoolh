@@ -1,0 +1,11 @@
+{% extends 'school/base.html' %}
+{% block title %}إنجازاتي وخطتي العلاجية{% endblock %}
+{% block page_heading %}إنجازاتي وخطتي العلاجية{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 flex-wrap mb-3"><a class="btn btn-outline-secondary btn-sm" href="{% url 'open_learning_list' %}">العودة للتعلم المفتوح</a><a class="btn btn-outline-primary btn-sm" href="{% url 'ol_student_progress' %}">تقدمي</a></div>
+<div class="row g-4">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-award"></i> الإنجازات والشارات</div><div class="card-body">{% for item in achievements %}<div class="border rounded p-3 mb-2"><div class="d-flex justify-content-between gap-2"><strong>{{ item.title }}</strong><span class="badge bg-success">{{ item.get_kind_display }}</span></div><div class="small text-muted">{{ item.lesson.title }} — {{ item.awarded_at|date:'Y-m-d H:i' }}</div>{% if item.description %}<div class="mt-2">{{ item.description }}</div>{% endif %}</div>{% empty %}<p class="text-muted mb-0">ستظهر إنجازاتك هنا عند إكمال الدروس أو الحصول على علامة كاملة.</p>{% endfor %}</div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-activity"></i> خطط المتابعة العلاجية</div><div class="card-body">{% for plan in remediation %}<div class="border border-warning rounded p-3 mb-2"><strong>{{ plan.lesson.title }}</strong>{% if plan.quiz %}<div class="small text-muted">الاختبار: {{ plan.quiz.title }}</div>{% endif %}<div class="small text-danger mt-1">{{ plan.reason }}</div><div class="mt-2">{{ plan.recommendation }}</div><a class="btn btn-sm btn-warning mt-2" href="{% url 'ol_student_learning_path' plan.lesson.id %}">العودة لمسار الدرس</a></div>{% empty %}<p class="text-success mb-0">لا توجد خطة علاجية نشطة حالياً.</p>{% endfor %}</div></div></div>
+</div>
+<div class="card mt-4"><div class="card-header"><i class="bi bi-bookmark-star"></i> مصادري المفضلة</div><div class="card-body">{% for item in favorites %}<div class="border-bottom py-2"><strong>{{ item.resource.title }}</strong><div class="small text-muted">{{ item.resource.source_name|default:'مصدر تعليمي' }}</div></div>{% empty %}<p class="text-muted mb-0">لم تضف مصادر إلى المفضلة بعد.</p>{% endfor %}</div></div>
+{% endblock %}
