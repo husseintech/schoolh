@@ -36,16 +36,16 @@ def send_push(user, title, body='', url='/'):
             if e.response is not None and e.response.status_code in (404, 410):
                 dead.append(sub.id)
             else:
-                logger.error(f'فشل إرسال إشعار: {e}')
+                logger.error('فشل إرسال إشعار ويب: %s', e)
         except Exception as e:
-            logger.error(f'خطأ في إرسال الإشعار: {e}')
+            logger.error('خطأ في إرسال الإشعار: %s', e)
     if dead:
         PushSubscription.objects.filter(id__in=dead).delete()
     return sent
 
 
 def send_visit_reminders():
-    """Create reminders exactly one day before a teacher's scheduled visit (runs lazily with every request)."""
+    """Create reminders exactly one day before a teacher's scheduled visit."""
     try:
         tomorrow = date.today() + timedelta(days=1)
         due = VisitProgram.objects.filter(visit_date=tomorrow, reminder_sent=False).select_related('teacher')
@@ -73,18 +73,17 @@ def send_visit_reminders():
                 send_push(manager, 'قرب موعد حضور معلم', text, f'/visit-program/{entry.id}/')
             VisitProgram.objects.filter(id=entry.id).update(reminder_sent=True)
     except Exception as e:
-        logger.error(f'خطأ في إرسال تذكيرات الزيارات: {e}')
+        logger.error('خطأ في إرسال تذكيرات الزيارات: %s', e)
 
 
 def send_whatsapp_message(phone_number, message):
     provider = settings.WHATSAPP_PROVIDER
     if provider == 'ultramsg':
         return _send_ultramsg(phone_number, message)
-    elif provider == 'log':
+    if provider == 'log':
         return _log_message(phone_number, message)
-    else:
-        logger.warning(f'WhatsApp provider "{provider}" غير معروف')
-        return False
+    logger.warning('WhatsApp provider "%s" غير معروف', provider)
+    return False
 
 
 def _send_ultramsg(phone_number, message):
@@ -101,28 +100,20 @@ def _send_ultramsg(phone_number, message):
         phone = '+' + phone
 
     url = f'https://api.ultramsg.com/{instance_id}/messages/chat'
-    payload = {
-        'token': token,
-        'to': phone,
-        'body': message,
-    }
+    payload = {'token': token, 'to': phone, 'body': message}
     try:
         resp = requests.post(url, data=payload, timeout=15)
         if resp.status_code == 200:
-            logger.info(f'تم إرسال واتساب إلى {phone}')
+            logger.info('تم إرسال رسالة واتساب بنجاح')
             return True
-        else:
-            logger.error(f'فشل إرسال واتساب: {resp.status_code} - {resp.text}')
-            return False
+        logger.error('فشل إرسال واتساب. status_code=%s', resp.status_code)
+        return False
     except requests.RequestException as e:
-        logger.error(f'خطأ في الاتصال بخدمة واتساب: {e}')
+        logger.error('خطأ في الاتصال بخدمة واتساب: %s', e)
         return False
 
 
 def _log_message(phone_number, message):
-    logger.info(f'[واتساب تجريبي] إلى {phone_number}: {message}')
-    print(f'\n--- رسالة واتساب (تجريبي) ---')
-    print(f'الرقم: {phone_number}')
-    print(f'الرسالة: {message}')
-    print(f'---\n')
+    # Test provider: keep the event visible in logs without storing PII or message text.
+    logger.info('[واتساب تجريبي] تم استلام طلب إرسال رسالة')
     return True
