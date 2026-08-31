@@ -1,0 +1,82 @@
+{% extends 'school/base.html' %}
+{% block title %}نتائج الاختبار{% endblock %}
+{% block page_heading %}نتائج الاختبار: {{ quiz.title }}{% endblock %}
+{% block content %}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'ol_lesson_builder' lesson.id %}" class="btn btn-outline-secondary btn-sm">العودة إلى بناء الدرس</a>
+  <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-primary btn-sm">عرض الدرس</a>
+  <button type="button" class="btn btn-outline-dark btn-sm" onclick="window.print()">طباعة التقرير</button>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3"><strong>الدرس:</strong> {{ lesson.title }}</div>
+      <div class="col-md-3"><strong>المادة:</strong> {{ lesson.subject|default:'-' }}</div>
+      <div class="col-md-3"><strong>الصفوف:</strong> {% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% empty %}-{% endfor %}</div>
+      <div class="col-md-3"><strong>نسبة النجاح:</strong> {{ quiz.passing_score }}%</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-2"><div class="card text-center h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ total_students }}</div><div class="small text-muted">طلاب الصف</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ attempted_students }}</div><div class="small text-muted">تقدموا</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ not_attempted_students }}</div><div class="small text-muted">لم يتقدموا</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center h-100"><div class="card-body"><div class="fs-4 fw-bold">{{ passed_students }}</div><div class="small text-muted">اجتازوا</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center h-100"><div class="card-body"><div class="fs-4 fw-bold">{% if average is not None %}{{ average|floatformat:1 }}%{% else %}-{% endif %}</div><div class="small text-muted">المتوسط</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center h-100"><div class="card-body"><div class="fs-4 fw-bold">{% if highest is not None %}{{ highest|floatformat:1 }}%{% else %}-{% endif %}</div><div class="small text-muted">أعلى نتيجة</div></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>علامات طلاب الصف</strong>
+    <span class="small text-muted">العلامة الأساسية = أفضل محاولة</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>اسم الطالب</th>
+          <th>الصف</th>
+          <th>الحالة</th>
+          <th>أفضل علامة</th>
+          <th>النسبة</th>
+          <th>آخر محاولة</th>
+          <th>عدد المحاولات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="fw-semibold">{{ row.student.full_name }}</td>
+          <td>{{ row.student.student_class|default:'-' }}</td>
+          {% if row.best %}
+            <td>{% if row.best.passed %}<span class="badge bg-success">ناجح</span>{% else %}<span class="badge bg-danger">لم يجتز</span>{% endif %}</td>
+            <td><strong>{{ row.best.score|floatformat:-2 }} / {{ row.best.max_score|floatformat:-2 }}</strong></td>
+            <td>{{ row.best.percentage|floatformat:1 }}%</td>
+            <td>{{ row.latest.percentage|floatformat:1 }}% <span class="small text-muted">({{ row.latest.submitted_at|date:'Y-m-d H:i' }})</span></td>
+            <td>{{ row.attempt_count }}</td>
+          {% else %}
+            <td><span class="badge bg-secondary">لم يتقدم</span></td>
+            <td>-</td><td>-</td><td>-</td><td>0</td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted py-4">لا يوجد طلاب مرتبطون بصفوف هذا الدرس.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+@media print {
+  .btn, nav, .navbar, .sidebar { display: none !important; }
+  .card { border: 1px solid #bbb !important; box-shadow: none !important; }
+  body { background: #fff !important; }
+}
+</style>
+{% endblock %}
