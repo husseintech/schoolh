@@ -9,6 +9,8 @@ class StudentRecordAccessMiddleware:
     """Protect direct student record URLs and sensitive destructive endpoints."""
 
     _student_record_re = re.compile(r'^/students/(\d+)/(detail|report)/$')
+    _student_lateness_re = re.compile(r'^/lateness/student/(\d+)/$')
+    _student_survey_re = re.compile(r'^/survey/(\d+)/$')
     _message_delete_re = re.compile(r'^/messages/(?:\d+/delete/|delete-all(?:-sent|-received)?/)$')
     _visit_program_delete_re = re.compile(r'^/visit-program/\d+/delete/$')
     _whatsapp_group_delete_re = re.compile(r'^/whatsapp-groups/\d+/delete/$')
@@ -19,6 +21,24 @@ class StudentRecordAccessMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
+
+    @staticmethod
+    def _can_access_student(user, student_id):
+        role = getattr(getattr(user, 'profile', None), 'role', None)
+        if role in ('admin', 'vice_principal', 'secretary'):
+            return True
+        if role == 'student':
+            student_profile = getattr(user, 'student_profile', None)
+            return bool(student_profile and student_profile.id == student_id)
+        if role == 'teacher':
+            teacher = getattr(user, 'teacher_profile', None)
+            if teacher:
+                from .models import Student
+                return Student.objects.filter(
+                    id=student_id,
+                    student_class__in=teacher.classes.all(),
+                ).exists()
+        return False
 
     def __call__(self, request):
         protected_delete = (
@@ -33,33 +53,28 @@ class StudentRecordAccessMiddleware:
         if protected_delete and request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
 
-        match = self._student_record_re.match(request.path)
-        if match and getattr(request, 'user', None) and request.user.is_authenticated:
-            student_id = int(match.group(1))
-            page_type = match.group(2)
-            role = getattr(getattr(request.user, 'profile', None), 'role', None)
-
-            if page_type == 'report':
-                if role != 'admin':
-                    messages.error(request, 'ليس لديك صلاحية للوصول إلى تقرير هذا الطالب')
-                    return redirect('dashboard')
-
-            elif page_type == 'detail':
-                allowed = False
-                if role in ('admin', 'vice_principal', 'secretary'):
-                    allowed = True
-                elif role == 'student':
-                    student_profile = getattr(request.user, 'student_profile', None)
-                    allowed = bool(student_profile and student_profile.id == student_id)
-                elif role == 'teacher':
-                    teacher = getattr(request.user, 'teacher_profile', None)
-                    if teacher:
-                        from .models import Student
-                        allowed = Student.objects.filter(id=student_id, student_class__in=teacher.classes.all()).exists()
-
-                if not allowed:
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated:
+            match = self._student_record_re.match(request.path)
+            if match:
+                student_id = int(match.group(1))
+                page_type = match.group(2)
+                role = getattr(getattr(user, 'profile', None), 'role', None)
+                if page_type == 'report':
+                    if role != 'admin':
+                        messages.error(request, 'ليس لديك صلاحية للوصول إلى تقرير هذا الطالب')
+                        return redirect('dashboard')
+                elif not self._can_access_student(user, student_id):
                     messages.error(request, 'ليس لديك صلاحية للوصول إلى بيانات هذا الطالب')
                     return redirect('dashboard')
+
+            for sensitive_match in (self._student_lateness_re.match(request.path), self._student_survey_re.match(request.path)):
+                if sensitive_match:
+                    student_id = int(sensitive_match.group(1))
+                    if not self._can_access_student(user, student_id):
+                        messages.error(request, 'ليس لديك صلاحية للوصول إلى بيانات هذا الطالب')
+                        return redirect('dashboard')
+                    break
 
         return self.get_response(request)
 
