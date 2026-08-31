@@ -47,8 +47,10 @@
                         <td><strong>{{ g.student_class.name }}</strong></td>
                         <td dir="ltr"><a href="{{ g.link }}" target="_blank" rel="noopener">{{ g.link }}</a></td>
                         <td class="text-center">
-                            <a href="{% url 'whatsapp_group_delete' g.id %}" class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('هل أنت متأكد من حذف الرابط؟')"><i class="bi bi-trash"></i></a>
+                            <form method="post" action="{% url 'whatsapp_group_delete' g.id %}" onsubmit="return confirm('هل أنت متأكد من حذف الرابط؟')" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
