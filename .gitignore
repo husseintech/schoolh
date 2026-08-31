@@ -13,3 +13,5 @@ db.sqlite3
 database.db
 media/
 staticfiles/
+
+# Safe redeploy marker after dashboard rollback
