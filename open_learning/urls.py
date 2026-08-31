@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, ai_views, plans_views, progress_views, learning_views, report_views, enhancement_views
+from . import views, ai_views, plans_views, progress_views, learning_views, report_views, enhancement_views, extra_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -21,6 +21,8 @@ urlpatterns = [
     path('my-progress/<int:lesson_id>/start/', progress_views.student_lesson_start, name='ol_student_lesson_start'),
     path('my-progress/<int:lesson_id>/complete/', progress_views.student_lesson_complete, name='ol_student_lesson_complete'),
     path('my-achievements/', enhancement_views.my_achievements, name='ol_my_achievements'),
+    path('student/<int:student_id>/learning-record/', extra_views.student_learning_record, name='ol_student_learning_record'),
+    path('achievement/<int:achievement_id>/certificate/', extra_views.achievement_certificate, name='ol_achievement_certificate'),
     path('learn/<int:lesson_id>/', learning_views.student_learning_path, name='ol_student_learning_path'),
     path('learn/activity/<int:activity_id>/complete/', learning_views.activity_complete, name='ol_activity_complete'),
     path('learn/quiz/<int:quiz_id>/', learning_views.quiz_take, name='ol_quiz_take'),
@@ -32,6 +34,7 @@ urlpatterns = [
     # أدوات المعلم والمتابعة والتقارير الصفية
     path('teacher-dashboard/', learning_views.teacher_learning_dashboard, name='ol_teacher_learning_dashboard'),
     path('advanced-dashboard/', enhancement_views.advanced_dashboard, name='ol_advanced_dashboard'),
+    path('oer-metadata/', extra_views.oer_metadata_manage, name='ol_oer_metadata_manage'),
     path('lessons/<int:lesson_id>/builder/', learning_views.lesson_builder, name='ol_lesson_builder'),
     path('lessons/<int:lesson_id>/smart-quiz/', enhancement_views.smart_quiz_generate, name='ol_smart_quiz_generate'),
     path('lessons/<int:lesson_id>/smart-assignment/', enhancement_views.smart_assignment_generate, name='ol_smart_assignment_generate'),
@@ -74,7 +77,7 @@ urlpatterns = [
     path('plans/<int:plan_id>/delete/', plans_views.weekly_plan_delete, name='ol_weekly_plan_delete'),
 
     path('teacher-plans/', views.teacher_plans_list, name='ol_teacher_plans'),
-    path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plan_add'),
+    path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plans_add'),
     path('teacher-plans/<int:plan_id>/delete/', views.teacher_plan_delete, name='ol_teacher_plan_delete'),
     path('teacher-plans/files/<int:file_id>/open/', views.teacher_plan_file_open, name='ol_teacher_plan_file_open'),
 ]
