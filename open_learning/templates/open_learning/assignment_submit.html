@@ -1,0 +1,16 @@
+{% extends 'school/base.html' %}
+{% block title %}تسليم الواجب{% endblock %}
+{% block page_heading %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body">
+<h5>{{ assignment.title }}</h5><p>{{ assignment.instructions|linebreaksbr }}</p>
+{% if assignment.due_at %}<div class="alert alert-light border">موعد التسليم: {{ assignment.due_at|date:'Y-m-d H:i' }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="mb-3"><label class="form-label">الإجابة</label><textarea class="form-control" rows="7" name="answer_text">{% if submission %}{{ submission.answer_text }}{% endif %}</textarea></div>
+<div class="mb-3"><label class="form-label">رابط إضافي (اختياري)</label><input type="url" class="form-control" name="answer_link" value="{% if submission %}{{ submission.answer_link }}{% endif %}" placeholder="https://..."></div>
+<button class="btn btn-primary" type="submit">حفظ وتسليم</button>
+<a class="btn btn-outline-secondary" href="{% url 'ol_student_learning_path' assignment.lesson_id %}">رجوع</a>
+</form>
+{% if submission and submission.status == 'reviewed' %}<div class="alert alert-success mt-3">العلامة: {{ submission.grade }}/{{ assignment.points }}{% if submission.feedback %}<br>ملاحظة المعلم: {{ submission.feedback }}{% endif %}</div>{% endif %}
+</div></div>
+{% endblock %}
