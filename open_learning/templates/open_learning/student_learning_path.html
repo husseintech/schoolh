@@ -1,0 +1,26 @@
+{% extends 'school/base.html' %}
+{% block title %}مسار الدرس{% endblock %}
+{% block page_heading %}{{ lesson.title }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><div class="text-muted">{{ lesson.subject.name }} — {{ student.student_class.name }}</div><h4 class="mb-0">{{ lesson.title }}</h4></div>
+  <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-primary btn-sm">عرض الدرس بالشكل الأصلي</a>
+</div>
+{% if not suite_ready %}
+<div class="alert alert-info">الواجهة الجديدة جاهزة، لكن جداول التعلم لم تُفعّل على قاعدة البيانات بعد.</div>
+{% else %}
+<div class="card mb-3"><div class="card-body">
+  <div class="d-flex justify-content-between"><strong>حالة التقدم</strong><span class="badge {% if progress.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ progress.get_status_display }}</span></div>
+</div></div>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-lightbulb"></i> الأنشطة</div><div class="card-body">
+{% if activities %}{% for a in activities %}<div class="border rounded p-3 mb-2"><div class="d-flex justify-content-between gap-2"><div><strong>{{ a.title }}</strong> <span class="badge bg-light text-dark border">{{ a.get_activity_type_display }}</span>{% if a.is_required %}<span class="badge bg-danger">إلزامي</span>{% endif %}<div class="mt-2">{{ a.instructions|linebreaksbr }}</div></div><div>{% if a.student_completed %}<span class="badge bg-success">مكتمل</span>{% else %}<form method="post" action="{% url 'ol_activity_complete' a.id %}">{% csrf_token %}<button class="btn btn-sm btn-success">تم الإنجاز</button></form>{% endif %}</div></div></div>{% endfor %}{% else %}<p class="text-muted mb-0">لا توجد أنشطة مضافة.</p>{% endif %}
+</div></div>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-ui-checks"></i> الاختبارات</div><div class="card-body">
+{% if quizzes %}{% for q in quizzes %}<div class="border rounded p-3 mb-2"><div class="d-flex flex-wrap justify-content-between gap-2"><div><strong>{{ q.title }}</strong><div class="small text-muted">النجاح {{ q.passing_score }}% — المحاولات {{ q.attempt_count }}/{{ q.max_attempts }}</div>{% if q.best_attempt %}<div class="small mt-1">أفضل نتيجة: {{ q.best_attempt.percentage }}% {% if q.best_attempt.passed %}<span class="text-success">ناجح</span>{% endif %}</div>{% endif %}</div>{% if q.can_attempt %}<a class="btn btn-primary btn-sm" href="{% url 'ol_quiz_take' q.id %}">بدء الاختبار</a>{% endif %}</div></div>{% endfor %}{% else %}<p class="text-muted mb-0">لا توجد اختبارات منشورة.</p>{% endif %}
+</div></div>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-journal-check"></i> الواجبات</div><div class="card-body">
+{% if assignments %}{% for a in assignments %}<div class="border rounded p-3 mb-2"><div class="d-flex flex-wrap justify-content-between gap-2"><div><strong>{{ a.title }}</strong><div>{{ a.instructions|linebreaksbr }}</div>{% if a.due_at %}<small class="text-muted">آخر موعد: {{ a.due_at|date:'Y-m-d H:i' }}</small>{% endif %}{% if a.student_submission %}<div class="text-success small">تم التسليم{% if a.student_submission.grade != None %} — العلامة {{ a.student_submission.grade }}/{{ a.points }}{% endif %}</div>{% endif %}</div><a class="btn btn-outline-primary btn-sm" href="{% url 'ol_assignment_submit' a.id %}">{% if a.student_submission %}تعديل التسليم{% else %}تسليم الواجب{% endif %}</a></div></div>{% endfor %}{% else %}<p class="text-muted mb-0">لا توجد واجبات منشورة.</p>{% endif %}
+</div></div>
+<div class="alert {% if can_complete %}alert-success{% else %}alert-secondary{% endif %} d-flex flex-wrap justify-content-between align-items-center gap-2"><div><strong>إنهاء الدرس:</strong> أكمل الأنشطة الإلزامية واجتز الاختبارات وسلّم الواجبات المنشورة.</div><form method="post" action="{% url 'ol_complete_learning_path' lesson.id %}">{% csrf_token %}<button class="btn btn-success" {% if not can_complete %}disabled{% endif %}>إكمال الدرس</button></form></div>
+{% endif %}
+{% endblock %}
