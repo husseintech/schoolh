@@ -74,8 +74,10 @@
                         <td>{{ l.subject|default:'---' }}</td>
                         <td>{{ l.issuing_entity|default:'---' }}</td>
                         <td class="no-print">
-                            <a href="{% url 'outgoing_delete' l.id %}" class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('هل أنت متأكد من حذف هذا الصادر؟')"><i class="bi bi-trash"></i></a>
+                            <form method="post" action="{% url 'outgoing_delete' l.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذا الصادر؟')" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
