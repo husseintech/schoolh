@@ -5,6 +5,6 @@ class OpenLearningConfig(AppConfig):
     name = 'open_learning'
 
     def ready(self):
-        # Models kept in a separate module to avoid disturbing the existing
-        # open-learning models file while this feature is being developed.
+        # Extension models are isolated while the new learning suite is developed.
         from . import progress_models  # noqa: F401
+        from . import learning_models  # noqa: F401
