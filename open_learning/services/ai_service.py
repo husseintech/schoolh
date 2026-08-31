@@ -47,9 +47,10 @@ def get_provider():
 
 
 def lesson_content_hash(lesson):
-    """بصمة محتوى الدرس: الصف + المادة + العنوان + الوصف + اللغة + الإصدار."""
+    """بصمة محتوى الدرس: الصفوف + المادة + العنوان + الوصف + اللغة + الإصدار."""
+    classes_str = ','.join(str(c) for c in lesson.student_classes.values_list('pk', flat=True).order_by('pk'))
     raw = '|'.join([
-        str(lesson.student_class_id),
+        classes_str,
         str(lesson.subject_id),
         lesson.title.strip().lower(),
         lesson.description.strip().lower(),

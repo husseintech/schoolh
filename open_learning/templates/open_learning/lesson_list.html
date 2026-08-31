@@ -70,7 +70,9 @@
                 <p class="card-text small text-muted mb-2">{{ lesson.description|truncatechars:100 }}</p>
                 <div class="small">
                     <div><i class="bi bi-easel"></i> {{ lesson.subject.name }}</div>
-                    <div><i class="bi bi-people"></i> {{ lesson.student_class.name }}</div>
+                    <div><i class="bi bi-people"></i>
+                        {% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}
+                    </div>
                     <div><i class="bi bi-person-badge"></i> {{ lesson.teacher.full_name }}</div>
                     {% if lesson.review_note %}
                     <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ lesson.review_note }}</div>

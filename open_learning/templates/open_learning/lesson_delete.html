@@ -6,7 +6,7 @@
     <div class="card-body">
         <div class="alert alert-danger">
             <i class="bi bi-exclamation-triangle-fill"></i>
-            هل أنت متأكد من حذف الدرس <strong>{{ lesson.title }}</strong> ({{ lesson.subject.name }} — {{ lesson.student_class.name }})؟
+            هل أنت متأكد من حذف الدرس <strong>{{ lesson.title }}</strong> ({{ lesson.subject.name }} — {% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %})؟
             سيتم حذف جميع موارده أيضاً ولا يمكن التراجع.
         </div>
         <form method="post">

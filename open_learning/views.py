@@ -31,11 +31,11 @@ def _teacher_of(user):
 def lesson_list(request):
     role = _role(request)
     status = request.GET.get('status', '')
-    lessons = LearningLesson.objects.select_related('student_class', 'subject', 'teacher')
+    lessons = LearningLesson.objects.select_related('subject', 'teacher').prefetch_related('student_classes')
 
     if role == 'student':
         student = request.user.student_profile
-        lessons = lessons.filter(student_class=student.student_class, status='published')
+        lessons = lessons.filter(student_classes=student.student_class, status='published')
     elif role == 'teacher':
         teacher = _teacher_of(request.user)
         if not teacher:
@@ -70,26 +70,41 @@ def lesson_add(request):
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         description = request.POST.get('description', '').strip()
-        student_class = request.POST.get('student_class', '')
+        class_ids = request.POST.getlist('student_classes')
         subject = request.POST.get('subject', '')
-        if not title or not student_class or not subject:
-            messages.error(request, 'يرجى تعبئة العنوان والصف والمادة')
+        if not title or not class_ids or not subject:
+            messages.error(request, 'يرجى تعبئة العنوان والصفوف والمادة')
         else:
-            student_class_obj = Class.objects.filter(pk=student_class).first()
+            class_objs = Class.objects.filter(pk__in=class_ids)
             subject_obj = Subject.objects.filter(pk=subject).first()
-            if not student_class_obj or not subject_obj:
-                messages.error(request, 'الصف أو المادة غير موجود')
-            elif role == 'teacher' and (student_class_obj not in teacher.classes.all() or subject_obj not in teacher.subjects.all()):
-                messages.error(request, 'يمكنك الإضافة لصفوفك وموادك فقط')
+            if not class_objs.exists() or not subject_obj:
+                messages.error(request, 'الصفوف أو المادة غير موجودة')
+            elif role == 'teacher':
+                invalid = class_objs.exclude(pk__in=teacher.classes.values_list('pk', flat=True))
+                if invalid.exists():
+                    messages.error(request, 'يمكنك الإضافة لصفوفك فقط')
+                elif subject_obj not in teacher.subjects.all():
+                    messages.error(request, 'يمكنك الإضافة لموادك فقط')
+                else:
+                    lesson = LearningLesson.objects.create(
+                        title=title,
+                        description=description,
+                        subject=subject_obj,
+                        teacher=teacher,
+                        status='draft',
+                    )
+                    lesson.student_classes.set(class_objs)
+                    messages.success(request, 'تم إنشاء الدرس كمسودة. أرسله للاعتماد عند الانتهاء.')
+                    return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
             else:
                 lesson = LearningLesson.objects.create(
                     title=title,
                     description=description,
-                    student_class=student_class_obj,
                     subject=subject_obj,
-                    teacher=teacher if role == 'teacher' else Teacher.objects.filter(pk=request.POST.get('teacher', '')).first(),
+                    teacher=Teacher.objects.filter(pk=request.POST.get('teacher', '')).first(),
                     status='draft',
                 )
+                lesson.student_classes.set(class_objs)
                 messages.success(request, 'تم إنشاء الدرس كمسودة. أرسله للاعتماد عند الانتهاء.')
                 return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
@@ -138,20 +153,36 @@ def lesson_edit(request, lesson_id):
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         description = request.POST.get('description', '').strip()
-        student_class = Class.objects.filter(pk=request.POST.get('student_class', '')).first()
+        class_ids = request.POST.getlist('student_classes')
         subject = Subject.objects.filter(pk=request.POST.get('subject', '')).first()
-        if not title or not student_class or not subject:
-            messages.error(request, 'يرجى تعبئة العنوان والصف والمادة')
-        elif role == 'teacher' and (student_class not in teacher.classes.all() or subject not in teacher.subjects.all()):
-            messages.error(request, 'يمكنك التعديل ضمن صفوفك وموادك فقط')
+        if not title or not class_ids or not subject:
+            messages.error(request, 'يرجى تعبئة العنوان والصفوف والمادة')
+        elif role == 'teacher':
+            class_objs = Class.objects.filter(pk__in=class_ids)
+            invalid = class_objs.exclude(pk__in=teacher.classes.values_list('pk', flat=True))
+            if invalid.exists():
+                messages.error(request, 'يمكنك التعديل ضمن صفوفك فقط')
+            elif subject not in teacher.subjects.all():
+                messages.error(request, 'يمكنك التعديل ضمن موادك فقط')
+            else:
+                lesson.title = title
+                lesson.description = description
+                lesson.subject = subject
+                lesson.status = 'draft'
+                lesson.review_note = ''
+                lesson.save()
+                lesson.student_classes.set(class_objs)
+                messages.success(request, 'تم تحديث الدرس وأصبح مسودة')
+                return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
         else:
+            class_objs = Class.objects.filter(pk__in=class_ids)
             lesson.title = title
             lesson.description = description
-            lesson.student_class = student_class
             lesson.subject = subject
             lesson.status = 'draft'
             lesson.review_note = ''
             lesson.save()
+            lesson.student_classes.set(class_objs)
             messages.success(request, 'تم تحديث الدرس وأصبح مسودة')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
@@ -268,13 +299,13 @@ def lesson_archive(request, lesson_id):
 @login_required
 def lesson_detail(request, lesson_id):
     lesson = get_object_or_404(
-        LearningLesson.objects.select_related('student_class', 'subject', 'teacher').prefetch_related('resources'),
+        LearningLesson.objects.select_related('subject', 'teacher').prefetch_related('student_classes', 'resources'),
         pk=lesson_id,
     )
     role = _role(request)
     if role == 'student':
         student = request.user.student_profile
-        if lesson.student_class_id != student.student_class_id or lesson.status != 'published':
+        if not lesson.student_classes.filter(pk=student.student_class_id).exists() or lesson.status != 'published':
             messages.error(request, 'لا يمكنك الاطلاع على هذا الدرس')
             return redirect('open_learning_list')
     elif role == 'teacher' and not _can_manage(request, lesson):
@@ -347,7 +378,7 @@ def resource_add(request, lesson_id):
                         uploaded.name,
                         data,
                         uploaded.content_type or 'application/octet-stream',
-                        class_name=lesson.student_class.name,
+                        class_name=', '.join(lesson.student_classes.values_list('name', flat=True)),
                         subject_name=lesson.subject.name,
                         lesson_title=lesson.title,
                     )
@@ -403,7 +434,7 @@ def resource_open(request, lesson_id, resource_id):
     lesson = resource.lesson
     role = _role(request)
     if role == 'student':
-        if lesson.student_class_id != request.user.student_profile.student_class_id or lesson.status != 'published':
+        if not lesson.student_classes.filter(pk=request.user.student_profile.student_class_id).exists() or lesson.status != 'published':
             messages.error(request, 'لا يمكنك الاطلاع على هذا الدرس')
             return redirect('open_learning_list')
         if resource.status != 'approved':

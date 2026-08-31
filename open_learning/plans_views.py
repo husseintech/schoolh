@@ -152,7 +152,7 @@ def weekly_plan_detail(request, plan_id):
                 subject = Subject.objects.filter(pk=request.POST.get(f'subject_{i}')).first() if request.POST.get(f'subject_{i}') else None
                 lesson = LearningLesson.objects.filter(
                     pk=request.POST.get(f'lesson_{i}'), teacher=plan.teacher,
-                    student_class=plan.student_class).first() if request.POST.get(f'lesson_{i}') else None
+                    student_classes=plan.student_class).first() if request.POST.get(f'lesson_{i}') else None
                 day.date = date_val
                 day.subject = subject
                 day.lesson = lesson
@@ -191,7 +191,7 @@ def weekly_plan_detail(request, plan_id):
             'is_empty': (day is None) or day.is_empty,
         })
     subjects = teacher.subjects.all() if teacher else Subject.objects.none()
-    lessons = LearningLesson.objects.filter(teacher=plan.teacher, student_class=plan.student_class)
+    lessons = LearningLesson.objects.filter(teacher=plan.teacher, student_classes=plan.student_class)
     review = plan.review if hasattr(plan, 'review') else None
     return render(request, 'open_learning/weekly_plan_detail.html', {
         'plan': plan,
@@ -208,7 +208,7 @@ def weekly_plan_detail(request, plan_id):
 def _save_day(plan, request, day):
     lesson_id = request.POST.get('lesson')
     subject_id = request.POST.get('subject')
-    lesson = LearningLesson.objects.filter(pk=lesson_id, teacher=plan.teacher, student_class=plan.student_class).first() if lesson_id else None
+    lesson = LearningLesson.objects.filter(pk=lesson_id, teacher=plan.teacher, student_classes=plan.student_class).first() if lesson_id else None
     subject = Subject.objects.filter(pk=subject_id).first() if subject_id else None
     if day is None:
         day = WeeklyPlanDay(weekly_plan=plan)

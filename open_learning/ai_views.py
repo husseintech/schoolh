@@ -16,8 +16,9 @@ from .views import _can_manage, _is_admin, _role
 
 
 def _prompt_data(lesson):
+    classes = ', '.join(lesson.student_classes.values_list('name', flat=True))
     return {
-        'grade': lesson.student_class.name if lesson.student_class else '',
+        'grade': classes or '',
         'subject': lesson.subject.name if lesson.subject else '',
         'lesson_title': lesson.title,
         'lesson_description': lesson.description,
@@ -217,7 +218,7 @@ def _execute_resource_search(request, lesson, operation, update_mode):
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
     searcher = SearchService()
-    grade = lesson.student_class.name if lesson.student_class else ''
+    grade = ', '.join(lesson.student_classes.values_list('name', flat=True))
     subject = lesson.subject.name if lesson.subject else ''
     started = time.monotonic()
     try:

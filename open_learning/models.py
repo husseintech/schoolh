@@ -26,7 +26,7 @@ class LearningLesson(models.Model):
 
     title = models.CharField('عنوان الدرس', max_length=200)
     description = models.TextField('وصف الدرس', blank=True)
-    student_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='learning_lessons', verbose_name='الصف')
+    student_classes = models.ManyToManyField(Class, verbose_name='الصفوف', blank=True, related_name='learning_lessons')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='learning_lessons', verbose_name='المادة')
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='learning_lessons', verbose_name='المعلم')
     status = models.CharField('الحالة', max_length=20, choices=STATUS_CHOICES, default='draft')
@@ -47,7 +47,8 @@ class LearningLesson(models.Model):
         ordering = ['-updated_at']
 
     def __str__(self):
-        return f'{self.title} - {self.student_class.name} - {self.subject.name}'
+        classes = ', '.join(self.student_classes.values_list('name', flat=True))
+        return f'{self.title} - {classes or "بدون صف"} - {self.subject.name}'
 
     @property
     def status_display_ar(self):

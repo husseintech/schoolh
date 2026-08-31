@@ -24,7 +24,9 @@
                 {% endif %}
                 <h5 class="mb-2"><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}</h5>
                 <div class="small text-muted">
-                    <div><i class="bi bi-easel"></i> {{ lesson.subject.name }} — <i class="bi bi-people"></i> {{ lesson.student_class.name }}</div>
+                    <div><i class="bi bi-easel"></i> {{ lesson.subject.name }} — <i class="bi bi-people"></i>
+                        {% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}
+                    </div>
                     <div><i class="bi bi-person-badge"></i> {{ lesson.teacher.full_name }}</div>
                     {% if lesson.reviewed_by %}<div><i class="bi bi-shield-check"></i> راجعه: {{ lesson.reviewed_by.username }}</div>{% endif %}
                     {% if lesson.ai_generated_at %}<div><i class="bi bi-stars"></i> أُنشئ المحتوى الذكي: {{ lesson.ai_generated_at|date:"Y-m-d H:i" }}</div>{% endif %}
