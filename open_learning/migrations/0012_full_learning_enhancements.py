@@ -112,4 +112,16 @@ class Migration(migrations.Migration):
             model_name='remediationplan',
             constraint=models.UniqueConstraint(fields=('student', 'quiz'), name='unique_student_quiz_remediation'),
         ),
+        migrations.AlterField(
+            model_name='quizquestion',
+            name='question_type',
+            field=models.CharField(
+                choices=[
+                    ('mcq', 'اختيار من متعدد'),
+                    ('true_false', 'صح/خطأ'),
+                    ('short_answer', 'إجابة قصيرة'),
+                ],
+                default='mcq', max_length=20, verbose_name='نوع السؤال',
+            ),
+        ),
     ]
