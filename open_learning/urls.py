@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, ai_views, plans_views
+from . import views, ai_views, plans_views, progress_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -15,6 +15,11 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/resources/add/', views.resource_add, name='open_learning_resource_add'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/delete/', views.resource_delete, name='open_learning_resource_delete'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/open/', views.resource_open, name='ol_resource_open'),
+
+    # ── تقدم الطالب (طبقة إضافية لا تغيّر عرض الدروس الحالي) ──
+    path('my-progress/', progress_views.student_progress_dashboard, name='ol_student_progress'),
+    path('my-progress/<int:lesson_id>/start/', progress_views.student_lesson_start, name='ol_student_lesson_start'),
+    path('my-progress/<int:lesson_id>/complete/', progress_views.student_lesson_complete, name='ol_student_lesson_complete'),
 
     # ── طبقة الذكاء الاصطناعي (أفعال يدوية فقط، بدون استدعاء تلقائي) ──
     path('ai/generate/<int:lesson_id>/', ai_views.ai_generate_content, name='open_learning_ai_generate'),
