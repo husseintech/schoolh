@@ -1,5 +1,60 @@
 import re
 
+from django.contrib import messages
+from django.shortcuts import redirect
+
+
+class StudentRecordAccessMiddleware:
+    """Protect direct student detail/report URLs without changing stored data.
+
+    - Student reports contain sensitive administrative history, so they are
+      restricted to the admin role.
+    - Student detail pages may be viewed by administrative roles, by a teacher
+      only for students in the teacher's assigned classes, or by the student
+      for their own record.
+    """
+
+    _student_record_re = re.compile(r'^/students/(\d+)/(detail|report)/$')
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        match = self._student_record_re.match(request.path)
+        if match and getattr(request, 'user', None) and request.user.is_authenticated:
+            student_id = int(match.group(1))
+            page_type = match.group(2)
+            role = getattr(getattr(request.user, 'profile', None), 'role', None)
+
+            # Full student reports can include administrative/private history.
+            if page_type == 'report':
+                if role != 'admin':
+                    messages.error(request, 'ليس لديك صلاحية للوصول إلى تقرير هذا الطالب')
+                    return redirect('dashboard')
+
+            elif page_type == 'detail':
+                allowed = False
+
+                if role in ('admin', 'vice_principal', 'secretary'):
+                    allowed = True
+                elif role == 'student':
+                    student_profile = getattr(request.user, 'student_profile', None)
+                    allowed = bool(student_profile and student_profile.id == student_id)
+                elif role == 'teacher':
+                    teacher = getattr(request.user, 'teacher_profile', None)
+                    if teacher:
+                        from .models import Student
+                        allowed = Student.objects.filter(
+                            id=student_id,
+                            student_class__in=teacher.classes.all(),
+                        ).exists()
+
+                if not allowed:
+                    messages.error(request, 'ليس لديك صلاحية للوصول إلى بيانات هذا الطالب')
+                    return redirect('dashboard')
+
+        return self.get_response(request)
+
 
 class WordExportMiddleware:
     """يحول أي صفحة HTML تُطلب بـ ?export=word إلى ملف Word (.doc) قابل للتحميل."""
