@@ -1,4 +1,4 @@
-name: Security regression tests
+name: Django regression tests
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
         env:
           DJANGO_DEBUG: 'False'
         run: python manage.py check
-      - name: Run security regression tests
+      - name: Run regression tests
         env:
           DJANGO_DEBUG: 'False'
-        run: python manage.py test school
+        run: python manage.py test school open_learning
