@@ -13,13 +13,14 @@ class StudentRecordAccessMiddleware:
     - Student detail pages may be viewed by administrative roles, by a teacher
       only for students in the teacher's assigned classes, or by the student
       for their own record.
-    - Destructive message/visit endpoints that already use POST forms in the UI
-      are refused on GET so a simple link cannot trigger a deletion.
+    - Destructive endpoints whose UI uses POST forms are refused on GET so a
+      simple link cannot trigger a deletion.
     """
 
     _student_record_re = re.compile(r'^/students/(\d+)/(detail|report)/$')
     _message_delete_re = re.compile(r'^/messages/(?:\d+/delete/|delete-all(?:-sent|-received)?/)$')
     _visit_program_delete_re = re.compile(r'^/visit-program/\d+/delete/$')
+    _whatsapp_group_delete_re = re.compile(r'^/whatsapp-groups/\d+/delete/$')
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -27,9 +28,13 @@ class StudentRecordAccessMiddleware:
     def __call__(self, request):
         # The current templates submit these operations as POST with CSRF tokens.
         # Refuse GET/HEAD access so deletions cannot be triggered by opening a URL.
-        if self._message_delete_re.match(request.path) or self._visit_program_delete_re.match(request.path):
-            if request.method != 'POST':
-                return HttpResponseNotAllowed(['POST'])
+        protected_delete = (
+            self._message_delete_re.match(request.path)
+            or self._visit_program_delete_re.match(request.path)
+            or self._whatsapp_group_delete_re.match(request.path)
+        )
+        if protected_delete and request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
 
         match = self._student_record_re.match(request.path)
         if match and getattr(request, 'user', None) and request.user.is_authenticated:
