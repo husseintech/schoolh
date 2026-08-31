@@ -49,8 +49,6 @@ def _link_reused_resource(lesson, src):
 
 @login_required
 def ai_generate_content(request, lesson_id):
-    """✨ إنشاء محتوى ذكي للدرس — Cache First:
-    المحتوى الموجود يقرأ من قاعدة البيانات دون أي استدعاء AI."""
     lesson = get_object_or_404(LearningLesson, pk=lesson_id)
     if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
@@ -59,14 +57,11 @@ def ai_generate_content(request, lesson_id):
     if request.method == 'POST':
         lesson.refresh_from_db()
         current_hash = lesson_content_hash(lesson)
-
-        # 1) نفس الدرس: المحتوى المخزن يطابق البصمة → عرض مخزن، صفر استهلاك
         if lesson.ai_payload and lesson.content_hash == current_hash:
             log_usage(request.user, lesson, CACHE_OPERATION, provider='cache')
             messages.info(request, 'المحتوى الذكي لهذا الدرس موجود مسبقاً — عُرض مباشرة من قاعدة البيانات دون أي استهلاك.')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
-        # 2) معلم آخر بنفس الدرس → إعادة استخدام الحزمة المخزنة (مواصفة: لا AI من جديد)
         cached_lesson = (
             LearningLesson.objects
             .filter(content_hash=current_hash, ai_status='approved', ai_payload__isnull=False)
@@ -93,7 +88,7 @@ def ai_generate_content(request, lesson_id):
         provider = get_provider()
         if not provider:
             log_usage(request.user, lesson, 'generate_content', provider='none', success=False,
-                      error='مزود الذكاء الاصطناعي غير مهيأ (AI_API_KEY)')
+                      error='مزود الذكاء الاصطناعي غير مهيأ')
             messages.error(request, 'تعذر إنشاء المحتوى الذكي حالياً، ولكن الدروس والمصادر المحفوظة ما زالت متاحة.')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
@@ -144,7 +139,6 @@ SECTION_OPERATIONS = {
 
 @login_required
 def ai_regenerate_section(request, lesson_id):
-    """توليد قسم واحد فقط (أسئلة/شرح/أنشطة) - أقل استهلاك ممكن."""
     lesson = get_object_or_404(LearningLesson, pk=lesson_id)
     if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
@@ -159,14 +153,13 @@ def ai_regenerate_section(request, lesson_id):
         provider = get_provider()
         if not provider:
             log_usage(request.user, lesson, operation, provider='none', success=False,
-                      error='مزود الذكاء الاصطناعي غير مهيأ (AI_API_KEY)')
+                      error='مزود الذكاء الاصطناعي غير مهيأ')
             messages.error(request, 'تعذر توليد هذا القسم حالياً، والمحتوى المحفوظ ما زال متاحاً.')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
         if recent_ai_operation(lesson.pk, operation):
             messages.info(request, 'تم توليد هذا القسم مؤخراً — اعرض النتيجة المحفوظة أو انتظر قليلاً.')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
-        started = time.monotonic()
         try:
             data, tokens, duration_ms = provider.generate_section(_prompt_data(lesson), op_key)
         except AIServiceUnavailable as exc:
@@ -196,10 +189,8 @@ def ai_regenerate_section(request, lesson_id):
 
 
 def _execute_resource_search(request, lesson, operation, update_mode):
-    """🔍 البحث الذكي: قاعدة البيانات أولاً ثم بحث ويب حقيقي، حفظ بلا تكرار، ولا حذف لأي مصدر."""
     current_hash = lesson_content_hash(lesson)
 
-    # 1) قاعدة البيانات أولاً: مصادر معتمدة من دروس مطابقة
     reused = 0
     for cached in (LearningLesson.objects
                    .filter(content_hash=current_hash, ai_status='approved')
@@ -212,7 +203,6 @@ def _execute_resource_search(request, lesson, operation, update_mode):
         messages.info(request, f'استُخدمت {reused} مصادر مخزنة من دروس مطابقة — دون أي بحث أو استهلاك.')
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
-    # 2) بحث ويب حقيقي فقط عند الحاجة
     if recent_ai_operation(lesson.pk, operation):
         messages.info(request, 'تم البحث عن مصادر لهذا الدرس مؤخراً — اعرض النتائج المحفوظة أو انتظر قليلاً.')
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
@@ -228,10 +218,15 @@ def _execute_resource_search(request, lesson, operation, update_mode):
         messages.error(request, 'تعذر البحث عن مصادر حالياً، والمصادر المحفوظة ما زالت متاحة.')
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
-    classified = [searcher.classify(item, lesson.title, grade, subject) for item in raw_results]
+    relevant_results = [
+        item for item in raw_results
+        if searcher.is_relevant(item, lesson.title, subject)
+    ]
+    classified = [searcher.classify(item, lesson.title, grade, subject) for item in relevant_results]
     classified = searcher.deduplicate_by_domain(classified)
 
     added = skipped_dup = skipped_invalid = skipped_archived = 0
+    skipped_irrelevant = len(raw_results) - len(relevant_results)
     for item in classified:
         from .services.ai_service import normalize_url
         norm = normalize_url(item['url'])
@@ -270,6 +265,8 @@ def _execute_resource_search(request, lesson, operation, update_mode):
     log_usage(request.user, lesson, operation, provider='web_search', duration_ms=duration_ms,
               success=True, tokens=None)
     summary = f'أُضيف {added} مصدر جديد (بانتظار اعتمادك).'
+    if skipped_irrelevant:
+        summary += f' استبعد النظام {skipped_irrelevant} نتيجة غير مرتبطة بموضوع الدرس.'
     if skipped_dup:
         summary += f' {skipped_dup} مكرراً تجاوزه النظام.'
     if skipped_invalid:
@@ -292,9 +289,8 @@ def ai_search_resources(request, lesson_id):
         'lesson': lesson,
         'title': 'البحث الذكي عن مصادر',
         'message': (
-            'سيبحث النظام عن مصادر متنوعة (فيديو، شرح، محاكاة، نشاط، تجربة، صور) باستعلامات متعددة، '
-            'يتحقق من صحة الروابط، يصنفها ويرتبها حسب الملاءمة، ثم يحفظها بانتظار اعتمادك. '
-            'لا تُحذف أي مصادر موجودة.'
+            'سيبحث النظام عن مصادر متنوعة مرتبطة مباشرة بعنوان الدرس ومادته، ويتحقق من صحة الروابط، '
+            'ويستبعد النتائج غير المرتبطة قبل حفظها بانتظار اعتمادك. لا تُحذف أي مصادر موجودة.'
         ),
         'action_url': 'open_learning_ai_search',
         'cost_notice': True,
@@ -312,10 +308,7 @@ def ai_update_resources(request, lesson_id):
     return render(request, 'open_learning/ai_confirm.html', {
         'lesson': lesson,
         'title': 'تحديث المصادر',
-        'message': (
-            'سيتم البحث عن مصادر جديدة فقط، مع منع التكرار وعدم حذف المصادر القديمة. '
-            'قد يستهلك هذا عملية ذكاء اصطناعي. هل تريد المتابعة؟'
-        ),
+        'message': 'سيتم البحث عن مصادر جديدة مرتبطة مباشرة بموضوع الدرس، مع منع التكرار وعدم حذف المصادر القديمة.',
         'action_url': 'open_learning_ai_update',
         'cost_notice': True,
     })
@@ -323,7 +316,6 @@ def ai_update_resources(request, lesson_id):
 
 @login_required
 def ai_approve_content(request, lesson_id):
-    """اعتماد المحتوى الذكي — المعلم (صاحب الدرس) أو المدير فقط."""
     lesson = get_object_or_404(LearningLesson, pk=lesson_id)
     if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
@@ -338,66 +330,45 @@ def ai_approve_content(request, lesson_id):
             messages.success(request, 'تم اعتماد المحتوى الذكي وسيظهر للطلاب عند نشر الدرس.')
         else:
             messages.warning(request, 'لا يوجد محتوى ذكي بانتظار الاعتماد.')
-        return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
-    messages.error(request, 'اعتمد المحتوى من صفحة الدرس.')
     return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
 
 @login_required
 def ai_approve_resource(request, lesson_id, resource_id):
-    resource = get_object_or_404(LearningResource, pk=resource_id, lesson_id=lesson_id)
-    if not _can_manage(request, resource.lesson):
+    lesson = get_object_or_404(LearningLesson, pk=lesson_id)
+    if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('open_learning_list')
+    resource = get_object_or_404(LearningResource, pk=resource_id, lesson=lesson)
     if request.method == 'POST':
         resource.status = 'approved'
-        resource.save()
-        if resource.library:
-            resource.library.status = 'approved'
-            resource.library.save(update_fields=['status'])
-        messages.success(request, 'تم اعتماد المصدر وسيظهر للطلاب.')
-    return redirect('open_learning_lesson_detail', lesson_id=lesson_id)
+        resource.save(update_fields=['status'])
+        if resource.library_id:
+            LearningResourceLibrary.objects.filter(pk=resource.library_id).update(status='approved')
+        messages.success(request, 'تم اعتماد المصدر.')
+    return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
 
 @login_required
 def ai_reject_resource(request, lesson_id, resource_id):
-    """رفض = أرشفة فقط، لا حذف من السجل (المواصفة: لا تحذف المصادر من التاريخ)."""
-    resource = get_object_or_404(LearningResource, pk=resource_id, lesson_id=lesson_id)
-    if not _can_manage(request, resource.lesson):
+    lesson = get_object_or_404(LearningLesson, pk=lesson_id)
+    if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('open_learning_list')
+    resource = get_object_or_404(LearningResource, pk=resource_id, lesson=lesson)
     if request.method == 'POST':
         resource.status = 'archived'
-        resource.save()
-        messages.success(request, 'تم رفض المصدر وأُرشف دون حذفه.')
-    return redirect('open_learning_lesson_detail', lesson_id=lesson_id)
+        resource.save(update_fields=['status'])
+        if resource.library_id:
+            LearningResourceLibrary.objects.filter(pk=resource.library_id).update(status='archived')
+        messages.success(request, 'تم رفض المصدر وإخفاؤه دون حذفه.')
+    return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
 
 @login_required
 def ai_dashboard(request):
     if not _is_admin(request):
-        messages.error(request, 'لوحة المراقبة لمدير المدرسة فقط')
+        messages.error(request, 'هذه الصفحة للمدير فقط.')
         return redirect('open_learning_list')
-    from django.db.models import Q
-    from .models import AIUsageLog
-
-    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    month_logs = AIUsageLog.objects.filter(created_at__gte=month_start)
-    stats = {
-        'ai_requests_month': month_logs.filter(~Q(operation=CACHE_OPERATION)).count(),
-        'success_month': month_logs.filter(~Q(operation=CACHE_OPERATION), success=True).count(),
-        'failed_month': month_logs.filter(~Q(operation=CACHE_OPERATION), success=False).count(),
-        'cache_hits': AIUsageLog.objects.filter(operation=CACHE_OPERATION).count(),
-        'total_ai_calls': AIUsageLog.objects.filter(~Q(operation=CACHE_OPERATION)).count(),
-        'generated_resources': LearningResourceLibrary.objects.filter(is_ai_generated=True).count(),
-        'stored_resources': LearningResourceLibrary.objects.count(),
-        'pending_resources': LearningResourceLibrary.objects.filter(status='pending').count(),
-        'approved_resources': LearningResourceLibrary.objects.filter(status='approved').count(),
-        'lessons_with_ai': LearningLesson.objects.exclude(ai_status='none').count(),
-    }
-    recent_logs = AIUsageLog.objects.select_related('user', 'lesson')[:30]
-    return render(request, 'open_learning/ai_dashboard.html', {
-        'stats': stats,
-        'recent_logs': recent_logs,
-        'lesson': None,
-    })
+    lessons = LearningLesson.objects.select_related('teacher', 'subject').prefetch_related('student_classes').all()
+    return render(request, 'open_learning/ai_dashboard.html', {'lessons': lessons, 'role': _role(request)})
