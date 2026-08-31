@@ -16,7 +16,6 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/delete/', views.resource_delete, name='open_learning_resource_delete'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/open/', views.resource_open, name='ol_resource_open'),
 
-    # تقدم الطالب والمسار التعليمي داخل الدرس
     path('my-progress/', progress_views.student_progress_dashboard, name='ol_student_progress'),
     path('my-progress/<int:lesson_id>/start/', progress_views.student_lesson_start, name='ol_student_lesson_start'),
     path('my-progress/<int:lesson_id>/complete/', progress_views.student_lesson_complete, name='ol_student_lesson_complete'),
@@ -31,7 +30,6 @@ urlpatterns = [
     path('resources/<int:resource_id>/favorite/', enhancement_views.toggle_favorite, name='ol_resource_favorite'),
     path('resources/<int:resource_id>/rate/', enhancement_views.rate_resource, name='ol_resource_rate'),
 
-    # أدوات المعلم والمتابعة والتقارير الصفية
     path('teacher-dashboard/', learning_views.teacher_learning_dashboard, name='ol_teacher_learning_dashboard'),
     path('advanced-dashboard/', enhancement_views.advanced_dashboard, name='ol_advanced_dashboard'),
     path('oer-metadata/', extra_views.oer_metadata_manage, name='ol_oer_metadata_manage'),
@@ -49,13 +47,11 @@ urlpatterns = [
     path('activities/<int:activity_id>/results/', report_views.activity_results_report, name='ol_activity_results_report'),
     path('assignment-submissions/<int:submission_id>/review/', learning_views.assignment_review, name='ol_assignment_review'),
 
-    # بوابة ولي الأمر
     path('guardian/', enhancement_views.guardian_portal, name='ol_guardian_portal'),
     path('guardian/student/<int:student_id>/', enhancement_views.guardian_student_detail, name='ol_guardian_student_detail'),
     path('guardian/manage/', enhancement_views.guardian_manage, name='ol_guardian_manage'),
     path('guardian/manage/<int:link_id>/unlink/', enhancement_views.guardian_unlink, name='ol_guardian_unlink'),
 
-    # طبقة الذكاء الاصطناعي (اختيارية ويدوية فقط)
     path('ai/generate/<int:lesson_id>/', ai_views.ai_generate_content, name='open_learning_ai_generate'),
     path('ai/section/<int:lesson_id>/', ai_views.ai_regenerate_section, name='open_learning_ai_section'),
     path('ai/search/<int:lesson_id>/', ai_views.ai_search_resources, name='open_learning_ai_search'),
@@ -77,7 +73,7 @@ urlpatterns = [
     path('plans/<int:plan_id>/delete/', plans_views.weekly_plan_delete, name='ol_weekly_plan_delete'),
 
     path('teacher-plans/', views.teacher_plans_list, name='ol_teacher_plans'),
-    path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plans_add'),
+    path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plan_add'),
     path('teacher-plans/<int:plan_id>/delete/', views.teacher_plan_delete, name='ol_teacher_plan_delete'),
     path('teacher-plans/files/<int:file_id>/open/', views.teacher_plan_file_open, name='ol_teacher_plan_file_open'),
 ]
