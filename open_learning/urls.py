@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, ai_views, plans_views, progress_views, learning_views
+from . import views, ai_views, plans_views, progress_views, learning_views, report_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -29,6 +29,7 @@ urlpatterns = [
     # أدوات المعلم والمتابعة
     path('teacher-dashboard/', learning_views.teacher_learning_dashboard, name='ol_teacher_learning_dashboard'),
     path('lessons/<int:lesson_id>/builder/', learning_views.lesson_builder, name='ol_lesson_builder'),
+    path('quizzes/<int:quiz_id>/results/', report_views.quiz_results_report, name='ol_quiz_results_report'),
     path('assignment-submissions/<int:submission_id>/review/', learning_views.assignment_review, name='ol_assignment_review'),
 
     # طبقة الذكاء الاصطناعي (اختيارية ويدوية فقط)
