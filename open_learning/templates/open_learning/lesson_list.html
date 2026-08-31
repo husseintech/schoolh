@@ -4,98 +4,17 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div>
-        {% if role == 'student' %}
-        <p class="text-muted mb-0">الدروس المنشورة لصفك</p>
-        {% elif role == 'teacher' %}
-        <p class="text-muted mb-0">دروسك وحالات اعتمادها</p>
-        {% else %}
-        <p class="text-muted mb-0">إدارة دروس التعلم المفتوح واعتمادها</p>
-        {% endif %}
+        {% if role == 'student' %}<p class="text-muted mb-0">الدروس المنشورة لصفك</p>
+        {% elif role == 'teacher' %}<p class="text-muted mb-0">دروسك وحالات اعتمادها</p>
+        {% else %}<p class="text-muted mb-0">إدارة دروس التعلم المفتوح واعتمادها</p>{% endif %}
     </div>
-    {% if role == 'teacher' or role == 'admin' %}
-    <a href="{% url 'open_learning_add' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> درس جديد
-    </a>
-    {% endif %}
-    {% if role == 'teacher' %}
-    <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary">
-        <i class="bi bi-calendar-week"></i> خطتي الأسبوعية
-    </a>
-    <a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-primary">
-        <i class="bi bi-file-earmark-image"></i> خططي المرفوعة
-    </a>
-    {% endif %}
-    {% if is_admin %}
-    <a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary">
-        <i class="bi bi-calendar-week"></i> متابعة الخطط الأسبوعية
-    </a>
-    <a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-file-earmark-image"></i> خطط المعلمين
-    </a>
-    <a href="{% url 'ol_storage_settings' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-google"></i> إعدادات التخزين
-    </a>
-    {% endif %}
-</div>
-
-{% if is_admin %}
-<div class="mb-3 d-flex flex-wrap gap-1">
-    <a href="{% url 'open_learning_list' %}" class="btn btn-sm {% if not current_status %}btn-dark{% else %}btn-outline-dark{% endif %}">الكل</a>
-    {% for s in statuses %}
-    <a href="{% url 'open_learning_list' %}?status={{ s.key }}" class="btn btn-sm {% if current_status == s.key %}btn-dark{% else %}btn-outline-dark{% endif %}">{{ s.label }}</a>
-    {% endfor %}
-</div>
-{% endif %}
-
-{% if lessons %}
-<div class="row g-3">
-    {% for lesson in lessons %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="card-title mb-0">
-                        <i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}
-                    </h6>
-                    <span class="badge
-                        {% if lesson.status == 'published' %}bg-success
-                        {% elif lesson.status == 'pending' %}bg-warning text-dark
-                        {% elif lesson.status == 'approved' %}bg-info
-                        {% elif lesson.status == 'rejected' %}bg-danger
-                        {% elif lesson.status == 'archived' %}bg-secondary
-                        {% else %}bg-secondary{% endif %}">
-                        {{ lesson.status_display_ar }}
-                    </span>
-                </div>
-                <p class="card-text small text-muted mb-2">{{ lesson.description|truncatechars:100 }}</p>
-                <div class="small">
-                    <div><i class="bi bi-easel"></i> {{ lesson.subject.name }}</div>
-                    <div><i class="bi bi-people"></i>
-                        {% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}
-                    </div>
-                    <div><i class="bi bi-person-badge"></i> {{ lesson.teacher.full_name }}</div>
-                    {% if lesson.review_note %}
-                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ lesson.review_note }}</div>
-                    {% endif %}
-                </div>
-                <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-sm btn-outline-primary mt-3">
-                    <i class="bi bi-eye"></i> عرض الدرس
-                </a>
-            </div>
-        </div>
+    <div class="d-flex flex-wrap gap-2">
+    {% if role == 'student' %}<a href="{% url 'ol_student_progress' %}" class="btn btn-outline-success"><i class="bi bi-graph-up-arrow"></i> تقدمي</a>{% endif %}
+    {% if role == 'teacher' or role == 'admin' %}<a href="{% url 'open_learning_add' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> درس جديد</a><a href="{% url 'ol_teacher_learning_dashboard' %}" class="btn btn-outline-success"><i class="bi bi-bar-chart"></i> متابعة التعلم</a>{% endif %}
+    {% if role == 'teacher' %}<a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary"><i class="bi bi-calendar-week"></i> خطتي الأسبوعية</a><a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-image"></i> خططي المرفوعة</a>{% endif %}
+    {% if is_admin %}<a href="{% url 'ol_weekly_plan_list' %}" class="btn btn-outline-primary"><i class="bi bi-calendar-week"></i> متابعة الخطط الأسبوعية</a><a href="{% url 'ol_teacher_plans' %}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-image"></i> خطط المعلمين</a><a href="{% url 'ol_storage_settings' %}" class="btn btn-outline-secondary"><i class="bi bi-google"></i> إعدادات التخزين</a>{% endif %}
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i>
-    {% if role == 'student' %}
-    لا توجد دروس منشورة لصفك بعد.
-    {% elif role == 'teacher' %}
-    لم تنشئ أي درس بعد. ابدأ بإنشاء درس جديد.
-    {% else %}
-    لا توجد دروس في هذه الحالة.
-    {% endif %}
-</div>
-{% endif %}
+{% if is_admin %}<div class="mb-3 d-flex flex-wrap gap-1"><a href="{% url 'open_learning_list' %}" class="btn btn-sm {% if not current_status %}btn-dark{% else %}btn-outline-dark{% endif %}">الكل</a>{% for s in statuses %}<a href="{% url 'open_learning_list' %}?status={{ s.key }}" class="btn btn-sm {% if current_status == s.key %}btn-dark{% else %}btn-outline-dark{% endif %}">{{ s.label }}</a>{% endfor %}</div>{% endif %}
+{% if lessons %}<div class="row g-3">{% for lesson in lessons %}<div class="col-md-6 col-lg-4"><div class="card h-100 shadow-sm"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between align-items-start mb-2"><h6 class="card-title mb-0"><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }}</h6><span class="badge {% if lesson.status == 'published' %}bg-success{% elif lesson.status == 'pending' %}bg-warning text-dark{% elif lesson.status == 'approved' %}bg-info{% elif lesson.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">{{ lesson.status_display_ar }}</span></div><p class="card-text small text-muted mb-2">{{ lesson.description|truncatechars:100 }}</p><div class="small"><div><i class="bi bi-easel"></i> {{ lesson.subject.name }}</div><div><i class="bi bi-people"></i> {% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}</div><div><i class="bi bi-person-badge"></i> {{ lesson.teacher.full_name }}</div>{% if lesson.review_note %}<div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ lesson.review_note }}</div>{% endif %}</div><div class="d-flex flex-wrap gap-2 mt-auto pt-3"><a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> عرض الدرس</a>{% if role == 'student' %}<a href="{% url 'ol_student_learning_path' lesson.id %}" class="btn btn-sm btn-success"><i class="bi bi-play-circle"></i> مسار التعلم</a>{% elif role == 'teacher' or is_admin %}<a href="{% url 'ol_lesson_builder' lesson.id %}" class="btn btn-sm btn-outline-success"><i class="bi bi-tools"></i> الأنشطة والاختبارات</a>{% endif %}</div></div></div></div>{% endfor %}</div>{% else %}<div class="alert alert-info"><i class="bi bi-info-circle"></i> {% if role == 'student' %}لا توجد دروس منشورة لصفك بعد.{% elif role == 'teacher' %}لم تنشئ أي درس بعد. ابدأ بإنشاء درس جديد.{% else %}لا توجد دروس في هذه الحالة.{% endif %}</div>{% endif %}
 {% endblock %}
