@@ -2,168 +2,128 @@
 {% block title %}ملف الطالب الموحد{% endblock %}
 {% block page_heading %}ملف الطالب الموحد{% endblock %}
 {% block content %}
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <span class="fw-bold"><i class="bi bi-person-circle"></i> {{ student.full_name }}</span>
-            <span class="badge bg-light text-dark border ms-2">{{ student.student_class.name|default:"بدون صف" }}</span>
-        </div>
-        <div class="d-flex flex-wrap gap-2 no-print">
-            {% if 'notes_add' in user_perms %}
-            <a href="{% url 'add_note_with_student' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> ملاحظة</a>
-            {% endif %}
-            {% if 'discipline_add' in user_perms %}
-            <a href="{% url 'add_student_warning' student.id %}" class="btn btn-danger btn-sm"><i class="bi bi-exclamation-triangle"></i> توجيه إنذار</a>
-            <a href="{% url 'add_guardian_summons' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-person-lines-fill"></i> استدعاء ولي الأمر</a>
-            {% endif %}
-            {% if 'students_edit' in user_perms %}
-            <a href="{% url 'edit_student' student.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> تعديل</a>
-            {% endif %}
-            {% if request.user.profile.role == 'admin' %}
-            <a href="{% url 'reset_student_password' student.id %}" class="btn btn-info btn-sm"><i class="bi bi-key"></i> كلمة المرور</a>
-            <a href="{% url 'student_report' student.id %}" class="btn btn-outline-dark btn-sm"><i class="bi bi-file-earmark-text"></i> التقرير الشامل</a>
-            {% endif %}
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100"><small class="text-muted d-block">رقم الهوية</small><strong>{{ student.student_id }}</strong></div></div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100"><small class="text-muted d-block">الصف</small><strong>{{ student.student_class.name|default:"-" }}</strong></div></div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100"><small class="text-muted d-block">ولي الأمر</small><strong>{{ student.parent_name|default:"-" }}</strong></div></div>
-            <div class="col-md-3">
-                <div class="border rounded p-3 text-center h-100">
-                    <small class="text-muted d-block">هاتف ولي الأمر</small>
-                    <strong>{{ student.parent_phone|default:"-" }}</strong>
-                    {% if student.parent_phone %}<a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" rel="noopener" class="btn btn-success btn-sm mt-1 no-print"><i class="bi bi-whatsapp"></i> واتساب</a>{% endif %}
+<style>
+.profile-hero{background:linear-gradient(135deg,#f8fbff,#ffffff);border:1px solid #e4eaf1;border-radius:16px;padding:20px}
+.profile-avatar{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0d6efd;color:#fff;font-size:1.6rem;font-weight:700;flex:0 0 auto}
+.profile-meta{color:#6c757d;font-size:.92rem}
+.quick-nav{display:flex;gap:8px;flex-wrap:wrap}
+.quick-nav a{text-decoration:none}
+.stat-card{display:block;border:1px solid #e3e8ef;border-radius:14px;padding:14px 10px;text-align:center;background:#fff;text-decoration:none;color:inherit;height:100%;transition:.15s ease}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(0,0,0,.08)}
+.stat-number{font-size:1.65rem;font-weight:700;line-height:1}
+.section-anchor{scroll-margin-top:90px}
+.info-tile{border:1px solid #e4e8ed;border-radius:12px;padding:12px;height:100%;background:#fff}
+.info-tile small{display:block;color:#6c757d;margin-bottom:4px}
+.section-title{display:flex;align-items:center;gap:7px;font-weight:700}
+@media (max-width:767.98px){.profile-hero{padding:14px}.profile-avatar{width:52px;height:52px;font-size:1.25rem}}
+</style>
+
+<div class="profile-hero mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="profile-avatar">{{ student.full_name|slice:":1" }}</div>
+            <div>
+                <h4 class="mb-1">{{ student.full_name }}</h4>
+                <div class="profile-meta">
+                    <span class="me-3"><i class="bi bi-mortarboard"></i> {{ student.student_class.name|default:"بدون صف" }}</span>
+                    <span class="me-3"><i class="bi bi-person-vcard"></i> {{ student.student_id }}</span>
+                    <span><i class="bi bi-clock-history"></i> آخر دخول: {% if student.user.last_login %}{{ student.user.last_login|date:"Y-m-d H:i" }}{% else %}لم يسجل الدخول بعد{% endif %}</span>
                 </div>
             </div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100"><small class="text-muted d-block">العنوان</small><strong>{{ student.address|default:"-"|truncatewords:8 }}</strong></div></div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100"><small class="text-muted d-block">تاريخ الميلاد</small><strong>{{ student.birth_date|date:"Y-m-d"|default:"-" }}</strong></div></div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100"><small class="text-muted d-block">تاريخ التسجيل</small><strong>{{ student.created_at|date:"Y-m-d" }}</strong></div></div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100 bg-light"><small class="text-muted d-block">آخر تسجيل دخول</small><strong>{% if student.user.last_login %}{{ student.user.last_login|date:"Y-m-d H:i" }}{% else %}لم يسجل الدخول بعد{% endif %}</strong></div></div>
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100 bg-light"><small class="text-muted d-block">اسم المستخدم</small><strong dir="ltr">{{ student.user.username }}</strong></div></div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 no-print">
+            {% if 'notes_add' in user_perms %}<a href="{% url 'add_note_with_student' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> ملاحظة</a>{% endif %}
+            {% if 'discipline_add' in user_perms %}
+            <a href="{% url 'add_student_warning' student.id %}" class="btn btn-danger btn-sm"><i class="bi bi-exclamation-triangle"></i> إنذار</a>
+            <a href="{% url 'add_guardian_summons' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-person-lines-fill"></i> استدعاء ولي الأمر</a>
+            {% endif %}
+            {% if 'students_edit' in user_perms %}<a href="{% url 'edit_student' student.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> تعديل</a>{% endif %}
             {% if request.user.profile.role == 'admin' %}
-            <div class="col-md-3"><div class="border rounded p-3 text-center h-100 bg-light"><small class="text-muted d-block">كلمة المرور</small><strong dir="ltr" class="text-success">{{ student.plain_password|default:"-" }}</strong><a href="{% url 'reset_student_password' student.id %}" class="d-block mt-1 small text-info no-print">تغيير</a></div></div>
+            <a href="{% url 'reset_student_password' student.id %}" class="btn btn-info btn-sm"><i class="bi bi-key"></i> كلمة المرور</a>
+            <a href="{% url 'student_report' student.id %}" class="btn btn-dark btn-sm"><i class="bi bi-file-earmark-text"></i> التقرير الشامل</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="quick-nav mt-3 no-print">
+        <a class="btn btn-outline-secondary btn-sm" href="#basic-info">البيانات الأساسية</a>
+        <a class="btn btn-outline-danger btn-sm" href="#attendance">الحضور والانضباط</a>
+        <a class="btn btn-outline-primary btn-sm" href="#education">المستوى التعليمي</a>
+        <a class="btn btn-outline-warning btn-sm" href="#followup">الملاحظات والمتابعة</a>
+        <a class="btn btn-outline-dark btn-sm" href="#guardian">ولي الأمر</a>
+    </div>
+</div>
+
+<div id="basic-info" class="card mb-4 section-anchor">
+    <div class="card-header"><div class="section-title"><i class="bi bi-person-lines-fill"></i> البيانات الأساسية والحساب</div></div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3"><div class="info-tile"><small>رقم الهوية</small><strong>{{ student.student_id }}</strong></div></div>
+            <div class="col-md-3"><div class="info-tile"><small>الصف</small><strong>{{ student.student_class.name|default:"-" }}</strong></div></div>
+            <div class="col-md-3"><div class="info-tile"><small>تاريخ الميلاد</small><strong>{{ student.birth_date|date:"Y-m-d"|default:"-" }}</strong></div></div>
+            <div class="col-md-3"><div class="info-tile"><small>تاريخ التسجيل</small><strong>{{ student.created_at|date:"Y-m-d" }}</strong></div></div>
+            <div class="col-md-6"><div class="info-tile"><small>العنوان</small><strong>{{ student.address|default:"-" }}</strong></div></div>
+            <div class="col-md-3"><div class="info-tile bg-light"><small>اسم المستخدم</small><strong dir="ltr">{{ student.user.username }}</strong></div></div>
+            <div class="col-md-3"><div class="info-tile bg-light"><small>آخر تسجيل دخول</small><strong>{% if student.user.last_login %}{{ student.user.last_login|date:"Y-m-d H:i" }}{% else %}لم يسجل الدخول بعد{% endif %}</strong></div></div>
+            {% if request.user.profile.role == 'admin' %}
+            <div class="col-md-3"><div class="info-tile bg-light"><small>كلمة المرور</small><strong dir="ltr" class="text-success">{{ student.plain_password|default:"-" }}</strong><a href="{% url 'reset_student_password' student.id %}" class="d-block small mt-1 no-print">تغيير</a></div></div>
             {% endif %}
         </div>
     </div>
 </div>
 
 <div class="card mb-4">
-    <div class="card-header"><i class="bi bi-speedometer2"></i> ملخص المتابعة</div>
+    <div class="card-header"><div class="section-title"><i class="bi bi-speedometer2"></i> ملخص المتابعة</div></div>
     <div class="card-body">
-        <div class="row g-3 text-center">
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-danger">{{ student.absences.count }}</div><small class="text-muted">أيام غياب</small></div></div>
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-warning">{{ student.lateness.count }}</div><small class="text-muted">مرات تأخير</small></div></div>
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-info">{{ student.leaves.count }}</div><small class="text-muted">أذونات مغادرة</small></div></div>
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-secondary">{{ notes.count }}</div><small class="text-muted">ملاحظات ظاهرة</small></div></div>
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-danger">{{ warnings.count }}</div><small class="text-muted">إنذارات</small></div></div>
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-warning">{{ summons.count }}</div><small class="text-muted">استدعاءات</small></div></div>
-            <div class="col-6 col-md-3 col-xl"><div class="border rounded p-3 h-100"><div class="fs-3 fw-bold text-primary">{{ levels.count }}</div><small class="text-muted">تقييمات مستوى</small></div></div>
+        <div class="row g-3">
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#attendance"><div class="stat-number text-danger">{{ student.absences.count }}</div><small class="text-muted">أيام غياب</small></a></div>
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#attendance"><div class="stat-number text-warning">{{ student.lateness.count }}</div><small class="text-muted">مرات تأخير</small></a></div>
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#attendance"><div class="stat-number text-info">{{ student.leaves.count }}</div><small class="text-muted">أذونات مغادرة</small></a></div>
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#followup"><div class="stat-number text-secondary">{{ notes.count }}</div><small class="text-muted">ملاحظات</small></a></div>
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#followup"><div class="stat-number text-danger">{{ warnings.count }}</div><small class="text-muted">إنذارات</small></a></div>
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#guardian"><div class="stat-number text-warning">{{ summons.count }}</div><small class="text-muted">استدعاءات</small></a></div>
+            <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#education"><div class="stat-number text-primary">{{ levels.count }}</div><small class="text-muted">تقييمات مستوى</small></a></div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card h-100 border-danger">
-            <div class="card-header bg-danger text-white"><i class="bi bi-calendar-x"></i> آخر الغيابات</div>
-            <div class="card-body p-0">
-                {% if student.absences.all %}
-                <div class="table-responsive"><table class="table table-sm mb-0 align-middle"><thead><tr><th>التاريخ</th><th>اليوم</th></tr></thead><tbody>
-                    {% for a in student.absences.all|slice:":8" %}<tr><td>{{ a.absence_date|date:"Y-m-d" }}</td><td>{{ a.absence_date|date:"l" }}</td></tr>{% endfor %}
-                </tbody></table></div>
-                {% else %}<p class="text-muted text-center py-4 mb-0">لا يوجد غياب مسجل</p>{% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card h-100 border-warning">
-            <div class="card-header bg-warning text-dark"><i class="bi bi-clock-history"></i> آخر التأخيرات</div>
-            <div class="card-body p-0">
-                {% if student.lateness.all %}
-                <div class="table-responsive"><table class="table table-sm mb-0 align-middle"><thead><tr><th>التاريخ</th><th>ملاحظات</th></tr></thead><tbody>
-                    {% for l in student.lateness.all|slice:":8" %}<tr><td>{{ l.date|date:"Y-m-d" }}</td><td>{{ l.notes|default:"-"|truncatewords:8 }}</td></tr>{% endfor %}
-                </tbody></table></div>
-                {% else %}<p class="text-muted text-center py-4 mb-0">لا يوجد تأخير مسجل</p>{% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card h-100 border-info">
-            <div class="card-header bg-info-subtle"><i class="bi bi-door-open"></i> آخر أذونات المغادرة</div>
-            <div class="card-body p-0">
-                {% if student.leaves.all %}
-                <div class="table-responsive"><table class="table table-sm mb-0 align-middle"><thead><tr><th>التاريخ</th><th>الوقت</th><th>السبب</th></tr></thead><tbody>
-                    {% for leave in student.leaves.all|slice:":8" %}<tr><td>{{ leave.leave_date|date:"Y-m-d" }}</td><td>{{ leave.leave_time|time:"H:i" }}</td><td>{{ leave.reason|truncatewords:6 }}</td></tr>{% endfor %}
-                </tbody></table></div>
-                {% else %}<p class="text-muted text-center py-4 mb-0">لا توجد أذونات مغادرة</p>{% endif %}
-            </div>
-        </div>
+<div id="attendance" class="section-anchor mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0"><i class="bi bi-calendar-check"></i> الحضور والانضباط</h5>{% if request.user.profile.role == 'admin' %}<a href="{% url 'student_report' student.id %}" class="btn btn-outline-secondary btn-sm no-print">عرض السجل الكامل</a>{% endif %}</div>
+    <div class="row g-4">
+        <div class="col-lg-4"><div class="card h-100 border-danger"><div class="card-header bg-danger text-white">آخر الغيابات</div><div class="card-body p-0">{% if student.absences.all %}<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>التاريخ</th><th>اليوم</th></tr></thead><tbody>{% for a in student.absences.all|slice:":6" %}<tr><td>{{ a.absence_date|date:"Y-m-d" }}</td><td>{{ a.absence_date|date:"l" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-4 mb-0">لا يوجد غياب مسجل</p>{% endif %}</div></div></div>
+        <div class="col-lg-4"><div class="card h-100 border-warning"><div class="card-header bg-warning text-dark">آخر التأخيرات</div><div class="card-body p-0">{% if student.lateness.all %}<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>التاريخ</th><th>ملاحظات</th></tr></thead><tbody>{% for l in student.lateness.all|slice:":6" %}<tr><td>{{ l.date|date:"Y-m-d" }}</td><td>{{ l.notes|default:"-"|truncatewords:7 }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-4 mb-0">لا يوجد تأخير مسجل</p>{% endif %}</div></div></div>
+        <div class="col-lg-4"><div class="card h-100 border-info"><div class="card-header bg-info-subtle">آخر أذونات المغادرة</div><div class="card-body p-0">{% if student.leaves.all %}<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>التاريخ</th><th>الوقت</th><th>السبب</th></tr></thead><tbody>{% for leave in student.leaves.all|slice:":6" %}<tr><td>{{ leave.leave_date|date:"Y-m-d" }}</td><td>{{ leave.leave_time|time:"H:i" }}</td><td>{{ leave.reason|truncatewords:5 }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-4 mb-0">لا توجد أذونات مغادرة</p>{% endif %}</div></div></div>
     </div>
 </div>
 
-<div class="row g-4 mt-1">
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header"><i class="bi bi-sticky-fill"></i> الملاحظات</div>
-            <div class="card-body">
-                {% if notes %}
-                <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>النوع</th><th>المحتوى</th><th>التاريخ</th></tr></thead><tbody>
-                    {% for note in notes|slice:":10" %}
-                    <tr><td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td><td>{{ note.content|truncatewords:10 }}</td><td>{{ note.created_at|date:"Y-m-d" }}</td></tr>
-                    {% endfor %}
-                </tbody></table></div>
-                {% if notes.count > 10 %}<a href="{% url 'student_notes' student.id %}" class="btn btn-outline-primary btn-sm no-print">عرض الكل</a>{% endif %}
-                {% else %}<p class="text-muted text-center py-3">لا توجد ملاحظات</p>{% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header"><i class="bi bi-graph-up-arrow"></i> المستويات التعليمية</div>
-            <div class="card-body">
-                {% if levels %}
-                <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>المادة</th><th>المستوى</th><th>التاريخ</th></tr></thead><tbody>
-                    {% for level in levels|slice:":10" %}
-                    <tr><td>{{ level.subject.name|default:"-" }}</td><td><span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ level.get_level_display }}</span></td><td>{{ level.created_at|date:"Y-m-d" }}</td></tr>
-                    {% endfor %}
-                </tbody></table></div>
-                {% else %}<p class="text-muted text-center py-3">لا توجد مستويات مسجلة</p>{% endif %}
-            </div>
-        </div>
+<div id="education" class="card mb-4 section-anchor">
+    <div class="card-header"><div class="section-title"><i class="bi bi-graph-up-arrow"></i> المستوى التعليمي</div></div>
+    <div class="card-body">{% if levels %}<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>المادة</th><th>المستوى</th><th>التاريخ</th></tr></thead><tbody>{% for level in levels|slice:":10" %}<tr><td>{{ level.subject.name|default:"-" }}</td><td><span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ level.get_level_display }}</span></td><td>{{ level.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-3 mb-0">لا توجد مستويات مسجلة</p>{% endif %}</div>
+</div>
+
+<div id="followup" class="section-anchor mb-4">
+    <h5 class="mb-2"><i class="bi bi-clipboard2-check"></i> الملاحظات والمتابعة</h5>
+    <div class="row g-4">
+        <div class="col-lg-6"><div class="card h-100"><div class="card-header">الملاحظات</div><div class="card-body">{% if notes %}<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>النوع</th><th>المحتوى</th><th>التاريخ</th></tr></thead><tbody>{% for note in notes|slice:":8" %}<tr><td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td><td>{{ note.content|truncatewords:10 }}</td><td>{{ note.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}</tbody></table></div>{% if notes.count > 8 %}<a href="{% url 'student_notes' student.id %}" class="btn btn-outline-primary btn-sm no-print">عرض الكل</a>{% endif %}{% else %}<p class="text-muted text-center py-3 mb-0">لا توجد ملاحظات</p>{% endif %}</div></div></div>
+        <div class="col-lg-6"><div class="card h-100 border-danger"><div class="card-header bg-danger text-white">الإنذارات</div><div class="card-body">{% if warnings %}<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>التاريخ</th><th>الوقائع</th><th class="no-print">طباعة</th></tr></thead><tbody>{% for w in warnings %}<tr><td>{{ w.incident_date|date:"Y-m-d" }}</td><td>{{ w.incident_facts|truncatewords:12 }}</td><td class="no-print"><a href="{% url 'print_student_warning' w.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i></a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-3 mb-0">لا توجد إنذارات</p>{% endif %}</div></div></div>
     </div>
 </div>
 
-<div class="row g-4 mt-1">
-    <div class="col-lg-6">
-        <div class="card border-danger h-100">
-            <div class="card-header bg-danger text-white"><i class="bi bi-exclamation-triangle-fill"></i> الإنذارات</div>
-            <div class="card-body">
-                {% if warnings %}
-                <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>تاريخ الحادثة</th><th>وقائع الحادثة</th><th>التسليم</th><th class="no-print">طباعة</th></tr></thead><tbody>
-                    {% for w in warnings %}<tr><td>{{ w.incident_date|date:"Y-m-d" }}</td><td>{{ w.incident_facts|truncatewords:12 }}</td><td>{{ w.get_delivery_method_display }}</td><td class="no-print"><a href="{% url 'print_student_warning' w.id %}" class="btn btn-outline-primary btn-sm" title="طباعة"><i class="bi bi-printer"></i></a></td></tr>{% endfor %}
-                </tbody></table></div>
-                {% else %}<p class="text-muted text-center py-3">لا توجد إنذارات</p>{% endif %}
-            </div>
+<div id="guardian" class="card mb-4 section-anchor">
+    <div class="card-header"><div class="section-title"><i class="bi bi-people"></i> ولي الأمر والاستدعاءات</div></div>
+    <div class="card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-md-5"><div class="info-tile"><small>اسم ولي الأمر</small><strong>{{ student.parent_name|default:"-" }}</strong></div></div>
+            <div class="col-md-5"><div class="info-tile"><small>هاتف ولي الأمر</small><strong dir="ltr">{{ student.parent_phone|default:"-" }}</strong></div></div>
+            <div class="col-md-2 d-flex align-items-stretch">{% if student.parent_phone %}<a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" rel="noopener" class="btn btn-success w-100 d-flex align-items-center justify-content-center no-print"><i class="bi bi-whatsapp me-1"></i> واتساب</a>{% endif %}</div>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card border-warning h-100">
-            <div class="card-header bg-warning text-dark"><i class="bi bi-person-lines-fill"></i> استدعاءات أولياء الأمور</div>
-            <div class="card-body">
-                {% if summons %}
-                <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>تاريخ الاستدعاء</th><th>نص الاستدعاء</th><th class="no-print">طباعة</th></tr></thead><tbody>
-                    {% for s in summons %}<tr><td>{{ s.summons_date|date:"Y-m-d" }}</td><td>{{ s.summons_text|truncatewords:12 }}</td><td class="no-print"><a href="{% url 'print_guardian_summons' s.id %}" class="btn btn-outline-primary btn-sm" title="طباعة"><i class="bi bi-printer"></i></a></td></tr>{% endfor %}
-                </tbody></table></div>
-                {% else %}<p class="text-muted text-center py-3">لا توجد استدعاءات</p>{% endif %}
-            </div>
-        </div>
+        {% if summons %}<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>تاريخ الاستدعاء</th><th>النص</th><th class="no-print">طباعة</th></tr></thead><tbody>{% for s in summons %}<tr><td>{{ s.summons_date|date:"Y-m-d" }}</td><td>{{ s.summons_text|truncatewords:14 }}</td><td class="no-print"><a href="{% url 'print_guardian_summons' s.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i></a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-3 mb-0">لا توجد استدعاءات لولي الأمر</p>{% endif %}
     </div>
 </div>
 
-<div class="alert alert-light border mt-4 mb-0">
-    <i class="bi bi-info-circle"></i>
-    <strong>ملف الطالب الموحد:</strong> يجمع السجل الإداري والتعليمي الموجود أصلًا في النظام في صفحة واحدة، دون إنشاء بيانات جديدة أو تغيير السجلات الحالية.
+{% if request.user.profile.role == 'admin' %}
+<div class="alert alert-primary d-flex flex-wrap justify-content-between align-items-center gap-2 mb-0">
+    <div><i class="bi bi-file-earmark-text"></i> تحتاج كل تفاصيل السجل أو الطباعة الرسمية؟ افتح تقرير الطالب الشامل.</div>
+    <a href="{% url 'student_report' student.id %}" class="btn btn-primary btn-sm no-print">فتح التقرير الشامل</a>
 </div>
+{% endif %}
 {% endblock %}
