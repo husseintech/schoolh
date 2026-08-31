@@ -1,0 +1,6 @@
+{% extends 'school/base.html' %}
+{% block title %}تقييم الواجب{% endblock %}
+{% block page_heading %}تقييم الواجب{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body"><h5>{{ submission.assignment.title }}</h5><div class="text-muted mb-3">الطالب: {{ submission.student.full_name }}</div><div class="border rounded p-3 mb-3">{{ submission.answer_text|default:'لا توجد إجابة نصية'|linebreaksbr }}{% if submission.answer_link %}<div class="mt-2"><a target="_blank" rel="noopener" href="{{ submission.answer_link }}">فتح الرابط المرفق</a></div>{% endif %}</div><form method="post">{% csrf_token %}<div class="mb-3"><label class="form-label">العلامة من {{ submission.assignment.points }}</label><input type="number" step="0.01" min="0" max="{{ submission.assignment.points }}" class="form-control" name="grade" value="{{ submission.grade|default:'' }}"></div><div class="mb-3"><label class="form-label">ملاحظة المعلم</label><textarea class="form-control" rows="4" name="feedback">{{ submission.feedback }}</textarea></div><button class="btn btn-primary">حفظ التقييم</button><a class="btn btn-outline-secondary" href="{% url 'ol_teacher_learning_dashboard' %}">رجوع</a></form></div></div>
+{% endblock %}
