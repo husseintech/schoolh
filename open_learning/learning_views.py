@@ -8,11 +8,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from school.models import Notification
+
 from .models import LearningLesson
 from .progress_models import StudentLessonProgress
 from .learning_models import (
     LessonActivity, StudentActivityCompletion, LessonQuiz, QuizQuestion,
     QuizAttempt, QuizAnswer, LessonAssignment, AssignmentSubmission,
+)
+from .services.learning_events import (
+    award_achievement, enhancements_ready, notify_lesson_students, update_remediation,
 )
 from .views import _can_manage, _is_admin, _role, _teacher_of
 
@@ -40,7 +45,9 @@ def _student(request):
 
 def _student_lesson(student, lesson_id):
     return get_object_or_404(
-        LearningLesson.objects.select_related('subject', 'teacher').prefetch_related('student_classes', 'resources'),
+        LearningLesson.objects.select_related('subject', 'teacher').prefetch_related(
+            'student_classes', 'resources', 'resources__library'
+        ),
         pk=lesson_id, status='published', student_classes=student.student_class,
     )
 
@@ -65,7 +72,10 @@ def student_learning_path(request, lesson_id):
     progress, _ = StudentLessonProgress.objects.get_or_create(student=student, lesson=lesson)
     progress.mark_started()
     activities = list(lesson.learning_activities.all())
-    completed_ids = set(StudentActivityCompletion.objects.filter(student=student, activity__lesson=lesson).values_list('activity_id', flat=True))
+    completed_ids = set(
+        StudentActivityCompletion.objects.filter(student=student, activity__lesson=lesson)
+        .values_list('activity_id', flat=True)
+    )
     for activity in activities:
         activity.student_completed = activity.id in completed_ids
 
@@ -77,7 +87,9 @@ def student_learning_path(request, lesson_id):
         quiz.can_attempt = quiz.attempt_count < quiz.max_attempts
 
     assignments = list(lesson.learning_assignments.filter(is_published=True))
-    submission_map = {s.assignment_id: s for s in AssignmentSubmission.objects.filter(student=student, assignment__lesson=lesson)}
+    submission_map = {
+        s.assignment_id: s for s in AssignmentSubmission.objects.filter(student=student, assignment__lesson=lesson)
+    }
     for assignment in assignments:
         assignment.student_submission = submission_map.get(assignment.id)
 
@@ -87,10 +99,29 @@ def student_learning_path(request, lesson_id):
     assignments_done = all(a.student_submission for a in assignments) if assignments else True
     can_complete = required_done and quizzes_done and assignments_done
 
+    remediation = []
+    achievements = []
+    favorite_ids = set()
+    if enhancements_ready():
+        from .enhancement_models import LearningAchievement, LearningResourceFavorite, RemediationPlan
+        remediation = RemediationPlan.objects.filter(
+            student=student, lesson=lesson, status='active'
+        ).select_related('quiz')
+        achievements = LearningAchievement.objects.filter(student=student, lesson=lesson)
+        favorite_ids = set(
+            LearningResourceFavorite.objects.filter(student=student).values_list('resource_id', flat=True)
+        )
+
+    resources = [r for r in lesson.resources.all() if r.status == 'approved' and r.library_id]
+    for resource in resources:
+        resource.is_favorite = resource.library_id in favorite_ids
+
     return render(request, 'open_learning/student_learning_path.html', {
         'lesson': lesson, 'student': student, 'suite_ready': True,
         'progress': progress, 'activities': activities, 'quizzes': quizzes,
         'assignments': assignments, 'can_complete': can_complete,
+        'remediation': remediation, 'achievements': achievements, 'resources': resources,
+        'enhancements_ready': enhancements_ready(),
     })
 
 
@@ -114,7 +145,10 @@ def quiz_take(request, quiz_id):
     student = _student(request)
     if not student or not learning_suite_ready():
         return _safe_redirect_not_ready(request)
-    quiz = get_object_or_404(LessonQuiz.objects.select_related('lesson').prefetch_related('questions'), pk=quiz_id, is_published=True)
+    quiz = get_object_or_404(
+        LessonQuiz.objects.select_related('lesson').prefetch_related('questions'),
+        pk=quiz_id, is_published=True,
+    )
     _student_lesson(student, quiz.lesson_id)
     attempts_count = QuizAttempt.objects.filter(student=student, quiz=quiz).count()
     if attempts_count >= quiz.max_attempts:
@@ -143,6 +177,14 @@ def quiz_take(request, quiz_id):
             attempt.save(update_fields=['score', 'percentage', 'passed'])
             progress, _ = StudentLessonProgress.objects.get_or_create(student=student, lesson=quiz.lesson)
             progress.mark_started()
+
+        update_remediation(student, quiz.lesson, quiz, attempt.percentage, attempt.passed)
+        if attempt.percentage == Decimal('100.00'):
+            award_achievement(
+                student, quiz.lesson, 'perfect_quiz',
+                f'علامة كاملة في {quiz.title}',
+                'أحرز الطالب العلامة الكاملة في الاختبار.',
+            )
         messages.success(request, f'تم تصحيح الاختبار تلقائياً. النتيجة: {attempt.percentage}%')
         return redirect('ol_student_learning_path', lesson_id=quiz.lesson_id)
 
@@ -154,7 +196,9 @@ def assignment_submit(request, assignment_id):
     student = _student(request)
     if not student or not learning_suite_ready():
         return _safe_redirect_not_ready(request)
-    assignment = get_object_or_404(LessonAssignment.objects.select_related('lesson'), pk=assignment_id, is_published=True)
+    assignment = get_object_or_404(
+        LessonAssignment.objects.select_related('lesson'), pk=assignment_id, is_published=True
+    )
     _student_lesson(student, assignment.lesson_id)
     submission = AssignmentSubmission.objects.filter(student=student, assignment=assignment).first()
     if request.method == 'POST':
@@ -165,7 +209,10 @@ def assignment_submit(request, assignment_id):
         else:
             submission, _ = AssignmentSubmission.objects.update_or_create(
                 student=student, assignment=assignment,
-                defaults={'answer_text': answer_text, 'answer_link': answer_link, 'status': 'submitted', 'grade': None, 'feedback': ''},
+                defaults={
+                    'answer_text': answer_text, 'answer_link': answer_link,
+                    'status': 'submitted', 'grade': None, 'feedback': '',
+                },
             )
             progress, _ = StudentLessonProgress.objects.get_or_create(student=student, lesson=assignment.lesson)
             progress.mark_started()
@@ -182,7 +229,10 @@ def complete_learning_path(request, lesson_id):
         return _safe_redirect_not_ready(request)
     lesson = _student_lesson(student, lesson_id)
     required_ids = set(lesson.learning_activities.filter(is_required=True).values_list('id', flat=True))
-    completed_ids = set(StudentActivityCompletion.objects.filter(student=student, activity_id__in=required_ids).values_list('activity_id', flat=True))
+    completed_ids = set(
+        StudentActivityCompletion.objects.filter(student=student, activity_id__in=required_ids)
+        .values_list('activity_id', flat=True)
+    )
     if required_ids - completed_ids:
         messages.warning(request, 'أكمل الأنشطة الإلزامية أولاً')
         return redirect('ol_student_learning_path', lesson_id=lesson.id)
@@ -196,8 +246,12 @@ def complete_learning_path(request, lesson_id):
             return redirect('ol_student_learning_path', lesson_id=lesson.id)
     progress, _ = StudentLessonProgress.objects.get_or_create(student=student, lesson=lesson)
     progress.mark_completed()
-    messages.success(request, 'أحسنت، أتممت مسار الدرس بنجاح')
-    return redirect('open_learning_list')
+    award_achievement(
+        student, lesson, 'lesson_complete', f'أكمل درس {lesson.title}',
+        'أكمل الطالب الأنشطة والاختبارات والواجبات المطلوبة في مسار الدرس.',
+    )
+    messages.success(request, 'أحسنت، أتممت مسار الدرس بنجاح وحصلت على إنجاز جديد')
+    return redirect('ol_my_achievements') if enhancements_ready() else redirect('open_learning_list')
 
 
 @login_required
@@ -209,6 +263,7 @@ def lesson_builder(request, lesson_id):
     if not learning_suite_ready():
         return render(request, 'open_learning/lesson_builder.html', {'lesson': lesson, 'suite_ready': False})
 
+    learning_link = f'/open-learning/learn/{lesson.id}/'
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'add_activity':
@@ -221,16 +276,27 @@ def lesson_builder(request, lesson_id):
                     is_required=request.POST.get('is_required') == 'on',
                     order=request.POST.get('order') or 0,
                 )
+                if lesson.status == 'published':
+                    notify_lesson_students(
+                        lesson, f'نشاط جديد: {title}',
+                        f'تمت إضافة نشاط جديد إلى درس {lesson.title}.', learning_link,
+                    )
                 messages.success(request, 'تمت إضافة النشاط')
         elif action == 'add_quiz':
             title = request.POST.get('title', '').strip()
             if title:
+                published = request.POST.get('is_published') == 'on'
                 LessonQuiz.objects.create(
                     lesson=lesson, title=title, instructions=request.POST.get('instructions', '').strip(),
                     passing_score=max(0, min(100, int(request.POST.get('passing_score') or 50))),
                     max_attempts=max(1, int(request.POST.get('max_attempts') or 2)),
-                    is_published=request.POST.get('is_published') == 'on',
+                    is_published=published,
                 )
+                if published:
+                    notify_lesson_students(
+                        lesson, f'اختبار جديد: {title}',
+                        f'تم نشر اختبار جديد في درس {lesson.title}.', learning_link,
+                    )
                 messages.success(request, 'تم إنشاء الاختبار')
         elif action == 'add_question':
             quiz = get_object_or_404(LessonQuiz, pk=request.POST.get('quiz_id'), lesson=lesson)
@@ -251,6 +317,11 @@ def lesson_builder(request, lesson_id):
             quiz = get_object_or_404(LessonQuiz, pk=request.POST.get('quiz_id'), lesson=lesson)
             quiz.is_published = not quiz.is_published
             quiz.save(update_fields=['is_published'])
+            if quiz.is_published:
+                notify_lesson_students(
+                    lesson, f'اختبار متاح: {quiz.title}',
+                    f'أصبح الاختبار متاحاً في درس {lesson.title}.', learning_link,
+                )
         elif action == 'add_assignment':
             title = request.POST.get('title', '').strip()
             instructions = request.POST.get('instructions', '').strip()
@@ -264,16 +335,29 @@ def lesson_builder(request, lesson_id):
                 except ValueError:
                     due_at = None
             if title and instructions:
+                published = request.POST.get('is_published') == 'on'
                 LessonAssignment.objects.create(
                     lesson=lesson, title=title, instructions=instructions,
                     due_at=due_at, points=max(1, int(request.POST.get('points') or 10)),
-                    is_published=request.POST.get('is_published') == 'on',
+                    is_published=published,
                 )
+                if published:
+                    notify_lesson_students(
+                        lesson, f'واجب جديد: {title}',
+                        f'تم نشر واجب جديد في درس {lesson.title}.', learning_link,
+                    )
                 messages.success(request, 'تمت إضافة الواجب')
         elif action == 'toggle_assignment':
-            assignment = get_object_or_404(LessonAssignment, pk=request.POST.get('assignment_id'), lesson=lesson)
+            assignment = get_object_or_404(
+                LessonAssignment, pk=request.POST.get('assignment_id'), lesson=lesson
+            )
             assignment.is_published = not assignment.is_published
             assignment.save(update_fields=['is_published'])
+            if assignment.is_published:
+                notify_lesson_students(
+                    lesson, f'واجب متاح: {assignment.title}',
+                    f'أصبح الواجب متاحاً في درس {lesson.title}.', learning_link,
+                )
         return redirect('ol_lesson_builder', lesson_id=lesson.id)
 
     quizzes = lesson.learning_quizzes.prefetch_related('questions').all()
@@ -324,7 +408,10 @@ def teacher_learning_dashboard(request):
 def assignment_review(request, submission_id):
     if not learning_suite_ready():
         return _safe_redirect_not_ready(request)
-    submission = get_object_or_404(AssignmentSubmission.objects.select_related('assignment__lesson', 'student'), pk=submission_id)
+    submission = get_object_or_404(
+        AssignmentSubmission.objects.select_related('assignment__lesson', 'student', 'student__user'),
+        pk=submission_id,
+    )
     lesson = submission.assignment.lesson
     if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
@@ -341,6 +428,15 @@ def assignment_review(request, submission_id):
         submission.feedback = request.POST.get('feedback', '').strip()
         submission.status = 'reviewed'
         submission.save()
-        messages.success(request, 'تم حفظ تقييم الواجب')
-        return redirect('ol_teacher_learning_dashboard')
+        Notification.objects.create(
+            user=submission.student.user,
+            title=f'تم تقييم الواجب: {submission.assignment.title}',
+            message=(
+                f'العلامة: {grade}/{submission.assignment.points}. '
+                f'{submission.feedback}' if grade is not None else submission.feedback
+            ),
+            link=f'/open-learning/learn/{lesson.id}/',
+        )
+        messages.success(request, 'تم حفظ تقييم الواجب وإشعار الطالب')
+        return redirect('ol_assignment_results_report', assignment_id=submission.assignment_id)
     return render(request, 'open_learning/assignment_review.html', {'submission': submission})

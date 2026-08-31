@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, ai_views, plans_views, progress_views, learning_views, report_views
+from . import views, ai_views, plans_views, progress_views, learning_views, report_views, enhancement_views, extra_views
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -16,25 +16,42 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/delete/', views.resource_delete, name='open_learning_resource_delete'),
     path('lessons/<int:lesson_id>/resources/<int:resource_id>/open/', views.resource_open, name='ol_resource_open'),
 
-    # تقدم الطالب والمسار التعليمي داخل الدرس
     path('my-progress/', progress_views.student_progress_dashboard, name='ol_student_progress'),
     path('my-progress/<int:lesson_id>/start/', progress_views.student_lesson_start, name='ol_student_lesson_start'),
     path('my-progress/<int:lesson_id>/complete/', progress_views.student_lesson_complete, name='ol_student_lesson_complete'),
+    path('my-achievements/', enhancement_views.my_achievements, name='ol_my_achievements'),
+    path('student/<int:student_id>/learning-record/', extra_views.student_learning_record, name='ol_student_learning_record'),
+    path('achievement/<int:achievement_id>/certificate/', extra_views.achievement_certificate, name='ol_achievement_certificate'),
     path('learn/<int:lesson_id>/', learning_views.student_learning_path, name='ol_student_learning_path'),
     path('learn/activity/<int:activity_id>/complete/', learning_views.activity_complete, name='ol_activity_complete'),
     path('learn/quiz/<int:quiz_id>/', learning_views.quiz_take, name='ol_quiz_take'),
     path('learn/assignment/<int:assignment_id>/', learning_views.assignment_submit, name='ol_assignment_submit'),
     path('learn/<int:lesson_id>/complete/', learning_views.complete_learning_path, name='ol_complete_learning_path'),
+    path('resources/<int:resource_id>/favorite/', enhancement_views.toggle_favorite, name='ol_resource_favorite'),
+    path('resources/<int:resource_id>/rate/', enhancement_views.rate_resource, name='ol_resource_rate'),
 
-    # أدوات المعلم والمتابعة والتقارير الصفية
     path('teacher-dashboard/', learning_views.teacher_learning_dashboard, name='ol_teacher_learning_dashboard'),
+    path('advanced-dashboard/', enhancement_views.advanced_dashboard, name='ol_advanced_dashboard'),
+    path('oer-metadata/', extra_views.oer_metadata_manage, name='ol_oer_metadata_manage'),
     path('lessons/<int:lesson_id>/builder/', learning_views.lesson_builder, name='ol_lesson_builder'),
+    path('lessons/<int:lesson_id>/smart-quiz/', enhancement_views.smart_quiz_generate, name='ol_smart_quiz_generate'),
+    path('lessons/<int:lesson_id>/smart-assignment/', enhancement_views.smart_assignment_generate, name='ol_smart_assignment_generate'),
+    path('questions/<int:question_id>/delete/', enhancement_views.delete_question, name='ol_question_delete'),
+    path('quizzes/<int:quiz_id>/delete/', enhancement_views.delete_quiz, name='ol_quiz_delete'),
+    path('assignments/<int:assignment_id>/delete/', enhancement_views.delete_assignment, name='ol_assignment_delete'),
     path('quizzes/<int:quiz_id>/results/', report_views.quiz_results_report, name='ol_quiz_results_report'),
+    path('quizzes/<int:quiz_id>/analysis/', enhancement_views.quiz_analysis, name='ol_quiz_analysis'),
+    path('quizzes/<int:quiz_id>/results.xlsx', enhancement_views.quiz_results_xlsx, name='ol_quiz_results_xlsx'),
+    path('quiz-attempts/<int:attempt_id>/', enhancement_views.quiz_attempt_detail, name='ol_quiz_attempt_detail'),
     path('assignments/<int:assignment_id>/results/', report_views.assignment_results_report, name='ol_assignment_results_report'),
     path('activities/<int:activity_id>/results/', report_views.activity_results_report, name='ol_activity_results_report'),
     path('assignment-submissions/<int:submission_id>/review/', learning_views.assignment_review, name='ol_assignment_review'),
 
-    # طبقة الذكاء الاصطناعي (اختيارية ويدوية فقط)
+    path('guardian/', enhancement_views.guardian_portal, name='ol_guardian_portal'),
+    path('guardian/student/<int:student_id>/', enhancement_views.guardian_student_detail, name='ol_guardian_student_detail'),
+    path('guardian/manage/', enhancement_views.guardian_manage, name='ol_guardian_manage'),
+    path('guardian/manage/<int:link_id>/unlink/', enhancement_views.guardian_unlink, name='ol_guardian_unlink'),
+
     path('ai/generate/<int:lesson_id>/', ai_views.ai_generate_content, name='open_learning_ai_generate'),
     path('ai/section/<int:lesson_id>/', ai_views.ai_regenerate_section, name='open_learning_ai_section'),
     path('ai/search/<int:lesson_id>/', ai_views.ai_search_resources, name='open_learning_ai_search'),

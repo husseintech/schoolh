@@ -6,9 +6,15 @@
 <div class="alert alert-info">المحاولة رقم {{ attempt_number }} من {{ quiz.max_attempts }} — نسبة النجاح {{ quiz.passing_score }}%</div>
 {% if quiz.instructions %}<p>{{ quiz.instructions|linebreaksbr }}</p>{% endif %}
 <form method="post">{% csrf_token %}
-{% for q in quiz.questions.all %}<div class="border rounded p-3 mb-3"><strong>{{ forloop.counter }}. {{ q.text }}</strong><div class="mt-2">
+{% for q in quiz.questions.all %}
+<div class="border rounded p-3 mb-3"><strong>{{ forloop.counter }}. {{ q.text }}</strong><div class="mt-2">
+{% if q.question_type == 'short_answer' %}
+<input class="form-control" type="text" name="q_{{ q.id }}" maxlength="500" placeholder="اكتب الإجابة القصيرة" required>
+{% else %}
 {% for option in q.options %}<div class="form-check"><input class="form-check-input" type="radio" name="q_{{ q.id }}" id="q{{ q.id }}_{{ forloop.counter }}" value="{{ option }}" required><label class="form-check-label" for="q{{ q.id }}_{{ forloop.counter }}">{{ option }}</label></div>{% endfor %}
-</div><small class="text-muted">العلامة: {{ q.points }}</small></div>{% empty %}<div class="alert alert-warning">لا توجد أسئلة في هذا الاختبار بعد.</div>{% endfor %}
+{% endif %}
+</div><small class="text-muted">العلامة: {{ q.points }}</small></div>
+{% empty %}<div class="alert alert-warning">لا توجد أسئلة في هذا الاختبار بعد.</div>{% endfor %}
 {% if quiz.questions.all %}<button class="btn btn-primary" type="submit">تسليم وتصحيح الاختبار</button>{% endif %}
 </form></div></div>
 {% endblock %}

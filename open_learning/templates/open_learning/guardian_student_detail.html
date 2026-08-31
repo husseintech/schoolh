@@ -1,0 +1,15 @@
+{% extends 'school/base.html' %}
+{% block title %}متابعة الطالب{% endblock %}
+{% block page_heading %}متابعة الطالب: {{ student.full_name }}{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 flex-wrap mb-3"><a class="btn btn-outline-secondary btn-sm" href="{% url 'ol_guardian_portal' %}">العودة لبوابة ولي الأمر</a></div>
+<div class="card mb-4"><div class="card-body"><strong>{{ student.full_name }}</strong><div class="text-muted">{{ student.student_class }} — رقم الهوية: {{ student.student_id }}</div></div></div>
+<div class="row g-4">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">آخر نتائج الاختبارات</div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>الدرس</th><th>الاختبار</th><th>النسبة</th><th>الحالة</th></tr></thead><tbody>{% for attempt in attempts %}<tr><td>{{ attempt.quiz.lesson.title }}</td><td>{{ attempt.quiz.title }}</td><td>{{ attempt.percentage|floatformat:1 }}%</td><td>{% if attempt.passed %}<span class="badge bg-success">ناجح</span>{% else %}<span class="badge bg-danger">لم يجتز</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted text-center">لا توجد محاولات بعد.</td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">الواجبات</div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>الدرس</th><th>الواجب</th><th>العلامة</th><th>الحالة</th></tr></thead><tbody>{% for s in submissions %}<tr><td>{{ s.assignment.lesson.title }}</td><td>{{ s.assignment.title }}</td><td>{% if s.grade != None %}{{ s.grade }}/{{ s.assignment.points }}{% else %}-{% endif %}</td><td>{{ s.get_status_display }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted text-center">لا توجد تسليمات بعد.</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+<div class="row g-4 mt-1">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">الإنجازات</div><div class="card-body">{% for item in achievements %}<div class="border-bottom py-2"><strong>{{ item.title }}</strong><div class="small text-muted">{{ item.lesson.title }} — {{ item.awarded_at|date:'Y-m-d' }}</div></div>{% empty %}<p class="text-muted mb-0">لا توجد إنجازات بعد.</p>{% endfor %}</div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">متابعة علاجية</div><div class="card-body">{% for plan in remediation %}<div class="border border-warning rounded p-2 mb-2"><strong>{{ plan.lesson.title }}</strong><div class="small text-danger">{{ plan.reason }}</div><div class="mt-1">{{ plan.recommendation }}</div></div>{% empty %}<p class="text-success mb-0">لا توجد خطط علاجية نشطة.</p>{% endfor %}</div></div></div>
+</div>
+{% endblock %}

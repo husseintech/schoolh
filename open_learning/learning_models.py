@@ -55,7 +55,11 @@ class LessonQuiz(models.Model):
 
 
 class QuizQuestion(models.Model):
-    TYPE_CHOICES = [('mcq', 'اختيار من متعدد'), ('true_false', 'صح/خطأ')]
+    TYPE_CHOICES = [
+        ('mcq', 'اختيار من متعدد'),
+        ('true_false', 'صح/خطأ'),
+        ('short_answer', 'إجابة قصيرة'),
+    ]
     quiz = models.ForeignKey(LessonQuiz, on_delete=models.CASCADE, related_name='questions', verbose_name='الاختبار')
     text = models.TextField('السؤال')
     question_type = models.CharField('نوع السؤال', max_length=20, choices=TYPE_CHOICES, default='mcq')
