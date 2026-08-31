@@ -3,9 +3,10 @@
 {% block page_heading %}ملف الطالب الموحد{% endblock %}
 {% block content %}
 <style>
-.profile-hero{background:linear-gradient(135deg,#f8fbff,#ffffff);border:1px solid #e4eaf1;border-radius:16px;padding:20px}
+.profile-hero{background:linear-gradient(135deg,#f8fbff,#ffffff);border:1px solid #e4eaf1;border-radius:16px;padding:20px;overflow:hidden}
 .profile-avatar{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0d6efd;color:#fff;font-size:1.6rem;font-weight:700;flex:0 0 auto}
 .profile-meta{color:#6c757d;font-size:.92rem}
+.profile-actions{display:flex;gap:8px;flex-wrap:wrap;max-width:100%}
 .quick-nav{display:flex;gap:8px;flex-wrap:wrap}
 .quick-nav a{text-decoration:none}
 .stat-card{display:block;border:1px solid #e3e8ef;border-radius:14px;padding:14px 10px;text-align:center;background:#fff;text-decoration:none;color:inherit;height:100%;transition:.15s ease}
@@ -15,6 +16,14 @@
 .info-tile{border:1px solid #e4e8ed;border-radius:12px;padding:12px;height:100%;background:#fff}
 .info-tile small{display:block;color:#6c757d;margin-bottom:4px}
 .section-title{display:flex;align-items:center;gap:7px;font-weight:700}
+.followup-state{border-radius:14px;padding:16px;border:1px solid transparent;height:100%}
+.followup-state strong{display:block;font-size:1.05rem;margin-bottom:4px}
+.followup-danger{background:#fff5f5;border-color:#f5c2c7}
+.followup-warning{background:#fffaf0;border-color:#ffe69c}
+.followup-info{background:#f4f9ff;border-color:#b6d4fe}
+.followup-success{background:#f3fbf6;border-color:#badbcc}
+.followup-note{font-size:.9rem;color:#5f6770}
+@media (max-width:991.98px){.profile-actions{width:100%;justify-content:flex-start}}
 @media (max-width:767.98px){.profile-hero{padding:14px}.profile-avatar{width:52px;height:52px;font-size:1.25rem}}
 </style>
 
@@ -31,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex flex-wrap gap-2 no-print">
+        <div class="profile-actions no-print">
             {% if 'notes_add' in user_perms %}<a href="{% url 'add_note_with_student' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-sticky"></i> ملاحظة</a>{% endif %}
             {% if 'discipline_add' in user_perms %}
             <a href="{% url 'add_student_warning' student.id %}" class="btn btn-danger btn-sm"><i class="bi bi-exclamation-triangle"></i> إنذار</a>
@@ -46,6 +55,7 @@
     </div>
     <div class="quick-nav mt-3 no-print">
         <a class="btn btn-outline-secondary btn-sm" href="#basic-info">البيانات الأساسية</a>
+        <a class="btn btn-outline-success btn-sm" href="#summary">ملخص المتابعة</a>
         <a class="btn btn-outline-danger btn-sm" href="#attendance">الحضور والانضباط</a>
         <a class="btn btn-outline-primary btn-sm" href="#education">المستوى التعليمي</a>
         <a class="btn btn-outline-warning btn-sm" href="#followup">الملاحظات والمتابعة</a>
@@ -71,9 +81,48 @@
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header"><div class="section-title"><i class="bi bi-speedometer2"></i> ملخص المتابعة</div></div>
+<div id="summary" class="card mb-4 section-anchor">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="section-title"><i class="bi bi-speedometer2"></i> ملخص المتابعة الذكي</div>
+        <small class="text-muted">قراءة سريعة مبنية على السجلات الحالية فقط</small>
+    </div>
     <div class="card-body">
+        <div class="row g-3 mb-3">
+            <div class="col-lg-8">
+                {% if warnings.count > 0 or summons.count > 0 %}
+                <div class="followup-state followup-danger">
+                    <strong><i class="bi bi-exclamation-triangle-fill"></i> يحتاج متابعة إدارية</strong>
+                    <div class="followup-note">يوجد في الملف إنذار أو استدعاء لولي الأمر. يُنصح بمراجعة قسم الملاحظات والمتابعة والسجل الكامل قبل اتخاذ أي إجراء.</div>
+                </div>
+                {% elif student.absences.count >= 5 or student.lateness.count >= 3 %}
+                <div class="followup-state followup-warning">
+                    <strong><i class="bi bi-calendar-exclamation"></i> يحتاج متابعة حضور وانضباط</strong>
+                    <div class="followup-note">مؤشرات الغياب أو التأخير تستحق المراجعة. يمكن فتح قسم الحضور والانضباط لمعرفة أحدث السجلات.</div>
+                </div>
+                {% elif not student.user.last_login %}
+                <div class="followup-state followup-info">
+                    <strong><i class="bi bi-person-check"></i> الحساب يحتاج تفعيلًا فعليًا</strong>
+                    <div class="followup-note">الطالب لم يسجل الدخول إلى النظام حتى الآن. يمكن التأكد من تسليمه اسم المستخدم وكلمة المرور.</div>
+                </div>
+                {% else %}
+                <div class="followup-state followup-success">
+                    <strong><i class="bi bi-check-circle-fill"></i> لا توجد مؤشرات متابعة عاجلة حاليًا</strong>
+                    <div class="followup-note">الملخص لا يظهر إنذارات أو استدعاءات أو مؤشرات حضور مرتفعة وفق الحدود الحالية. تبقى المراجعة التربوية للمعلم والإدارة هي الأساس.</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-4">
+                <div class="info-tile bg-light">
+                    <small>حالة الدخول للنظام</small>
+                    {% if student.user.last_login %}
+                    <strong class="text-success"><i class="bi bi-check-circle"></i> استخدم الحساب</strong>
+                    <div class="small text-muted mt-1">آخر دخول {{ student.user.last_login|date:"Y-m-d H:i" }}</div>
+                    {% else %}
+                    <strong class="text-warning"><i class="bi bi-exclamation-circle"></i> لم يسجل الدخول بعد</strong>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         <div class="row g-3">
             <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#attendance"><div class="stat-number text-danger">{{ student.absences.count }}</div><small class="text-muted">أيام غياب</small></a></div>
             <div class="col-6 col-md-3 col-xl"><a class="stat-card" href="#attendance"><div class="stat-number text-warning">{{ student.lateness.count }}</div><small class="text-muted">مرات تأخير</small></a></div>
