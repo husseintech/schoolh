@@ -27,6 +27,9 @@ class StudentRecordAccessMiddleware:
     _open_learning_resource_delete_re = re.compile(
         r'^/open-learning/lessons/\d+/resources/\d+/delete/$'
     )
+    _ol_question_delete_re = re.compile(r'^/open-learning/questions/(\d+)/delete/$')
+    _ol_quiz_delete_re = re.compile(r'^/open-learning/quizzes/(\d+)/delete/$')
+    _ol_assignment_delete_re = re.compile(r'^/open-learning/assignments/(\d+)/delete/$')
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -54,6 +57,31 @@ class StudentRecordAccessMiddleware:
                 ).exists()
         return False
 
+    @staticmethod
+    def _protect_learning_history(request, question_match, quiz_match, assignment_match):
+        """Refuse destructive deletes once students have historical work attached."""
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+
+        from open_learning.learning_models import LessonAssignment, LessonQuiz, QuizQuestion
+
+        if question_match:
+            question = QuizQuestion.objects.filter(pk=int(question_match.group(1))).first()
+            if question and question.answers.exists():
+                messages.error(request, 'لا يمكن حذف السؤال لأنه مرتبط بإجابات طلاب سابقة. أوقف نشر الاختبار بدلاً من الحذف.')
+                return redirect('ol_lesson_builder', lesson_id=question.quiz.lesson_id)
+        elif quiz_match:
+            quiz = LessonQuiz.objects.filter(pk=int(quiz_match.group(1))).first()
+            if quiz and quiz.attempts.exists():
+                messages.error(request, 'لا يمكن حذف الاختبار لأنه يحتوي على نتائج ومحاولات طلاب سابقة. يمكنك إيقاف نشره مع إبقاء السجل محفوظاً.')
+                return redirect('ol_lesson_builder', lesson_id=quiz.lesson_id)
+        elif assignment_match:
+            assignment = LessonAssignment.objects.filter(pk=int(assignment_match.group(1))).first()
+            if assignment and assignment.submissions.exists():
+                messages.error(request, 'لا يمكن حذف الواجب لأنه يحتوي على تسليمات طلاب سابقة. يمكنك إيقاف نشره مع إبقاء السجل محفوظاً.')
+                return redirect('ol_lesson_builder', lesson_id=assignment.lesson_id)
+        return None
+
     def __call__(self, request):
         protected_mutation = (
             self._message_delete_re.match(request.path)
@@ -77,6 +105,16 @@ class StudentRecordAccessMiddleware:
                 return render(request, 'school/security_confirm.html')
             if request.method != 'POST':
                 return HttpResponseNotAllowed(['GET', 'POST'])
+
+        question_delete = self._ol_question_delete_re.match(request.path)
+        quiz_delete = self._ol_quiz_delete_re.match(request.path)
+        assignment_delete = self._ol_assignment_delete_re.match(request.path)
+        if question_delete or quiz_delete or assignment_delete:
+            protected_response = self._protect_learning_history(
+                request, question_delete, quiz_delete, assignment_delete
+            )
+            if protected_response is not None:
+                return protected_response
 
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
