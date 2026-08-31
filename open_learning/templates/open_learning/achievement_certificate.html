@@ -1,0 +1,8 @@
+{% extends 'school/base.html' %}
+{% block title %}شهادة إنجاز{% endblock %}
+{% block page_heading %}شهادة إنجاز{% endblock %}
+{% block content %}
+<div class="no-print d-flex gap-2 mb-3"><button class="btn btn-dark" onclick="window.print()">طباعة / حفظ PDF</button><a class="btn btn-outline-secondary" href="{% url 'ol_student_learning_record' achievement.student.id %}">العودة لسجل الطالب</a></div>
+<div class="certificate mx-auto text-center p-5"><div class="fs-5 mb-2">دولة فلسطين — وزارة التربية والتعليم العالي</div><div class="display-5 fw-bold my-4">شهادة إنجاز</div><p class="fs-5">تُمنح هذه الشهادة للطالب</p><h2 class="my-3">{{ achievement.student.full_name }}</h2><p class="fs-5">تقديراً لإنجازه</p><h4 class="text-success my-3">{{ achievement.title }}</h4><p>في درس <strong>{{ achievement.lesson.title }}</strong> — مادة {{ achievement.lesson.subject.name }}</p>{% if achievement.description %}<p class="mt-3">{{ achievement.description }}</p>{% endif %}<div class="mt-5 d-flex justify-content-around"><div>التاريخ<br><strong>{{ achievement.awarded_at|date:'Y-m-d' }}</strong></div><div>الصف<br><strong>{{ achievement.student.student_class|default:'-' }}</strong></div></div></div>
+<style>.certificate{max-width:900px;min-height:560px;border:8px double #444;background:#fff}.no-print{display:flex}@media print{.no-print,nav,.navbar,.sidebar{display:none!important}.certificate{border:8px double #000;max-width:none;min-height:95vh;margin:0!important}.container,.container-fluid{max-width:none!important}}</style>
+{% endblock %}
