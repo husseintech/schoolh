@@ -21,9 +21,6 @@ class StudentRecordAccessMiddleware:
     _reciprocal_visit_delete_re = re.compile(r'^/reciprocal-visits/\d+/delete/$')
     _agenda_mutation_re = re.compile(r'^/agenda/\d+/(?:complete|uncomplete|delete)/$')
 
-    # Legacy Open Learning actions currently use links for operations that change
-    # state. GET is converted into an explicit CSRF-protected confirmation step;
-    # the actual view is reached only by POST.
     _open_learning_confirm_re = re.compile(
         r'^/open-learning/lessons/\d+/(?:submit|approve|publish|archive)/$'
     )
@@ -37,15 +34,20 @@ class StudentRecordAccessMiddleware:
     @staticmethod
     def _can_access_student(user, student_id):
         role = getattr(getattr(user, 'profile', None), 'role', None)
-        if role in ('admin', 'vice_principal', 'secretary'):
+        if role == 'admin':
             return True
         if role == 'student':
             student_profile = getattr(user, 'student_profile', None)
             return bool(student_profile and student_profile.id == student_id)
+
+        from .models import Student, has_perm
+        if role in ('vice_principal', 'secretary'):
+            return has_perm(user, 'students', 'view')
         if role == 'teacher':
+            if not has_perm(user, 'students', 'view'):
+                return False
             teacher = getattr(user, 'teacher_profile', None)
             if teacher:
-                from .models import Student
                 return Student.objects.filter(
                     id=student_id,
                     student_class__in=teacher.classes.all(),
