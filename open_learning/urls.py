@@ -26,10 +26,12 @@ urlpatterns = [
     path('learn/assignment/<int:assignment_id>/', learning_views.assignment_submit, name='ol_assignment_submit'),
     path('learn/<int:lesson_id>/complete/', learning_views.complete_learning_path, name='ol_complete_learning_path'),
 
-    # أدوات المعلم والمتابعة
+    # أدوات المعلم والمتابعة والتقارير الصفية
     path('teacher-dashboard/', learning_views.teacher_learning_dashboard, name='ol_teacher_learning_dashboard'),
     path('lessons/<int:lesson_id>/builder/', learning_views.lesson_builder, name='ol_lesson_builder'),
     path('quizzes/<int:quiz_id>/results/', report_views.quiz_results_report, name='ol_quiz_results_report'),
+    path('assignments/<int:assignment_id>/results/', report_views.assignment_results_report, name='ol_assignment_results_report'),
+    path('activities/<int:activity_id>/results/', report_views.activity_results_report, name='ol_activity_results_report'),
     path('assignment-submissions/<int:submission_id>/review/', learning_views.assignment_review, name='ol_assignment_review'),
 
     # طبقة الذكاء الاصطناعي (اختيارية ويدوية فقط)
