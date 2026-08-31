@@ -47,6 +47,7 @@
             <a href="{% url 'add_guardian_summons' student.id %}" class="btn btn-warning btn-sm"><i class="bi bi-person-lines-fill"></i> استدعاء ولي الأمر</a>
             {% endif %}
             {% if 'students_edit' in user_perms %}<a href="{% url 'edit_student' student.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> تعديل</a>{% endif %}
+            <a href="{% url 'ol_student_learning_record' student.id %}" class="btn btn-success btn-sm"><i class="bi bi-mortarboard-fill"></i> سجل التعلم المفتوح</a>
             {% if request.user.profile.role == 'admin' %}
             <a href="{% url 'reset_student_password' student.id %}" class="btn btn-info btn-sm"><i class="bi bi-key"></i> كلمة المرور</a>
             <a href="{% url 'student_report' student.id %}" class="btn btn-dark btn-sm"><i class="bi bi-file-earmark-text"></i> التقرير الشامل</a>
@@ -58,6 +59,7 @@
         <a class="btn btn-outline-success btn-sm" href="#summary">ملخص المتابعة</a>
         <a class="btn btn-outline-danger btn-sm" href="#attendance">الحضور والانضباط</a>
         <a class="btn btn-outline-primary btn-sm" href="#education">المستوى التعليمي</a>
+        <a class="btn btn-outline-success btn-sm" href="{% url 'ol_student_learning_record' student.id %}">التعلم المفتوح</a>
         <a class="btn btn-outline-warning btn-sm" href="#followup">الملاحظات والمتابعة</a>
         <a class="btn btn-outline-dark btn-sm" href="#guardian">ولي الأمر</a>
     </div>
