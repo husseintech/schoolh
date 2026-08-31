@@ -2,21 +2,109 @@
 {% block title %}بناء مسار الدرس{% endblock %}
 {% block page_heading %}بناء مسار الدرس: {{ lesson.title }}{% endblock %}
 {% block content %}
-<div class="mb-3 d-flex gap-2 flex-wrap"><a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary btn-sm">العودة للدرس</a><a href="{% url 'ol_teacher_learning_dashboard' %}" class="btn btn-outline-primary btn-sm">لوحة المتابعة</a></div>
-{% if not suite_ready %}<div class="alert alert-info">الحزمة جاهزة في الكود، لكن جداولها لم تُفعّل على قاعدة البيانات بعد.</div>{% else %}
-<div class="row g-4">
-<div class="col-lg-6"><div class="card h-100"><div class="card-header">الأنشطة</div><div class="card-body">
-{% for a in activities %}<div class="border rounded p-2 mb-2"><div class="d-flex justify-content-between gap-2 flex-wrap"><div><strong>{{ a.title }}</strong> <span class="badge bg-light text-dark border">{{ a.get_activity_type_display }}</span>{% if a.is_required %}<span class="badge bg-danger">إلزامي</span>{% endif %}</div><a href="{% url 'ol_activity_results_report' a.id %}" class="btn btn-outline-primary btn-sm">متابعة الطلاب</a></div><div class="small mt-1">{{ a.instructions|truncatewords:20 }}</div></div>{% empty %}<p class="text-muted">لا توجد أنشطة.</p>{% endfor %}
-<hr><form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_activity"><div class="mb-2"><input class="form-control" name="title" placeholder="عنوان النشاط" required></div><div class="mb-2"><textarea class="form-control" name="instructions" rows="3" placeholder="تعليمات النشاط" required></textarea></div><div class="row g-2"><div class="col"><select class="form-select" name="activity_type"><option value="practice">تدريب</option><option value="discussion">مناقشة</option><option value="exploration">استكشاف</option><option value="project">مشروع قصير</option></select></div><div class="col"><input class="form-control" type="number" min="0" name="order" value="0"></div></div><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="is_required" id="required"><label class="form-check-label" for="required">نشاط إلزامي</label></div><button class="btn btn-primary btn-sm mt-2">إضافة النشاط</button></form>
-</div></div></div>
-<div class="col-lg-6"><div class="card h-100"><div class="card-header">الواجبات</div><div class="card-body">
-{% for a in assignments %}<div class="border rounded p-2 mb-2"><div class="d-flex justify-content-between gap-2 flex-wrap"><div><strong>{{ a.title }}</strong> <span class="badge {% if a.is_published %}bg-success{% else %}bg-secondary{% endif %}">{% if a.is_published %}منشور{% else %}مسودة{% endif %}</span></div><a href="{% url 'ol_assignment_results_report' a.id %}" class="btn btn-outline-primary btn-sm">تسليمات الطلاب</a></div><div class="small">{{ a.instructions|truncatewords:20 }}</div><form method="post" class="mt-1">{% csrf_token %}<input type="hidden" name="action" value="toggle_assignment"><input type="hidden" name="assignment_id" value="{{ a.id }}"><button class="btn btn-outline-secondary btn-sm">{% if a.is_published %}إيقاف النشر{% else %}نشر للطلاب{% endif %}</button></form></div>{% empty %}<p class="text-muted">لا توجد واجبات.</p>{% endfor %}
-<hr><form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_assignment"><div class="mb-2"><input class="form-control" name="title" placeholder="عنوان الواجب" required></div><div class="mb-2"><textarea class="form-control" name="instructions" rows="3" placeholder="تعليمات الواجب" required></textarea></div><div class="row g-2"><div class="col"><input type="datetime-local" class="form-control" name="due_at"></div><div class="col"><input type="number" min="1" class="form-control" name="points" value="10"></div></div><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="is_published" id="assignmentPublished"><label class="form-check-label" for="assignmentPublished">نشر للطلاب الآن</label></div><button class="btn btn-primary btn-sm mt-2">إضافة الواجب</button></form>
-</div></div></div>
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary btn-sm">العودة للدرس</a>
+  <a href="{% url 'ol_teacher_learning_dashboard' %}" class="btn btn-outline-primary btn-sm">لوحة المتابعة</a>
+  <a href="{% url 'ol_advanced_dashboard' %}" class="btn btn-outline-dark btn-sm">التحليل المتقدم</a>
 </div>
+{% if not suite_ready %}
+<div class="alert alert-info">الحزمة جاهزة في الكود، لكن جداولها لم تُفعّل على قاعدة البيانات بعد.</div>
+{% else %}
+
+<div class="card mb-4 border-primary">
+  <div class="card-header"><i class="bi bi-stars"></i> إنشاء ذكي للمحتوى التقويمي</div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <form method="post" action="{% url 'ol_smart_quiz_generate' lesson.id %}" class="border rounded p-3 h-100">
+          {% csrf_token %}
+          <h6>إنشاء اختبار ذكي</h6>
+          <p class="small text-muted">ينشئ مسودة أسئلة مرتبطة بعنوان الدرس ومحتواه، ولا ينشرها تلقائياً.</p>
+          <div class="row g-2">
+            <div class="col-6"><label class="form-label small">عدد الأسئلة</label><input class="form-control" type="number" name="question_count" min="3" max="20" value="5"></div>
+            <div class="col-6"><label class="form-label small">الصعوبة</label><select class="form-select" name="difficulty"><option value="easy">سهل</option><option value="medium" selected>متوسط</option><option value="hard">متقدم</option></select></div>
+          </div>
+          <button class="btn btn-primary mt-3"><i class="bi bi-stars"></i> إنشاء اختبار ذكي كمسودة</button>
+        </form>
+      </div>
+      <div class="col-lg-6">
+        <form method="post" action="{% url 'ol_smart_assignment_generate' lesson.id %}" class="border rounded p-3 h-100">
+          {% csrf_token %}
+          <h6>إنشاء واجب ذكي</h6>
+          <p class="small text-muted">ينشئ واجباً مقترحاً من موضوع الدرس والأهداف، ويبقى مسودة حتى تراجعه.</p>
+          <label class="form-label small">الصعوبة</label>
+          <select class="form-select" name="difficulty"><option value="easy">سهل</option><option value="medium" selected>متوسط</option><option value="hard">متقدم</option></select>
+          <button class="btn btn-primary mt-3"><i class="bi bi-stars"></i> إنشاء واجب ذكي كمسودة</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">الأنشطة</div><div class="card-body">
+    {% for a in activities %}
+    <div class="border rounded p-2 mb-2">
+      <div class="d-flex justify-content-between gap-2 flex-wrap"><div><strong>{{ a.title }}</strong> <span class="badge bg-light text-dark border">{{ a.get_activity_type_display }}</span>{% if a.is_required %}<span class="badge bg-danger">إلزامي</span>{% endif %}</div><a href="{% url 'ol_activity_results_report' a.id %}" class="btn btn-outline-primary btn-sm">متابعة الطلاب</a></div>
+      <div class="small mt-1">{{ a.instructions|truncatewords:20 }}</div>
+    </div>
+    {% empty %}<p class="text-muted">لا توجد أنشطة.</p>{% endfor %}
+    <hr>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_activity">
+      <div class="mb-2"><input class="form-control" name="title" placeholder="عنوان النشاط" required></div>
+      <div class="mb-2"><textarea class="form-control" name="instructions" rows="3" placeholder="تعليمات النشاط" required></textarea></div>
+      <div class="row g-2"><div class="col"><select class="form-select" name="activity_type"><option value="practice">تدريب</option><option value="discussion">مناقشة</option><option value="exploration">استكشاف</option><option value="project">مشروع قصير</option></select></div><div class="col"><input class="form-control" type="number" min="0" name="order" value="0"></div></div>
+      <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="is_required" id="required"><label class="form-check-label" for="required">نشاط إلزامي</label></div>
+      <button class="btn btn-primary btn-sm mt-2">إضافة النشاط</button>
+    </form>
+  </div></div></div>
+
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">الواجبات</div><div class="card-body">
+    {% for a in assignments %}
+    <div class="border rounded p-2 mb-2">
+      <div class="d-flex justify-content-between gap-2 flex-wrap"><div><strong>{{ a.title }}</strong> <span class="badge {% if a.is_published %}bg-success{% else %}bg-secondary{% endif %}">{% if a.is_published %}منشور{% else %}مسودة{% endif %}</span></div><div class="d-flex gap-1 flex-wrap"><a href="{% url 'ol_assignment_results_report' a.id %}" class="btn btn-outline-primary btn-sm">تسليمات الطلاب</a><form method="post" action="{% url 'ol_assignment_delete' a.id %}" onsubmit="return confirm('حذف الواجب وتسليماته؟')">{% csrf_token %}<button class="btn btn-outline-danger btn-sm">حذف</button></form></div></div>
+      <div class="small">{{ a.instructions|truncatewords:20 }}</div>
+      <form method="post" class="mt-1">{% csrf_token %}<input type="hidden" name="action" value="toggle_assignment"><input type="hidden" name="assignment_id" value="{{ a.id }}"><button class="btn btn-outline-secondary btn-sm">{% if a.is_published %}إيقاف النشر{% else %}نشر للطلاب{% endif %}</button></form>
+    </div>
+    {% empty %}<p class="text-muted">لا توجد واجبات.</p>{% endfor %}
+    <hr>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_assignment">
+      <div class="mb-2"><input class="form-control" name="title" placeholder="عنوان الواجب" required></div>
+      <div class="mb-2"><textarea class="form-control" name="instructions" rows="3" placeholder="تعليمات الواجب" required></textarea></div>
+      <div class="row g-2"><div class="col"><input type="datetime-local" class="form-control" name="due_at"></div><div class="col"><input type="number" min="1" class="form-control" name="points" value="10"></div></div>
+      <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="is_published" id="assignmentPublished"><label class="form-check-label" for="assignmentPublished">نشر للطلاب الآن</label></div>
+      <button class="btn btn-primary btn-sm mt-2">إضافة الواجب</button>
+    </form>
+  </div></div></div>
+</div>
+
 <div class="card mt-4"><div class="card-header">الاختبارات والتصحيح التلقائي</div><div class="card-body">
-{% for qz in quizzes %}<div class="border rounded p-3 mb-3"><div class="d-flex flex-wrap justify-content-between gap-2"><div><strong>{{ qz.title }}</strong> <span class="badge {% if qz.is_published %}bg-success{% else %}bg-secondary{% endif %}">{% if qz.is_published %}منشور{% else %}مسودة{% endif %}</span><div class="small text-muted">النجاح {{ qz.passing_score }}% — المحاولات {{ qz.max_attempts }}</div></div><div class="d-flex gap-2 flex-wrap"><a href="{% url 'ol_quiz_results_report' qz.id %}" class="btn btn-outline-primary btn-sm">نتائج الطلاب</a><form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_quiz"><input type="hidden" name="quiz_id" value="{{ qz.id }}"><button class="btn btn-outline-secondary btn-sm">{% if qz.is_published %}إيقاف النشر{% else %}نشر للطلاب{% endif %}</button></form></div></div><ol class="mt-2">{% for q in qz.questions.all %}<li>{{ q.text }} <span class="text-muted">({{ q.points }})</span></li>{% empty %}<li class="text-muted">لا توجد أسئلة بعد.</li>{% endfor %}</ol><form method="post" class="bg-light rounded p-2">{% csrf_token %}<input type="hidden" name="action" value="add_question"><input type="hidden" name="quiz_id" value="{{ qz.id }}"><div class="row g-2"><div class="col-md-8"><input class="form-control form-control-sm" name="text" placeholder="نص السؤال" required></div><div class="col-md-4"><select class="form-select form-select-sm" name="question_type"><option value="mcq">اختيار من متعدد</option><option value="true_false">صح/خطأ</option></select></div><div class="col-md-6"><textarea class="form-control form-control-sm" name="options" rows="3" placeholder="الخيارات، كل خيار في سطر"></textarea></div><div class="col-md-4"><input class="form-control form-control-sm" name="correct_answer" placeholder="الإجابة الصحيحة" required></div><div class="col-md-2"><input type="number" min="1" class="form-control form-control-sm" name="points" value="1"></div></div><button class="btn btn-primary btn-sm mt-2">إضافة سؤال</button></form></div>{% empty %}<p class="text-muted">لا توجد اختبارات.</p>{% endfor %}
-<hr><h6>إنشاء اختبار جديد</h6><form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_quiz"><div class="row g-2"><div class="col-md-5"><input class="form-control" name="title" placeholder="عنوان الاختبار" required></div><div class="col-md-2"><input type="number" class="form-control" name="passing_score" min="0" max="100" value="50" title="نسبة النجاح"></div><div class="col-md-2"><input type="number" class="form-control" name="max_attempts" min="1" value="2" title="المحاولات"></div><div class="col-md-3"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="is_published" id="quizPublished"><label class="form-check-label" for="quizPublished">نشر الآن</label></div></div><div class="col-12"><textarea class="form-control" name="instructions" rows="2" placeholder="تعليمات الاختبار"></textarea></div></div><button class="btn btn-primary btn-sm mt-2">إنشاء الاختبار</button></form>
+{% for qz in quizzes %}
+<div class="border rounded p-3 mb-3">
+  <div class="d-flex flex-wrap justify-content-between gap-2">
+    <div><strong>{{ qz.title }}</strong> <span class="badge {% if qz.is_published %}bg-success{% else %}bg-secondary{% endif %}">{% if qz.is_published %}منشور{% else %}مسودة{% endif %}</span><div class="small text-muted">النجاح {{ qz.passing_score }}% — المحاولات {{ qz.max_attempts }}</div></div>
+    <div class="d-flex gap-1 flex-wrap">
+      <a href="{% url 'ol_quiz_results_report' qz.id %}" class="btn btn-outline-primary btn-sm">نتائج الطلاب</a>
+      <a href="{% url 'ol_quiz_analysis' qz.id %}" class="btn btn-outline-dark btn-sm">تحليل الاختبار</a>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_quiz"><input type="hidden" name="quiz_id" value="{{ qz.id }}"><button class="btn btn-outline-secondary btn-sm">{% if qz.is_published %}إيقاف النشر{% else %}نشر للطلاب{% endif %}</button></form>
+      <form method="post" action="{% url 'ol_quiz_delete' qz.id %}" onsubmit="return confirm('حذف الاختبار ومحاولات الطلاب؟')">{% csrf_token %}<button class="btn btn-outline-danger btn-sm">حذف</button></form>
+    </div>
+  </div>
+  <div class="mt-3">
+  {% for q in qz.questions.all %}
+    <div class="d-flex justify-content-between align-items-start gap-2 border-bottom py-2"><div><strong>{{ forloop.counter }}.</strong> {{ q.text }} <span class="text-muted">({{ q.points }})</span><div class="small text-success">الإجابة الصحيحة: {{ q.correct_answer }}</div>{% if q.options %}<div class="small text-muted">الخيارات: {% for o in q.options %}{{ o }}{% if not forloop.last %} — {% endif %}{% endfor %}</div>{% endif %}</div><form method="post" action="{% url 'ol_question_delete' q.id %}" onsubmit="return confirm('حذف هذا السؤال؟')">{% csrf_token %}<button class="btn btn-outline-danger btn-sm">حذف</button></form></div>
+  {% empty %}<div class="text-muted">لا توجد أسئلة بعد.</div>{% endfor %}
+  </div>
+  <form method="post" class="bg-light rounded p-3 mt-3">{% csrf_token %}<input type="hidden" name="action" value="add_question"><input type="hidden" name="quiz_id" value="{{ qz.id }}">
+    <h6>إضافة سؤال يدوي</h6>
+    <div class="row g-2"><div class="col-md-8"><input class="form-control form-control-sm" name="text" placeholder="مثال: 5 × 6 = ؟" required></div><div class="col-md-4"><select class="form-select form-select-sm" name="question_type"><option value="mcq">اختيار من متعدد</option><option value="true_false">صح/خطأ</option></select></div><div class="col-md-6"><textarea class="form-control form-control-sm" name="options" rows="4" placeholder="اكتب الخيارات، كل خيار في سطر&#10;20&#10;25&#10;30&#10;35"></textarea></div><div class="col-md-4"><input class="form-control form-control-sm" name="correct_answer" placeholder="الإجابة الصحيحة: 30" required></div><div class="col-md-2"><input type="number" min="1" class="form-control form-control-sm" name="points" value="1"></div></div>
+    <button class="btn btn-primary btn-sm mt-2">إضافة سؤال</button>
+  </form>
+</div>
+{% empty %}<p class="text-muted">لا توجد اختبارات.</p>{% endfor %}
+<hr>
+<h6>إنشاء اختبار جديد يدويًا</h6>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_quiz"><div class="row g-2"><div class="col-md-5"><input class="form-control" name="title" placeholder="عنوان الاختبار" required></div><div class="col-md-2"><input type="number" class="form-control" name="passing_score" min="0" max="100" value="50" title="نسبة النجاح"></div><div class="col-md-2"><input type="number" class="form-control" name="max_attempts" min="1" value="2" title="المحاولات"></div><div class="col-md-3"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="is_published" id="quizPublished"><label class="form-check-label" for="quizPublished">نشر الآن</label></div></div><div class="col-12"><textarea class="form-control" name="instructions" rows="2" placeholder="تعليمات الاختبار"></textarea></div></div><button class="btn btn-primary btn-sm mt-2">إنشاء الاختبار</button></form>
 </div></div>
 {% endif %}
 {% endblock %}
