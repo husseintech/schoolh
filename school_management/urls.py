@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from school.academic_report_views import academic_achievement_report
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('administration/academic-achievement/', academic_achievement_report, name='academic_achievement_report'),
     path('', include('school.urls')),
     path('open-learning/', include('open_learning.urls')),
 ]
