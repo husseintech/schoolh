@@ -8,8 +8,9 @@ class SchoolConfig(AppConfig):
         # Register the optional public-facing settings model.
         from . import public_models  # noqa: F401
 
-        # Keep the existing URL name/path, while extending the school-info editor
-        # without touching the large legacy views module.
+        # Keep existing URL names while extending selected legacy views safely.
         from . import views
         from .public_views import school_info_view
+        from .academic_report_views import academic_achievement_report
         views.school_info_view = school_info_view
+        views.academic_achievement_report = academic_achievement_report
