@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
-from .teacher_records_models import CurriculumProgressRecord, TeacherTrainingRecord
+from .teacher_records_models import CurriculumProgressRecord, TeacherTrainingRecord, ClassSubjectMapping
 
 
 @login_required
@@ -9,7 +9,11 @@ def teacher_records_reset(request):
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    tables = [('curriculum','سجل متابعة ما قطع من المنهاج',CurriculumProgressRecord),('training','سجل الدورات',TeacherTrainingRecord)]
+    tables = [
+        ('class_subjects','مواد الصفوف',ClassSubjectMapping),
+        ('curriculum','سجل متابعة ما قطع من المنهاج',CurriculumProgressRecord),
+        ('training','سجل الدورات',TeacherTrainingRecord),
+    ]
     if request.method == 'POST' and request.POST.get('confirm') == 'YES':
         key=request.POST.get('key')
         for k,label,model in tables:

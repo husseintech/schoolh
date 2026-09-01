@@ -1,0 +1,45 @@
+{% extends 'school/base.html' %}
+{% block title %}مواد الصفوف{% endblock %}
+{% block page_heading %}مواد الصفوف{% endblock %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header"><i class="bi bi-diagram-3"></i> تحديد المواد المخصصة لكل صف</div>
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end mb-4">
+      <div class="col-md-8">
+        <label class="form-label">الصف / الشعبة</label>
+        <select name="class_id" class="form-select" required>
+          <option value="">اختر الصف</option>
+          {% for c in classes %}<option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4"><button class="btn btn-primary w-100"><i class="bi bi-search"></i> تحميل الصف</button></div>
+    </form>
+
+    {% if selected_class %}
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">
+      <div class="alert alert-info py-2">حدد جميع المواد المخصصة للصف <strong>{{ selected_class.name }}</strong> ثم اضغط حفظ.</div>
+      <div class="row g-2">
+        {% for s in subjects %}
+        <div class="col-md-4 col-sm-6">
+          <label class="border rounded p-2 w-100 d-flex gap-2 align-items-center">
+            <input type="checkbox" name="subjects" value="{{ s.id }}" {% if s.id in selected_ids %}checked{% endif %}>
+            <span>{{ s.name }}</span>
+          </label>
+        </div>
+        {% empty %}<div class="text-muted">لا توجد مواد مضافة للنظام.</div>{% endfor %}
+      </div>
+      <button class="btn btn-success mt-3"><i class="bi bi-save"></i> حفظ مواد الصف</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">ملخص المواد المخصصة للصفوف</div>
+  <div class="table-responsive"><table class="table table-bordered align-middle mb-0"><thead><tr><th>الصف</th><th>المواد المخصصة</th><th></th></tr></thead><tbody>
+  {% for row in mapping_summary %}<tr><td class="fw-bold">{{ row.student_class.name }}</td><td>{% for s in row.subjects %}<span class="badge bg-light text-dark border me-1">{{ s.name }}</span>{% empty %}<span class="text-muted">لم تحدد مواد بعد</span>{% endfor %}</td><td><a class="btn btn-sm btn-outline-primary" href="?class_id={{ row.student_class.id }}">تعديل</a></td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+{% endblock %}
