@@ -1,10 +1,11 @@
 import re
 
 from .reset_data_teacher_records import handle_teacher_record_reset, reset_rows_html
+from .models import SupervisorVisit
 
 
 class TeacherRecordsNavigationMiddleware:
-    """Expose teacher registers in the legacy UI and integrate their reset rows safely."""
+    """Expose teacher registers, reset rows, and selected administration alerts safely."""
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -44,6 +45,16 @@ class TeacherRecordsNavigationMiddleware:
                 tbody_end = '</tbody>'
                 if tbody_end in html:
                     html = html.replace(tbody_end, rows + tbody_end, 1)
+
+        if role in ('admin', 'vice_principal') and request.path.rstrip('/') == '/dashboard' and 'data-supervisor-followup-alert="1"' not in html:
+            pending = SupervisorVisit.objects.filter(management_followup__isnull=True, admin_followup='').count()
+            if pending:
+                alert = f'''<a data-supervisor-followup-alert="1" href="/supervisor-visits/?status=pending" class="alert alert-danger d-flex align-items-center justify-content-between text-decoration-none mt-3 mb-3" role="alert"><div><strong><i class="bi bi-clipboard-x"></i> زيارات مشرفين تحتاج متابعة إدارية</strong><div class="small mt-1">يوجد {pending} تقرير زيارة لم تُسجل له متابعة الإدارة بعد. اضغط لعرضها.</div></div><span class="badge bg-danger rounded-pill fs-6">{pending}</span></a>'''
+                target = '<div class="today-head">'
+                if target in html:
+                    html = html.replace(target, alert + target, 1)
+                elif '</main>' in html:
+                    html = html.replace('</main>', alert + '</main>', 1)
 
         response.content = html.encode(response.charset or 'utf-8')
         if response.has_header('Content-Length'):
