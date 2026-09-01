@@ -1,9 +1,20 @@
+import re
+
+from .reset_data_teacher_records import handle_teacher_record_reset, reset_rows_html
+
+
 class TeacherRecordsNavigationMiddleware:
-    """Expose the new school registers in the legacy administration UI safely."""
+    """Expose teacher registers in the legacy UI and integrate their reset rows safely."""
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated and request.path.rstrip('/') == '/reset-data':
+            handled = handle_teacher_record_reset(request)
+            if handled is not None:
+                return handled
+
         response = self.get_response(request)
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated or 'text/html' not in response.get('Content-Type', ''):
@@ -26,11 +37,13 @@ class TeacherRecordsNavigationMiddleware:
             if links:
                 html = html.replace(marker, marker + ''.join(links), 1)
 
-        if role == 'admin' and request.path.rstrip('/') == '/reset-data' and 'teacher-records-reset-link' not in html:
-            anchor = '<a href="/administration/teacher-records/reset/" id="teacher-records-reset-link" class="btn btn-outline-danger"><i class="bi bi-eraser"></i> تفريغ سجلات المعلمين ومواد الصفوف</a> '
-            target = '<a href="/backup/"'
-            if target in html:
-                html = html.replace(target, anchor + target, 1)
+        if role == 'admin' and request.path.rstrip('/') == '/reset-data' and 'data-teacher-record-reset="1"' not in html:
+            token_match = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', html)
+            if token_match:
+                rows = reset_rows_html(token_match.group(1))
+                tbody_end = '</tbody>'
+                if tbody_end in html:
+                    html = html.replace(tbody_end, rows + tbody_end, 1)
 
         response.content = html.encode(response.charset or 'utf-8')
         if response.has_header('Content-Length'):
