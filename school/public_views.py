@@ -56,10 +56,7 @@ def school_info_view(request):
 
         public_settings, _ = SchoolPublicSettings.objects.get_or_create(school_info=info)
         public_settings.school_mobile = request.POST.get('school_mobile', '').strip()
-        public_settings.news_enabled = request.POST.get('news_enabled') == 'on'
-        public_settings.news_source_name = request.POST.get('news_source_name', '').strip()
-        public_settings.news_feed_url = request.POST.get('news_feed_url', '').strip()
-        public_settings.save()
+        public_settings.save(update_fields=['school_mobile', 'updated_at'])
 
         messages.success(request, 'تم حفظ بيانات المدرسة وإعدادات التواصل')
         return redirect('school_info')
