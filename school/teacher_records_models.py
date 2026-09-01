@@ -2,6 +2,22 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class ClassSubjectMapping(models.Model):
+    student_class = models.ForeignKey('school.Class', on_delete=models.CASCADE, related_name='subject_mappings', verbose_name='الصف')
+    subject = models.ForeignKey('school.Subject', on_delete=models.CASCADE, related_name='class_mappings', verbose_name='المبحث')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_class_subject_mappings')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['student_class', 'subject'], name='unique_class_subject_mapping')]
+        ordering = ['student_class__name', 'subject__name']
+        verbose_name = 'مادة صف'
+        verbose_name_plural = 'مواد الصفوف'
+
+    def __str__(self):
+        return f'{self.student_class} - {self.subject}'
+
+
 class CurriculumProgressRecord(models.Model):
     teacher = models.ForeignKey('school.Teacher', on_delete=models.CASCADE, related_name='curriculum_progress_records', verbose_name='المعلم')
     subject = models.ForeignKey('school.Subject', on_delete=models.PROTECT, related_name='curriculum_progress_records', verbose_name='المبحث')
