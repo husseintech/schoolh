@@ -144,6 +144,17 @@ def _fetch_news(feed_url):
     return items
 
 
+def _source_home_url(feed_url):
+    """Return the public website root instead of exposing raw RSS on fallback clicks."""
+    try:
+        parsed = urlparse(feed_url)
+        if parsed.scheme == 'https' and parsed.netloc:
+            return f'{parsed.scheme}://{parsed.netloc}/'
+    except Exception:
+        pass
+    return '#'
+
+
 @register.simple_tag
 def school_home_extras():
     try:
@@ -159,8 +170,8 @@ def school_home_extras():
         news = _fetch_news(settings.news_feed_url)
         if not news:
             news = [{
-                'title': 'تعذر تحميل الأخبار من المصدر حالياً — اضغط لفتح موجز الأخبار مباشرة',
-                'url': settings.news_feed_url,
+                'title': 'آخر الأخبار من المصدر الرسمي',
+                'url': _source_home_url(settings.news_feed_url),
             }]
 
     raw_mobile = (settings.school_mobile or '').strip()
