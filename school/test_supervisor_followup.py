@@ -37,9 +37,10 @@ class SupervisorFollowupWorkflowTests(TestCase):
         self.assertEqual(self.visit.admin_followup, '')
 
     def test_pending_filter_becomes_followed_after_followup(self):
+        report_link = reverse('supervisor_visit_report', args=[self.visit.id])
         pending_url = reverse('supervisor_visit_list') + '?status=pending'
         response = self.client.get(pending_url)
-        self.assertContains(response, 'معلم اختبار')
+        self.assertContains(response, report_link)
         SupervisorVisitFollowup.objects.create(
             visit=self.visit,
             followup_date=date(2026, 9, 5),
@@ -47,7 +48,7 @@ class SupervisorFollowupWorkflowTests(TestCase):
             created_by=self.admin,
         )
         response = self.client.get(pending_url)
-        self.assertNotContains(response, 'معلم اختبار')
+        self.assertNotContains(response, report_link)
         followed_url = reverse('supervisor_visit_list') + '?status=followed'
         response = self.client.get(followed_url)
-        self.assertContains(response, 'معلم اختبار')
+        self.assertContains(response, report_link)
