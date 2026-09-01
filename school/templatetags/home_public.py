@@ -12,9 +12,11 @@ from school.public_models import SchoolPublicSettings
 
 register = template.Library()
 
-MAX_FEED_BYTES = 512 * 1024
-FEED_TIMEOUT_SECONDS = 3
+# Some Arabic news feeds include long descriptions/images, so 512 KB was too strict.
+MAX_FEED_BYTES = 2 * 1024 * 1024
+FEED_TIMEOUT_SECONDS = 6
 FEED_CACHE_SECONDS = 15 * 60
+NEGATIVE_CACHE_SECONDS = 60
 
 
 def _is_public_https_url(url):
@@ -28,11 +30,19 @@ def _is_public_https_url(url):
             return ip.is_global
         except ValueError:
             pass
-        # Resolve host and reject any private/reserved destination.
-        for item in socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM):
-            address = ipaddress.ip_address(item[4][0])
-            if not address.is_global:
+        # Resolve host and reject private/reserved destinations when resolution works.
+        # If DNS resolution is temporarily unavailable here, the actual request will fail
+        # safely below instead of permanently hiding a valid public feed.
+        try:
+            resolved = socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM)
+            if not resolved:
                 return False
+            for item in resolved:
+                address = ipaddress.ip_address(item[4][0])
+                if not address.is_global:
+                    return False
+        except socket.gaierror:
+            return False
         return True
     except Exception:
         return False
@@ -58,8 +68,8 @@ def _parse_feed(data):
     root = ET.fromstring(data)
     items = []
 
-    # RSS 2.x
-    for item in root.findall('.//item')[:8]:
+    # RSS 2.x (including the format used by maannews.net/rss)
+    for item in root.findall('.//item')[:12]:
         title = _text(item, ['title'])
         link = _text(item, ['link'])
         if title and link and urlparse(link).scheme in ('http', 'https'):
@@ -68,7 +78,7 @@ def _parse_feed(data):
     # Atom
     if not items:
         ns = {'a': 'http://www.w3.org/2005/Atom'}
-        for entry in root.findall('.//a:entry', ns)[:8]:
+        for entry in root.findall('.//a:entry', ns)[:12]:
             title = _text(entry, ['{http://www.w3.org/2005/Atom}title'])
             link = ''
             for link_node in entry.findall('{http://www.w3.org/2005/Atom}link'):
@@ -80,34 +90,46 @@ def _parse_feed(data):
             if title and link and urlparse(link).scheme in ('http', 'https'):
                 items.append({'title': title[:220], 'url': link})
 
-    return items[:6]
+    return items[:8]
 
 
 def _fetch_news(feed_url):
     if not feed_url or not _is_public_https_url(feed_url):
         return []
-    cache_key = 'school-public-feed:' + str(abs(hash(feed_url)))
+
+    cache_key = 'school-public-feed-v2:' + str(abs(hash(feed_url)))
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
 
     try:
         opener = build_opener(_SafeRedirectHandler())
-        request = Request(feed_url, headers={'User-Agent': 'SchoolPortal/1.0 (+RSS reader)'})
+        request = Request(
+            feed_url,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (compatible; SchoolPortalRSS/1.0)',
+                'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*;q=0.8',
+                'Accept-Language': 'ar,en;q=0.7',
+                'Connection': 'close',
+            },
+        )
         with opener.open(request, timeout=FEED_TIMEOUT_SECONDS) as response:
-            content_type = (response.headers.get('Content-Type') or '').lower()
-            if not any(kind in content_type for kind in ('xml', 'rss', 'atom', 'text/plain', 'application/octet-stream')):
-                cache.set(cache_key, [], FEED_CACHE_SECONDS)
-                return []
+            # Do not reject a valid feed only because the publisher uses a generic
+            # Content-Type. We validate the body by parsing it as XML instead.
             data = response.read(MAX_FEED_BYTES + 1)
             if len(data) > MAX_FEED_BYTES:
-                cache.set(cache_key, [], FEED_CACHE_SECONDS)
+                cache.set(cache_key, [], NEGATIVE_CACHE_SECONDS)
                 return []
+
         items = _parse_feed(data)
     except Exception:
         items = []
 
-    cache.set(cache_key, items, FEED_CACHE_SECONDS)
+    cache.set(
+        cache_key,
+        items,
+        FEED_CACHE_SECONDS if items else NEGATIVE_CACHE_SECONDS,
+    )
     return items
 
 
