@@ -24,29 +24,50 @@ def _percentage(passed, total):
 
 
 def _scope_for_user(user):
-    """Return the classes and schedule scope the user is allowed to analyse."""
+    """Return the classes the user may analyse plus schedule/teacher scope."""
     role = user.profile.role
     if role not in ('admin', 'vice_principal', 'teacher'):
         return Class.objects.none(), TeacherScheduleEntry.objects.none(), None
 
-    schedule = TeacherScheduleEntry.objects.filter(
-        subject__isnull=False,
-        student_class__isnull=False,
-    )
+    schedule = TeacherScheduleEntry.objects.filter(subject__isnull=False, student_class__isnull=False)
     teacher = getattr(user, 'teacher_profile', None)
+
     if role == 'teacher':
         if not teacher:
             return Class.objects.none(), TeacherScheduleEntry.objects.none(), None
-        schedule = schedule.filter(teacher=teacher)
+        # Teacher class assignments are managed directly on Teacher.classes.
+        # Do not require a generated daily schedule just to expose those classes.
+        classes = teacher.classes.all().order_by('name')
+        return classes, schedule.filter(teacher=teacher), teacher
 
-    class_ids = schedule.values_list('student_class_id', flat=True).distinct()
-    classes = Class.objects.filter(id__in=class_ids).order_by('name')
+    # For administration, expose classes that are actually assigned to at least one teacher.
+    classes = Class.objects.filter(teachers__isnull=False).distinct().order_by('name')
     return classes, schedule, teacher
+
+
+def _subjects_for_class(user, selected_class, schedule_scope, teacher):
+    role = user.profile.role
+    if role == 'teacher':
+        # Prefer exact teacher+class subject mapping from the daily schedule when present.
+        subject_ids = schedule_scope.filter(student_class=selected_class).values_list('subject_id', flat=True).distinct()
+        subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+        if subjects.exists():
+            return subjects
+        # If the daily schedule has not been built yet, use the subjects already assigned
+        # to this teacher in the teacher profile so assigned classes still work.
+        return teacher.subjects.all().order_by('name') if teacher else Subject.objects.none()
+
+    # Administration: prefer schedule mappings; otherwise derive from teachers assigned to class.
+    subject_ids = schedule_scope.filter(student_class=selected_class).values_list('subject_id', flat=True).distinct()
+    subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+    if subjects.exists():
+        return subjects
+    return Subject.objects.filter(teachers__classes=selected_class).distinct().order_by('name')
 
 
 @login_required
 def academic_achievement_report(request):
-    """Printable achievement analysis scoped to the real teacher/class/subject schedule."""
+    """Printable achievement analysis scoped to teacher/class/subject assignments."""
     classes, schedule_scope, teacher = _scope_for_user(request.user)
     if request.user.profile.role not in ('admin', 'vice_principal', 'teacher'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا التقرير')
@@ -61,18 +82,17 @@ def academic_achievement_report(request):
         try:
             selected_class = classes.get(pk=class_id)
             total_students = selected_class.students.count()
-            subject_ids = schedule_scope.filter(student_class=selected_class).values_list('subject_id', flat=True).distinct()
-            subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+            subjects = _subjects_for_class(request.user, selected_class, schedule_scope, teacher)
         except (Class.DoesNotExist, ValueError):
             selected_class = None
-            messages.error(request, 'هذا الصف غير مرتبط بالمواد المسموح لك بإدخالها')
+            messages.error(request, 'هذا الصف غير مرتبط بك أو غير متاح لك')
 
     if request.method == 'POST':
         if not selected_class:
             messages.error(request, 'يرجى اختيار الصف/الشعبة')
             return redirect('academic_achievement_report')
         if not subjects.exists():
-            messages.error(request, 'لا توجد مواد مرتبطة بهذا الصف في جدول المعلمين')
+            messages.error(request, 'لا توجد مواد مرتبطة بهذا الصف والمعلم')
             return redirect(f'/administration/academic-achievement/?class_id={selected_class.id}')
 
         rows = []
