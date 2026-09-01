@@ -4,297 +4,202 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-{% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
-<div class="d-flex flex-wrap gap-2 mb-4">
-    <a href="{% url 'student_list' %}" class="btn btn-primary"><i class="bi bi-people-fill"></i> جميع الطلاب</a>
-    <a href="{% url 'lateness_list' %}" class="btn btn-warning text-dark"><i class="bi bi-clock-history"></i> تأخيرات الطلاب</a>
-    <a href="{% url 'absence_list' %}" class="btn btn-danger"><i class="bi bi-person-x-fill"></i> غياب الطلاب</a>
-</div>
-{% endif %}
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
-                <i class="bi bi-megaphone-fill"></i> الإعلانات
+<style>
+.auth-home{--ink:#172033;--muted:#6b7280;--line:#e7ebf2;--blue:#1f5fbf;--blue2:#2f80ed}.auth-home .welcome{background:linear-gradient(135deg,#173d8f,#2f80ed);border-radius:22px;padding:24px;color:#fff;box-shadow:0 16px 36px rgba(47,128,237,.18)}.auth-home .quick-btn{border-radius:14px;padding:12px 16px;font-weight:700}.auth-home .home-card{border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.05)}.auth-home .home-card .card-header{background:#fff;border-bottom:1px solid var(--line);font-weight:800;color:var(--ink)}.auth-home .list-row{padding:14px 0;border-bottom:1px solid #eef1f5}.auth-home .list-row:last-child{border-bottom:0}.auth-home .lesson-row{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none;padding:12px 0;border-bottom:1px solid #eef1f5}.auth-home .lesson-row:last-child{border-bottom:0}.auth-home .lesson-icon{width:44px;height:44px;border-radius:13px;background:#eef4ff;color:var(--blue2);display:flex;align-items:center;justify-content:center;flex-shrink:0}@media(prefers-reduced-motion:reduce){.auth-home *{transition:none!important}}
+</style>
+<div class="auth-home">
+    <section class="welcome mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="small opacity-75 mb-1">مرحباً بك في النظام المدرسي</div>
+                <h2 class="h4 fw-bold mb-1">{{ school_info.name_ar|default:'النظام المدرسي' }}</h2>
+                <div class="opacity-75">كل ما تحتاجه للوصول إلى الخدمات المدرسية في مكان واحد.</div>
             </div>
-            <div class="card-body p-3">
-                {% if announcements %}
-                    {% for a in announcements %}
-                    <div class="mb-3 pb-2 border-bottom">
-                        <div style="font-weight: 600; font-size: 0.95rem; color: #1a2744;">{{ a.title }}</div>
-                        <div style="font-size: 0.75rem; color: #94a3b8;"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
-                        <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ a.content|truncatewords:25 }}</div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-megaphone" style="font-size: 2rem;"></i>
-                    <p class="mt-2">لا توجد إعلانات حالياً</p>
+            <a href="{% url 'dashboard' %}" class="btn btn-light quick-btn"><i class="bi bi-speedometer2"></i> لوحة التحكم</a>
+        </div>
+    </section>
+
+    {% if user.profile.role == 'admin' or user.profile.role == 'vice_principal' %}
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{% url 'student_list' %}" class="btn btn-primary quick-btn"><i class="bi bi-people-fill"></i> جميع الطلاب</a>
+        <a href="{% url 'lateness_list' %}" class="btn btn-outline-warning text-dark quick-btn"><i class="bi bi-clock-history"></i> تأخيرات الطلاب</a>
+        <a href="{% url 'absence_list' %}" class="btn btn-outline-danger quick-btn"><i class="bi bi-person-x-fill"></i> غياب الطلاب</a>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card home-card h-100">
+                <div class="card-header"><i class="bi bi-megaphone-fill text-primary"></i> الإعلانات</div>
+                <div class="card-body p-3">
+                    {% if announcements %}
+                        {% for a in announcements %}
+                        <div class="list-row">
+                            <div class="fw-semibold">{{ a.title }}</div>
+                            <div class="small text-muted"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
+                            <div class="small text-secondary mt-1">{{ a.content|truncatewords:25 }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4 text-muted"><i class="bi bi-megaphone fs-2"></i><p class="mt-2 mb-0">لا توجد إعلانات حالياً</p></div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header" style="background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;">
-                <i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية
-            </div>
-            <div class="card-body p-3">
-                {% if lesson_links %}
-                    {% for link in lesson_links %}
-                    <a href="{{ link.url }}" target="_blank" class="text-decoration-none" style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f4f8; color: inherit;">
-                        <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-left: 14px; flex-shrink: 0;">
-                            <i class="bi bi-play-fill"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 0.9rem; color: #1a2744;">{{ link.title }}
-                                {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span style="background: #10b981; color: #fff; font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; margin-right: 5px;">مباشر</span>{% endif %}
+        <div class="col-lg-6">
+            <div class="card home-card h-100">
+                <div class="card-header"><i class="bi bi-camera-video-fill text-primary"></i> الحصص الإلكترونية</div>
+                <div class="card-body p-3">
+                    {% if lesson_links %}
+                        {% for link in lesson_links %}
+                        <a href="{{ link.url }}" target="_blank" rel="noopener" class="lesson-row">
+                            <div class="lesson-icon"><i class="bi bi-play-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">{{ link.title }} {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span class="badge bg-success">مباشر</span>{% endif %}</div>
+                                {% if link.lesson_datetime %}<div class="small text-muted"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>{% endif %}
                             </div>
-                            {% if link.lesson_datetime %}
-                            <div style="font-size: 0.75rem; color: #94a3b8;"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>
-                            {% endif %}
-                        </div>
-                        <div style="color: #2d9cdb; font-size: 1.2rem;"><i class="bi bi-chevron-left"></i></div>
-                    </a>
-                    {% endfor %}
-                {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-camera-video" style="font-size: 2rem;"></i>
-                    <p class="mt-2">لا توجد حصص إلكترونية حالياً</p>
+                            <i class="bi bi-chevron-left text-primary"></i>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4 text-muted"><i class="bi bi-camera-video fs-2"></i><p class="mt-2 mb-0">لا توجد حصص إلكترونية حالياً</p></div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
-</div>
-{% if school_info and school_info.latitude and school_info.longitude %}
-<div class="mt-4 text-center">
-    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#schoolMapModal">
-        <i class="bi bi-geo-alt-fill"></i> موقع المدرسة
-    </button>
-</div>
-<div class="modal fade" id="schoolMapModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-geo-alt-fill"></i> موقع المدرسة</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-2">
-                <div id="school-map" style="width:100%;height:400px;border-radius:8px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div>
-            </div>
-        </div>
+
+    {% if school_info and school_info.latitude and school_info.longitude %}
+    <div class="text-center mt-4">
+        <button type="button" class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#schoolMapModal"><i class="bi bi-geo-alt-fill"></i> موقع المدرسة</button>
     </div>
+    {% endif %}
 </div>
-{% endif %}
 {% endif %}
 {% endblock %}
 
 {% block unauth_content %}
 <style>
-    .home-page {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #e8f4f8 0%, #f0f7fe 50%, #f8faff 100%);
-    }
-    .home-topbar {
-        background: #fff;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 12px 0;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    }
-    .home-topbar .brand {
-        display: flex; align-items: center; gap: 10px;
-    }
-    .home-topbar .brand i {
-        font-size: 1.8rem; color: #2d9cdb;
-    }
-    .home-topbar .brand h4 {
-        margin: 0; font-weight: 700; color: #1a2744; font-size: 1.2rem;
-    }
-    .home-topbar .brand small {
-        color: #94a3b8; font-size: 0.75rem;
-    }
-    .login-inline .form-control {
-        border-radius: 8px; border: 1px solid #e2e8f0;
-        font-size: 0.85rem; padding: 6px 12px;
-    }
-    .login-inline .form-control:focus {
-        border-color: #4fc3f7; box-shadow: 0 0 0 3px rgba(45,156,219,0.12);
-    }
-    .login-inline .btn-login-sm {
-        background: linear-gradient(135deg, #2d9cdb, #4fc3f7);
-        border: none; color: #fff; padding: 6px 18px; border-radius: 8px;
-        font-weight: 600; font-size: 0.85rem; transition: all 0.3s; white-space: nowrap;
-    }
-    .login-inline .btn-login-sm:hover { box-shadow: 0 4px 12px rgba(45,156,219,0.3); color: #fff; }
-    .side-card {
-        border: none; border-radius: 12px;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.06);
-        margin-bottom: 20px; overflow: hidden; background: #fff;
-    }
-    .side-card .card-header {
-        font-weight: 600; padding: 14px 20px; border-bottom: none; font-size: 0.95rem;
-        background: linear-gradient(135deg, #2d9cdb, #4fc3f7); color: #fff;
-    }
-    .announce-item {
-        padding: 14px 0; border-bottom: 1px solid #f0f4f8;
-    }
-    .announce-item:last-child { border-bottom: none; }
-    .announce-item .title { font-weight: 600; font-size: 0.95rem; color: #1a2744; }
-    .announce-item .date { font-size: 0.75rem; color: #94a3b8; }
-    .announce-item .content { font-size: 0.85rem; color: #64748b; margin-top: 4px; line-height: 1.5; }
-    .link-item {
-        display: flex; align-items: center; padding: 12px 0;
-        border-bottom: 1px solid #f0f4f8; text-decoration: none; color: inherit; transition: all 0.2s;
-    }
-    .link-item:hover { background: #f8faff; padding-right: 8px; border-radius: 8px; }
-    .link-item:last-child { border-bottom: none; }
-    .link-item .icon {
-        width: 42px; height: 42px;
-        background: linear-gradient(135deg, #2d9cdb, #4fc3f7);
-        color: #fff; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        margin-left: 14px; flex-shrink: 0;
-    }
-    .link-item .info { flex: 1; }
-    .link-item .info .title { font-weight: 600; font-size: 0.9rem; color: #1a2744; }
-    .link-item .info .time { font-size: 0.75rem; color: #94a3b8; }
-    .link-item .arrow { color: #2d9cdb; font-size: 1.2rem; }
-    .empty-placeholder {
-        text-align: center; padding: 30px 20px; color: #94a3b8;
-    }
-    .empty-placeholder i { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5; }
-    .badge-live {
-        background: #10b981; color: #fff; font-size: 0.6rem;
-        padding: 2px 8px; border-radius: 10px; margin-right: 5px;
-    }
-    .btn-social-fb {
-        background: #1877f2;
-        color: #fff;
-        border: none;
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding: 7px 16px;
-        border-radius: 8px;
-        text-decoration: none;
-        box-shadow: 0 2px 6px rgba(24, 119, 242, 0.4);
-        transition: transform 0.2s ease, background 0.2s ease;
-    }
-    .btn-social:hover {
-        background: #1464c7;
-        color: #fff;
-        transform: translateY(-1px);
-    }
-    @media (max-width: 768px) {
-        .home-topbar .brand small { display: none; }
-        .login-inline .form-control { font-size: 0.8rem; padding: 5px 10px; }
-    }
+:root{--home-navy:#102a56;--home-blue:#2367d1;--home-sky:#eaf2ff;--home-ink:#182235;--home-muted:#6c7688;--home-line:#e6eaf0;--home-bg:#f6f8fc}
+.modern-home{min-height:100vh;background:radial-gradient(circle at 10% 0%,rgba(35,103,209,.10),transparent 28%),linear-gradient(180deg,#fbfdff 0%,#f5f8fc 100%);color:var(--home-ink)}
+.modern-home .nav-shell{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(230,234,240,.9)}
+.modern-home .brand-mark{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--home-navy),var(--home-blue));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.35rem;box-shadow:0 8px 20px rgba(35,103,209,.22)}
+.modern-home .brand-title{font-weight:850;color:var(--home-ink);line-height:1.2}.modern-home .brand-sub{font-size:.78rem;color:var(--home-muted)}
+.modern-home .hero{padding:72px 0 46px}.modern-home .hero-wrap{background:linear-gradient(135deg,#102a56 0%,#1d4f9d 58%,#2367d1 100%);border-radius:30px;overflow:hidden;position:relative;box-shadow:0 28px 60px rgba(16,42,86,.20)}
+.modern-home .hero-wrap:before,.modern-home .hero-wrap:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.08)}.modern-home .hero-wrap:before{width:320px;height:320px;left:-120px;top:-130px}.modern-home .hero-wrap:after{width:220px;height:220px;right:-70px;bottom:-110px}
+.modern-home .hero-copy{padding:52px 42px;color:#fff;position:relative;z-index:1}.modern-home .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);font-size:.82rem;margin-bottom:18px}.modern-home .hero-title{font-size:clamp(2rem,4vw,3.6rem);font-weight:900;line-height:1.15;margin-bottom:14px}.modern-home .hero-lead{font-size:1.02rem;line-height:1.9;color:rgba(255,255,255,.82);max-width:620px}.modern-home .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.modern-home .btn-main{background:#fff;color:var(--home-navy);border:none;border-radius:14px;padding:12px 20px;font-weight:800}.modern-home .btn-ghost{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:14px;padding:12px 20px;font-weight:700}.modern-home .btn-ghost:hover{background:rgba(255,255,255,.16);color:#fff}
+.modern-home .login-card{background:#fff;border:1px solid rgba(255,255,255,.7);border-radius:24px;padding:26px;position:relative;z-index:1;box-shadow:0 18px 40px rgba(0,0,0,.12)}.modern-home .login-card h3{font-size:1.15rem;font-weight:850;margin-bottom:4px}.modern-home .login-card p{font-size:.85rem;color:var(--home-muted);margin-bottom:18px}.modern-home .login-card .form-control{border-radius:12px;border:1px solid var(--home-line);padding:11px 13px}.modern-home .login-card .form-control:focus{border-color:#89ace7;box-shadow:0 0 0 4px rgba(35,103,209,.10)}.modern-home .login-card .btn-login{width:100%;border:0;border-radius:12px;padding:11px;background:linear-gradient(135deg,var(--home-navy),var(--home-blue));color:#fff;font-weight:800}
+.modern-home .quick-grid{margin-top:-2px}.modern-home .quick-card{background:#fff;border:1px solid var(--home-line);border-radius:20px;padding:20px;height:100%;box-shadow:0 8px 28px rgba(15,23,42,.04);transition:.18s ease}.modern-home .quick-card:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(15,23,42,.08)}.modern-home .quick-icon{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:var(--home-sky);color:var(--home-blue);font-size:1.25rem;margin-bottom:14px}.modern-home .quick-card h4{font-size:1rem;font-weight:850;margin-bottom:5px}.modern-home .quick-card p{font-size:.84rem;color:var(--home-muted);margin:0}
+.modern-home .section{padding:24px 0 10px}.modern-home .section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:16px}.modern-home .section-title{font-size:1.28rem;font-weight:900;margin:0}.modern-home .section-sub{font-size:.84rem;color:var(--home-muted)}
+.modern-home .content-card{background:#fff;border:1px solid var(--home-line);border-radius:22px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,.04);height:100%}.modern-home .content-card .head{padding:18px 20px;border-bottom:1px solid var(--home-line);display:flex;align-items:center;gap:10px;font-weight:850}.modern-home .announce{padding:16px 20px;border-bottom:1px solid #eef1f5}.modern-home .announce:last-child{border-bottom:0}.modern-home .announce .title{font-weight:800}.modern-home .announce .date{font-size:.75rem;color:#98a1b1;margin-top:2px}.modern-home .announce .text{font-size:.86rem;color:var(--home-muted);line-height:1.7;margin-top:6px}.modern-home .lesson{display:flex;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid #eef1f5;text-decoration:none;color:inherit}.modern-home .lesson:last-child{border-bottom:0}.modern-home .lesson:hover{background:#fbfcff}.modern-home .lesson-icon{width:44px;height:44px;border-radius:14px;background:#eef4ff;color:var(--home-blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}.modern-home .empty{padding:36px 20px;text-align:center;color:#9aa3b2}.modern-home .empty i{font-size:2rem;display:block;margin-bottom:8px}
+.modern-home .learning-strip{margin:28px 0;background:linear-gradient(135deg,#eff5ff,#f8fbff);border:1px solid #dfe9fa;border-radius:24px;padding:24px}.modern-home .learning-strip h3{font-size:1.15rem;font-weight:900}.modern-home .learning-strip p{color:var(--home-muted);margin:0}.modern-home .footer{padding:30px 0 36px;margin-top:26px;border-top:1px solid var(--home-line);color:var(--home-muted);font-size:.85rem}.modern-home .social-link{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;color:#1877f2}.modern-home .map-btn{border-radius:999px;padding:10px 18px}
+@media(max-width:991.98px){.modern-home .hero{padding-top:34px}.modern-home .hero-copy{padding:34px 26px}.modern-home .login-area{padding:0 26px 28px}.modern-home .hero-wrap{border-radius:24px}}@media(max-width:575.98px){.modern-home .nav-shell{position:static}.modern-home .brand-sub{display:none}.modern-home .hero-title{font-size:2rem}.modern-home .hero-copy{padding:30px 20px}.modern-home .login-area{padding:0 20px 20px}.modern-home .quick-card{padding:16px}}@media(prefers-reduced-motion:reduce){.modern-home *{transition:none!important}.modern-home .quick-card:hover{transform:none}}
 </style>
-<div class="home-page">
-    <div class="home-topbar">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="brand">
-                        <i class="bi bi-mortarboard-fill"></i>
-                        <div>
-                            <h4>النظام المدرسي</h4>
-                            <small>نظام إدارة متكامل للمدارس</small>
+<div class="modern-home">
+    <header class="nav-shell">
+        <div class="container py-3 d-flex justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-mark"><i class="bi bi-mortarboard-fill"></i></div>
+                <div><div class="brand-title">{{ school_info.name_ar|default:'مدرسة المنصور الأساسية' }}</div><div class="brand-sub">نظام مدرسي رقمي متكامل</div></div>
+            </div>
+            <a href="#loginCard" class="btn btn-outline-primary rounded-pill px-3"><i class="bi bi-box-arrow-in-left"></i> تسجيل الدخول</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <div class="hero-wrap">
+                <div class="row g-0 align-items-center">
+                    <div class="col-lg-7">
+                        <div class="hero-copy">
+                            <div class="eyebrow"><i class="bi bi-stars"></i> بيئة تعليمية رقمية حديثة</div>
+                            <h1 class="hero-title">بوابتك إلى المدرسة<br>بصورة أبسط وأجمل.</h1>
+                            <p class="hero-lead">تابع الإعلانات، الحصص الإلكترونية، التعلم المفتوح والخدمات المدرسية من مكان واحد، بتجربة واضحة وسريعة على الهاتف والحاسوب.</p>
+                            <div class="hero-actions">
+                                <a href="#loginCard" class="btn btn-main"><i class="bi bi-box-arrow-in-left"></i> الدخول إلى حسابي</a>
+                                <a href="{% url 'open_learning_list' %}" class="btn btn-ghost"><i class="bi bi-book-half"></i> التعلم المفتوح</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 login-area">
+                        <div class="login-card" id="loginCard">
+                            <h3>تسجيل الدخول</h3>
+                            <p>أدخل بيانات حسابك للوصول إلى صفحتك وخدماتك.</p>
+                            <form method="post" action="{% url 'login' %}">
+                                {% csrf_token %}
+                                <div class="mb-3"><label class="form-label small fw-semibold">اسم المستخدم</label><input type="text" name="username" class="form-control" required autocomplete="username" placeholder="اسم المستخدم"></div>
+                                <div class="mb-3"><label class="form-label small fw-semibold">كلمة المرور</label><input type="password" name="password" class="form-control" required autocomplete="current-password" placeholder="كلمة المرور"></div>
+                                <button type="submit" class="btn-login"><i class="bi bi-box-arrow-in-left"></i> دخول آمن</button>
+                            </form>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 text-start text-md-left mt-2 mt-md-0">
-                    <form method="post" action="{% url 'login' %}" class="login-inline d-flex align-items-center gap-2 justify-content-end flex-wrap">
-                        {% csrf_token %}
-                        <input type="text" name="username" class="form-control" required placeholder="اسم المستخدم" style="width:140px">
-                        <input type="password" name="password" class="form-control" required placeholder="كلمة المرور" style="width:140px">
-                        <button type="submit" class="btn-login-sm">دخول <i class="bi bi-box-arrow-in-left"></i></button>
-                    </form>
-                    <a href="https://www.facebook.com/ALMANSOUR.SCHOOL.YATTA" target="_blank" rel="noopener" class="btn btn-social-fb d-flex align-items-center gap-2 mt-2 justify-content-center" style="width:auto;">
-                        <i class="bi bi-facebook" style="font-size:1.2rem;"></i> تابع صفحة المدرسة على فيسبوك
-                    </a>
-                </div>
             </div>
-        </div>
-    </div>
-    <div class="container" style="padding: 40px 0;">
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="side-card">
-                    <div class="card-header"><i class="bi bi-megaphone-fill"></i> الإعلانات</div>
-                    <div class="card-body p-3">
+        </section>
+
+        <section class="quick-grid">
+            <div class="row g-3">
+                <div class="col-6 col-lg-3"><div class="quick-card"><div class="quick-icon"><i class="bi bi-megaphone-fill"></i></div><h4>إعلانات المدرسة</h4><p>آخر الأخبار والتنبيهات المهمة.</p></div></div>
+                <div class="col-6 col-lg-3"><div class="quick-card"><div class="quick-icon"><i class="bi bi-camera-video-fill"></i></div><h4>حصص إلكترونية</h4><p>روابط الدروس واللقاءات التعليمية.</p></div></div>
+                <div class="col-6 col-lg-3"><div class="quick-card"><div class="quick-icon"><i class="bi bi-book-half"></i></div><h4>التعلم المفتوح</h4><p>دروس، أنشطة، اختبارات وإنجازات.</p></div></div>
+                <div class="col-6 col-lg-3"><div class="quick-card"><div class="quick-icon"><i class="bi bi-people-fill"></i></div><h4>تواصل مدرسي</h4><p>قنوات تواصل واضحة مع المدرسة.</p></div></div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-head"><div><h2 class="section-title">ما الجديد في المدرسة؟</h2><div class="section-sub">أهم ما يحتاج الطالب وولي الأمر لمتابعته الآن.</div></div></div>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="content-card">
+                        <div class="head"><i class="bi bi-megaphone-fill text-primary"></i> آخر الإعلانات</div>
                         {% if announcements %}
                             {% for a in announcements %}
-                            <div class="announce-item">
-                                <div class="title">{{ a.title }}</div>
-                                <div class="date"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div>
-                                <div class="content">{{ a.content|truncatewords:25 }}</div>
-                            </div>
+                            <div class="announce"><div class="title">{{ a.title }}</div><div class="date"><i class="bi bi-calendar3"></i> {{ a.created_at|date:"Y-m-d" }}</div><div class="text">{{ a.content|truncatewords:28 }}</div></div>
                             {% endfor %}
-                        {% else %}
-                            <div class="empty-placeholder">
-                                <i class="bi bi-megaphone"></i>
-                                لا توجد إعلانات حالياً
-                            </div>
-                        {% endif %}
+                        {% else %}<div class="empty"><i class="bi bi-megaphone"></i>لا توجد إعلانات حالياً</div>{% endif %}
                     </div>
                 </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="side-card">
-                    <div class="card-header"><i class="bi bi-camera-video-fill"></i> الحصص الإلكترونية</div>
-                    <div class="card-body p-3">
+                <div class="col-lg-6">
+                    <div class="content-card">
+                        <div class="head"><i class="bi bi-camera-video-fill text-primary"></i> الحصص الإلكترونية</div>
                         {% if lesson_links %}
                             {% for link in lesson_links %}
-                            <a href="{{ link.url }}" target="_blank" class="link-item">
-                                <div class="icon"><i class="bi bi-play-fill"></i></div>
-                                <div class="info">
-                                    <div class="title">{{ link.title }}
-                                        {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span class="badge-live">مباشر</span>{% endif %}
-                                    </div>
-                                    {% if link.lesson_datetime %}
-                                    <div class="time"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="arrow"><i class="bi bi-chevron-left"></i></div>
-                            </a>
+                            <a href="{{ link.url }}" target="_blank" rel="noopener" class="lesson"><div class="lesson-icon"><i class="bi bi-play-fill"></i></div><div class="flex-grow-1"><div class="fw-semibold">{{ link.title }} {% if link.lesson_datetime and link.lesson_datetime <= now and link.lesson_datetime >= now_ago %}<span class="badge bg-success">مباشر</span>{% endif %}</div>{% if link.lesson_datetime %}<div class="small text-muted"><i class="bi bi-clock"></i> {{ link.lesson_datetime|date:"Y-m-d H:i" }}</div>{% endif %}</div><i class="bi bi-chevron-left text-primary"></i></a>
                             {% endfor %}
-                        {% else %}
-                            <div class="empty-placeholder">
-                                <i class="bi bi-camera-video"></i>
-                                لا توجد حصص إلكترونية حالياً
-                            </div>
-                        {% endif %}
+                        {% else %}<div class="empty"><i class="bi bi-camera-video"></i>لا توجد حصص إلكترونية حالياً</div>{% endif %}
                     </div>
                 </div>
             </div>
-        </div>
-        {% if school_info and school_info.latitude and school_info.longitude %}
-        <div class="row g-4 mt-2">
-            <div class="col-lg-12 text-center">
-                <button type="button" class="btn btn-outline-primary btn-lg" data-bs-toggle="modal" data-bs-target="#schoolMapModal">
-                    <i class="bi bi-geo-alt-fill"></i> موقع المدرسة
-                </button>
-            </div>
-        </div>
-        <div class="modal fade" id="schoolMapModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-geo-alt-fill"></i> موقع المدرسة</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-2">
-                        <div id="school-map" style="width:100%;height:400px;border-radius:8px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div>
-                    </div>
+        </section>
+
+        <section class="learning-strip d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3"><div class="quick-icon mb-0"><i class="bi bi-lightbulb-fill"></i></div><div><h3 class="mb-1">مساحة التعلم المفتوح</h3><p>استكشف الدروس والأنشطة والاختبارات والمواد التعليمية المنشورة.</p></div></div>
+            <a href="{% url 'open_learning_list' %}" class="btn btn-primary rounded-pill px-4"><i class="bi bi-arrow-left-circle"></i> استكشاف المحتوى</a>
+        </section>
+
+        <footer class="footer">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div><strong class="text-dark">{{ school_info.name_ar|default:'مدرسة المنصور الأساسية' }}</strong><div>نظام مدرسي رقمي لخدمة الطلبة والهيئة التدريسية وأولياء الأمور.</div></div>
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <a href="https://www.facebook.com/ALMANSOUR.SCHOOL.YATTA" target="_blank" rel="noopener" class="social-link"><i class="bi bi-facebook"></i> صفحة المدرسة</a>
+                    {% if school_info and school_info.latitude and school_info.longitude %}<button type="button" class="btn btn-outline-primary map-btn" data-bs-toggle="modal" data-bs-target="#schoolMapModal"><i class="bi bi-geo-alt-fill"></i> موقع المدرسة</button>{% endif %}
                 </div>
             </div>
-        </div>
-        {% endif %}
-    </div>
+        </footer>
+    </main>
 </div>
 {% endblock %}
+
+{% if school_info and school_info.latitude and school_info.longitude %}
+<div class="modal fade" id="schoolMapModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 overflow-hidden">
+            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-geo-alt-fill text-primary"></i> موقع المدرسة</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-2"><div id="school-map" style="width:100%;height:400px;border-radius:14px;" data-lat="{{ school_info.latitude }}" data-lng="{{ school_info.longitude }}" data-name="{{ school_info.name_ar }}"></div></div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% block extra_js %}
 <script>
@@ -304,20 +209,13 @@ function initSchoolMap() {
     var lat = parseFloat(mapEl.dataset.lat.replace(',', '.'));
     var lng = parseFloat(mapEl.dataset.lng.replace(',', '.'));
     var name = mapEl.dataset.name;
-    var streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap'
-    });
-    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 18,
-        attribution: '&copy; ESRI'
-    });
-    var map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 18);
+    var streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'});
+    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 18, attribution: '&copy; ESRI'});
+    var map = L.map(mapEl, {zoomControl: true, scrollWheelZoom: false}).setView([lat, lng], 18);
     satellite.addTo(map);
-    satellite.on('tileerror', function() { if (!map.hasLayer(streets)) { streets.addTo(map); } });
+    satellite.on('tileerror', function() { if (!map.hasLayer(streets)) streets.addTo(map); });
     L.control.layers({'القمر الصناعي': satellite, 'خريطة عادية': streets}).addTo(map);
-    var marker = L.marker([lat, lng]).addTo(map);
-    marker.bindPopup('<span style="color:red;font-weight:bold;font-size:16px;">' + (name || 'موقع المدرسة') + '</span>').openPopup();
+    L.marker([lat, lng]).addTo(map).bindPopup('<span style="color:red;font-weight:bold;font-size:16px;">' + (name || 'موقع المدرسة') + '</span>').openPopup();
     mapEl.addEventListener('click', function() { map.scrollWheelZoom.enable(); });
     window._schoolMap = map;
 }
