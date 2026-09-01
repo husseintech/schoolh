@@ -1,0 +1,54 @@
+{% extends 'school/base.html' %}
+{% block title %}متابعة زيارة مشرف{% endblock %}
+{% block page_heading %}متابعة الإدارة لزيارة المشرف{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <strong><i class="bi bi-clipboard-check"></i> بيانات الزيارة والتوصيات</strong>
+                <span class="badge bg-light text-dark">{{ visit.visit_date|date:'Y-m-d' }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6"><strong>المعلم:</strong> {{ visit.teacher.full_name }}</div>
+                    <div class="col-md-6"><strong>المشرف:</strong> {{ visit.supervisor_name|default:'---' }}</div>
+                    <div class="col-md-4"><strong>المبحث:</strong> {{ visit.subject_area|default:'---' }}</div>
+                    <div class="col-md-4"><strong>الصف:</strong> {{ visit.class_name|default:'---' }}</div>
+                    <div class="col-md-4"><strong>الشعبة:</strong> {{ visit.section|default:'---' }}</div>
+                </div>
+                <div class="alert alert-light border mb-0">
+                    <div class="fw-bold mb-2">توصيات المشرف</div>
+                    <div style="white-space:pre-line; line-height:1.8;">{{ visit.recommendations|default:'لا توجد توصيات مسجلة' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <strong><i class="bi bi-check2-circle"></i> تسجيل متابعة الإدارة</strong>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">تاريخ المتابعة</label>
+                            <input type="date" name="followup_date" class="form-control" value="{% if followup %}{{ followup.followup_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">متابعة الإدارة</label>
+                            <textarea name="notes" class="form-control" rows="6" required placeholder="اكتب ما قامت به الإدارة استناداً إلى توصيات المشرف...">{% if followup %}{{ followup.notes }}{% endif %}</textarea>
+                            <div class="form-text">يمكن فتح الزيارة لاحقاً وتحديث المتابعة أو تاريخها عند الحاجة.</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> حفظ المتابعة</button>
+                        <a href="{% url 'supervisor_visit_report' visit.id %}" class="btn btn-outline-secondary">العودة للتقرير</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
