@@ -1,0 +1,1 @@
+Teacher achievement report hotfix: class choices now use Teacher.classes assignments, while subject choices prefer exact schedule mappings and fall back to Teacher.subjects when the daily schedule has not yet been generated.
