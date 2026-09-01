@@ -15,7 +15,6 @@
 {% endif %}
 <div class="card" id="reportCard">
     <div class="card-body">
-        <!-- حانوت التقرير -->
         <div class="row mb-4 align-items-center">
             <div class="col-5 text-start">
                 <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
@@ -32,11 +31,9 @@
             </div>
         </div>
         <hr>
-        <!-- عنوان التقرير -->
         <div class="text-center mb-4">
-            <h5>محضر اجتماع معلمين</h5>
+            <h5>محضر اجتماع معلمين ({{ meeting.meeting_type }})</h5>
         </div>
-        <!-- بيانات الاجتماع -->
         <table class="table table-bordered">
             <tr>
                 <td style="width: 50%;"><strong>رقم الاجتماع:</strong> {{ meeting.meeting_number }}</td>
@@ -51,17 +48,14 @@
                 <td><strong>المكان:</strong> {{ meeting.place }}</td>
             </tr>
         </table>
-        <!-- أهداف الاجتماع -->
         <div class="mb-3">
             <h6>أهداف الاجتماع:</h6>
             <p style="line-height: 1.8;">{{ meeting.goals|linebreaks }}</p>
         </div>
-        <!-- محضر الاجتماع -->
         <div class="mb-3">
             <h6>محضر الاجتماع:</h6>
             <p style="line-height: 1.8;">{{ meeting.minutes|linebreaks }}</p>
         </div>
-        <!-- الحضور -->
         <div class="mb-3">
             <h6>المعلمون الحاضرون:</h6>
             <div style="column-count: 2; column-gap: 40px;">
