@@ -17,9 +17,8 @@ class TeacherRecordsNavigationMiddleware:
         marker = '<div class="nav-collapse" id="collapse-admin">'
         if marker in html and 'data-school-records-nav="1"' not in html:
             links = []
-            if role in ('admin', 'vice_principal'):
-                links.append('<a data-school-records-nav="1" href="/administration/academic-achievement/" class="nav-link"><i class="bi bi-clipboard-data"></i> تحليل التحصيل الدراسي</a>')
             if role in ('admin', 'vice_principal', 'teacher'):
+                links.append('<a data-school-records-nav="1" href="/administration/academic-achievement/" class="nav-link"><i class="bi bi-clipboard-data"></i> تحليل التحصيل الدراسي</a>')
                 links.append('<a data-school-records-nav="1" href="/administration/teacher-records/curriculum/" class="nav-link"><i class="bi bi-journal-check"></i> متابعة ما قطع من المنهاج</a>')
                 links.append('<a data-school-records-nav="1" href="/administration/teacher-records/training/" class="nav-link"><i class="bi bi-mortarboard"></i> سجل الدورات</a>')
             if links:
@@ -30,8 +29,6 @@ class TeacherRecordsNavigationMiddleware:
             target = '<a href="/backup/"'
             if target in html:
                 html = html.replace(target, anchor + target, 1)
-            else:
-                html = html.replace('</div>\n{% endblock %}', anchor + '</div>\n{% endblock %}', 1)
 
         response.content = html.encode(response.charset or 'utf-8')
         if response.has_header('Content-Length'):
