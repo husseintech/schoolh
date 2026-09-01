@@ -38,6 +38,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'school.teacher_records_nav.TeacherRecordsNavigationMiddleware',
     'school.middleware.StudentRecordAccessMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'school.middleware.WordExportMiddleware',
@@ -108,8 +109,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://schoolh-bay.vercel.app',
 ]
 
-# Vercel terminates HTTPS at the proxy. Trust its forwarded scheme and use
-# secure cookies only there so local HTTP development continues to work.
 if os.getenv('VERCEL'):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
