@@ -3,25 +3,159 @@
 {% block page_heading %}لوحتي الطلابية{% endblock %}
 {% block content %}
 <style>
-.student-dashboard{--sd-blue:#2563eb;--sd-ink:#172033;--sd-muted:#6b7280;--sd-bg:#f6f8fc;--sd-line:#e7ebf2;--sd-green:#16875b;--sd-orange:#d97706}.student-dashboard .hero{background:linear-gradient(135deg,#173d8f,#2563eb);border-radius:24px;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:0 14px 35px rgba(37,99,235,.18)}.student-dashboard .hero:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08);left:-70px;top:-110px}.student-dashboard .hero-icon{width:68px;height:68px;border-radius:20px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:2rem}.student-dashboard .class-pill{display:inline-flex;gap:7px;align-items:center;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);padding:7px 12px;border-radius:999px}.student-dashboard .section-title{font-size:1.08rem;font-weight:800;color:var(--sd-ink);margin-bottom:14px}.student-dashboard .summary-card,.student-dashboard .panel{background:#fff;border:1px solid var(--sd-line);border-radius:18px}.student-dashboard .summary-card{padding:18px;height:100%;transition:.18s ease}.student-dashboard .summary-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(25,45,80,.08)}.student-dashboard .summary-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;background:#eef4ff;color:var(--sd-blue)}.student-dashboard .summary-number{font-size:1.65rem;font-weight:850;color:var(--sd-ink);line-height:1}.student-dashboard .panel{padding:20px;height:100%}.student-dashboard .attention{border-right:4px solid var(--sd-orange)}.student-dashboard .ok-box{background:#effaf5;border:1px solid #d5f1e4;border-radius:16px;color:#126442;padding:16px}.student-dashboard .quick-link{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--sd-line);border-radius:15px;color:var(--sd-ink);text-decoration:none;height:100%;background:#fff;transition:.18s ease}.student-dashboard .quick-link:hover{border-color:#bfd0fa;box-shadow:0 8px 20px rgba(25,45,80,.07);color:var(--sd-blue)}.student-dashboard .quick-link i{font-size:1.3rem;color:var(--sd-blue)}.student-dashboard .learning-card{background:linear-gradient(135deg,#f0f6ff,#f8fbff);border:1px solid #dce8ff;border-radius:20px;padding:22px}.student-dashboard .level-item{border:1px solid var(--sd-line);border-radius:15px;padding:14px;height:100%;background:#fff}.student-dashboard .details-box{background:var(--sd-bg);border-radius:16px;padding:15px}.student-dashboard .soft-badge{padding:6px 10px;border-radius:999px;font-size:.78rem;font-weight:700}.student-dashboard .table{margin-bottom:0}.student-dashboard .table>:not(caption)>*>*{padding:.75rem .6rem}.student-dashboard .survey-banner{border:0;border-radius:16px}.student-dashboard .modal-content{border:0;border-radius:20px}@media(max-width:767.98px){.student-dashboard .hero{padding:21px;border-radius:19px}.student-dashboard .hero-icon{width:54px;height:54px}.student-dashboard .summary-card{padding:14px}.student-dashboard .summary-number{font-size:1.4rem}}@media(prefers-reduced-motion:reduce){.student-dashboard *{transition:none!important}.student-dashboard .summary-card:hover{transform:none}}
+.student-dashboard{
+  --sd-blue:#2563eb;--sd-blue-dark:#163f8f;--sd-ink:#172033;--sd-muted:#687386;
+  --sd-bg:#f6f8fc;--sd-line:#e6ebf3;--sd-green:#16875b;--sd-orange:#d97706;--sd-red:#dc3545;
+  color:var(--sd-ink)
+}
+.student-dashboard .hero{
+  background:linear-gradient(135deg,#143d8f 0%,#2563eb 58%,#4d7ff3 100%);
+  border-radius:26px;padding:30px;color:#fff;position:relative;overflow:hidden;
+  box-shadow:0 18px 40px rgba(37,99,235,.20)
+}
+.student-dashboard .hero:before,.student-dashboard .hero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.08)}
+.student-dashboard .hero:before{width:240px;height:240px;left:-70px;top:-120px}
+.student-dashboard .hero:after{width:145px;height:145px;right:-35px;bottom:-70px}
+.student-dashboard .hero-icon{width:72px;height:72px;border-radius:22px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:2.15rem;border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.student-dashboard .hero-copy{position:relative;z-index:2}.student-dashboard .hero-actions{position:relative;z-index:2}
+.student-dashboard .class-pill{display:inline-flex;gap:7px;align-items:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:7px 12px;border-radius:999px;font-size:.9rem}
+.student-dashboard .motto{opacity:.84;font-size:.9rem;margin-top:10px}
+.student-dashboard .section-title{font-size:1.08rem;font-weight:800;color:var(--sd-ink);margin-bottom:14px}
+.student-dashboard .section-subtitle{color:var(--sd-muted);font-size:.86rem}
+.student-dashboard .summary-card,.student-dashboard .panel{background:#fff;border:1px solid var(--sd-line);border-radius:20px}
+.student-dashboard .summary-card{padding:18px;height:100%;transition:.18s ease;position:relative;overflow:hidden}
+.student-dashboard .summary-card:after{content:"";position:absolute;width:54px;height:54px;border-radius:50%;background:#f4f7fc;left:-18px;bottom:-20px}
+.student-dashboard .summary-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(25,45,80,.08)}
+.student-dashboard .summary-icon{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:#eef4ff;color:var(--sd-blue)}
+.student-dashboard .summary-number{font-size:1.7rem;font-weight:850;color:var(--sd-ink);line-height:1}
+.student-dashboard .panel{padding:21px;height:100%;box-shadow:0 6px 18px rgba(35,55,90,.03)}
+.student-dashboard .attention-item{padding:14px 15px;border:1px solid #f0e6d4;border-right:4px solid var(--sd-orange);border-radius:14px;background:#fffaf3}
+.student-dashboard .attention-danger{border-color:#f5dddd;border-right-color:var(--sd-red);background:#fff7f7}
+.student-dashboard .ok-box{background:#effaf5;border:1px solid #d5f1e4;border-radius:16px;color:#126442;padding:17px}
+.student-dashboard .quick-link{display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--sd-line);border-radius:16px;color:var(--sd-ink);text-decoration:none;height:100%;background:#fff;transition:.18s ease}
+.student-dashboard .quick-link:hover{border-color:#bfd0fa;box-shadow:0 9px 22px rgba(25,45,80,.07);color:var(--sd-blue);transform:translateY(-2px)}
+.student-dashboard .quick-link i{font-size:1.35rem;color:var(--sd-blue)}
+.student-dashboard .learning-card{background:linear-gradient(135deg,#edf5ff 0%,#f8fbff 70%);border:1px solid #d7e5ff;border-radius:22px;padding:22px;position:relative;overflow:hidden}
+.student-dashboard .learning-card:after{content:"";position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(37,99,235,.06);left:-45px;bottom:-60px}
+.student-dashboard .learning-actions{position:relative;z-index:2}
+.student-dashboard .level-item{border:1px solid var(--sd-line);border-radius:16px;padding:15px;height:100%;background:#fff;transition:.18s ease}
+.student-dashboard .level-item:hover{border-color:#c9d7f3;box-shadow:0 8px 18px rgba(25,45,80,.05)}
+.student-dashboard .details-box{background:var(--sd-bg);border-radius:16px;padding:15px}
+.student-dashboard .soft-badge{padding:6px 10px;border-radius:999px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.student-dashboard .table{margin-bottom:0}.student-dashboard .table>:not(caption)>*>*{padding:.75rem .6rem;vertical-align:middle}
+.student-dashboard .schedule-table th{background:#f7f9fc}.student-dashboard .schedule-table td{min-width:100px}
+.student-dashboard .survey-banner{border:0;border-radius:18px}
+.student-dashboard .modal-content{border:0;border-radius:20px}
+.student-dashboard .identity-row .details-box{height:100%}
+.student-dashboard .mini-label{font-size:.77rem;color:var(--sd-muted);margin-bottom:4px}
+.student-dashboard .streak-note{font-size:.82rem;color:var(--sd-muted)}
+@media(max-width:767.98px){
+  .student-dashboard .hero{padding:22px;border-radius:20px}.student-dashboard .hero-icon{width:56px;height:56px;border-radius:17px;font-size:1.65rem}
+  .student-dashboard .summary-card{padding:14px}.student-dashboard .summary-number{font-size:1.45rem}.student-dashboard .panel{padding:17px}
+  .student-dashboard .quick-link{padding:13px}.student-dashboard .motto{display:none}.student-dashboard .hero h2{font-size:1.15rem}
+}
+@media(prefers-reduced-motion:reduce){.student-dashboard *{transition:none!important}.student-dashboard .summary-card:hover,.student-dashboard .quick-link:hover{transform:none}}
 </style>
+
 <div class="student-dashboard">
-<section class="hero mb-4"><div class="d-flex align-items-center gap-3 position-relative" style="z-index:1"><div class="hero-icon"><i class="bi bi-mortarboard-fill"></i></div><div class="flex-grow-1"><div class="small opacity-75 mb-1">أهلًا بك في مساحتك المدرسية</div><h2 class="h4 fw-bold mb-2">مرحباً، {{ student.full_name }} 👋</h2><span class="class-pill"><i class="bi bi-people-fill"></i> الصف {{ student.student_class.name|default:"غير محدد" }}</span></div><a href="{% url 'my_account' %}" class="btn btn-light btn-sm d-none d-md-inline-flex align-items-center gap-2"><i class="bi bi-person-gear"></i> حسابي</a></div></section>
-{% if 'survey_add' in user_perms %}<div class="alert alert-info survey-banner d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4"><div><strong><i class="bi bi-clipboard2-heart-fill me-1"></i> المسح الصحي والاجتماعي</strong> <span class="ms-1">{{ survey_status|default:'' }}</span><div class="small mt-1">إكمال بيانات المسح يساعد المدرسة على تقديم رعاية أفضل.</div></div><a href="{% url 'survey_form' %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i> تعبئة / مراجعة</a></div>{% endif %}
-<div class="section-title"><i class="bi bi-grid-1x2-fill text-primary me-1"></i> ملخصي</div><div class="row g-3 mb-4">
-<div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="text-muted small mb-2">الرسائل الجديدة</div><div class="summary-number">{{ unread_messages }}</div></div><div class="summary-icon"><i class="bi bi-envelope-fill"></i></div></div><a href="{% url 'student_messages' %}" class="small text-decoration-none d-inline-block mt-3">عرض الرسائل <i class="bi bi-arrow-left"></i></a></div></div>
-<div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="text-muted small mb-2">أيام الغياب</div><div class="summary-number {% if absence_count %}text-danger{% endif %}">{{ absence_count }}</div></div><div class="summary-icon"><i class="bi bi-calendar-x-fill"></i></div></div><a href="{% url 'student_absence_report' %}" class="small text-decoration-none d-inline-block mt-3">تقرير الغياب <i class="bi bi-arrow-left"></i></a></div></div>
-<div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="text-muted small mb-2">أذونات المغادرة</div><div class="summary-number">{{ leaves|length }}</div></div><div class="summary-icon"><i class="bi bi-door-open-fill"></i></div></div><div class="small text-muted mt-3">آخر الأذونات المسجلة</div></div></div>
-<div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="text-muted small mb-2">المستويات المسجلة</div><div class="summary-number">{{ levels|length }}</div></div><div class="summary-icon"><i class="bi bi-graph-up-arrow"></i></div></div><div class="small text-muted mt-3">متابعة تقدّمك الأكاديمي</div></div></div></div>
-<div class="row g-3 mb-4"><div class="col-lg-7"><div class="panel"><div class="section-title mb-3"><i class="bi bi-bell-fill text-warning me-1"></i> ما الذي يحتاج انتباهك؟</div>{% if unread_messages or warnings or summons %}{% if unread_messages %}<div class="attention p-3 bg-light rounded-3 mb-2"><strong>لديك {{ unread_messages }} رسالة جديدة</strong><div class="small text-muted mt-1">راجع رسائلك حتى لا يفوتك أي تحديث من المدرسة.</div><a href="{% url 'student_messages' %}" class="btn btn-outline-primary btn-sm mt-2">فتح الرسائل</a></div>{% endif %}{% if warnings %}<div class="attention p-3 bg-light rounded-3 mb-2" style="border-right-color:#dc3545"><strong>يوجد تنبيه سلوكي مسجل</strong><div class="small text-muted mt-1">راجع قسم الإنذارات أدناه لمعرفة التفاصيل.</div></div>{% endif %}{% if summons %}<div class="attention p-3 bg-light rounded-3"><strong>يوجد استدعاء لولي الأمر</strong><div class="small text-muted mt-1">يرجى مراجعة تفاصيل الاستدعاء أدناه.</div></div>{% endif %}{% else %}<div class="ok-box"><i class="bi bi-check-circle-fill me-1"></i> <strong>كل شيء على ما يرام.</strong><div class="small mt-1">لا توجد رسائل أو تنبيهات جديدة تحتاج متابعتك الآن.</div></div>{% endif %}</div></div>
-<div class="col-lg-5"><div class="learning-card h-100"><div class="d-flex align-items-start gap-3"><div class="summary-icon"><i class="bi bi-lightbulb-fill"></i></div><div><h3 class="h6 fw-bold mb-1">مساحة التعلم المفتوح</h3><p class="text-muted small mb-3">دروسك، أنشطتك، الاختبارات والإنجازات في مكان واحد.</p></div></div><div class="d-flex flex-wrap gap-2"><a href="{% url 'ol_student_progress' %}" class="btn btn-primary btn-sm"><i class="bi bi-play-circle"></i> ابدأ التعلم</a><a href="{% url 'ol_my_achievements' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-trophy"></i> إنجازاتي</a></div></div></div></div>
-<div class="section-title"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> وصول سريع</div><div class="row g-2 mb-4"><div class="col-6 col-md-3"><a class="quick-link" href="{% url 'student_messages' %}"><i class="bi bi-chat-dots-fill"></i><span><strong class="d-block">رسائلي</strong><small class="text-muted">تواصل المدرسة</small></span></a></div><div class="col-6 col-md-3"><a class="quick-link" href="{% url 'student_absence_report' %}"><i class="bi bi-calendar-check-fill"></i><span><strong class="d-block">حضوري</strong><small class="text-muted">سجل الغياب</small></span></a></div><div class="col-6 col-md-3"><a class="quick-link" href="{% url 'ol_student_progress' %}"><i class="bi bi-book-half"></i><span><strong class="d-block">تعلمي</strong><small class="text-muted">الدروس والتقدم</small></span></a></div><div class="col-6 col-md-3"><a class="quick-link" href="{% url 'my_account' %}"><i class="bi bi-person-badge-fill"></i><span><strong class="d-block">بياناتي</strong><small class="text-muted">الحساب الشخصي</small></span></a></div></div>
-<div class="panel mb-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><div class="section-title mb-0"><i class="bi bi-bar-chart-fill text-primary me-1"></i> مستواي الأكاديمي</div><span class="small text-muted">آخر المستويات المسجلة من المعلمين</span></div>{% if levels %}<div class="row g-2">{% for lv in levels|slice:":8" %}<div class="col-md-6 col-lg-3"><div class="level-item"><div class="d-flex justify-content-between gap-2"><strong>{{ lv.subject.name|default:'عام' }}</strong><span class="soft-badge {% if lv.level == 'excellent' %}bg-success-subtle text-success{% elif lv.level == 'very_good' %}bg-info-subtle text-info-emphasis{% elif lv.level == 'good' %}bg-primary-subtle text-primary{% elif lv.level == 'acceptable' %}bg-warning-subtle text-warning-emphasis{% else %}bg-danger-subtle text-danger{% endif %}">{{ lv.get_level_display }}</span></div><div class="small text-muted mt-2">{{ lv.notes|default:'لا توجد ملاحظات'|truncatewords:10 }}</div><div class="small text-muted mt-2"><i class="bi bi-calendar3"></i> {{ lv.created_at|date:"Y-m-d" }}</div></div></div>{% endfor %}</div>{% else %}<div class="ok-box text-center">لم يتم تسجيل مستوى أكاديمي بعد.</div>{% endif %}</div>
-<div class="panel mb-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><div class="section-title mb-0"><i class="bi bi-calendar-week-fill text-primary me-1"></i> برنامجي المدرسي</div><span class="badge text-bg-light">الصف {{ student.student_class.name|default:'غير محدد' }}</span></div>{% if student.student_class %}<div class="table-responsive"><table class="table table-bordered text-center align-middle"><thead class="table-light"><tr><th>اليوم</th>{% for p in period_range %}<th>حصة {{ p }}</th>{% endfor %}</tr></thead><tbody>{% for day in schedule_days %}<tr><th class="text-nowrap">{{ day }}</th>{% for p in period_range %}<td>{% for e in schedule_entries %}{% if e.day == day and e.period == p %}<strong class="d-block">{{ e.subject.name|default:'---' }}</strong><small class="text-muted">{{ e.teacher.full_name|default:'' }}</small>{% endif %}{% endfor %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% else %}<div class="text-muted text-center py-3">لم يتم تحديد صف لهذا الطالب.</div>{% endif %}</div>
-<div class="row g-3 mb-4"><div class="col-lg-6"><div class="panel"><div class="section-title"><i class="bi bi-sticky-fill text-primary me-1"></i> آخر الملاحظات</div>{% if notes %}<div class="table-responsive"><table class="table align-middle"><tbody>{% for note in notes|slice:":5" %}<tr><td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td><td>{{ note.content|truncatewords:12 }}</td><td class="text-muted small text-nowrap">{{ note.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="ok-box">لا توجد ملاحظات مسجلة.</div>{% endif %}</div></div><div class="col-lg-6"><div class="panel"><div class="section-title"><i class="bi bi-door-open-fill text-primary me-1"></i> آخر أذونات المغادرة</div>{% if leaves %}<div class="table-responsive"><table class="table align-middle"><tbody>{% for l in leaves|slice:":5" %}<tr><td class="text-nowrap">{{ l.leave_date|date:"Y-m-d" }}</td><td>{{ l.reason|truncatewords:8 }}</td><td><span class="badge bg-{% if l.status == 'approved' %}success{% elif l.status == 'rejected' %}danger{% else %}warning{% endif %}">{{ l.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="ok-box">لا توجد أذونات مغادرة مسجلة.</div>{% endif %}</div></div></div>
-{% if warnings or summons %}<div class="row g-3 mb-4">{% if warnings %}<div class="col-lg-6"><div class="panel border-danger"><div class="section-title text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> الإنذارات</div>{% for w in warnings|slice:":5" %}<div class="details-box mb-2"><strong>{{ w.incident_date|date:"Y-m-d" }}</strong><div class="small mt-1">{{ w.incident_facts|truncatewords:20 }}</div></div>{% endfor %}</div></div>{% endif %}{% if summons %}<div class="col-lg-6"><div class="panel border-warning"><div class="section-title"><i class="bi bi-person-lines-fill text-warning me-1"></i> استدعاءات ولي الأمر</div>{% for s in summons|slice:":5" %}<div class="details-box mb-2"><strong>{{ s.summons_date|date:"Y-m-d" }}</strong><div class="small mt-1">{{ s.summons_text|truncatewords:20 }}</div></div>{% endfor %}</div></div>{% endif %}</div>{% endif %}
-<div class="panel mb-4"><div class="section-title"><i class="bi bi-person-vcard-fill text-primary me-1"></i> بياناتي الشخصية</div><div class="row g-2"><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">رقم الهوية</small><strong>{{ student.student_id }}</strong></div></div><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">الصف</small><strong>{{ student.student_class.name|default:'غير محدد' }}</strong></div></div><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">ولي الأمر</small><strong>{{ student.parent_name|default:'غير مسجل' }}</strong></div></div></div></div>
-{% if has_survey and whatsapp_groups %}<div class="panel mb-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><div class="section-title mb-1"><i class="bi bi-whatsapp text-success"></i> مجموعات واتساب للصف</div><div class="small text-muted">روابط التواصل الخاصة بالصف {{ student.student_class.name|default:'' }}</div></div><button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#whatsappModal"><i class="bi bi-whatsapp"></i> عرض الروابط</button></div></div>{% endif %}
+  <section class="hero mb-4">
+    <div class="d-flex align-items-center gap-3 hero-copy">
+      <div class="hero-icon"><i class="bi bi-mortarboard-fill"></i></div>
+      <div class="flex-grow-1">
+        <div class="small opacity-75 mb-1">مساحتك المدرسية الشخصية</div>
+        <h2 class="h4 fw-bold mb-2">مرحباً، {{ student.full_name }} 👋</h2>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <span class="class-pill"><i class="bi bi-people-fill"></i> الصف {{ student.student_class.name|default:"غير محدد" }}</span>
+          {% if unread_messages %}<span class="class-pill"><i class="bi bi-envelope-fill"></i> {{ unread_messages }} جديدة</span>{% endif %}
+        </div>
+        <div class="motto">ابدأ يومك بمعرفة ما يهمك، ثم تابع تعلمك وإنجازاتك بخطوات واضحة.</div>
+      </div>
+      <div class="hero-actions d-none d-md-flex gap-2">
+        <a href="{% url 'ol_student_progress' %}" class="btn btn-light btn-sm"><i class="bi bi-play-circle"></i> تعلّمي</a>
+        <a href="{% url 'my_account' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-person-gear"></i> حسابي</a>
+      </div>
+    </div>
+  </section>
+
+  {% if 'survey_add' in user_perms %}
+  <div class="alert alert-info survey-banner d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div><strong><i class="bi bi-clipboard2-heart-fill me-1"></i> المسح الصحي والاجتماعي</strong> <span class="ms-1">{{ survey_status|default:'' }}</span><div class="small mt-1">إكمال بيانات المسح يساعد المدرسة على تقديم رعاية أفضل.</div></div>
+    <a href="{% url 'survey_form' %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i> تعبئة / مراجعة</a>
+  </div>
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <div><div class="section-title mb-1"><i class="bi bi-grid-1x2-fill text-primary me-1"></i> ملخصي</div><div class="section-subtitle">أهم ما تحتاج معرفته بمجرد فتح الصفحة</div></div>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="mini-label">الرسائل الجديدة</div><div class="summary-number">{{ unread_messages }}</div></div><div class="summary-icon"><i class="bi bi-envelope-fill"></i></div></div><a href="{% url 'student_messages' %}" class="small text-decoration-none d-inline-block mt-3">عرض الرسائل <i class="bi bi-arrow-left"></i></a></div></div>
+    <div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="mini-label">أيام الغياب</div><div class="summary-number {% if absence_count %}text-danger{% endif %}">{{ absence_count }}</div></div><div class="summary-icon"><i class="bi bi-calendar-x-fill"></i></div></div><a href="{% url 'student_absence_report' %}" class="small text-decoration-none d-inline-block mt-3">تقرير الغياب <i class="bi bi-arrow-left"></i></a></div></div>
+    <div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="mini-label">أذونات المغادرة</div><div class="summary-number">{{ leaves|length }}</div></div><div class="summary-icon"><i class="bi bi-door-open-fill"></i></div></div><div class="streak-note mt-3">آخر الأذونات المسجلة</div></div></div>
+    <div class="col-6 col-lg-3"><div class="summary-card"><div class="d-flex justify-content-between"><div><div class="mini-label">المستويات المسجلة</div><div class="summary-number">{{ levels|length }}</div></div><div class="summary-icon"><i class="bi bi-graph-up-arrow"></i></div></div><div class="streak-note mt-3">متابعة تقدّمك الأكاديمي</div></div></div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-7">
+      <div class="panel">
+        <div class="section-title mb-3"><i class="bi bi-bell-fill text-warning me-1"></i> ما الذي يحتاج انتباهك؟</div>
+        {% if unread_messages or warnings or summons %}
+          {% if unread_messages %}<div class="attention-item mb-2"><strong>لديك {{ unread_messages }} رسالة جديدة</strong><div class="small text-muted mt-1">راجع رسائلك حتى لا يفوتك أي تحديث من المدرسة.</div><a href="{% url 'student_messages' %}" class="btn btn-outline-primary btn-sm mt-2">فتح الرسائل</a></div>{% endif %}
+          {% if warnings %}<div class="attention-item attention-danger mb-2"><strong>يوجد تنبيه سلوكي مسجل</strong><div class="small text-muted mt-1">راجع قسم الإنذارات في هذه الصفحة لمعرفة التفاصيل.</div></div>{% endif %}
+          {% if summons %}<div class="attention-item"><strong>يوجد استدعاء لولي الأمر</strong><div class="small text-muted mt-1">يرجى مراجعة تفاصيل الاستدعاء والتأكد من وصوله لولي الأمر.</div></div>{% endif %}
+        {% else %}
+          <div class="ok-box"><i class="bi bi-check-circle-fill me-1"></i> <strong>كل شيء على ما يرام.</strong><div class="small mt-1">لا توجد رسائل أو تنبيهات جديدة تحتاج متابعتك الآن.</div></div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="learning-card h-100">
+        <div class="d-flex align-items-start gap-3"><div class="summary-icon"><i class="bi bi-lightbulb-fill"></i></div><div><h3 class="h6 fw-bold mb-1">مساحة التعلم المفتوح</h3><p class="text-muted small mb-3">دروسك، أنشطتك، اختباراتك وإنجازاتك في مكان واحد.</p></div></div>
+        <div class="learning-actions d-flex flex-wrap gap-2"><a href="{% url 'ol_student_progress' %}" class="btn btn-primary btn-sm"><i class="bi bi-play-circle"></i> ابدأ التعلم</a><a href="{% url 'ol_my_achievements' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-trophy"></i> إنجازاتي</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> وصول سريع</div>
+  <div class="row g-2 mb-4">
+    <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'student_messages' %}"><i class="bi bi-chat-dots-fill"></i><span><strong class="d-block">رسائلي</strong><small class="text-muted">تواصل المدرسة</small></span></a></div>
+    <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'student_absence_report' %}"><i class="bi bi-calendar-check-fill"></i><span><strong class="d-block">حضوري</strong><small class="text-muted">سجل الغياب</small></span></a></div>
+    <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'ol_student_progress' %}"><i class="bi bi-book-half"></i><span><strong class="d-block">تعلّمي</strong><small class="text-muted">الدروس والتقدم</small></span></a></div>
+    <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'my_account' %}"><i class="bi bi-person-badge-fill"></i><span><strong class="d-block">بياناتي</strong><small class="text-muted">الحساب الشخصي</small></span></a></div>
+  </div>
+
+  <div class="panel mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><div class="section-title mb-0"><i class="bi bi-bar-chart-fill text-primary me-1"></i> مستواي الأكاديمي</div><span class="section-subtitle">آخر المستويات المسجلة من المعلمين</span></div>
+    {% if levels %}<div class="row g-2">{% for lv in levels|slice:":8" %}<div class="col-md-6 col-lg-3"><div class="level-item"><div class="d-flex justify-content-between gap-2"><strong>{{ lv.subject.name|default:'عام' }}</strong><span class="soft-badge {% if lv.level == 'excellent' %}bg-success-subtle text-success{% elif lv.level == 'very_good' %}bg-info-subtle text-info-emphasis{% elif lv.level == 'good' %}bg-primary-subtle text-primary{% elif lv.level == 'acceptable' %}bg-warning-subtle text-warning-emphasis{% else %}bg-danger-subtle text-danger{% endif %}">{{ lv.get_level_display }}</span></div><div class="small text-muted mt-2">{{ lv.notes|default:'لا توجد ملاحظات'|truncatewords:10 }}</div><div class="small text-muted mt-2"><i class="bi bi-calendar3"></i> {{ lv.created_at|date:"Y-m-d" }}</div></div></div>{% endfor %}</div>{% else %}<div class="ok-box text-center">لم يتم تسجيل مستوى أكاديمي بعد.</div>{% endif %}
+  </div>
+
+  <div class="panel mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><div class="section-title mb-0"><i class="bi bi-calendar-week-fill text-primary me-1"></i> برنامجي المدرسي</div><span class="badge text-bg-light">الصف {{ student.student_class.name|default:'غير محدد' }}</span></div>
+    {% if student.student_class %}<div class="table-responsive"><table class="table table-bordered text-center align-middle schedule-table"><thead><tr><th>اليوم</th>{% for p in period_range %}<th>حصة {{ p }}</th>{% endfor %}</tr></thead><tbody>{% for day in schedule_days %}<tr><th class="text-nowrap">{{ day }}</th>{% for p in period_range %}<td>{% for e in schedule_entries %}{% if e.day == day and e.period == p %}<strong class="d-block">{{ e.subject.name|default:'---' }}</strong><small class="text-muted">{{ e.teacher.full_name|default:'' }}</small>{% endif %}{% endfor %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% else %}<div class="text-muted text-center py-3">لم يتم تحديد صف لهذا الطالب.</div>{% endif %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6"><div class="panel"><div class="section-title"><i class="bi bi-sticky-fill text-primary me-1"></i> آخر الملاحظات</div>{% if notes %}<div class="table-responsive"><table class="table align-middle"><tbody>{% for note in notes|slice:":5" %}<tr><td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% else %}secondary{% endif %}">{{ note.note_type }}</span></td><td>{{ note.content|truncatewords:12 }}</td><td class="text-muted small text-nowrap">{{ note.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="ok-box">لا توجد ملاحظات مسجلة.</div>{% endif %}</div></div>
+    <div class="col-lg-6"><div class="panel"><div class="section-title"><i class="bi bi-door-open-fill text-primary me-1"></i> آخر أذونات المغادرة</div>{% if leaves %}<div class="table-responsive"><table class="table align-middle"><tbody>{% for l in leaves|slice:":5" %}<tr><td class="text-nowrap">{{ l.leave_date|date:"Y-m-d" }}</td><td>{{ l.reason|truncatewords:8 }}</td><td><span class="badge bg-{% if l.status == 'approved' %}success{% elif l.status == 'rejected' %}danger{% else %}warning{% endif %}">{{ l.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="ok-box">لا توجد أذونات مغادرة مسجلة.</div>{% endif %}</div></div>
+  </div>
+
+  {% if warnings or summons %}
+  <div class="row g-3 mb-4">
+    {% if warnings %}<div class="col-lg-6"><div class="panel border-danger"><div class="section-title text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> الإنذارات</div>{% for w in warnings|slice:":5" %}<div class="details-box mb-2"><strong>{{ w.incident_date|date:"Y-m-d" }}</strong><div class="small mt-1">{{ w.incident_facts|truncatewords:20 }}</div></div>{% endfor %}</div></div>{% endif %}
+    {% if summons %}<div class="col-lg-6"><div class="panel border-warning"><div class="section-title"><i class="bi bi-person-lines-fill text-warning me-1"></i> استدعاءات ولي الأمر</div>{% for s in summons|slice:":5" %}<div class="details-box mb-2"><strong>{{ s.summons_date|date:"Y-m-d" }}</strong><div class="small mt-1">{{ s.summons_text|truncatewords:20 }}</div></div>{% endfor %}</div></div>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="panel mb-4">
+    <div class="section-title"><i class="bi bi-person-vcard-fill text-primary me-1"></i> بياناتي الشخصية</div>
+    <div class="row g-2 identity-row"><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">رقم الهوية</small><strong>{{ student.student_id }}</strong></div></div><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">الصف</small><strong>{{ student.student_class.name|default:'غير محدد' }}</strong></div></div><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">ولي الأمر</small><strong>{{ student.parent_name|default:'غير مسجل' }}</strong></div></div></div>
+  </div>
+
+  {% if has_survey and whatsapp_groups %}
+  <div class="panel mb-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><div class="section-title mb-1"><i class="bi bi-whatsapp text-success"></i> مجموعات واتساب للصف</div><div class="small text-muted">روابط التواصل الخاصة بالصف {{ student.student_class.name|default:'' }}</div></div><button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#whatsappModal"><i class="bi bi-whatsapp"></i> عرض الروابط</button></div></div>
+  {% endif %}
 </div>
-{% if whatsapp_groups %}<div class="modal fade" id="whatsappModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-whatsapp text-success"></i> روابط واتساب — الصف {{ student.student_class.name|default:'' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">{% for group in whatsapp_groups %}<div class="d-flex justify-content-between align-items-center border rounded-3 p-3 mb-2"><strong>{{ group.name|default:'مجموعة الصف' }}</strong>{% if group.link %}<a href="{{ group.link }}" target="_blank" rel="noopener" class="btn btn-success btn-sm">انضمام</a>{% elif group.url %}<a href="{{ group.url }}" target="_blank" rel="noopener" class="btn btn-success btn-sm">انضمام</a>{% endif %}</div>{% endfor %}</div></div></div></div>{% endif %}
+
+{% if whatsapp_groups %}
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-whatsapp text-success"></i> روابط واتساب — الصف {{ student.student_class.name|default:'' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">{% for group in whatsapp_groups %}<div class="d-flex justify-content-between align-items-center border rounded-3 p-3 mb-2"><strong>مجموعة الصف</strong>{% if group.link %}<a href="{{ group.link }}" target="_blank" rel="noopener" class="btn btn-success btn-sm">انضمام</a>{% endif %}</div>{% endfor %}</div></div></div></div>
+{% endif %}
 {% endblock %}
