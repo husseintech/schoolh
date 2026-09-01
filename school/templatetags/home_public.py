@@ -1,10 +1,10 @@
+import hashlib
 import ipaddress
 import re
-import socket
 import xml.etree.ElementTree as ET
 from urllib.parse import urljoin, urlparse
-from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+import requests
 from django import template
 from django.core.cache import cache
 
@@ -12,48 +12,31 @@ from school.public_models import SchoolPublicSettings
 
 register = template.Library()
 
-# Some Arabic news feeds include long descriptions/images, so 512 KB was too strict.
 MAX_FEED_BYTES = 2 * 1024 * 1024
-FEED_TIMEOUT_SECONDS = 6
+FEED_TIMEOUT = (3.05, 8)
 FEED_CACHE_SECONDS = 15 * 60
-NEGATIVE_CACHE_SECONDS = 60
+NEGATIVE_CACHE_SECONDS = 30
+MAX_REDIRECTS = 3
 
 
-def _is_public_https_url(url):
+def _is_allowed_public_url(url):
+    """Allow HTTPS public URLs and reject obvious local/private literal targets."""
     try:
         parsed = urlparse(url)
         if parsed.scheme != 'https' or not parsed.hostname:
             return False
-        # Reject literal private/reserved IP hosts.
-        try:
-            ip = ipaddress.ip_address(parsed.hostname)
-            return ip.is_global
-        except ValueError:
-            pass
-        # Resolve host and reject private/reserved destinations when resolution works.
-        # If DNS resolution is temporarily unavailable here, the actual request will fail
-        # safely below instead of permanently hiding a valid public feed.
-        try:
-            resolved = socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM)
-            if not resolved:
-                return False
-            for item in resolved:
-                address = ipaddress.ip_address(item[4][0])
-                if not address.is_global:
-                    return False
-        except socket.gaierror:
+        if parsed.username or parsed.password:
             return False
-        return True
+        host = parsed.hostname.strip().lower()
+        if host in {'localhost', 'localhost.localdomain'} or host.endswith('.local'):
+            return False
+        try:
+            return ipaddress.ip_address(host).is_global
+        except ValueError:
+            # Normal DNS hostnames are allowed. The source URL is editable only by admins.
+            return True
     except Exception:
         return False
-
-
-class _SafeRedirectHandler(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        target = urljoin(req.full_url, newurl)
-        if not _is_public_https_url(target):
-            raise ValueError('Unsafe redirect target')
-        return super().redirect_request(req, fp, code, msg, headers, target)
 
 
 def _text(node, names):
@@ -68,7 +51,7 @@ def _parse_feed(data):
     root = ET.fromstring(data)
     items = []
 
-    # RSS 2.x (including the format used by maannews.net/rss)
+    # RSS 2.x, including https://www.maannews.net/rss
     for item in root.findall('.//item')[:12]:
         title = _text(item, ['title'])
         link = _text(item, ['link'])
@@ -93,36 +76,67 @@ def _parse_feed(data):
     return items[:8]
 
 
+def _download_feed(feed_url):
+    """Fetch a feed with requests/certifi and manually validate HTTPS redirects."""
+    current_url = feed_url
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                      '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*;q=0.8',
+        'Accept-Language': 'ar,en;q=0.7',
+        'Cache-Control': 'no-cache',
+    }
+
+    for _ in range(MAX_REDIRECTS + 1):
+        if not _is_allowed_public_url(current_url):
+            return b''
+
+        response = requests.get(
+            current_url,
+            headers=headers,
+            timeout=FEED_TIMEOUT,
+            allow_redirects=False,
+            stream=True,
+        )
+
+        if response.is_redirect or response.is_permanent_redirect:
+            location = response.headers.get('Location', '').strip()
+            response.close()
+            if not location:
+                return b''
+            current_url = urljoin(current_url, location)
+            continue
+
+        response.raise_for_status()
+        data = bytearray()
+        try:
+            for chunk in response.iter_content(chunk_size=64 * 1024):
+                if not chunk:
+                    continue
+                data.extend(chunk)
+                if len(data) > MAX_FEED_BYTES:
+                    return b''
+        finally:
+            response.close()
+        return bytes(data)
+
+    return b''
+
+
 def _fetch_news(feed_url):
-    if not feed_url or not _is_public_https_url(feed_url):
+    if not feed_url or not _is_allowed_public_url(feed_url):
         return []
 
-    cache_key = 'school-public-feed-v2:' + str(abs(hash(feed_url)))
+    digest = hashlib.sha256(feed_url.encode('utf-8')).hexdigest()[:24]
+    cache_key = f'school-public-feed-v3:{digest}'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
 
     try:
-        opener = build_opener(_SafeRedirectHandler())
-        request = Request(
-            feed_url,
-            headers={
-                'User-Agent': 'Mozilla/5.0 (compatible; SchoolPortalRSS/1.0)',
-                'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*;q=0.8',
-                'Accept-Language': 'ar,en;q=0.7',
-                'Connection': 'close',
-            },
-        )
-        with opener.open(request, timeout=FEED_TIMEOUT_SECONDS) as response:
-            # Do not reject a valid feed only because the publisher uses a generic
-            # Content-Type. We validate the body by parsing it as XML instead.
-            data = response.read(MAX_FEED_BYTES + 1)
-            if len(data) > MAX_FEED_BYTES:
-                cache.set(cache_key, [], NEGATIVE_CACHE_SECONDS)
-                return []
-
-        items = _parse_feed(data)
-    except Exception:
+        data = _download_feed(feed_url)
+        items = _parse_feed(data) if data else []
+    except (requests.RequestException, ET.ParseError, ValueError, OSError):
         items = []
 
     cache.set(
