@@ -33,7 +33,6 @@ def _is_allowed_public_url(url):
         try:
             return ipaddress.ip_address(host).is_global
         except ValueError:
-            # Normal DNS hostnames are allowed. The source URL is editable only by admins.
             return True
     except Exception:
         return False
@@ -51,14 +50,12 @@ def _parse_feed(data):
     root = ET.fromstring(data)
     items = []
 
-    # RSS 2.x, including https://www.maannews.net/rss
     for item in root.findall('.//item')[:12]:
         title = _text(item, ['title'])
         link = _text(item, ['link'])
         if title and link and urlparse(link).scheme in ('http', 'https'):
             items.append({'title': title[:220], 'url': link})
 
-    # Atom
     if not items:
         ns = {'a': 'http://www.w3.org/2005/Atom'}
         for entry in root.findall('.//a:entry', ns)[:12]:
@@ -160,6 +157,11 @@ def school_home_extras():
     news = []
     if settings.news_enabled and settings.news_feed_url:
         news = _fetch_news(settings.news_feed_url)
+        if not news:
+            news = [{
+                'title': 'تعذر تحميل الأخبار من المصدر حالياً — اضغط لفتح موجز الأخبار مباشرة',
+                'url': settings.news_feed_url,
+            }]
 
     raw_mobile = (settings.school_mobile or '').strip()
     whatsapp_number = ''
