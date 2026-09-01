@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Class, Subject
@@ -23,6 +24,44 @@ def class_subject_mapping(request):
         selected_ids = list(ClassSubjectMapping.objects.filter(student_class=selected_class).values_list('subject_id', flat=True))
 
     if request.method == 'POST' and selected_class:
+        action = request.POST.get('action', 'save')
+
+        if action == 'copy':
+            target_ids = {int(v) for v in request.POST.getlist('target_classes') if str(v).isdigit()}
+            target_ids.discard(selected_class.id)
+            target_classes = list(Class.objects.filter(id__in=target_ids).order_by('name'))
+            source_subject_ids = list(ClassSubjectMapping.objects.filter(student_class=selected_class).values_list('subject_id', flat=True))
+            copy_mode = request.POST.get('copy_mode', 'add')
+
+            if not target_classes:
+                messages.error(request, 'اختر صفًا واحدًا على الأقل لنسخ المواد إليه')
+                return redirect(f'/administration/teacher-records/class-subjects/?class_id={selected_class.id}')
+            if not source_subject_ids:
+                messages.error(request, f'لا توجد مواد مخصصة للصف {selected_class.name} لنسخها')
+                return redirect(f'/administration/teacher-records/class-subjects/?class_id={selected_class.id}')
+
+            with transaction.atomic():
+                for target_class in target_classes:
+                    if copy_mode == 'replace':
+                        ClassSubjectMapping.objects.filter(student_class=target_class).delete()
+                    existing_ids = set(ClassSubjectMapping.objects.filter(student_class=target_class).values_list('subject_id', flat=True))
+                    new_rows = [
+                        ClassSubjectMapping(
+                            student_class=target_class,
+                            subject_id=subject_id,
+                            created_by=request.user,
+                        )
+                        for subject_id in source_subject_ids
+                        if subject_id not in existing_ids
+                    ]
+                    if new_rows:
+                        ClassSubjectMapping.objects.bulk_create(new_rows, ignore_conflicts=True)
+
+            mode_label = 'استبدال' if copy_mode == 'replace' else 'إضافة'
+            target_names = '، '.join(c.name for c in target_classes)
+            messages.success(request, f'تم نسخ مواد الصف {selected_class.name} إلى: {target_names} بنمط {mode_label}')
+            return redirect(f'/administration/teacher-records/class-subjects/?class_id={selected_class.id}')
+
         requested_ids = {int(v) for v in request.POST.getlist('subjects') if str(v).isdigit()}
         valid_ids = set(Subject.objects.filter(id__in=requested_ids).values_list('id', flat=True))
         existing_ids = set(ClassSubjectMapping.objects.filter(student_class=selected_class).values_list('subject_id', flat=True))
