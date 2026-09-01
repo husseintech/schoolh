@@ -3,7 +3,7 @@
 {% block page_heading %}بيانات المدرسة{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="card">
             <div class="card-header"><i class="bi bi-building"></i> بيانات المدرسة</div>
             <div class="card-body">
@@ -26,6 +26,14 @@
                             <label class="form-label">رقم المدرسة الوطني</label>
                             <input type="text" name="national_number" class="form-control" value="{{ info.national_number|default:'' }}" required dir="ltr">
                         </div>
+
+                        <div class="col-12"><hr class="my-1"><h6 class="mb-0 mt-2"><i class="bi bi-telephone"></i> التواصل مع إدارة المدرسة</h6></div>
+                        <div class="col-md-6">
+                            <label class="form-label">رقم جوال المدرسة</label>
+                            <input type="tel" name="school_mobile" class="form-control" value="{{ public_settings.school_mobile|default:'' }}" dir="ltr" placeholder="+97059XXXXXXX">
+                            <div class="form-text">يفضل إدخال الرقم بصيغة دولية مثل +970 حتى يعمل زر واتساب بشكل صحيح.</div>
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label">خط العرض (Latitude)</label>
                             <input type="text" name="latitude" class="form-control" value="{{ info.latitude|default:'' }}" dir="ltr" placeholder="مثال: 31.4477">
@@ -53,6 +61,23 @@
                                 <small class="text-muted d-block">الشعار الحالي</small>
                             </div>
                             {% endif %}
+                        </div>
+
+                        <div class="col-12"><hr class="my-1"><h6 class="mb-0 mt-2"><i class="bi bi-newspaper"></i> شريط الأخبار الخارجي</h6></div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="news_enabled" name="news_enabled" {% if public_settings.news_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="news_enabled">تفعيل شريط الأخبار</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">اسم مصدر الأخبار</label>
+                            <input type="text" name="news_source_name" class="form-control" value="{{ public_settings.news_source_name|default:'' }}" placeholder="مثال: وكالة معاً">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">رابط RSS أو Atom الرسمي</label>
+                            <input type="url" name="news_feed_url" class="form-control" value="{{ public_settings.news_feed_url|default:'' }}" dir="ltr" placeholder="https://example.com/rss.xml">
+                            <div class="form-text">يتم عرض الأخبار فقط إذا كان الرابط HTTPS ويعيد موجز RSS/Atom صالحاً. عند تعذر المصدر يختفي الشريط تلقائياً ولا تظهر أخبار وهمية.</div>
                         </div>
                     </div>
                     <div class="mt-4">
