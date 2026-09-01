@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('administration/academic-achievement/', academic_achievement_report, name='academic_achievement_report'),
     path('administration/teacher-records/', include('school.teacher_records_urls')),
+    path('', include('school.supervisor_followup_urls')),
     path('', include('school.urls')),
     path('open-learning/', include('open_learning.urls')),
 ]
