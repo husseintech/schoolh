@@ -5,8 +5,9 @@ class SchoolConfig(AppConfig):
     name = 'school'
 
     def ready(self):
-        # Register the optional public-facing settings model.
+        # Register optional models kept outside the legacy large models module.
         from . import public_models  # noqa: F401
+        from . import teacher_records_models  # noqa: F401
 
         # Keep existing URL names while extending selected legacy views safely.
         from . import views

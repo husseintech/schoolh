@@ -3,8 +3,12 @@
 {% block page_heading %}تحليل التحصيل الدراسي{% endblock %}
 {% block content %}
 <div class="card no-print">
-  <div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-clipboard-data"></i> نموذج تحليل التحصيل الدراسي</span><span class="badge bg-primary">قسم الإدارة</span></div>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clipboard-data"></i> نموذج تحليل التحصيل الدراسي</span>
+    <span class="badge bg-primary">{% if is_teacher %}سجل المعلم{% else %}قسم الإدارة{% endif %}</span>
+  </div>
   <div class="card-body">
+    {% if is_teacher %}<div class="alert alert-light border py-2">سيظهر لك فقط الصفوف والمواد المرتبطة بك فعلياً في جدولك الدراسي.</div>{% endif %}
     <form method="get" class="row g-3 align-items-end mb-4">
       <div class="col-md-8"><label class="form-label">الصف / الشعبة</label><select name="class_id" class="form-select" required><option value="">اختر الصف / الشعبة</option>{% for c in classes %}<option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
       <div class="col-md-4"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-people"></i> تحميل بيانات الصف</button></div>
@@ -21,13 +25,13 @@
       <div class="table-responsive">
         <table class="table table-bordered table-sm align-middle text-center">
           <thead><tr><th rowspan="2">المبحث</th><th rowspan="2">عدد الطلبة</th><th colspan="2">نصف الفصل</th><th colspan="2">نهاية الفصل</th><th rowspan="2">توصيات مدير المدرسة</th></tr><tr><th>ناجحون</th><th>راسبون</th><th>ناجحون</th><th>راسبون</th></tr></thead>
-          <tbody>{% for subject in subjects %}<tr><td class="fw-bold">{{ subject.name }}</td><td>{{ total_students }}</td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="half_passed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="half_failed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="final_passed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="final_failed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm" type="text" name="recommendation_{{ subject.id }}"></td></tr>{% empty %}<tr><td colspan="7">لا توجد مواد دراسية مضافة.</td></tr>{% endfor %}</tbody>
+          <tbody>{% for subject in subjects %}<tr><td class="fw-bold">{{ subject.name }}</td><td>{{ total_students }}</td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="half_passed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="half_failed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="final_passed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm text-center" type="number" min="0" max="{{ total_students }}" name="final_failed_{{ subject.id }}" value="0"></td><td><input class="form-control form-control-sm" type="text" name="recommendation_{{ subject.id }}"></td></tr>{% empty %}<tr><td colspan="7">لا توجد مواد مرتبطة بهذا الصف ضمن جدولك الدراسي.</td></tr>{% endfor %}</tbody>
         </table>
       </div>
       <div class="alert alert-light border small">سيحسب النظام تلقائياً نسبة النجاح لنصف الفصل ونهاية الفصل، ثم فرق النسب = نسبة نهاية الفصل − نسبة نصف الفصل.</div>
-      <button class="btn btn-success" type="submit"><i class="bi bi-printer"></i> إنشاء التقرير ومعاينة الطباعة</button>
+      {% if subjects %}<button class="btn btn-success" type="submit"><i class="bi bi-printer"></i> إنشاء التقرير ومعاينة الطباعة</button>{% endif %}
     </form>
-    {% else %}<div class="text-muted text-center py-4">اختر الصف / الشعبة أولاً ليتم جلب عدد الطلبة تلقائياً.</div>{% endif %}
+    {% else %}<div class="text-muted text-center py-4">اختر الصف / الشعبة أولاً ليتم جلب عدد الطلبة والمواد المرتبطة فعلياً.</div>{% endif %}
   </div>
 </div>
 {% endblock %}
