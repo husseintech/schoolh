@@ -17,8 +17,8 @@
     </form>
 
     {% if selected_class %}
-    <form method="post">
-      {% csrf_token %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">
+    <form method="post" class="mb-4">
+      {% csrf_token %}<input type="hidden" name="class_id" value="{{ selected_class.id }}"><input type="hidden" name="action" value="save">
       <div class="alert alert-info py-2">حدد جميع المواد المخصصة للصف <strong>{{ selected_class.name }}</strong> ثم اضغط حفظ.</div>
       <div class="row g-2">
         {% for s in subjects %}
@@ -32,6 +32,38 @@
       </div>
       <button class="btn btn-success mt-3"><i class="bi bi-save"></i> حفظ مواد الصف</button>
     </form>
+
+    <div class="border rounded p-3 bg-light">
+      <h6 class="mb-3"><i class="bi bi-copy"></i> نسخ مواد {{ selected_class.name }} إلى صفوف أخرى</h6>
+      <form method="post" onsubmit="return confirmCopyMode(this)">
+        {% csrf_token %}<input type="hidden" name="class_id" value="{{ selected_class.id }}"><input type="hidden" name="action" value="copy">
+        <div class="row g-2 mb-3">
+          {% for c in classes %}
+            {% if c.id != selected_class.id %}
+            <div class="col-md-4 col-sm-6">
+              <label class="border rounded p-2 w-100 d-flex gap-2 align-items-center bg-white">
+                <input type="checkbox" name="target_classes" value="{{ c.id }}">
+                <span>{{ c.name }}</span>
+              </label>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-8">
+            <label class="form-label">طريقة النسخ</label>
+            <select name="copy_mode" class="form-select" id="copy-mode">
+              <option value="add">إضافة مواد الصف الأصلي مع الإبقاء على المواد الموجودة</option>
+              <option value="replace">استبدال مواد الصفوف المحددة بالكامل بمواد الصف الأصلي</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100"><i class="bi bi-copy"></i> نسخ المواد</button>
+          </div>
+        </div>
+        <div class="form-text mt-2">وضع الإضافة لا يكرر المواد الموجودة. وضع الاستبدال يحذف مواد الصفوف الهدف ثم ينسخ مواد الصف الحالي.</div>
+      </form>
+    </div>
     {% endif %}
   </div>
 </div>
@@ -42,4 +74,18 @@
   {% for row in mapping_summary %}<tr><td class="fw-bold">{{ row.student_class.name }}</td><td>{% for s in row.subjects %}<span class="badge bg-light text-dark border me-1">{{ s.name }}</span>{% empty %}<span class="text-muted">لم تحدد مواد بعد</span>{% endfor %}</td><td><a class="btn btn-sm btn-outline-primary" href="?class_id={{ row.student_class.id }}">تعديل</a></td></tr>{% endfor %}
   </tbody></table></div>
 </div>
+<script>
+function confirmCopyMode(form) {
+  const checked = form.querySelectorAll('input[name="target_classes"]:checked');
+  if (!checked.length) {
+    alert('اختر صفًا واحدًا على الأقل لنسخ المواد إليه.');
+    return false;
+  }
+  const mode = form.querySelector('[name="copy_mode"]').value;
+  if (mode === 'replace') {
+    return confirm('سيتم حذف المواد الحالية من الصفوف المحددة واستبدالها بمواد الصف الأصلي. هل تريد المتابعة؟');
+  }
+  return true;
+}
+</script>
 {% endblock %}
