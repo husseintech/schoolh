@@ -1,5 +1,6 @@
 from django.urls import path
 from . import teacher_records_views as v
+from .teacher_records_reset import teacher_records_reset
 
 urlpatterns = [
     path('curriculum/', v.curriculum_records, name='curriculum_records'),
@@ -8,4 +9,5 @@ urlpatterns = [
     path('training/', v.training_records, name='training_records'),
     path('training/print/', v.training_records_print, name='training_records_print'),
     path('training/<int:record_id>/delete/', v.training_record_delete, name='training_record_delete'),
+    path('reset/', teacher_records_reset, name='teacher_records_reset'),
 ]
