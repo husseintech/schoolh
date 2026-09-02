@@ -31,6 +31,8 @@ class TeacherRecordsNavigationMiddleware:
             links = []
             if role == 'admin':
                 links.append('<a data-school-records-nav="1" href="/administration/teacher-records/class-subjects/" class="nav-link"><i class="bi bi-diagram-3"></i> مواد الصفوف</a>')
+            if role in ('admin', 'vice_principal'):
+                links.append('<a data-school-records-nav="1" href="/administration/teacher-records/load-distribution/" class="nav-link"><i class="bi bi-grid-3x3-gap"></i> توزيع الأنصبة</a>')
             if role in ('admin', 'vice_principal', 'teacher'):
                 links.append('<a data-school-records-nav="1" href="/administration/academic-achievement/" class="nav-link"><i class="bi bi-clipboard-data"></i> تحليل التحصيل الدراسي</a>')
                 links.append('<a data-school-records-nav="1" href="/administration/teacher-records/curriculum/" class="nav-link"><i class="bi bi-journal-check"></i> متابعة ما قطع من المنهاج</a>')
