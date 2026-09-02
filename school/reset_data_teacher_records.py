@@ -2,11 +2,13 @@ from django.contrib import messages
 from django.shortcuts import redirect
 
 from .teacher_records_models import ClassSubjectMapping, CurriculumProgressRecord, TeacherTrainingRecord
+from .supervisor_followup_models import SupervisorVisitFollowup
 
 TEACHER_RECORD_CLEARABLE_TABLES = [
     ('class_subjects', 'مواد الصفوف', ClassSubjectMapping),
     ('curriculum', 'سجل متابعة ما قطع من المنهاج', CurriculumProgressRecord),
     ('training', 'سجل الدورات', TeacherTrainingRecord),
+    ('supervisor_followups', 'متابعات الإدارة لزيارات المشرفين', SupervisorVisitFollowup),
 ]
 
 
