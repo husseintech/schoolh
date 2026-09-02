@@ -4,143 +4,107 @@
 {% block page_heading %}بطاقات المعلمين{% endblock %}
 {% block content %}
 
-<div class="card mb-3 no-print">
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-6">
-                <label class="form-label">اختيار معلم لعرض بطاقته</label>
-                <select name="teacher_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">-- جميع المعلمين --</option>
-                    {% for t in all_teachers %}
-                    <option value="{{ t.id }}" {% if selected_teacher and selected_teacher.id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% if selected_teacher %}
-            <div class="col-md-3">
-                <a href="{% url 'teacher_cards_report' %}" class="btn btn-outline-secondary w-100">إلغاء التحديد (عرض الكل)</a>
-            </div>
-            {% endif %}
-        </form>
-    </div>
+<style>
+.teacher-tools{background:#fff;border:1px solid #e3e8ef;border-radius:16px;padding:16px 18px;box-shadow:0 6px 18px rgba(15,23,42,.04)}
+.teacher-card{border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 10px 28px rgba(15,23,42,.06);background:#fff}
+.teacher-card-head{padding:16px 18px;background:#f4f7fb;border-bottom:1px solid #e3e8ef;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.teacher-avatar{width:46px;height:46px;border-radius:14px;background:#e8eef7;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#31557a;flex:0 0 auto}
+.teacher-name{font-weight:800;color:#1f2937;font-size:1rem;line-height:1.35}
+.teacher-id{font-size:.78rem;color:#6b7280;margin-top:3px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.info-item{background:#f8fafc;border:1px solid #edf1f5;border-radius:12px;padding:9px 10px;min-height:58px}
+.info-label{font-size:.72rem;color:#7a8797;margin-bottom:3px;display:flex;gap:5px;align-items:center}
+.info-value{font-size:.86rem;font-weight:700;color:#26364a;word-break:break-word}
+.section-title{font-size:.76rem;font-weight:800;color:#536273;margin-bottom:7px}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.soft-tag{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:.74rem;font-weight:700;background:#eef3f8;color:#36536f;border:1px solid #dde7f0}
+.visit-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.visit-box{border-radius:12px;padding:10px;border:1px solid #e5e7eb;background:#fafafa;text-align:center}
+.visit-box.done{background:#f2f8f3;border-color:#d6e8d9}.visit-box.pending{background:#fff5f5;border-color:#f0d3d3}
+.visit-title{font-size:.73rem;color:#586575;margin-bottom:5px}.visit-status{font-weight:800;font-size:.78rem}.visit-status.done{color:#2f6b3a}.visit-status.pending{color:#a33a3a}.visit-meta{font-size:.68rem;color:#7a8592;margin-top:3px}
+.teacher-card-footer{padding:10px 14px;background:#fbfcfd;border-top:1px solid #edf0f3;text-align:center}
+@media (max-width:767px){.info-grid,.visit-grid{grid-template-columns:1fr}.teacher-card-head{align-items:flex-start}}
+@media print{
+ @page{size:A4 portrait;margin:8mm}
+ body{background:#fff!important}
+ .sidebar,.top-bar,.topbar,.navbar,.no-print,nav,header{display:none!important}
+ main,.main-content,.content-wrapper,.container,.container-fluid{margin:0!important;padding:0!important;width:100%!important;max-width:none!important}
+ .print-heading{display:block!important;margin:0 0 5mm!important;text-align:center}.print-heading h4{font-size:15px;margin:0 0 2mm}.print-heading p{font-size:10px;margin:0}
+ .cards-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6mm!important}
+ .cards-grid>[class*='col-']{width:auto!important;max-width:none!important;flex:none!important;padding:0!important;margin:0!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ .teacher-card{box-shadow:none!important;border:1px solid #555!important;border-radius:8px!important;break-inside:avoid!important;page-break-inside:avoid!important;height:auto!important}
+ .teacher-card-head{padding:7px 8px!important;background:#fff!important}.teacher-avatar{width:32px;height:32px;border-radius:8px;font-size:1rem}.teacher-name{font-size:10px}.teacher-id{font-size:8px}
+ .teacher-card .card-body{padding:8px!important}.info-grid{gap:4px!important;margin-bottom:7px!important}.info-item{padding:5px 6px!important;min-height:0!important;border-radius:6px!important}.info-label{font-size:7px!important}.info-value{font-size:8px!important}.section-title{font-size:7px!important;margin-bottom:4px!important}.soft-tag{font-size:7px!important;padding:3px 5px!important}.tag-wrap{gap:3px!important}.visit-grid{gap:4px!important;margin-top:7px!important}.visit-box{padding:5px!important;border-radius:6px!important}.visit-title{font-size:7px!important}.visit-status{font-size:7px!important}.visit-meta{font-size:6.5px!important}.teacher-card-footer{display:none!important}
+ body[data-print-card] .cards-grid{display:block!important}body[data-print-card] .cards-grid>[class*='col-']{display:none!important}body[data-print-card] .cards-grid>[data-wrapper]{display:none!important}
+ {% for t in teachers %}body[data-print-card='{{ t.id }}'] .card-wrap[data-wrapper='{{ t.id }}']{display:block!important;width:100%!important}body[data-print-card='{{ t.id }}'] .teacher-card[data-card='{{ t.id }}']{max-width:170mm;margin:0 auto}{% endfor %}
+}
+</style>
+
+<div class="teacher-tools mb-3 no-print">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">اختيار معلم لعرض بطاقته</label>
+            <select name="teacher_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- جميع المعلمين --</option>
+                {% for t in all_teachers %}
+                <option value="{{ t.id }}" {% if selected_teacher and selected_teacher.id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 d-flex gap-2 flex-wrap">
+            <button type="button" onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> {% if selected_teacher %}طباعة البطاقة{% else %}طباعة جميع البطاقات{% endif %}</button>
+            {% if selected_teacher %}<a href="{% url 'teacher_cards_report' %}" class="btn btn-outline-secondary">عرض جميع المعلمين</a>{% endif %}
+            <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">العودة للمعلمين</a>
+        </div>
+    </form>
 </div>
 
-<div class="mb-3 no-print">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> {% if selected_teacher %}طباعة البطاقة{% else %}طباعة جميع البطاقات{% endif %}</button>
-    <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">العودة للمعلمين</a>
-</div>
-
-<div class="d-none d-print-block text-center mb-3">
-    {% if info %}
+<div class="print-heading d-none d-print-block">
     <h4>{{ info.name_ar|default:'المدرسة' }}</h4>
-    {% else %}
-    <h4>بطاقة معلم</h4>
-    {% endif %}
     <p>{% if selected_teacher %}بطاقة المعلم: {{ selected_teacher.full_name }}{% else %}بطاقات المعلمين{% endif %} — تاريخ الطباعة: {% now 'Y-m-d' %}</p>
-    <hr>
 </div>
 
-<div class="row g-3">
+<div class="row g-3 cards-grid">
     {% for t in teachers %}
-    <div class="col-md-6 col-xl-4">
-        <div class="card teacher-card h-100" data-card="{{ t.id }}">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-person-badge-fill"></i> {{ t.full_name }}</h6>
-                <span class="badge bg-light text-dark">{{ t.id_number|default:'---' }}</span>
+    <div class="col-md-6 col-xl-4 card-wrap" data-wrapper="{{ t.id }}">
+        <div class="teacher-card h-100" data-card="{{ t.id }}">
+            <div class="teacher-card-head">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="teacher-avatar"><i class="bi bi-person-badge-fill"></i></div>
+                    <div><div class="teacher-name">{{ t.full_name }}</div><div class="teacher-id">رقم الهوية: {{ t.id_number|default:'---' }}</div></div>
+                </div>
+                <span class="soft-tag"><i class="bi bi-mortarboard"></i> {{ t.specialization|default:'معلم' }}</span>
             </div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-2">
-                    <tbody>
-                        <tr>
-                            <td class="text-muted w-40">المؤهل العلمي</td>
-                            <td><strong>{{ t.qualification|default:'---' }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">التخصص</td>
-                            <td><strong>{{ t.specialization|default:'---' }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">تاريخ التعيين</td>
-                            <td><strong>{{ t.hire_date|date:'Y-m-d'|default:'---' }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">رقم الهاتف</td>
-                            <td><strong>{{ t.phone|default:'---' }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="mb-2">
-                    <small class="text-muted d-block mb-1">المواد التي يدرسها:</small>
-                    {% for s in t.subjects.all %}<span class="badge bg-success me-1">{{ s.name }}</span>{% empty %}<span class="badge bg-secondary">لا يوجد</span>{% endfor %}
+            <div class="card-body p-3">
+                <div class="info-grid">
+                    <div class="info-item"><div class="info-label"><i class="bi bi-award"></i> المؤهل العلمي</div><div class="info-value">{{ t.qualification|default:'---' }}</div></div>
+                    <div class="info-item"><div class="info-label"><i class="bi bi-book"></i> التخصص</div><div class="info-value">{{ t.specialization|default:'---' }}</div></div>
+                    <div class="info-item"><div class="info-label"><i class="bi bi-calendar-check"></i> تاريخ التعيين</div><div class="info-value">{{ t.hire_date|date:'Y-m-d'|default:'---' }}</div></div>
+                    <div class="info-item"><div class="info-label"><i class="bi bi-telephone"></i> رقم الهاتف</div><div class="info-value">{{ t.phone|default:'---' }}</div></div>
                 </div>
-                <div class="mb-3">
-                    <small class="text-muted d-block mb-1">الصفوف التي يدرسها:</small>
-                    {% for c in t.classes.all %}<span class="badge bg-info me-1">{{ c.name }}</span>{% empty %}<span class="badge bg-secondary">لا يوجد</span>{% endfor %}
-                </div>
-                <hr>
-                <div class="row text-center">
-                    <div class="col-6">
-                        <small class="text-muted d-block">الزيارة الإشرافية (المدير)</small>
-                        {% with v=t.inspection_visits.all|first %}
-                        {% if v %}
-                        <span class="badge bg-success">تمت الزيارة</span>
-                        <small class="d-block text-muted">{{ v.visit_date|date:'Y-m-d' }} — {{ t.inspection_visits.all|length }} زيارة</small>
-                        {% else %}
-                        <span class="badge bg-danger">لم تتم الزيارة</span>
-                        {% endif %}
-                        {% endwith %}
-                    </div>
-                    <div class="col-6">
-                        <small class="text-muted d-block">زيارات المشرفين</small>
-                        {% with v=t.supervisor_visits.all|first %}
-                        {% if v %}
-                        <span class="badge bg-success">تمت الزيارة</span>
-                        <small class="d-block text-muted">{{ v.visit_date|date:'Y-m-d' }} — {{ t.supervisor_visits.all|length }} زيارة</small>
-                        {% else %}
-                        <span class="badge bg-danger">لم تتم الزيارة</span>
-                        {% endif %}
-                        {% endwith %}
-                    </div>
+
+                <div class="mb-3"><div class="section-title"><i class="bi bi-journal-text"></i> المواد التي يدرسها</div><div class="tag-wrap">{% for s in t.subjects.all %}<span class="soft-tag">{{ s.name }}</span>{% empty %}<span class="soft-tag">لا يوجد</span>{% endfor %}</div></div>
+                <div><div class="section-title"><i class="bi bi-diagram-3"></i> الصفوف التي يدرسها</div><div class="tag-wrap">{% for c in t.classes.all %}<span class="soft-tag">{{ c.name }}</span>{% empty %}<span class="soft-tag">لا يوجد</span>{% endfor %}</div></div>
+
+                <div class="visit-grid">
+                    {% with v=t.inspection_visits.all|first %}
+                    <div class="visit-box {% if v %}done{% else %}pending{% endif %}"><div class="visit-title">الزيارة الإشرافية (المدير)</div>{% if v %}<div class="visit-status done">تمت الزيارة</div><div class="visit-meta">{{ v.visit_date|date:'Y-m-d' }} — {{ t.inspection_visits.all|length }} زيارة</div>{% else %}<div class="visit-status pending">لم تتم الزيارة</div>{% endif %}</div>
+                    {% endwith %}
+                    {% with v=t.supervisor_visits.all|first %}
+                    <div class="visit-box {% if v %}done{% else %}pending{% endif %}"><div class="visit-title">زيارات المشرفين</div>{% if v %}<div class="visit-status done">تمت الزيارة</div><div class="visit-meta">{{ v.visit_date|date:'Y-m-d' }} — {{ t.supervisor_visits.all|length }} زيارة</div>{% else %}<div class="visit-status pending">لم تتم الزيارة</div>{% endif %}</div>
+                    {% endwith %}
                 </div>
             </div>
-            <div class="card-footer text-center no-print">
-                <button class="btn btn-outline-primary btn-sm" onclick="printOneCard({{ t.id }})">
-                    <i class="bi bi-printer"></i> طباعة هذه البطاقة
-                </button>
-            </div>
+            <div class="teacher-card-footer no-print"><button class="btn btn-outline-primary btn-sm" onclick="printOneCard({{ t.id }})"><i class="bi bi-printer"></i> طباعة هذه البطاقة</button></div>
         </div>
     </div>
     {% empty %}
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body text-center text-muted py-5">
-                <i class="bi bi-person-badge" style="font-size: 3rem;"></i>
-                <p class="mt-2">لا يوجد معلمون</p>
-            </div>
-        </div>
-    </div>
+    <div class="col-12"><div class="teacher-tools text-center text-muted py-5"><i class="bi bi-person-badge" style="font-size:3rem"></i><p class="mt-2 mb-0">لا يوجد معلمون</p></div></div>
     {% endfor %}
 </div>
 
-<style>
-    .w-40 { width: 40%; }
-    @media print {
-        .sidebar, .top-bar, .no-print { display: none !important; }
-        .main-content { margin-right: 0 !important; }
-        .card { box-shadow: none !important; border: 1px solid #000 !important; }
-        .card-header { background: #fff !important; color: #000 !important; border-bottom: 1px solid #000 !important; }
-        body[data-print-card] .teacher-card { display: none !important; }
-        {% for t in teachers %}
-        body[data-print-card="{{ t.id }}"] .teacher-card[data-card="{{ t.id }}"] { display: block !important; }
-        {% endfor %}
-        .d-print-block { display: block !important; }
-    }
-</style>
-
 <script>
-function printOneCard(id) {
-    document.body.setAttribute('data-print-card', id);
-    window.print();
-}
+function printOneCard(id){document.body.setAttribute('data-print-card',id);window.print()}
+window.addEventListener('afterprint',function(){document.body.removeAttribute('data-print-card')})
 </script>
 {% endblock %}
