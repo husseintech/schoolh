@@ -1,107 +1,76 @@
 {% extends 'school/base.html' %}
 {% block title %}الطلاب{% endblock %}
-{% block page_heading %}قائمة الطلاب{% endblock %}
+{% block page_heading %}إدارة الطلاب{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-people-fill"></i> جميع الطلاب ({{ students.count }})</span>
-        <div>
-            {% if user.profile.role == 'admin' %}
-            <a href="{% url 'add_student' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة</a>
-            <div class="btn-group btn-group-sm">
-                <a href="{% url 'download_student_template' %}" class="btn btn-outline-secondary"><i class="bi bi-download"></i> تحميل نموذج</a>
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('importInput').click()"><i class="bi bi-upload"></i> استيراد</button>
-                <a href="{% url 'export_students' %}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-excel"></i> تصدير</a>
-            </div>
-            <form method="post" action="{% url 'import_students' %}" enctype="multipart/form-data" style="display:none" id="importForm">
-                {% csrf_token %}
-                <input type="file" name="excel_file" id="importInput" accept=".xlsx,.xls" onchange="document.getElementById('importForm').submit()">
-            </form>
-            {% endif %}
-        </div>
-    </div>
-    <div class="card-body">
-        {% if user.profile.role == 'admin' or user.profile.role == 'teacher' %}
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <select class="form-select" id="classFilter" onchange="filterStudents()">
-                    <option value="">جميع الصفوف</option>
-                    {% for c in classes %}
-                    <option value="{{ c.name }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <input type="text" class="form-control" id="searchInput" placeholder="بحث بالاسم أو رقم الهوية..." onkeyup="filterStudents()">
-            </div>
-        </div>
-        {% endif %}
+<style>
+.students-hero{background:linear-gradient(135deg,#20364d,#315d82);color:#fff;border-radius:18px;padding:24px;box-shadow:0 12px 30px rgba(24,48,73,.16)}
+.students-hero h2{font-size:1.35rem;font-weight:800;margin:0 0 6px}.students-hero p{margin:0;color:rgba(255,255,255,.78)}
+.hero-stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 18px;min-width:118px;text-align:center}.hero-stat strong{display:block;font-size:1.45rem}.hero-stat span{font-size:.78rem;color:rgba(255,255,255,.76)}
+.student-action{height:100%;background:#fff;border:1px solid #e7edf3;border-radius:16px;padding:17px;display:flex;gap:13px;align-items:flex-start;box-shadow:0 5px 18px rgba(27,51,75,.05);transition:.2s ease}.student-action:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(27,51,75,.09)}
+.student-action .action-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex:0 0 44px}.student-action h6{font-weight:800;margin:0 0 4px;color:#24384d}.student-action p{font-size:.78rem;color:#748396;margin:0 0 10px;line-height:1.5}
+.icon-add{background:#eaf7ef;color:#21854f}.icon-import{background:#eaf2fb;color:#2268a7}.icon-check{background:#fff5dc;color:#9a6900}.icon-export{background:#eef0ff;color:#5a55a8}
+.students-card{border-radius:17px;overflow:hidden}.students-toolbar{background:#f8fafc;border:1px solid #e7edf3;border-radius:13px;padding:12px}.students-table thead th{white-space:nowrap;background:#eef3f7;color:#3b5066;border:0;padding:12px 10px}.students-table tbody td{padding:11px 10px;border-color:#edf1f5}.students-table tbody tr:hover{background:#f8fbfd}
+.student-name{font-weight:750;color:#244d70;text-decoration:none}.student-name:hover{text-decoration:underline}.class-badge{background:#e8f5fa;color:#16718b;border:1px solid #cae8f1}.modal-guide{background:#f7fafc;border:1px solid #e3eaf0;border-radius:12px;padding:13px;font-size:.86rem;color:#556779}
+@media(max-width:767.98px){.students-hero{padding:19px}.hero-stats{margin-top:16px}.student-action{padding:14px}.students-toolbar .col-md-4+ .col-md-4{margin-top:10px}}
+</style>
 
-        <div class="table-responsive">
-            <table class="table table-hover" id="studentsTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>الاسم الكامل</th>
-                        <th>اسم المستخدم</th>
-                        <th>رقم الهوية</th>
-                        <th>الصف</th>
-                        <th>ولي الأمر</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr data-class="{{ student.student_class.name|default:'' }}">
-                        <td>{{ forloop.counter }}</td>
-                        <td>
-                            <a href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a>
-                            {% if student.parent_phone %}
-                            <a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" class="text-success ms-1" title="واتساب"><i class="bi bi-whatsapp"></i></a>
-                            {% endif %}
-                        </td>
-                        <td><small dir="ltr">{{ student.user.username }}</small></td>
-                        <td>{{ student.student_id }}</td>
-                        <td><span class="badge bg-info">{{ student.student_class.name|default:"-" }}</span></td>
-                        <td>{{ student.parent_name|default:"-" }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-info" title="عرض"><i class="bi bi-eye"></i></a>
-                                <a href="{% url 'student_report' student.id %}" class="btn btn-outline-success" title="تقرير"><i class="bi bi-file-text"></i></a>
-                                <a href="{% url 'add_note_with_student' student.id %}" class="btn btn-outline-warning" title="إضافة ملاحظة"><i class="bi bi-sticky"></i></a>
-                                <a href="{% url 'add_leave_with_student' student.id %}" class="btn btn-outline-info" title="إذن مغادرة"><i class="bi bi-box-arrow-right"></i></a>
-                                {% if user.profile.role == 'admin' %}
-                                <a href="{% url 'edit_student' student.id %}" class="btn btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
-                                <a href="{% url 'reset_student_password' student.id %}" class="btn btn-outline-info" title="كلمة المرور"><i class="bi bi-key"></i></a>
-                                <a href="{% url 'delete_student' student.id %}" class="btn btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
-                            <i class="bi bi-people" style="font-size: 2rem;"></i>
-                            <p class="mt-2">لا يوجد طلاب مسجلون</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="students-hero mb-4">
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+    <div><h2><i class="bi bi-people-fill ms-2"></i>ملفات الطلاب</h2><p>إضافة الطلاب، استيراد البيانات، وفحص الهويات الناقصة من مكان واحد.</p></div>
+    <div class="d-flex gap-2 hero-stats flex-wrap"><div class="hero-stat"><strong>{{ students|length }}</strong><span>طالب مسجل</span></div><div class="hero-stat"><strong>{{ classes|length }}</strong><span>صف وشعبة</span></div></div>
+  </div>
 </div>
 
+{% if user.profile.role == 'admin' %}
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-xl-3"><div class="student-action"><div class="action-icon icon-add"><i class="bi bi-person-plus-fill"></i></div><div><h6>إضافة طالب</h6><p>إدخال بيانات طالب واحد يدوياً.</p><a href="{% url 'add_student' %}" class="btn btn-sm btn-success">إضافة جديدة</a></div></div></div>
+  <div class="col-md-6 col-xl-3"><div class="student-action"><div class="action-icon icon-import"><i class="bi bi-file-earmark-arrow-up-fill"></i></div><div><h6>استيراد طلاب</h6><p>يضيف الجدد ويتجاهل الهويات الموجودة.</p><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#importStudentsModal">رفع ملف</button></div></div></div>
+  <div class="col-md-6 col-xl-3"><div class="student-action"><div class="action-icon icon-check"><i class="bi bi-person-check-fill"></i></div><div><h6>فحص الطلاب غير الموجودين</h6><p>مقارنة أرقام الهويات دون تعديل البيانات.</p><button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#checkIdsModal">بدء الفحص</button></div></div></div>
+  <div class="col-md-6 col-xl-3"><div class="student-action"><div class="action-icon icon-export"><i class="bi bi-file-earmark-excel-fill"></i></div><div><h6>النماذج والتصدير</h6><p>تحميل نموذج الإدخال أو تصدير القائمة.</p><div class="d-flex gap-1 flex-wrap"><a href="{% url 'download_student_template' %}" class="btn btn-sm btn-outline-secondary">النموذج</a><a href="{% url 'export_students' %}" class="btn btn-sm btn-outline-primary">تصدير</a></div></div></div></div>
+</div>
+{% endif %}
+
+<div class="card students-card">
+  <div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-list-ul ms-2"></i>قائمة الطلاب</span><span class="badge text-bg-light border">{{ students|length }} سجل</span></div>
+  <div class="card-body">
+    {% if user.profile.role == 'admin' or user.profile.role == 'teacher' %}
+    <div class="students-toolbar row g-2 mb-3">
+      <div class="col-md-4"><label for="classFilter" class="form-label small fw-bold mb-1">الصف والشعبة</label><select class="form-select" id="classFilter" onchange="filterStudents()"><option value="">جميع الصفوف</option>{% for c in classes %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-5"><label for="searchInput" class="form-label small fw-bold mb-1">البحث</label><div class="input-group"><span class="input-group-text bg-white"><i class="bi bi-search"></i></span><input type="search" class="form-control" id="searchInput" placeholder="الاسم أو رقم الهوية..." oninput="filterStudents()"></div></div>
+    </div>
+    {% endif %}
+    <div class="table-responsive">
+      <table class="table students-table align-middle" id="studentsTable">
+        <thead><tr><th>#</th><th>الاسم الكامل</th><th>اسم المستخدم</th><th>رقم الهوية</th><th>الصف</th><th>ولي الأمر</th><th>الإجراءات</th></tr></thead>
+        <tbody>
+        {% for student in students %}
+          <tr data-class="{{ student.student_class.name|default:'' }}"><td>{{ forloop.counter }}</td><td><a class="student-name" href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a>{% if student.parent_phone %}<a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" rel="noopener" class="text-success me-1" title="واتساب"><i class="bi bi-whatsapp"></i></a>{% endif %}</td><td><small dir="ltr">{{ student.user.username }}</small></td><td><span dir="ltr">{{ student.student_id }}</span></td><td><span class="badge class-badge">{{ student.student_class.name|default:"-" }}</span></td><td>{{ student.parent_name|default:"-" }}</td><td><div class="btn-group btn-group-sm">
+            <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-info" title="عرض"><i class="bi bi-eye"></i></a><a href="{% url 'student_report' student.id %}" class="btn btn-outline-success" title="تقرير"><i class="bi bi-file-text"></i></a><a href="{% url 'add_note_with_student' student.id %}" class="btn btn-outline-warning" title="إضافة ملاحظة"><i class="bi bi-sticky"></i></a><a href="{% url 'add_leave_with_student' student.id %}" class="btn btn-outline-info" title="إذن مغادرة"><i class="bi bi-box-arrow-right"></i></a>
+            {% if user.profile.role == 'admin' %}<a href="{% url 'edit_student' student.id %}" class="btn btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a><a href="{% url 'reset_student_password' student.id %}" class="btn btn-outline-secondary" title="كلمة المرور"><i class="bi bi-key"></i></a><a href="{% url 'delete_student' student.id %}" class="btn btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></a>{% endif %}
+          </div></td></tr>
+        {% empty %}<tr data-empty-row="true"><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-people d-block mb-2" style="font-size:2rem"></i>لا يوجد طلاب مسجلون</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      <div id="noFilterResults" class="text-center text-muted py-4 d-none"><i class="bi bi-search d-block mb-2 fs-3"></i>لا توجد نتائج مطابقة</div>
+    </div>
+  </div>
+</div>
+
+{% if user.profile.role == 'admin' %}
+<div class="modal fade" id="importStudentsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 rounded-4"><form method="post" action="{% url 'import_students' %}" enctype="multipart/form-data">{% csrf_token %}
+  <div class="modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-arrow-up text-primary ms-2"></i>استيراد الطلاب</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button></div>
+  <div class="modal-body"><div class="modal-guide mb-3"><i class="bi bi-shield-check text-success ms-1"></i>سيتم إضافة الهويات الجديدة فقط. الطالب الموجود لن تتغير بياناته أو شعبته أو كلمة مروره.</div><label class="form-label fw-bold" for="importStudentsFile">ملف Excel الكامل</label><input class="form-control" type="file" name="excel_file" id="importStudentsFile" accept=".xlsx,.xlsm" required><div class="form-text">الصيغة المدعومة XLSX والحجم الأقصى 5 MB.</div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button><button type="submit" class="btn btn-primary"><i class="bi bi-upload ms-1"></i>بدء الاستيراد</button></div>
+</form></div></div></div>
+
+<div class="modal fade" id="checkIdsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 rounded-4"><form method="post" action="{% url 'check_missing_student_ids' %}" enctype="multipart/form-data">{% csrf_token %}
+  <div class="modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-person-check text-warning ms-2"></i>فحص الهويات الناقصة</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button></div>
+  <div class="modal-body"><div class="modal-guide mb-3"><strong class="d-block text-success mb-1"><i class="bi bi-eye ms-1"></i>عملية قراءة فقط</strong>يقارن النظام أرقام الهويات ويعرض غير الموجود منها. لن يضيف أو يعدل أو يحذف أي سجل.</div><label class="form-label fw-bold" for="checkIdsFile">ملف أرقام الهويات</label><input class="form-control" type="file" name="excel_file" id="checkIdsFile" accept=".xlsx,.xlsm" required><div class="form-text">يقبل عمودًا بعنوان «رقم الهوية» أو «رقم هوية الطالب»، كما يقبل ملفًا بعمود واحد.</div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button><button type="submit" class="btn btn-warning"><i class="bi bi-search ms-1"></i>فحص الملف</button></div>
+</form></div></div></div>
+{% endif %}
+
 <script>
-function filterStudents() {
-    var classFilter = (document.getElementById('classFilter')?.value || '').toLowerCase();
-    var searchInput = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    var rows = document.querySelectorAll('#studentsTable tbody tr');
-    rows.forEach(function(row) {
-        var classMatch = !classFilter || (row.getAttribute('data-class') || '').toLowerCase().includes(classFilter);
-        var textMatch = !searchInput || row.textContent.toLowerCase().includes(searchInput);
-        row.style.display = classMatch && textMatch ? '' : 'none';
-    });
-}
+function filterStudents(){var classFilter=(document.getElementById('classFilter')?.value||'').toLowerCase();var searchInput=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();var visible=0;document.querySelectorAll('#studentsTable tbody tr:not([data-empty-row])').forEach(function(row){var classMatch=!classFilter||(row.getAttribute('data-class')||'').toLowerCase().includes(classFilter);var textMatch=!searchInput||row.textContent.toLowerCase().includes(searchInput);var show=classMatch&&textMatch;row.style.display=show?'':'none';if(show){visible++;}});document.getElementById('noFilterResults')?.classList.toggle('d-none',visible!==0||!!document.querySelector('#studentsTable tbody tr[data-empty-row]'));}
 </script>
 {% endblock %}

@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
 from django.conf import settings
 from dotenv import set_key
@@ -538,6 +539,70 @@ def student_report(request, student_id):
 
 # ─── Excel Import/Export ──────────────────────────────────────────────────────
 
+_ARABIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890123456789')
+_STUDENT_ID_HEADERS = {
+    'رقمالهوية',
+    'رقمهويةالطالب',
+    'هويةالطالب',
+    'الهوية',
+    'studentid',
+    'id',
+}
+
+
+def _normalize_student_id(value):
+    """Return a stable identifier for text or numeric Excel cells."""
+    if value is None or isinstance(value, bool):
+        return ''
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    text = str(value).strip().translate(_ARABIC_DIGITS)
+    text = text.replace('\u200e', '').replace('\u200f', '').replace('\ufeff', '')
+    if re.fullmatch(r'\d+\.0+', text):
+        text = text.split('.', 1)[0]
+    return text
+
+
+def _normalize_excel_header(value):
+    text = str(value or '').strip().translate(_ARABIC_DIGITS).lower()
+    return re.sub(r'[\s_\-:]+', '', text)
+
+
+def _find_student_id_column(ws):
+    """Locate the identity column in an ordinary or eSchool workbook."""
+    max_scan_row = min(ws.max_row or 1, 15)
+    max_scan_col = min(ws.max_column or 1, 40)
+    for row_number in range(1, max_scan_row + 1):
+        for column_number in range(1, max_scan_col + 1):
+            header = _normalize_excel_header(ws.cell(row_number, column_number).value)
+            if header in _STUDENT_ID_HEADERS or (
+                'هوية' in header and ('طالب' in header or header == 'رقمالهوية')
+            ):
+                return row_number, column_number
+
+    populated_columns = set()
+    for row in ws.iter_rows(min_row=1, max_row=min(ws.max_row or 1, 50), values_only=False):
+        for cell in row:
+            if cell.value not in (None, ''):
+                populated_columns.add(cell.column)
+    if len(populated_columns) == 1:
+        return 0, populated_columns.pop()
+    raise ValueError('لم يتم العثور على عمود رقم الهوية')
+
+
+def _load_excel_worksheet(excel_file):
+    if excel_file.size > 5 * 1024 * 1024:
+        raise ValueError('حجم الملف كبير. الحد الأقصى 5 MB')
+    if not excel_file.name.lower().endswith(('.xlsx', '.xlsm')):
+        raise ValueError('الرجاء حفظ الملف بصيغة Excel XLSX')
+    import openpyxl
+    try:
+        workbook = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
+        return workbook, workbook.active
+    except Exception as exc:
+        raise ValueError('فشل في قراءة الملف. تأكد من أنه ملف Excel XLSX صالح') from exc
+
+
 @login_required
 def download_student_template(request):
     if request.user.profile.role != 'admin':
@@ -584,30 +649,26 @@ def import_students(request):
         return redirect('dashboard')
 
     if request.method == 'POST' and request.FILES.get('excel_file'):
-        excel_file = request.FILES['excel_file']
-        if not excel_file.name.endswith(('.xlsx', '.xls')):
-            messages.error(request, 'الرجاء رفع ملف Excel صالح (xlsx أو xls)')
-            return redirect('student_list')
-
-        import openpyxl
         try:
-            wb = openpyxl.load_workbook(excel_file)
-            ws = wb.active
-        except Exception:
-            messages.error(request, 'فشل في قراءة الملف. تأكد من أنه ملف Excel صالح.')
+            wb, ws = _load_excel_worksheet(request.FILES['excel_file'])
+        except ValueError as exc:
+            messages.error(request, str(exc))
             return redirect('student_list')
 
         rows = list(ws.iter_rows(min_row=2, values_only=True))
+        wb.close()
         if not rows:
             messages.warning(request, 'الملف فارغ، لا توجد بيانات للاستيراد')
             return redirect('student_list')
 
         imported = 0
+        skipped_existing = 0
         errors = []
+        known_student_ids = set(Student.objects.values_list('student_id', flat=True))
         for i, row in enumerate(rows, start=2):
             try:
                 full_name = str(row[0]).strip() if row[0] else ''
-                student_id = str(row[1]).strip() if row[1] else ''
+                student_id = _normalize_student_id(row[1] if len(row) > 1 else None)
                 class_name = str(row[2]).strip() if row[2] else ''
                 parent_phone = str(row[3]).strip() if row[3] else ''
                 parent_name = str(row[4]).strip() if row[4] else ''
@@ -620,13 +681,9 @@ def import_students(request):
                     errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
                     continue
 
-                if Student.objects.filter(student_id=student_id).exists():
-                    errors.append(f'الصف {i}: رقم الهوية {student_id} موجود مسبقاً')
+                if student_id in known_student_ids:
+                    skipped_existing += 1
                     continue
-
-                class_obj = None
-                if class_name:
-                    class_obj, _ = Class.objects.get_or_create(name=class_name)
 
                 if isinstance(birth_date, datetime):
                     bd = birth_date.date()
@@ -640,27 +697,38 @@ def import_students(request):
                 if not password:
                     password = student_id[-6:] if len(student_id) >= 6 else student_id
 
-                user = User.objects.create_user(username=username, password=password)
-                Profile.objects.create(user=user, role='student')
-                Student.objects.create(
-                    user=user,
-                    student_id=student_id,
-                    full_name=full_name,
-                    student_class=class_obj,
-                    parent_phone=parent_phone,
-                    parent_name=parent_name,
-                    address=address,
-                    birth_date=bd,
-                    plain_password=password,
-                )
+                with transaction.atomic():
+                    class_obj = None
+                    if class_name:
+                        class_obj, _ = Class.objects.get_or_create(name=class_name)
+                    user = User.objects.create_user(username=username, password=password)
+                    Profile.objects.create(user=user, role='student')
+                    Student.objects.create(
+                        user=user,
+                        student_id=student_id,
+                        full_name=full_name,
+                        student_class=class_obj,
+                        parent_phone=parent_phone,
+                        parent_name=parent_name,
+                        address=address,
+                        birth_date=bd,
+                        plain_password=password,
+                    )
+                known_student_ids.add(student_id)
                 imported += 1
             except Exception as e:
                 errors.append(f'الصف {i}: خطأ - {str(e)}')
 
         if imported:
-            msg = f'تم استيراد {imported} طالب/طالب بنجاح'
-            log_action(request.user, 'استيراد طلاب من Excel', msg)
-            messages.success(request, f'{msg}\nاسم المستخدم: رقم الهوية (أو ما أُدرج في عمود اسم المستخدم)\nكلمة المرور: آخر 6 أرقام من رقم الهوية (أو ما أُدرج في عمود كلمة المرور)')
+            msg = f'تمت إضافة {imported} طالب جديد بنجاح'
+            log_action(
+                request.user,
+                'استيراد طلاب من Excel',
+                f'{msg} - موجود مسبقاً: {skipped_existing} - أخطاء: {len(errors)}',
+            )
+            messages.success(request, msg)
+        if skipped_existing:
+            messages.info(request, f'تم تجاهل {skipped_existing} طالب لأن رقم الهوية موجود مسبقاً، ولم يتم تعديل بياناتهم')
         if errors:
             for err in errors[:10]:
                 messages.warning(request, err)
@@ -669,6 +737,69 @@ def import_students(request):
         return redirect('student_list')
 
     return redirect('student_list')
+
+
+@login_required
+def check_missing_student_ids(request):
+    """Compare uploaded national IDs with students without changing data."""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+    if request.method != 'POST' or not request.FILES.get('excel_file'):
+        return redirect('student_list')
+
+    wb = None
+    try:
+        wb, ws = _load_excel_worksheet(request.FILES['excel_file'])
+        header_row, id_column = _find_student_id_column(ws)
+    except ValueError as exc:
+        if wb:
+            wb.close()
+        messages.error(request, str(exc))
+        return redirect('student_list')
+
+    unique_ids = []
+    seen_ids = set()
+    duplicate_count = 0
+    invalid_rows = []
+    first_data_row = header_row + 1 if header_row else 1
+
+    for row_number in range(first_data_row, (ws.max_row or 0) + 1):
+        raw_value = ws.cell(row_number, id_column).value
+        if raw_value in (None, ''):
+            continue
+        student_id = _normalize_student_id(raw_value)
+        if not re.fullmatch(r'\d{1,20}', student_id):
+            invalid_rows.append({'row': row_number, 'value': student_id or str(raw_value)})
+            continue
+        if student_id in seen_ids:
+            duplicate_count += 1
+            continue
+        seen_ids.add(student_id)
+        unique_ids.append(student_id)
+
+    wb.close()
+    if not unique_ids and not invalid_rows:
+        messages.warning(request, 'لم يتم العثور على أرقام هوية في الملف')
+        return redirect('student_list')
+
+    existing_ids = set()
+    for start in range(0, len(unique_ids), 500):
+        existing_ids.update(
+            Student.objects.filter(student_id__in=unique_ids[start:start + 500])
+            .values_list('student_id', flat=True)
+        )
+    missing_ids = [student_id for student_id in unique_ids if student_id not in existing_ids]
+    return render(request, 'school/student_id_check_result.html', {
+        'file_name': request.FILES['excel_file'].name,
+        'total_unique': len(unique_ids),
+        'existing_count': len(existing_ids),
+        'missing_ids': missing_ids,
+        'missing_count': len(missing_ids),
+        'duplicate_count': duplicate_count,
+        'invalid_rows': invalid_rows,
+        'invalid_count': len(invalid_rows),
+    })
 
 
 @login_required
@@ -4174,4 +4305,3 @@ def no_objection_delete(request, obj_id):
     obj.delete()
     messages.success(request, 'تم حذف لا مانع')
     return redirect('no_objection_list')
-
