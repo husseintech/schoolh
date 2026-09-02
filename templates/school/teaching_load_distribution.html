@@ -1,0 +1,106 @@
+{% extends 'school/base.html' %}
+{% block title %}توزيع الأنصبة{% endblock %}
+{% block page_heading %}توزيع الأنصبة{% endblock %}
+{% block content %}
+<style>
+    .load-report-wrap{background:#fff;border:1px solid #dfe5ec;border-radius:16px;box-shadow:0 8px 24px rgba(31,41,55,.06);overflow:hidden}
+    .load-report-head{padding:20px 22px;background:linear-gradient(135deg,#f7f9fc,#eef3f8);border-bottom:1px solid #dfe5ec}
+    .load-report-title{font-weight:800;color:#24364b;margin:0}
+    .load-report-subtitle{color:#65758b;font-size:.9rem;margin-top:5px}
+    .table-load{min-width:1150px;margin:0;font-size:.86rem}
+    .table-load th,.table-load td{vertical-align:middle;text-align:center;border-color:#cfd7e1;padding:.55rem .45rem}
+    .table-load thead th{background:#eef4f8;color:#26384d;font-weight:800;white-space:nowrap}
+    .table-load thead .class-head{background:#dfeaf3}
+    .teacher-cell{text-align:right!important;min-width:190px}
+    .teacher-name{font-weight:800;color:#1f2937;font-size:.94rem}
+    .teacher-id{font-size:.78rem;color:#6b7280;margin-top:4px}
+    .meta-cell{min-width:115px}
+    .subject-cell{min-width:120px}
+    .count-cell{min-width:72px}
+    .subject-line,.count-line{min-height:27px;display:flex;align-items:center;justify-content:center;border-bottom:1px dashed #dde4ec}
+    .subject-line:last-child,.count-line:last-child{border-bottom:0}
+    .count-line{font-weight:800;color:#244c6a}
+    .total-cell{font-weight:900;font-size:1rem;background:#edf7ef!important;color:#216e39;min-width:90px}
+    .empty-cell{color:#b0b7c1}
+    .report-actions{display:flex;gap:8px;align-items:center}
+    @media print{
+        @page{size:A3 landscape;margin:8mm}
+        body{background:#fff!important}
+        .sidebar,.topbar,.navbar,.no-print,.report-actions{display:none!important}
+        main,.main-content,.content-wrapper{margin:0!important;padding:0!important;width:100%!important}
+        .load-report-wrap{box-shadow:none;border:0;border-radius:0}
+        .load-report-head{padding:8px 0;background:#fff!important}
+        .table-responsive{overflow:visible!important}
+        .table-load{min-width:0;width:100%;font-size:9px}
+        .table-load th,.table-load td{padding:3px 2px}
+        .teacher-name{font-size:9px}.teacher-id{font-size:8px}.total-cell{font-size:9px}
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 no-print">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-grid-3x3-gap-fill"></i> توزيع الأنصبة</h4>
+        <div class="text-muted small">تقرير تلقائي من الجدول اليومي للمعلمين، دون أي إدخالات إضافية.</div>
+    </div>
+    <div class="report-actions">
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+    </div>
+</div>
+
+<div class="load-report-wrap">
+    <div class="load-report-head text-center">
+        <h5 class="load-report-title">{{ info.name_ar|default:'المدرسة' }}</h5>
+        <div class="load-report-subtitle">توزيع الأنصبة الأسبوعية للمعلمين حسب الصف والمبحث</div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-load">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width:48px">#</th>
+                    <th rowspan="2">اسم المعلم / رقم الهوية</th>
+                    <th rowspan="2">المؤهل</th>
+                    <th rowspan="2">التخصص</th>
+                    {% for c in classes %}
+                    <th colspan="2" class="class-head">{{ c.name }}</th>
+                    {% endfor %}
+                    <th rowspan="2">مجموع الحصص</th>
+                </tr>
+                <tr>
+                    {% for c in classes %}
+                    <th>المبحث</th>
+                    <th>عدد الحصص</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in teacher_rows %}
+                <tr>
+                    <td>{{ row.index }}</td>
+                    <td class="teacher-cell">
+                        <div class="teacher-name">{{ row.teacher.full_name }}</div>
+                        <div class="teacher-id">رقم الهوية: {{ row.teacher.id_number|default:'---' }}</div>
+                    </td>
+                    <td class="meta-cell">{{ row.teacher.qualification|default:'---' }}</td>
+                    <td class="meta-cell">{{ row.teacher.specialization|default:'---' }}</td>
+                    {% for cell in row.class_cells %}
+                    <td class="subject-cell">
+                        {% if cell.entries %}
+                            {% for item in cell.entries %}<div class="subject-line">{{ item.subject_name }}</div>{% endfor %}
+                        {% else %}<span class="empty-cell">—</span>{% endif %}
+                    </td>
+                    <td class="count-cell">
+                        {% if cell.entries %}
+                            {% for item in cell.entries %}<div class="count-line">{{ item.count }}</div>{% endfor %}
+                        {% else %}<span class="empty-cell">—</span>{% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="total-cell">{{ row.total }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="99" class="text-center text-muted py-4">لا يوجد معلمون مسجلون.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
