@@ -24,15 +24,35 @@ def teaching_load_distribution(request):
     )
     classes = scheduled_classes or list(Class.objects.all().order_by('name'))
 
+    scheduled_teacher_ids = list(
+        TeacherScheduleEntry.objects.filter(subject__isnull=False, student_class__isnull=False)
+        .values_list('teacher_id', flat=True).distinct()
+    )
+    available_teachers = list(Teacher.objects.filter(id__in=scheduled_teacher_ids).order_by('full_name'))
+
+    selected_raw = request.GET.getlist('teachers')
+    selected_ids = []
+    for value in selected_raw:
+        try:
+            teacher_id = int(value)
+        except (TypeError, ValueError):
+            continue
+        if teacher_id in scheduled_teacher_ids:
+            selected_ids.append(teacher_id)
+    selected_ids = list(dict.fromkeys(selected_ids))
+
+    # By default the report contains all people who actually have lessons in the schedule.
+    # The administrator can then exclude principal/secretary/custodian or any other person.
+    report_teacher_ids = selected_ids if selected_raw else scheduled_teacher_ids
+
     aggregate_rows = (
         TeacherScheduleEntry.objects
-        .filter(subject__isnull=False, student_class__isnull=False)
-        .values(
-            'teacher_id',
-            'student_class_id',
-            'subject_id',
-            'subject__name',
+        .filter(
+            teacher_id__in=report_teacher_ids,
+            subject__isnull=False,
+            student_class__isnull=False,
         )
+        .values('teacher_id', 'student_class_id', 'subject_id', 'subject__name')
         .annotate(lesson_count=Count('id'))
         .order_by('teacher_id', 'student_class_id', 'subject__name')
     )
@@ -49,7 +69,8 @@ def teaching_load_distribution(request):
         teacher_totals[row['teacher_id']] += row['lesson_count']
 
     teacher_rows = []
-    for index, teacher in enumerate(Teacher.objects.all().order_by('full_name'), start=1):
+    report_teachers = Teacher.objects.filter(id__in=report_teacher_ids).order_by('full_name')
+    for index, teacher in enumerate(report_teachers, start=1):
         class_cells = []
         for student_class in classes:
             entries = by_teacher[teacher.id].get(student_class.id, [])
@@ -69,4 +90,6 @@ def teaching_load_distribution(request):
         'info': SchoolInfo.objects.first(),
         'classes': classes,
         'teacher_rows': teacher_rows,
+        'available_teachers': available_teachers,
+        'selected_ids': selected_ids if selected_raw else scheduled_teacher_ids,
     })
