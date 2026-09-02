@@ -1,0 +1,36 @@
+{% extends 'school/base.html' %}
+{% block title %}نتيجة فحص هويات الطلاب{% endblock %}
+{% block page_heading %}نتيجة فحص الهويات{% endblock %}
+{% block content %}
+<style>
+.check-head{background:linear-gradient(135deg,#263e55,#396d91);color:#fff;border-radius:18px;padding:23px;box-shadow:0 12px 30px rgba(24,48,73,.14)}.check-head h2{font-size:1.3rem;font-weight:800;margin:0 0 6px}.check-head p{margin:0;color:rgba(255,255,255,.78)}
+.result-stat{background:#fff;border:1px solid #e6ecf1;border-radius:15px;padding:17px;box-shadow:0 5px 16px rgba(31,55,78,.05);height:100%}.result-stat .icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.15rem}.result-stat strong{font-size:1.4rem;color:#263c51}.result-stat small{display:block;color:#758496}.stat-blue{background:#eaf2fb;color:#28699d}.stat-green{background:#e9f7ef;color:#23834e}.stat-orange{background:#fff4db;color:#976600}.stat-red{background:#fdecec;color:#ad3c3c}
+.missing-card{border-radius:17px;overflow:hidden}.missing-card .card-header{padding:16px 19px}.missing-table th{background:#eef3f7;color:#41566b}.missing-table td,.missing-table th{text-align:center;vertical-align:middle}.read-only-note{background:#eef8f2;border:1px solid #cfe8d8;color:#32674a;border-radius:12px;padding:12px 14px}
+</style>
+
+<div class="check-head mb-4"><div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center"><div><h2><i class="bi bi-person-check-fill ms-2"></i>اكتمل فحص الهويات</h2><p>الملف: {{ file_name }}</p></div><a href="{% url 'student_list' %}" class="btn btn-light"><i class="bi bi-arrow-right ms-1"></i>العودة إلى الطلاب</a></div></div>
+
+<div class="read-only-note mb-4"><i class="bi bi-shield-check ms-1"></i><strong>لم يتم تعديل قاعدة البيانات.</strong> هذه النتيجة ناتجة عن المقارنة فقط.</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-blue"><i class="bi bi-list-ol"></i></div><div><strong>{{ total_unique }}</strong><small>هوية فريدة</small></div></div></div>
+  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-green"><i class="bi bi-check2-circle"></i></div><div><strong>{{ existing_count }}</strong><small>موجودة</small></div></div></div>
+  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-orange"><i class="bi bi-person-plus"></i></div><div><strong>{{ missing_count }}</strong><small>غير موجودة</small></div></div></div>
+  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-red"><i class="bi bi-exclamation-triangle"></i></div><div><strong>{{ invalid_count }}</strong><small>غير صالحة</small></div></div></div>
+</div>
+
+<div class="card missing-card">
+  <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2"><span><i class="bi bi-person-x-fill text-warning ms-2"></i>أرقام الهويات غير الموجودة ({{ missing_count }})</span>{% if missing_ids %}<button type="button" class="btn btn-sm btn-outline-primary" id="copyMissingIds"><i class="bi bi-clipboard ms-1"></i>نسخ الأرقام</button>{% endif %}</div>
+  <div class="card-body p-0">
+  {% if missing_ids %}<div class="table-responsive"><table class="table table-hover missing-table mb-0"><thead><tr><th style="width:90px">#</th><th>رقم الهوية</th><th>الحالة</th></tr></thead><tbody>{% for student_id in missing_ids %}<tr><td>{{ forloop.counter }}</td><td class="missing-id fw-bold" dir="ltr">{{ student_id }}</td><td><span class="badge text-bg-warning">يحتاج إضافة</span></td></tr>{% endfor %}</tbody></table></div>
+  {% else %}<div class="text-center py-5 px-3"><i class="bi bi-check-circle-fill text-success d-block mb-2" style="font-size:2.8rem"></i><h5 class="fw-bold">جميع الهويات موجودة</h5><p class="text-muted mb-0">لا يوجد طلاب ناقصون وفق الملف المرفوع.</p></div>{% endif %}
+  </div>
+</div>
+
+{% if duplicate_count %}<div class="alert alert-info"><i class="bi bi-files ms-1"></i>تم تجاهل {{ duplicate_count }} رقم مكرر داخل الملف.</div>{% endif %}
+{% if invalid_rows %}<div class="card"><div class="card-header"><i class="bi bi-exclamation-triangle text-danger ms-1"></i>قيم تحتاج مراجعة</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>صف Excel</th><th>القيمة</th><th>السبب</th></tr></thead><tbody>{% for item in invalid_rows %}<tr><td>{{ item.row }}</td><td dir="ltr">{{ item.value }}</td><td>ليست رقم هوية رقميًا صحيحًا</td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
+
+<script>
+document.getElementById('copyMissingIds')?.addEventListener('click',async function(){var values=Array.from(document.querySelectorAll('.missing-id')).map(function(cell){return cell.textContent.trim();}).join('\n');try{await navigator.clipboard.writeText(values);this.innerHTML='<i class="bi bi-check2 ms-1"></i>تم النسخ';}catch(error){window.prompt('انسخ الأرقام:',values);}});
+</script>
+{% endblock %}
