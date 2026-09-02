@@ -2,139 +2,110 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>طباعة جميع الشهادات</title>
+<title>طباعة شهادات التقدير</title>
 <style>
 @page { size: A4 landscape; margin: 0; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: 'Amiri', 'Traditional Arabic', serif;
-    overflow: hidden;
-}
-.sheet {
-    width: 297mm; height: 210mm;
-    display: flex; align-items: center; justify-content: center;
-    page-break-after: always;
-    overflow: hidden;
-}
-.sheet:last-child { page-break-after: auto; }
-.bg-1 { background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 50%, #ffcc80 100%); color: #5d3a00; }
-.bg-2 { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%); color: #1b3a1b; }
-.bg-3 { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%); color: #0d2f4f; }
-.bg-4 { background: #fff; color: #333; }
-.bg-5 { background: linear-gradient(135deg, #fff5f7 0%, #fbd3dc 50%, #f6aec2 100%); color: #4a1d2b; }
-.bg-6 { background: linear-gradient(135deg, #fff8f5 0%, #fad3d8 50%, #f2aebf 100%); color: #4a1d2b; }
-.bg-7 { background: linear-gradient(135deg, #ffe9f0 0%, #f9b8cc 50%, #ee7fa4 100%); color: #3d0f24; }
-.bg-8 { background: #fffafb; color: #4a1d2b; }
-.bg-9 { background: linear-gradient(135deg, #fff3e8 0%, #ffd9d3 45%, #ffc2ca 100%); color: #4a1d2b; }
-.frame {
-    width: 277mm; height: 190mm;
-    border: 4mm double #c9a227;
-    border-radius: 8mm;
-    display: flex; flex-direction: column;
-    position: relative;
-    padding: 12mm;
-}
-.bg-4 .frame { border-color: #1d4ed8; }
-.bg-5 .frame { border-color: #b3405f; box-shadow: inset 0 0 0 1.2mm rgba(255,255,255,.6); }
-.bg-6 .frame { border-color: #c2527d; box-shadow: inset 0 0 0 1.2mm #e8b04b; }
-.bg-7 .frame { border-color: #8e1e4e; }
-.bg-8 .frame { border-color: #e8487d; box-shadow: inset 0 0 0 1.2mm rgba(179,64,95,.25); }
-.bg-9 .frame { border-color: #d96459; box-shadow: inset 0 0 0 1.2mm rgba(255,255,255,.7); }
-.bg-5 .corner, .bg-6 .corner, .bg-7 .corner, .bg-8 .corner, .bg-9 .corner { border-color: #b3405f; }
-.bg-6 .corner { border-color: #c2527d; }
-.bg-7 .corner { border-color: #8e1e4e; }
-.bg-8 .corner { border-color: #e8487d; }
-.bg-9 .corner { border-color: #d96459; }
-.corner { position: absolute; width: 22mm; height: 22mm; opacity: .35; }
-.corner-tl { top: 2mm; left: 2mm; border-top: 1.5mm solid #c9a227; border-left: 1.5mm solid #c9a227; border-radius: 6mm 0 0 0; }
-.corner-tr { top: 2mm; right: 2mm; border-top: 1.5mm solid #c9a227; border-right: 1.5mm solid #c9a227; border-radius: 0 6mm 0 0; }
-.corner-bl { bottom: 2mm; left: 2mm; border-bottom: 1.5mm solid #c9a227; border-left: 1.5mm solid #c9a227; border-radius: 0 0 0 6mm; }
-.corner-br { bottom: 2mm; right: 2mm; border-bottom: 1.5mm solid #c9a227; border-right: 1.5mm solid #c9a227; border-radius: 0 0 6mm 0; }
-header { display: flex; justify-content: space-between; align-items: center; }
-.logo { height: 30mm; }
-.logo img { height: 30mm; }
-.logo-placeholder {
-    height: 30mm; width: 30mm; border: 1px dashed #999;
-    display: flex; align-items: center; justify-content: center;
-    color: #999; font-size: 9pt; background: rgba(255,255,255,.5); border-radius: 4mm;
-}
-.school-name { text-align: center; font-size: 24pt; font-weight: bold; flex: 1; }
-.mid { text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6mm; }
-.title { font-size: 38pt; font-weight: bold; letter-spacing: 1px; }
-.deco { font-size: 18pt; }
-.student-name { font-size: 32pt; font-weight: bold; }
-.phrase { font-size: 16pt; line-height: 2; }
-.phrase strong { font-size: 20pt; }
-footer { display: flex; justify-content: space-between; align-items: flex-end; }
-.footer-item { text-align: center; font-size: 15pt; }
-.footer-item .line { border-bottom: .6mm solid #555; min-width: 60mm; height: 9mm; }
-.footer-item .role { margin-top: 2mm; color: #666; font-size: 12pt; }
-.toolbar { position: fixed; top: 10px; left: 10px; z-index: 10; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: 92vw; }
-.toolbar a {
-    display: inline-block; background: #2563eb; color: #fff;
-    padding: 8px 14px; border-radius: 8px; text-decoration: none;
-    font-family: Arial, sans-serif; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,.3);
-}
-.toolbar a:hover { filter: brightness(1.1); }
-.toolbar-label { background: #333; color: #fff; padding: 8px 12px; border-radius: 8px; font-family: Arial, sans-serif; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-.toolbar-print { background: #059669 !important; }
-@media print { .toolbar { display: none; } }
+:root { --ink:#18324a; --accent:#b58a32; --accent2:#e2c779; --paper:#fffdf8; }
+html, body { background:#eceff1; }
+body { font-family:'Amiri','Noto Naskh Arabic','Traditional Arabic','Times New Roman',serif; color:var(--ink); }
+.sheet { width:297mm; height:210mm; page-break-after:always; break-after:page; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; background:var(--paper); }
+.sheet:last-of-type { page-break-after:auto; }
+.certificate { width:283mm; height:196mm; position:relative; padding:10mm 15mm 9mm; display:flex; flex-direction:column; background:rgba(255,255,255,.72); }
+.certificate:before { content:""; position:absolute; inset:2.8mm; border:1.1mm solid var(--accent); pointer-events:none; }
+.certificate:after { content:""; position:absolute; inset:5.2mm; border:.35mm solid var(--accent2); pointer-events:none; }
+.inner-line { position:absolute; inset:7mm; border:.22mm solid rgba(24,50,74,.28); pointer-events:none; }
+.corner { position:absolute; width:29mm; height:29mm; z-index:2; pointer-events:none; }
+.corner:before,.corner:after { content:""; position:absolute; border-color:var(--accent); }
+.corner:before { width:23mm; height:23mm; border-style:solid; border-width:0; }
+.corner:after { width:12mm; height:12mm; border:1mm solid var(--accent2); transform:rotate(45deg); opacity:.8; }
+.corner-tr { top:1.5mm; right:1.5mm; }.corner-tr:before{top:0;right:0;border-top-width:2mm;border-right-width:2mm;border-radius:0 5mm 0 0}.corner-tr:after{top:7mm;right:7mm}
+.corner-tl { top:1.5mm; left:1.5mm; }.corner-tl:before{top:0;left:0;border-top-width:2mm;border-left-width:2mm;border-radius:5mm 0 0 0}.corner-tl:after{top:7mm;left:7mm}
+.corner-br { bottom:1.5mm; right:1.5mm; }.corner-br:before{bottom:0;right:0;border-bottom-width:2mm;border-right-width:2mm;border-radius:0 0 5mm 0}.corner-br:after{bottom:7mm;right:7mm}
+.corner-bl { bottom:1.5mm; left:1.5mm; }.corner-bl:before{bottom:0;left:0;border-bottom-width:2mm;border-left-width:2mm;border-radius:0 0 0 5mm}.corner-bl:after{bottom:7mm;left:7mm}
+.watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; overflow:hidden; }
+.watermark:before { content:"✦"; font-size:115mm; color:var(--accent); opacity:.035; transform:rotate(-10deg); }
+.cert-header { min-height:35mm; display:grid; grid-template-columns:35mm 1fr 35mm; align-items:center; position:relative; z-index:3; }
+.logo-box { width:28mm; height:28mm; display:flex; align-items:center; justify-content:center; justify-self:center; }
+.logo-box img { max-width:28mm; max-height:28mm; object-fit:contain; }
+.logo-placeholder { width:25mm; height:25mm; border:.35mm solid var(--accent2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9pt; color:#8a7550; }
+.school-block { text-align:center; }
+.basmalah { font-size:13pt; margin-bottom:1.5mm; color:#52606c; }
+.school-name { font-size:22pt; font-weight:700; line-height:1.25; color:var(--ink); }
+.school-ornament { margin-top:1.5mm; color:var(--accent); font-size:12pt; letter-spacing:4px; }
+.cert-body { flex:1; position:relative; z-index:3; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:2mm; }
+.title-wrap { display:flex; align-items:center; justify-content:center; width:76%; gap:5mm; margin-bottom:4mm; }
+.title-line { height:.35mm; flex:1; background:linear-gradient(to left,transparent,var(--accent),transparent); }
+.title { font-size:36pt; line-height:1.1; font-weight:800; color:var(--accent); text-shadow:0 .25mm 0 rgba(255,255,255,.8); white-space:nowrap; }
+.intro { font-size:15.5pt; line-height:1.8; color:#34495e; }
+.intro strong { color:var(--ink); font-size:17pt; }
+.student-name { margin:3mm 0 2.5mm; min-width:125mm; max-width:220mm; padding:0 10mm 2mm; font-size:31pt; line-height:1.25; font-weight:800; color:var(--ink); border-bottom:.7mm solid var(--accent); position:relative; }
+.student-name:after { content:"◆"; position:absolute; bottom:-3.2mm; left:50%; transform:translateX(-50%); background:var(--paper); color:var(--accent); padding:0 3mm; font-size:8pt; }
+.reason { font-size:15pt; line-height:1.75; color:#445566; }
+.reason strong { font-size:17pt; color:var(--ink); }
+.medallion { margin-top:3mm; min-width:38mm; padding:1.3mm 5mm; border:.35mm solid var(--accent2); border-radius:20mm; color:var(--accent); font-size:11pt; font-weight:700; background:rgba(255,255,255,.55); }
+.cert-footer { min-height:29mm; display:grid; grid-template-columns:1fr 48mm 1fr; align-items:end; position:relative; z-index:3; padding:0 12mm 2mm; }
+.signature { text-align:center; font-size:12pt; color:#52606c; }
+.signature-name { min-height:8mm; display:flex; align-items:flex-end; justify-content:center; padding-bottom:1.5mm; border-bottom:.35mm solid #7b8790; font-size:14pt; font-weight:700; color:var(--ink); }
+.signature-role { margin-top:1.5mm; font-size:10.5pt; }
+.seal { width:34mm; height:34mm; margin:auto; border:.65mm double var(--accent); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--accent); transform:rotate(-3deg); background:rgba(255,255,255,.42); }
+.seal-star { font-size:16pt; line-height:1; }.seal-text { font-size:9pt; font-weight:700; margin-top:1mm; }
+/* Theme palettes: the paper stays elegant while the frame identity changes. */
+.bg-1 { --ink:#24364b; --accent:#aa7d20; --accent2:#ddc47c; --paper:#fffdf7; }
+.bg-2 { --ink:#173d35; --accent:#38745d; --accent2:#9dc5ad; --paper:#fbfffc; }
+.bg-3 { --ink:#183b62; --accent:#315f91; --accent2:#9ab9d7; --paper:#fbfdff; }
+.bg-4 { --ink:#26384d; --accent:#607286; --accent2:#bdc7d0; --paper:#fff; }
+.bg-5 { --ink:#56283b; --accent:#a64f6d; --accent2:#dfafbf; --paper:#fffafb; }
+.bg-6 { --ink:#553342; --accent:#a15f72; --accent2:#d8b46c; --paper:#fffaf8; }
+.bg-7 { --ink:#4b1731; --accent:#8d3157; --accent2:#d38ca9; --paper:#fff9fc; }
+.bg-8 { --ink:#54293a; --accent:#c25b7e; --accent2:#e8b8c8; --paper:#fff; }
+.bg-9 { --ink:#56322d; --accent:#b96855; --accent2:#dfaa92; --paper:#fffaf6; }
+.toolbar { position:fixed; top:10px; left:10px; z-index:20; display:flex; align-items:center; gap:6px; flex-wrap:wrap; max-width:94vw; direction:rtl; font-family:Arial,sans-serif; }
+.toolbar-label,.toolbar a { box-shadow:0 2px 8px rgba(0,0,0,.18); border-radius:8px; font-size:12px; }
+.toolbar-label { background:#263238; color:#fff; padding:8px 11px; }
+.toolbar a { display:inline-block; background:#fff; color:#263238; border:1px solid #d7dde2; padding:8px 11px; text-decoration:none; }
+.toolbar a:hover { background:#f5f7f8; }.toolbar-print { background:#176b51 !important; border-color:#176b51 !important; color:#fff !important; }
+@media print { html,body{background:#fff} .toolbar{display:none!important} .sheet{margin:0} }
 </style>
 </head>
 <body>
 {% for cert in certs %}
-<div class="sheet bg-{{ bg }}">
-    <div class="frame">
-        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
-        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
-        <header>
-            <div class="logo">
-                {% if info and info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="logo">
-                {% else %}
-                <div class="logo-placeholder">الشعار</div>
-                {% endif %}
-            </div>
-            <div class="school-name">بسم الله الرحمن الرحيم</div>
-            <div class="logo" style="width: 30mm;"></div>
-        </header>
-        <div class="mid">
-            <div class="title">شهادة شكر وتقدير</div>
-            <div class="deco">✦ ✦ ✦</div>
-            <div class="phrase">
-                يسرّ إدارة مدرسة <strong>{% if info %}{{ info.name_ar }}{% endif %}</strong> أن تمنح هذه الشهادة إلى الطالب
-            </div>
-            <div class="student-name">{{ cert.student_name }}</div>
-            <div class="phrase">
-                من الصف <strong>{{ cert.class_name }}</strong> وذلك تقديراً على جهوده وتفوقه
-            </div>
-        </div>
-        <footer>
-            <div class="footer-item">
-                <div class="line"></div>
-                <div class="role">مربي الصف: {{ cert.guardian_name }}</div>
-            </div>
-            <div class="footer-item">
-                <div class="line"></div>
-                <div class="role">مدير المدرسة: {{ cert.principal_name }}</div>
-            </div>
-        </footer>
-    </div>
-</div>
+<section class="sheet bg-{{ bg }}">
+  <div class="certificate">
+    <div class="inner-line"></div><div class="watermark"></div>
+    <span class="corner corner-tr"></span><span class="corner corner-tl"></span><span class="corner corner-br"></span><span class="corner corner-bl"></span>
+    <header class="cert-header">
+      <div class="logo-box">
+        {% if info and info.ministry_logo %}<img src="{{ info.ministry_logo }}" alt="شعار الوزارة">{% else %}<div class="logo-placeholder">الشعار</div>{% endif %}
+      </div>
+      <div class="school-block">
+        <div class="basmalah">بسم الله الرحمن الرحيم</div>
+        <div class="school-name">{% if info %}{{ info.name_ar }}{% endif %}</div>
+        <div class="school-ornament">◆ ✦ ◆</div>
+      </div>
+      <div class="logo-box"></div>
+    </header>
+    <main class="cert-body">
+      <div class="title-wrap"><span class="title-line"></span><h1 class="title">شهادة شكر وتقدير</h1><span class="title-line"></span></div>
+      <div class="intro">تتقدم إدارة <strong>{% if info %}{{ info.name_ar }}{% endif %}</strong> بكل فخر واعتزاز بهذه الشهادة إلى الطالب</div>
+      <div class="student-name">{{ cert.student_name }}</div>
+      <div class="reason">من الصف <strong>{{ cert.class_name }}</strong>، تقديراً لجهوده المتميزة وتفوقه، مع أطيب الأمنيات له بدوام النجاح والتقدم.</div>
+      <div class="medallion">✦ تميّز وإبداع ✦</div>
+    </main>
+    <footer class="cert-footer">
+      <div class="signature"><div class="signature-name">{{ cert.guardian_name }}</div><div class="signature-role">مربي الصف</div></div>
+      <div class="seal"><div class="seal-star">✦</div><div class="seal-text">تميز وإبداع</div></div>
+      <div class="signature"><div class="signature-name">{{ cert.principal_name }}</div><div class="signature-role">مدير المدرسة</div></div>
+    </footer>
+  </div>
+</section>
 {% empty %}
-<div class="sheet" style="font-size: 20pt; color: #666;">لا توجد شهادات للطباعة</div>
+<section class="sheet" style="font-size:20pt;color:#666;">لا توجد شهادات للطباعة</section>
 {% endfor %}
 <div class="toolbar">
-    <span class="toolbar-label">التصميم:</span>
-    <a href="?bg=5">وردي فاتح</a>
-    <a href="?bg=6">وردي ذهبي</a>
-    <a href="?bg=7">فوشيا</a>
-    <a href="?bg=8">أبيض وردي</a>
-    <a href="?bg=9">خوخي</a>
-    <a href="?bg=1">ذهبي</a>
-    <a href="?bg=2">أخضر</a>
-    <a href="?bg=3">أزرق</a>
-    <a href="javascript:window.print()" class="toolbar-print">طباعة الكل</a>
+  <span class="toolbar-label">هوية الإطار:</span>
+  <a href="?bg=1">ذهبي</a><a href="?bg=3">أزرق ملكي</a><a href="?bg=2">أخضر</a><a href="?bg=5">وردي هادئ</a><a href="?bg=6">وردي ذهبي</a><a href="?bg=7">فوشيا</a><a href="?bg=8">أبيض وردي</a><a href="?bg=9">خوخي</a>
+  <a href="javascript:window.print()" class="toolbar-print">طباعة الكل</a>
 </div>
 </body>
 </html>
