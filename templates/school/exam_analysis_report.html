@@ -3,108 +3,26 @@
 {% block title %}تقرير تحليل الامتحان{% endblock %}
 {% block page_heading %}تقرير تحليل الامتحان{% endblock %}
 {% block content %}
-<div class="d-print-none text-center mb-3">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
-    <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary ms-1">العودة</a>
-</div>
-
-<div class="card" id="reportCard">
-    <div class="card-body">
-        {% if info %}
-        <div class="row mb-4 align-items-center">
-            <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
-            </div>
-            <div class="col-7 text-end">
-                <h6 class="text-muted">تاريخ الطباعة: {{ today|date:'Y/m/d' }}</h6>
-            </div>
-        </div>
-        <hr>
-        {% endif %}
-        <div class="text-center mb-4">
-            <h5>تحليل امتحان: {{ analysis.exam_name }}</h5>
-            <p class="text-muted mb-0">المادة: {{ analysis.subject.name|default:'-' }} | الصف: {{ analysis.student_class.name|default:'-' }}</p>
-            <small class="text-muted">بواسطة: {{ analysis.created_by|by_name }} | {{ analysis.created_at|date:'Y/m/d' }}</small>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="border rounded p-3 text-center">
-                    <div class="fw-bold fs-4 text-primary">{{ analysis.total_students }}</div>
-                    <small class="text-muted">عدد الطلاب</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="border rounded p-3 text-center">
-                    <div class="fw-bold fs-4 text-success">{{ analysis.passed_count }}</div>
-                    <small class="text-muted">عدد الناجحين</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="border rounded p-3 text-center">
-                    <div class="fw-bold fs-4 text-danger">{{ analysis.failed_count }}</div>
-                    <small class="text-muted">عدد الراسبين</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="border rounded p-3 text-center">
-                    <div class="fw-bold fs-4 text-success">{{ analysis.pass_percentage|default:0 }}%</div>
-                    <small class="text-muted">نسبة النجاح</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <canvas id="passChart" height="260"></canvas>
-            </div>
-            <div class="col-md-6">
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tbody>
-                            <tr>
-                                <th class="table-success">نسبة النجاح</th>
-                                <td class="text-success fw-bold">{{ analysis.pass_percentage|default:0 }}%</td>
-                            </tr>
-                            <tr>
-                                <th class="table-danger">نسبة الرسوب</th>
-                                <td class="text-danger fw-bold">{{ analysis.fail_percentage|default:0 }}%</td>
-                            </tr>
-                            <tr>
-                                <th>عدد الناجحين</th>
-                                <td>{{ analysis.passed_count }} من {{ analysis.total_students }}</td>
-                            </tr>
-                            <tr>
-                                <th>عدد الراسبين</th>
-                                <td>{{ analysis.failed_count }} من {{ analysis.total_students }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        {% if analysis.success_reasons %}
-        <h6 class="text-success"><i class="bi bi-check-circle-fill"></i> أسباب النجاح</h6>
-        <p>{{ analysis.success_reasons }}</p>
-        {% endif %}
-        {% if analysis.fail_reasons %}
-        <h6 class="text-danger"><i class="bi bi-x-circle-fill"></i> أسباب الرسوب</h6>
-        <p>{{ analysis.fail_reasons }}</p>
-        {% endif %}
-        {% if analysis.notes %}
-        <h6>ملاحظات إضافية</h6>
-        <p>{{ analysis.notes }}</p>
-        {% endif %}
-
-        {% if info %}
-        <div class="mt-4 pt-3 border-top d-flex justify-content-between">
-            <p class="mb-0"><strong>المعلم/ة: {{ analysis.created_by|by_name }}</strong></p>
-            <p class="mb-0"><strong>المدير: {{ info.principal_name }}</strong></p>
-        </div>
-        {% endif %}
+{% include 'school/includes/report_premium_styles.html' %}
+<div class="report-page">
+<div class="d-print-none d-flex justify-content-end gap-2 mb-3"><button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button><a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary">العودة</a></div>
+<div class="card" id="reportCard"><div class="card-body">
+    {% if info %}<div class="row mb-3 align-items-center"><div class="col-7 text-start"><h6 style="font-size:12px;line-height:1.55">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6></div><div class="col-5 text-end"><h6 class="text-muted">تاريخ الطباعة: {{ today|date:'Y/m/d' }}</h6></div></div><hr>{% endif %}
+    <div class="report-title-box"><h5>تحليل امتحان: {{ analysis.exam_name }}</h5><p>المادة: {{ analysis.subject.name|default:'-' }} — الصف: {{ analysis.student_class.name|default:'-' }} — بواسطة: {{ analysis.created_by|by_name }}</p></div>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="p-3 text-center rounded-3 h-100" style="background:#f5f8fc;border:1px solid #e3e8ef"><div class="fw-bold fs-4">{{ analysis.total_students }}</div><small class="text-muted">عدد الطلاب</small></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 text-center rounded-3 h-100" style="background:#f3f8f4;border:1px solid #dce9df"><div class="fw-bold fs-4 status-ok">{{ analysis.passed_count }}</div><small class="text-muted">عدد الناجحين</small></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 text-center rounded-3 h-100" style="background:#fff6f6;border:1px solid #efdede"><div class="fw-bold fs-4 status-bad">{{ analysis.failed_count }}</div><small class="text-muted">عدد الراسبين</small></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 text-center rounded-3 h-100" style="background:#f5f8fc;border:1px solid #e3e8ef"><div class="fw-bold fs-4 status-ok">{{ analysis.pass_percentage|default:0 }}%</div><small class="text-muted">نسبة النجاح</small></div></div>
     </div>
+    <div class="row g-4 mb-4"><div class="col-md-6"><div class="p-3 rounded-3 h-100" style="border:1px solid #e3e8ef;background:#fff"><canvas id="passChart" height="260"></canvas></div></div><div class="col-md-6"><div class="table-responsive"><table class="table table-bordered"><tbody><tr><th>نسبة النجاح</th><td class="status-ok">{{ analysis.pass_percentage|default:0 }}%</td></tr><tr><th>نسبة الرسوب</th><td class="status-bad">{{ analysis.fail_percentage|default:0 }}%</td></tr><tr><th>عدد الناجحين</th><td>{{ analysis.passed_count }} من {{ analysis.total_students }}</td></tr><tr><th>عدد الراسبين</th><td>{{ analysis.failed_count }} من {{ analysis.total_students }}</td></tr></tbody></table></div></div></div>
+    {% if analysis.success_reasons %}<div class="p-3 mb-3 rounded-3" style="background:#f3f8f4;border:1px solid #dce9df"><h6 class="status-ok"><i class="bi bi-check-circle-fill"></i> أسباب النجاح</h6><div>{{ analysis.success_reasons }}</div></div>{% endif %}
+    {% if analysis.fail_reasons %}<div class="p-3 mb-3 rounded-3" style="background:#fff6f6;border:1px solid #efdede"><h6 class="status-bad"><i class="bi bi-x-circle-fill"></i> أسباب الرسوب</h6><div>{{ analysis.fail_reasons }}</div></div>{% endif %}
+    {% if analysis.notes %}<div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid #e5e9ef"><h6 class="fw-bold">ملاحظات إضافية</h6><div>{{ analysis.notes }}</div></div>{% endif %}
+    {% if info %}<div class="mt-4 pt-3 border-top d-flex justify-content-between"><strong>المعلم/ة: {{ analysis.created_by|by_name }}</strong><strong>المدير: {{ info.principal_name }}</strong></div>{% endif %}
+</div></div>
 </div>
+<style>@media print{@page{size:A4 portrait}.report-page canvas{max-height:55mm!important}}</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -115,25 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!ctx) return;
     new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: ['ناجح', 'راسب'],
-            datasets: [{
-                label: 'عدد الطلاب',
-                data: [{{ analysis.passed_count }}, {{ analysis.failed_count }}],
-                backgroundColor: ['#198754', '#dc3545'],
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'نتيجة الامتحان (ناجح / راسب)' }
-            },
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } }
-            }
-        }
+        data: { labels: ['ناجح', 'راسب'], datasets: [{ label: 'عدد الطلاب', data: [{{ analysis.passed_count }}, {{ analysis.failed_count }}], backgroundColor: ['#198754', '#dc3545'], borderRadius: 6 }] },
+        options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'نتيجة الامتحان (ناجح / راسب)' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
     });
 });
 </script>
