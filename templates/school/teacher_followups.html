@@ -2,130 +2,61 @@
 {% block title %}متابعة المعلمين{% endblock %}
 {% block page_heading %}متابعة المعلمين - الأمور الشهرية{% endblock %}
 {% block content %}
-
-<div class="card mb-4 no-print">
-    <div class="card-header"><i class="bi bi-clipboard-check-fill"></i> تسجيل متابعة معلم</div>
-    <div class="card-body">
-        <form method="post" class="row g-3">
-            {% csrf_token %}
-            <div class="col-md-4">
-                <label class="form-label">المعلم</label>
-                <select name="teacher_id" class="form-select" required>
-                    <option value="">اختر المعلم...</option>
-                    {% for t in teachers %}
-                    <option value="{{ t.id }}">{{ t.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">تاريخ المتابعة</label>
-                <input type="date" name="follow_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
-            </div>
-            <div class="col-12">
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 20%;">الأمر الشهري</th>
-                                <th class="text-center" style="width: 10%;">تمت المتابعة</th>
-                                <th>ملاحظات خاصة</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>التحضير</strong></td>
-                                <td class="text-center"><input type="checkbox" name="prep_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
-                                <td><input type="text" name="prep_notes" class="form-control" placeholder="ملاحظات التحضير..."></td>
-                            </tr>
-                            <tr>
-                                <td><strong>العلامات</strong></td>
-                                <td class="text-center"><input type="checkbox" name="marks_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
-                                <td><input type="text" name="marks_notes" class="form-control" placeholder="ملاحظات العلامات..."></td>
-                            </tr>
-                            <tr>
-                                <td><strong>المتابعة</strong></td>
-                                <td class="text-center"><input type="checkbox" name="follow_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
-                                <td><input type="text" name="follow_notes" class="form-control" placeholder="ملاحظات المتابعة..."></td>
-                            </tr>
-                            <tr>
-                                <td><strong>الخطط</strong></td>
-                                <td class="text-center"><input type="checkbox" name="plans_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
-                                <td><input type="text" name="plans_notes" class="form-control" placeholder="ملاحظات الخطط..."></td>
-                            </tr>
-                            <tr>
-                                <td><strong>دفتر الغياب</strong></td>
-                                <td class="text-center"><input type="checkbox" name="absence_done" class="form-check-input" style="width: 20px; height: 20px;"></td>
-                                <td><input type="text" name="absence_notes" class="form-control" placeholder="ملاحظات دفتر الغياب..."></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="col-12">
-                <label class="form-label"><strong>ملاحظات عامة</strong></label>
-                <textarea name="general_notes" class="form-control" rows="2" placeholder="ملاحظات عامة على متابعة المعلم..."></textarea>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ المتابعة</button>
-            </div>
-        </form>
+<style>
+.followup-shell{display:grid;gap:18px}.followup-hero{background:#f4f7fb;border:1px solid #e1e7ef;border-radius:18px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px}.followup-hero h4{margin:0;color:#23354a;font-weight:800}.followup-hero p{margin:5px 0 0;color:#708096;font-size:.88rem}.soft-card{background:#fff;border:1px solid #e3e8ef;border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.05);overflow:hidden}.soft-card-head{padding:14px 18px;background:#fafbfd;border-bottom:1px solid #e8edf3;font-weight:800;color:#33465b}.soft-card-body{padding:18px}.follow-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.follow-item{border:1px solid #e3e8ef;border-radius:14px;padding:12px;background:#fbfcfe}.follow-item-title{font-weight:800;color:#35475a;margin-bottom:8px}.check-wrap{display:flex;align-items:center;gap:7px;margin-bottom:8px;color:#637184;font-size:.8rem}.check-wrap input{width:20px;height:20px}.filters{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.filters .actions{display:flex;gap:8px;flex-wrap:wrap}.follow-table{margin:0}.follow-table th{background:#f3f6f9!important;color:#44566a;font-size:.78rem;white-space:nowrap}.follow-table td{font-size:.82rem;vertical-align:middle}.status-dot{display:inline-flex;width:25px;height:25px;border-radius:50%;align-items:center;justify-content:center;font-size:.78rem}.status-dot.ok{background:#edf7ef;color:#2f6b3a}.status-dot.no{background:#fff1f1;color:#a33a3a}.teacher-chip{font-weight:800;color:#25384d}.empty-state{text-align:center;padding:34px 12px;color:#7a8795}.empty-state i{font-size:2rem;color:#b1bbc6}.form-label{font-weight:700;color:#49596a;font-size:.82rem}.form-control,.form-select{border-color:#dce3eb}
+@media(max-width:992px){.follow-grid{grid-template-columns:1fr 1fr}}@media(max-width:576px){.follow-grid{grid-template-columns:1fr}.followup-hero{align-items:flex-start;flex-direction:column}.soft-card-body{padding:14px}}
+</style>
+<div class="followup-shell">
+    <div class="followup-hero no-print">
+        <div><h4><i class="bi bi-clipboard2-check"></i> متابعة المعلمين</h4><p>تسجيل ومراجعة الأمور الشهرية للمعلمين بصورة واضحة وسريعة.</p></div>
+        <div class="text-muted small">{% if is_all %}عرض جميع الشهور{% else %}الشهر الحالي: {{ month_label }}{% endif %}</div>
     </div>
-</div>
 
-<div class="card mb-4 no-print">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><i class="bi bi-funnel"></i> متابعات {% if is_all %}جميع الشهور{% else %}شهر {{ month_label }}{% endif %}</span>
-        <div class="d-flex gap-2">
-            <form method="get" class="d-flex align-items-center gap-2">
-                <input type="month" name="month" class="form-control form-control-sm" value="{% if not is_all %}{{ month_value }}{% endif %}">
-                <button class="btn btn-sm btn-outline-primary">عرض</button>
-                <a href="{% url 'teacher_followups' %}?month=all" class="btn btn-sm btn-{% if is_all %}primary{% else %}outline-secondary{% endif %}">كل الشهور</a>
+    <div class="soft-card no-print">
+        <div class="soft-card-head"><i class="bi bi-plus-circle ms-1"></i> تسجيل متابعة جديدة</div>
+        <div class="soft-card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6"><label class="form-label">المعلم</label><select name="teacher_id" class="form-select" required><option value="">اختر المعلم...</option>{% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3"><label class="form-label">تاريخ المتابعة</label><input type="date" name="follow_date" class="form-control" value="{{ today|date:'Y-m-d' }}"></div>
+                </div>
+                <div class="follow-grid mb-3">
+                    <div class="follow-item"><div class="follow-item-title">التحضير</div><label class="check-wrap"><input type="checkbox" name="prep_done" class="form-check-input"> تمت المتابعة</label><input type="text" name="prep_notes" class="form-control form-control-sm" placeholder="ملاحظات التحضير..."></div>
+                    <div class="follow-item"><div class="follow-item-title">العلامات</div><label class="check-wrap"><input type="checkbox" name="marks_done" class="form-check-input"> تمت المتابعة</label><input type="text" name="marks_notes" class="form-control form-control-sm" placeholder="ملاحظات العلامات..."></div>
+                    <div class="follow-item"><div class="follow-item-title">المتابعة</div><label class="check-wrap"><input type="checkbox" name="follow_done" class="form-check-input"> تمت المتابعة</label><input type="text" name="follow_notes" class="form-control form-control-sm" placeholder="ملاحظات المتابعة..."></div>
+                    <div class="follow-item"><div class="follow-item-title">الخطط</div><label class="check-wrap"><input type="checkbox" name="plans_done" class="form-check-input"> تمت المتابعة</label><input type="text" name="plans_notes" class="form-control form-control-sm" placeholder="ملاحظات الخطط..."></div>
+                    <div class="follow-item"><div class="follow-item-title">دفتر الغياب</div><label class="check-wrap"><input type="checkbox" name="absence_done" class="form-check-input"> تمت المتابعة</label><input type="text" name="absence_notes" class="form-control form-control-sm" placeholder="ملاحظات دفتر الغياب..."></div>
+                </div>
+                <div class="mb-3"><label class="form-label">ملاحظات عامة</label><textarea name="general_notes" class="form-control" rows="2" placeholder="ملاحظات عامة على متابعة المعلم..."></textarea></div>
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save"></i> حفظ المتابعة</button>
             </form>
-            <a href="{% url 'teacher_followup_report' %}?month={{ month_value }}" class="btn btn-sm btn-outline-success"><i class="bi bi-printer"></i> تقرير المتابَعين</a>
-            <a href="{% url 'teacher_followup_missing' %}?month={{ month_value }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-earmark-x"></i> غير المتابَعين</a>
         </div>
     </div>
-    <div class="card-body">
+
+    <div class="soft-card no-print">
+        <div class="soft-card-head filters">
+            <span><i class="bi bi-calendar3 ms-1"></i> {% if is_all %}متابعات جميع الشهور{% else %}متابعات شهر {{ month_label }}{% endif %}</span>
+            <div class="actions">
+                <form method="get" class="d-flex gap-2"><input type="month" name="month" class="form-control form-control-sm" value="{% if not is_all %}{{ month_value }}{% endif %}"><button class="btn btn-sm btn-outline-primary">عرض</button></form>
+                <a href="{% url 'teacher_followups' %}?month=all" class="btn btn-sm btn-{% if is_all %}primary{% else %}outline-secondary{% endif %}">كل الشهور</a>
+                <a href="{% url 'teacher_followup_report' %}?month={{ month_value }}" class="btn btn-sm btn-outline-success"><i class="bi bi-file-earmark-text"></i> تقرير المتابَعين</a>
+                <a href="{% url 'teacher_followup_missing' %}?month={{ month_value }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-person-x"></i> غير المتابَعين</a>
+            </div>
+        </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover table-sm">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>المعلم</th>
-                        <th>تاريخ المتابعة</th>
-                        <th>التحضير</th>
-                        <th>العلامات</th>
-                        <th>المتابعة</th>
-                        <th>الخطط</th>
-                        <th>دفتر الغياب</th>
-                        <th>الملاحظات العامة</th>
-                        <th class="text-center">حذف</th>
-                    </tr>
-                </thead>
+            <table class="table table-hover align-middle follow-table">
+                <thead><tr><th>#</th><th>المعلم</th><th>التاريخ</th><th class="text-center">التحضير</th><th class="text-center">العلامات</th><th class="text-center">المتابعة</th><th class="text-center">الخطط</th><th class="text-center">دفتر الغياب</th><th>الملاحظات العامة</th><th class="text-center">إجراء</th></tr></thead>
                 <tbody>
-                    {% for f in followups %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ f.teacher.full_name }}</strong></td>
-                        <td>{{ f.follow_date|date:'Y-m-d' }}</td>
-                        <td class="text-center">{% if f.prep_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
-                        <td class="text-center">{% if f.marks_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
-                        <td class="text-center">{% if f.follow_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
-                        <td class="text-center">{% if f.plans_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
-                        <td class="text-center">{% if f.absence_done %}<span class="text-success"><i class="bi bi-check-circle-fill"></i></span>{% else %}<span class="text-danger"><i class="bi bi-x-circle"></i></span>{% endif %}</td>
-                        <td>{{ f.general_notes|default:'---'|truncatewords:8 }}</td>
-                        <td class="text-center">
-                            <form method="post" action="{% url 'teacher_followup_delete' f.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه المتابعة؟')" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="10" class="text-center text-muted py-4">لا توجد متابعات مسجلة لهذا الشهر</td>
-                    </tr>
-                    {% endfor %}
+                {% for f in followups %}
+                    <tr><td>{{ forloop.counter }}</td><td><span class="teacher-chip">{{ f.teacher.full_name }}</span></td><td>{{ f.follow_date|date:'Y-m-d' }}</td>
+                    <td class="text-center"><span class="status-dot {% if f.prep_done %}ok{% else %}no{% endif %}"><i class="bi {% if f.prep_done %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i></span></td>
+                    <td class="text-center"><span class="status-dot {% if f.marks_done %}ok{% else %}no{% endif %}"><i class="bi {% if f.marks_done %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i></span></td>
+                    <td class="text-center"><span class="status-dot {% if f.follow_done %}ok{% else %}no{% endif %}"><i class="bi {% if f.follow_done %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i></span></td>
+                    <td class="text-center"><span class="status-dot {% if f.plans_done %}ok{% else %}no{% endif %}"><i class="bi {% if f.plans_done %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i></span></td>
+                    <td class="text-center"><span class="status-dot {% if f.absence_done %}ok{% else %}no{% endif %}"><i class="bi {% if f.absence_done %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i></span></td>
+                    <td>{{ f.general_notes|default:'---'|truncatewords:8 }}</td><td class="text-center"><form method="post" action="{% url 'teacher_followup_delete' f.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه المتابعة؟')" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></button></form></td></tr>
+                {% empty %}<tr><td colspan="10"><div class="empty-state"><i class="bi bi-inbox"></i><div class="mt-2">لا توجد متابعات مسجلة لهذا الشهر</div></div></td></tr>{% endfor %}
                 </tbody>
             </table>
         </div>
