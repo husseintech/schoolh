@@ -3,100 +3,17 @@
 {% block title %}تقرير الزيارات التبادلية - غرفة المعلمين{% endblock %}
 {% block page_heading %}تقرير الزيارات التبادلية - غرفة المعلمين{% endblock %}
 {% block content %}
-
-<div class="card">
-    <div class="card-body" id="reportArea">
-        {% if info %}
-        <div class="row mb-4 align-items-center">
-            <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
-            </div>
-            <div class="col-2 text-center">
-                {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
-                {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
-                {% endif %}
-            </div>
-            <div class="col-5 text-end" dir="ltr">
-                <h6 style="font-size: 13px; line-height: 1.5;">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6>
-            </div>
-        </div>
-        <hr>
-        {% endif %}
-
-        <div class="text-center mb-4">
-            <h5>جدول الزيارات التبادلية بين المعلمين</h5>
-            <p class="text-muted">يُعلّق هذا التقرير في غرفة المعلمين للاطلاع على مواعيد الزيارات القادمة</p>
-        </div>
-
-        <h6 class="fw-bold mb-3"><i class="bi bi-calendar-event"></i> الزيارات المقررة (بانتظار المتابعة)</h6>
-        <div class="table-responsive">
-            <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 5%;">#</th>
-                        <th>المعلم الزائر</th>
-                        <th>المعلم المزار</th>
-                        <th>تاريخ الزيارة</th>
-                        <th>الصف</th>
-                        <th>رقم الحصة</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for v in pending %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ v.visitor.full_name }}</strong></td>
-                        <td><strong>{{ v.host.full_name }}</strong></td>
-                        <td>{{ v.visit_date|date:'Y/m/d' }}</td>
-                        <td>{{ v.student_class.name|default:'---' }}</td>
-                        <td>{{ v.period }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-3">لا توجد زيارات مقررة</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if done %}
-        <h6 class="fw-bold mb-3 mt-4"><i class="bi bi-check-circle"></i> الزيارات المكتملة</h6>
-        <div class="table-responsive">
-            <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 5%;">#</th>
-                        <th>المعلم الزائر</th>
-                        <th>المعلم المزار</th>
-                        <th>تاريخ الزيارة</th>
-                        <th>الصف</th>
-                        <th>رقم الحصة</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for v in done %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ v.visitor.full_name }}</strong></td>
-                        <td><strong>{{ v.host.full_name }}</strong></td>
-                        <td>{{ v.visit_date|date:'Y/m/d' }}</td>
-                        <td>{{ v.student_class.name|default:'---' }}</td>
-                        <td>{{ v.period }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-
-        <p class="text-muted text-center mt-4 small">طُبع بتاريخ {{ today|date:'Y-m-d' }}</p>
-    </div>
-    <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
-        <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a>
-    </div>
+{% include 'school/includes/report_premium_styles.html' %}
+<div class="report-page">
+<div class="card"><div class="card-body" id="reportArea">
+    {% if info %}<div class="row mb-3 align-items-center"><div class="col-5 text-start"><h6 style="font-size:12px;line-height:1.55">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6></div><div class="col-2 text-center">{% if info.ministry_logo %}<img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height:58px;width:auto">{% else %}<img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height:58px;width:auto">{% endif %}</div><div class="col-5 text-end" dir="ltr"><h6 style="font-size:12px;line-height:1.55">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6></div></div><hr>{% endif %}
+    <div class="report-title-box"><h5>جدول الزيارات التبادلية بين المعلمين</h5><p>للاطلاع على مواعيد الزيارات القادمة وحالة الزيارات المكتملة</p></div>
+    <div class="report-summary"><span class="chip">الزيارات المقررة: {{ pending|length }}</span><span class="chip">الزيارات المكتملة: {{ done|length }}</span></div>
+    <h6 class="fw-bold mb-3"><i class="bi bi-calendar-event"></i> الزيارات المقررة</h6>
+    <div class="table-responsive"><table class="table table-bordered text-center align-middle"><thead><tr><th>#</th><th>المعلم الزائر</th><th>المعلم المزار</th><th>تاريخ الزيارة</th><th>الصف</th><th>رقم الحصة</th></tr></thead><tbody>{% for v in pending %}<tr><td>{{ forloop.counter }}</td><td><strong>{{ v.visitor.full_name }}</strong></td><td><strong>{{ v.host.full_name }}</strong></td><td>{{ v.visit_date|date:'Y/m/d' }}</td><td>{{ v.student_class.name|default:'---' }}</td><td><span class="badge text-bg-light border text-dark">{{ v.period }}</span></td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">لا توجد زيارات مقررة</td></tr>{% endfor %}</tbody></table></div>
+    {% if done %}<h6 class="fw-bold mb-3 mt-4 status-ok"><i class="bi bi-check-circle"></i> الزيارات المكتملة</h6><div class="table-responsive"><table class="table table-bordered text-center align-middle"><thead><tr><th>#</th><th>المعلم الزائر</th><th>المعلم المزار</th><th>تاريخ الزيارة</th><th>الصف</th><th>رقم الحصة</th></tr></thead><tbody>{% for v in done %}<tr><td>{{ forloop.counter }}</td><td><strong>{{ v.visitor.full_name }}</strong></td><td><strong>{{ v.host.full_name }}</strong></td><td>{{ v.visit_date|date:'Y/m/d' }}</td><td>{{ v.student_class.name|default:'---' }}</td><td><span class="badge text-bg-success">{{ v.period }}</span></td></tr>{% endfor %}</tbody></table></div>{% endif %}
+    <p class="text-muted text-center mt-4 small">طُبع بتاريخ {{ today|date:'Y-m-d' }}</p>
+</div><div class="card-footer no-print text-center"><button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button> <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a></div></div>
 </div>
+<style>@media print{@page{size:A4 landscape}}</style>
 {% endblock %}

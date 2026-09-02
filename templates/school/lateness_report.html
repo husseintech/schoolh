@@ -3,11 +3,16 @@
 {% block title %}تقرير التأخيرات{% endblock %}
 {% block page_heading %}تقرير التأخيرات{% endblock %}
 {% block content %}
+{% include 'school/includes/report_premium_styles.html' %}
+<div class="report-page">
 <div class="card">
-    <div class="card-header"><i class="bi bi-clock-history"></i> تقرير تأخيرات الطلاب</div>
+    <div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <span><i class="bi bi-clock-history"></i> تقرير تأخيرات الطلاب</span>
+        <button onclick="window.print()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    </div>
     <div class="card-body">
         <form method="get" class="row g-3 mb-4 no-print">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <label class="form-label">الشهر ({{ current_year }})</label>
                 <select name="month" class="form-select">
                     <option value="">كل شهور {{ current_year }}</option>
@@ -16,20 +21,19 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-6 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> عرض</button>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> عرض التقرير</button>
             </div>
         </form>
 
-        <div class="text-center mb-3 no-print">
-            <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+        <div class="report-title-box d-none d-print-block">
+            <h4>تقرير تأخيرات الطلاب</h4>
+            <p>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %} {% endif %}{{ current_year }}</p>
         </div>
 
-        <div class="d-none d-print-block text-center mb-3">
-            <h4>تقرير تأخيرات الطلاب</h4>
-            <h5>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %} {% endif %}{{ current_year }}</h5>
-            <hr>
-        </div>
+        {% if lateness_list %}
+        <div class="report-summary no-print"><span class="chip">إجمالي التأخيرات: {{ lateness_list.count }}</span></div>
+        {% endif %}
 
         <div class="table-responsive">
             <table class="table table-bordered table-hover">
@@ -48,7 +52,7 @@
                     {% for l in lateness_list %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ l.student.full_name }}</td>
+                        <td><strong>{{ l.student.full_name }}</strong></td>
                         <td>{{ l.student.student_class.name|default:"-" }}</td>
                         <td>{{ l.student.student_id }}</td>
                         <td>{{ l.date|date:"Y-m-d" }}</td>
@@ -56,31 +60,13 @@
                         <td>{{ l.created_by|by_name }}</td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
-                            <i class="bi bi-clock" style="font-size: 2rem;"></i>
-                            <p class="mt-2">لا توجد تأخيرات مسجلة</p>
-                        </td>
-                    </tr>
+                    <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-clock" style="font-size:2rem"></i><div class="mt-2">لا توجد تأخيرات مسجلة</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
-        {% if lateness_list %}
-        <div class="text-muted small">إجمالي التأخيرات: {{ lateness_list.count }}</div>
-        {% endif %}
     </div>
 </div>
-
-<style>
-    @media print {
-        .sidebar, .top-bar, .no-print { display: none !important; }
-        .main-content { margin-right: 0 !important; }
-        .card { border: none !important; box-shadow: none !important; }
-        body { font-size: 12pt; }
-        .table th, .table td { border: 1px solid #000; padding: 6px; }
-        .d-print-block { display: block !important; }
-    }
-</style>
+</div>
+<style>@media print{@page{size:A4 landscape}}</style>
 {% endblock %}

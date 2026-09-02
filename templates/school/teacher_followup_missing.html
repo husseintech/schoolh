@@ -3,79 +3,13 @@
 {% block title %}المعلمون غير المتابَعين{% endblock %}
 {% block page_heading %}المعلمون غير المتابَعين{% endblock %}
 {% block content %}
-<div class="card mb-4 no-print">
-    <div class="card-body">
-        <form method="get" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label">اختر الشهر</label>
-                <input type="month" name="month" class="form-control" value="{% if not is_all %}{{ month_value }}{% endif %}">
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-primary">عرض التقرير</button>
-                <a href="{% url 'teacher_followup_missing' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %} ms-2">كل الشهور</a>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-body" id="reportArea">
-        {% if info %}
-        <div class="row mb-4 align-items-center">
-            <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
-            </div>
-            <div class="col-2 text-center">
-                {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
-                {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
-                {% endif %}
-            </div>
-            <div class="col-5 text-end" dir="ltr">
-                <h6 style="font-size: 13px; line-height: 1.5;">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6>
-            </div>
-        </div>
-        <hr>
-        {% endif %}
-        <div class="text-center mb-4">
-            <h5>المعلمون غير المتابَعين</h5>
-            <p class="text-muted">{% if is_all %}لم يتم إدخال أي متابعة لهم منذ بداية التسجيل{% else %}شهر {{ month_label }} — لم يتم إدخال أي متابعة لهم في أي من الأمور الشهرية{% endif %}</p>
-        </div>
-        {% if missing %}
-        <div class="table-responsive">
-            <table class="table table-bordered text-center align-middle" style="font-size: 0.9rem;">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>اسم المعلم</th>
-                        <th>رقم الهوية</th>
-                        <th>التخصص</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in missing %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ t.full_name }}</strong></td>
-                        <td>{{ t.id_number|default:'---' }}</td>
-                        <td>{{ t.specialization|default:'---' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <p class="text-center mt-3"><strong>إجمالي غير المتابَعين: {{ missing|length }} من أصل {{ total_teachers }} معلماً</strong></p>
-        {% else %}
-        <div class="text-center py-4">
-            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-            <p class="mt-2">جميع المعلمين ({{ total_teachers }}) تمت متابعتهم في هذا الشهر</p>
-        </div>
-        {% endif %}
-    </div>
-    <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
-        <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">العودة</a>
-    </div>
+<style>
+.report-tools{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;box-shadow:0 6px 18px rgba(15,23,42,.04)}.report-paper{background:#fff;border:1px solid #dfe5ec;border-radius:18px;box-shadow:0 10px 28px rgba(15,23,42,.06);overflow:hidden}.report-head{padding:18px 22px;border-bottom:1px solid #e5eaf0}.report-title{text-align:center;margin:14px 0 4px;font-weight:800;color:#26384d}.report-sub{text-align:center;color:#708096;font-size:.85rem}.ministry-row{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}.ministry-ar,.ministry-en{font-size:.76rem;line-height:1.55;color:#3c4d60}.ministry-en{text-align:left;direction:ltr}.ministry-logo img{height:56px;width:auto}.missing-table{margin:0;font-size:.85rem}.missing-table th{background:#f3f6f9!important;color:#425469;font-weight:800}.missing-table td,.missing-table th{text-align:center;vertical-align:middle}.summary-strip{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;padding:14px;background:#fafbfd;border-top:1px solid #e8edf2}.summary-pill{border:1px solid #e1e6ec;background:#fff;border-radius:999px;padding:7px 12px;font-size:.8rem;font-weight:700;color:#536273}.all-good{text-align:center;padding:42px 15px}.all-good .icon{width:58px;height:58px;border-radius:50%;background:#edf7ef;color:#2f6b3a;display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem}.all-good h6{margin:12px 0 3px;font-weight:800;color:#30465b}
+@media print{@page{size:A4 portrait;margin:9mm}.no-print,.sidebar,.topbar,.navbar,nav,header{display:none!important}main,.main-content,.content-wrapper,.container,.container-fluid{margin:0!important;padding:0!important;max-width:none!important;width:100%!important}.report-paper{box-shadow:none;border:0;border-radius:0}.report-head{padding:0 0 4mm}.ministry-ar,.ministry-en{font-size:8px}.ministry-logo img{height:38px}.report-title{font-size:13px}.report-sub{font-size:8px}.missing-table{font-size:9px}.missing-table td,.missing-table th{padding:4px!important}tr{break-inside:avoid;page-break-inside:avoid}thead{display:table-header-group}}
+</style>
+<div class="report-tools mb-3 no-print"><form method="get" class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label fw-bold">اختر الشهر</label><input type="month" name="month" class="form-control" value="{% if not is_all %}{{ month_value }}{% endif %}"></div><div class="col-md-auto"><button class="btn btn-outline-primary">عرض التقرير</button></div><div class="col-md-auto"><a href="{% url 'teacher_followup_missing' %}?month=all" class="btn btn-{% if is_all %}primary{% else %}outline-secondary{% endif %}">كل الشهور</a></div><div class="col-md-auto ms-md-auto"><button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button> <a href="{% url 'teacher_followups' %}" class="btn btn-outline-secondary">العودة</a></div></form></div>
+<div class="report-paper" id="reportArea">
+    <div class="report-head">{% if info %}<div class="ministry-row"><div class="ministry-ar">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br><strong>{{ info.name_ar|default:'اسم المدرسة' }}</strong></div><div class="ministry-logo">{% if info.ministry_logo %}<img src="{{ info.ministry_logo }}" alt="شعار الوزارة">{% else %}<img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين">{% endif %}</div><div class="ministry-en">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Yatta Directorate<br><strong>{{ info.name_en|default:'School Name' }}</strong></div></div>{% endif %}<h5 class="report-title">المعلمون غير المتابَعين</h5><div class="report-sub">{% if is_all %}لم يتم إدخال أي متابعة لهم منذ بداية التسجيل{% else %}شهر {{ month_label }} — لم يتم إدخال أي متابعة لهم في الأمور الشهرية{% endif %}</div></div>
+    {% if missing %}<div class="table-responsive"><table class="table table-hover missing-table"><thead><tr><th>#</th><th>اسم المعلم</th><th>رقم الهوية</th><th>التخصص</th></tr></thead><tbody>{% for t in missing %}<tr><td>{{ forloop.counter }}</td><td><strong>{{ t.full_name }}</strong></td><td>{{ t.id_number|default:'---' }}</td><td>{{ t.specialization|default:'---' }}</td></tr>{% endfor %}</tbody></table></div><div class="summary-strip"><span class="summary-pill">غير المتابَعين: {{ missing|length }}</span><span class="summary-pill">إجمالي المعلمين: {{ total_teachers }}</span></div>{% else %}<div class="all-good"><span class="icon"><i class="bi bi-check-lg"></i></span><h6>تمت متابعة جميع المعلمين</h6><div class="text-muted small">عدد المعلمين: {{ total_teachers }}</div></div>{% endif %}
 </div>
 {% endblock %}

@@ -3,196 +3,53 @@
 {% block page_heading %}التقارير{% endblock %}
 {% block content %}
 <style>
-  .report-hero {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-    color: #fff; border-radius: 16px; padding: 1.4rem 1.6rem; margin-bottom: 1.5rem;
-    box-shadow: 0 10px 25px rgba(44,62,80,.25);
-  }
-  .kpi-card {
-    border: 0; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.06);
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.12); }
-  .kpi-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; }
-  .section-title { border-right: 4px solid #3498db; padding-right: .6rem; margin: 1.6rem 0 1rem; font-weight: 700; }
-  .report-card {
-    border: 0; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.06);
-    transition: transform .15s ease, box-shadow .15s ease; height: 100%;
-  }
-  .report-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.12); }
-  .report-card .ic {
-    width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; color: #fff; margin: 0 auto .75rem;
-  }
-  .c-blue{background:#3498db;} .c-green{background:#27ae60;} .c-red{background:#e74c3c;}
-  .c-purple{background:#8e44ad;} .c-orange{background:#f39c12;} .c-teal{background:#17a2b8;}
-  .c-mint{background:#20c997;} .c-dark{background:#2c3e50;} .c-sea{background:#16a085;}
-  .c-whats{background:#25d366;} .c-deep{background:#c0392b;}
-  .ic-sm { width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; }
+.report-hero{background:#f4f7fb;border:1px solid #e2e8f0;border-radius:18px;padding:18px 20px;margin-bottom:18px;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+.report-hero-icon{width:48px;height:48px;border-radius:14px;background:#e7eef6;color:#355875;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.kpi-card,.report-card{border:1px solid #e3e8ef;border-radius:15px;box-shadow:0 7px 20px rgba(15,23,42,.04);background:#fff;transition:transform .15s ease,box-shadow .15s ease;height:100%}
+.kpi-card:hover,.report-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.07)}
+.kpi-icon,.report-card .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:#eef3f8;color:#3e5f7b;flex:0 0 auto}
+.report-card .ic{margin:0 auto 10px}.ic-sm{width:40px!important;height:40px!important}
+.section-title{border-right:3px solid #7893ac;padding-right:9px;margin:22px 0 12px;font-weight:800;color:#2a3b4f;font-size:1rem}
+.report-card h6{font-weight:800;color:#28394c}.report-card .btn{border-radius:9px;font-weight:700}.kpi-card .h4{font-weight:900;color:#27384b}
+.counter-box{text-align:end;min-width:170px}.counter-value{font-size:1.7rem;font-weight:900;color:#2e465e}
+@media(max-width:767px){.report-hero{padding:14px}.counter-box{text-align:start}.report-card .card-body{padding:13px}}
 </style>
 
 <div class="report-hero d-flex flex-wrap align-items-center justify-content-between gap-3">
-    <div class="d-flex align-items-center gap-3">
-        <i class="bi bi-bar-chart-line-fill" style="font-size:2.2rem"></i>
-        <div>
-            <div style="font-weight:700;font-size:1.1rem;">لوحة التقارير والمطبوعات</div>
-            <div class="opacity-75 small">جميع تقارير المدرسة والزيارات والمطبوعات في مكان واحد</div>
-        </div>
-    </div>
-    <div class="text-end">
-        <div class="opacity-75 small">عدد زيارات الطلاب للموقع</div>
-        <div style="font-size:2rem;font-weight:700;">{{ login_counter.count }}</div>
-        <form method="post" onsubmit="return confirm('هل أنت متأكد من تصفير العداد؟')" class="mt-1">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="reset_login_counter">
-            <button type="submit" class="btn btn-light btn-sm"><i class="bi bi-arrow-counterclockwise"></i> تصفير العداد</button>
-        </form>
-    </div>
+    <div class="d-flex align-items-center gap-3"><div class="report-hero-icon"><i class="bi bi-bar-chart-line-fill"></i></div><div><div class="fw-bold">لوحة التقارير والمطبوعات</div><div class="text-muted small">جميع تقارير المدرسة والزيارات والمطبوعات في مكان واحد</div></div></div>
+    <div class="counter-box"><div class="text-muted small">عدد زيارات الطلاب للموقع</div><div class="counter-value">{{ login_counter.count }}</div><form method="post" onsubmit="return confirm('هل أنت متأكد من تصفير العداد؟')" class="mt-1">{% csrf_token %}<input type="hidden" name="action" value="reset_login_counter"><button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i> تصفير العداد</button></form></div>
 </div>
 
 <div class="row g-3 mb-2">
-    <div class="col-6 col-md-3">
-        <div class="card kpi-card h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="kpi-icon c-blue"><i class="bi bi-people-fill"></i></div>
-            <div><div class="text-muted small">الطلاب</div><div class="h4 mb-0">{{ total_students }}</div></div>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card kpi-card h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="kpi-icon c-purple"><i class="bi bi-person-badge-fill"></i></div>
-            <div><div class="text-muted small">المعلمون</div><div class="h4 mb-0">{{ total_teachers }}</div></div>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card kpi-card h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="kpi-icon c-sea"><i class="bi bi-building-fill"></i></div>
-            <div><div class="text-muted small">الصفوف</div><div class="h4 mb-0">{{ total_classes }}</div></div>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card kpi-card h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="kpi-icon c-orange"><i class="bi bi-sticky-fill"></i></div>
-            <div><div class="text-muted small">الملاحظات</div><div class="h4 mb-0">{{ total_notes }}</div></div>
-        </div></div>
-    </div>
+    <div class="col-6 col-md-3"><div class="card kpi-card"><div class="card-body d-flex align-items-center gap-3"><div class="kpi-icon"><i class="bi bi-people-fill"></i></div><div><div class="text-muted small">الطلاب</div><div class="h4 mb-0">{{ total_students }}</div></div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card kpi-card"><div class="card-body d-flex align-items-center gap-3"><div class="kpi-icon"><i class="bi bi-person-badge-fill"></i></div><div><div class="text-muted small">المعلمون</div><div class="h4 mb-0">{{ total_teachers }}</div></div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card kpi-card"><div class="card-body d-flex align-items-center gap-3"><div class="kpi-icon"><i class="bi bi-building-fill"></i></div><div><div class="text-muted small">الصفوف</div><div class="h4 mb-0">{{ total_classes }}</div></div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card kpi-card"><div class="card-body d-flex align-items-center gap-3"><div class="kpi-icon"><i class="bi bi-sticky-fill"></i></div><div><div class="text-muted small">الملاحظات</div><div class="h4 mb-0">{{ total_notes }}</div></div></div></div></div>
 </div>
 
 <h5 class="section-title">الصفوف الدراسية</h5>
-<div class="row g-3 mb-2">
-    {% for class_obj in classes %}
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-sea ic-sm"><i class="bi bi-building"></i></div>
-            <h6 class="mb-1">{{ class_obj.name }}</h6>
-            <div class="text-muted small mb-3">طلاب: {{ class_obj.students.count }}</div>
-            <a href="{% url 'class_report' class_obj.id %}" class="btn btn-primary btn-sm w-100"><i class="bi bi-file-text"></i> التقرير</a>
-        </div></div>
-    </div>
-    {% empty %}
-    <div class="col-12 text-center text-muted py-4"><i class="bi bi-bar-chart" style="font-size:2rem;"></i><p class="mt-2 mb-0">لا توجد صفوف</p></div>
-    {% endfor %}
-</div>
+<div class="row g-3 mb-2">{% for class_obj in classes %}<div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic ic-sm"><i class="bi bi-building"></i></div><h6 class="mb-1">{{ class_obj.name }}</h6><div class="text-muted small mb-3">طلاب: {{ class_obj.students.count }}</div><a href="{% url 'class_report' class_obj.id %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> التقرير</a></div></div></div>{% empty %}<div class="col-12 text-center text-muted py-4">لا توجد صفوف</div>{% endfor %}</div>
 
 <h5 class="section-title">تقارير الطلاب</h5>
 <div class="row g-3 mb-2">
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-green"><i class="bi bi-graph-up"></i></div>
-            <h6 class="mb-1">مستويات الطلاب</h6>
-            <div class="text-muted small mb-3">عرض وطباعة المستويات</div>
-            <a href="{% url 'student_levels_report' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-printer"></i> طباعة</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-red"><i class="bi bi-clock-history"></i></div>
-            <h6 class="mb-1">تأخيرات الطلاب</h6>
-            <div class="text-muted small mb-3">حسب الشهر والسنة</div>
-            <a href="{% url 'lateness_report' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-blue"><i class="bi bi-box-arrow-right"></i></div>
-            <h6 class="mb-1">أذونات المغادرة</h6>
-            <div class="text-muted small mb-3">بحث وطباعة</div>
-            <a href="{% url 'leave_list' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-orange"><i class="bi bi-sticky-fill"></i></div>
-            <h6 class="mb-1">ملاحظات الطلاب</h6>
-            <div class="text-muted small mb-3">جميع الملاحظات مرتبة</div>
-            <a href="{% url 'notes_report' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-deep"><i class="bi bi-exclamation-triangle-fill"></i></div>
-            <h6 class="mb-1">الإنذارات والاستدعاءات</h6>
-            <div class="text-muted small mb-3">طباعة الإنذارات والاستدعاءات</div>
-            <div class="btn-group btn-group-sm w-100">
-                <a href="{% url 'print_all_warnings' %}" class="btn btn-outline-danger"><i class="bi bi-printer"></i> الإنذارات</a>
-                <a href="{% url 'print_all_summons' %}" class="btn btn-outline-warning"><i class="bi bi-printer"></i> الاستدعاءات</a>
-            </div>
-        </div></div>
-    </div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-graph-up"></i></div><h6>مستويات الطلاب</h6><div class="text-muted small mb-3">عرض وطباعة المستويات</div><a href="{% url 'student_levels_report' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-clock-history"></i></div><h6>تأخيرات الطلاب</h6><div class="text-muted small mb-3">حسب الشهر والسنة</div><a href="{% url 'lateness_report' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-box-arrow-right"></i></div><h6>أذونات المغادرة</h6><div class="text-muted small mb-3">بحث وطباعة</div><a href="{% url 'leave_list' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-sticky-fill"></i></div><h6>ملاحظات الطلاب</h6><div class="text-muted small mb-3">جميع الملاحظات مرتبة</div><a href="{% url 'notes_report' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-exclamation-triangle-fill"></i></div><h6>الإنذارات والاستدعاءات</h6><div class="text-muted small mb-3">طباعة الإنذارات والاستدعاءات</div><div class="d-flex gap-1"><a href="{% url 'print_all_warnings' %}" class="btn btn-outline-danger btn-sm flex-fill">الإنذارات</a><a href="{% url 'print_all_summons' %}" class="btn btn-outline-warning btn-sm flex-fill">الاستدعاءات</a></div></div></div></div>
 </div>
 
 <h5 class="section-title">تقارير المعلمين والاجتماعات</h5>
 <div class="row g-3 mb-2">
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-purple"><i class="bi bi-person-badge-fill"></i></div>
-            <h6 class="mb-1">المعلمون</h6>
-            <div class="text-muted small mb-3">جميع المعلمين والمواد</div>
-            <a href="{% url 'teachers_report' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-printer"></i> طباعة</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-mint"><i class="bi bi-clipboard-check-fill"></i></div>
-            <h6 class="mb-1">متابعة المعلمين</h6>
-            <div class="text-muted small mb-3">المتابَعون وغير المتابَعين شهرياً</div>
-            <a href="{% url 'teacher_followup_report' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-printer"></i> التقرير</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-teal"><i class="bi bi-people-fill"></i></div>
-            <h6 class="mb-1">اجتماعات المعلمين</h6>
-            <div class="text-muted small mb-3">محاضر الاجتماعات</div>
-            <a href="{% url 'meeting_list' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
-        </div></div>
-    </div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-person-badge-fill"></i></div><h6>المعلمون</h6><div class="text-muted small mb-3">جميع المعلمين والمواد</div><a href="{% url 'teachers_report' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-clipboard-check-fill"></i></div><h6>متابعة المعلمين</h6><div class="text-muted small mb-3">المتابَعون وغير المتابَعين شهرياً</div><a href="{% url 'teacher_followup_report' %}" class="btn btn-outline-primary btn-sm w-100">التقرير</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-people-fill"></i></div><h6>اجتماعات المعلمين</h6><div class="text-muted small mb-3">محاضر الاجتماعات</div><a href="{% url 'meeting_list' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
 </div>
 
 <h5 class="section-title">الزيارات والمتابعة</h5>
 <div class="row g-3">
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-mint"><i class="bi bi-clipboard-check-fill"></i></div>
-            <h6 class="mb-1">زيارات المشرفين</h6>
-            <div class="text-muted small mb-3">عرض وطباعة الزيارات</div>
-            <a href="{% url 'supervisor_visit_list' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-dark"><i class="bi bi-eye-fill"></i></div>
-            <h6 class="mb-1">الزيارات الإشرافية</h6>
-            <div class="text-muted small mb-3">تقرير شامل للمدير</div>
-            <a href="{% url 'inspection_visits_all_report' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-file-text"></i> عرض</a>
-        </div></div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-        <div class="card report-card"><div class="card-body text-center py-3">
-            <div class="ic c-whats"><i class="bi bi-whatsapp"></i></div>
-            <h6 class="mb-1">روابط واتساب الصفوف</h6>
-            <div class="text-muted small mb-3">روابط مجموعات الطلاب</div>
-            <a href="{% url 'whatsapp_groups' %}" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-whatsapp"></i> روابط الواتس</a>
-        </div></div>
-    </div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-clipboard-check-fill"></i></div><h6>زيارات المشرفين</h6><div class="text-muted small mb-3">عرض وطباعة الزيارات</div><a href="{% url 'supervisor_visit_list' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-eye-fill"></i></div><h6>الزيارات الإشرافية</h6><div class="text-muted small mb-3">تقرير شامل للمدير</div><a href="{% url 'inspection_visits_all_report' %}" class="btn btn-outline-primary btn-sm w-100">عرض</a></div></div></div>
+    <div class="col-6 col-md-4 col-lg-3"><div class="card report-card"><div class="card-body text-center py-3"><div class="ic"><i class="bi bi-whatsapp"></i></div><h6>روابط واتساب الصفوف</h6><div class="text-muted small mb-3">روابط مجموعات الطلاب</div><a href="{% url 'whatsapp_groups' %}" class="btn btn-outline-primary btn-sm w-100">روابط الواتس</a></div></div></div>
 </div>
 {% endblock %}
