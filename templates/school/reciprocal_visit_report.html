@@ -3,101 +3,20 @@
 {% block title %}تقرير الزيارة التبادلية{% endblock %}
 {% block page_heading %}تقرير الزيارة التبادلية{% endblock %}
 {% block content %}
-
-<div class="card">
-    <div class="card-body" id="reportArea">
-        {% if info %}
-        <div class="row mb-4 align-items-center">
-            <div class="col-5 text-start">
-                <h6 style="font-size: 13px; line-height: 1.5;">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6>
-            </div>
-            <div class="col-2 text-center">
-                {% if info.ministry_logo %}
-                <img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height: 60px; width: auto;">
-                {% else %}
-                <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height: 60px; width: auto;">
-                {% endif %}
-            </div>
-            <div class="col-5 text-end" dir="ltr">
-                <h6 style="font-size: 13px; line-height: 1.5;">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6>
-            </div>
-        </div>
-        <hr>
-        {% endif %}
-
-        <div class="text-center mb-4">
-            <h5>تقرير الزيارة التبادلية</h5>
-            <p class="text-muted">تقرير عن حصة حضرها المعلم الزائر لدى زميله المزار</p>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <table class="table table-bordered">
-                    <tr>
-                        <th class="table-light" style="width: 40%;">المعلم الزائر</th>
-                        <td><strong>{{ visit.visitor.full_name }}</strong></td>
-                    </tr>
-                    <tr>
-                        <th class="table-light">المعلم المزار</th>
-                        <td><strong>{{ visit.host.full_name }}</strong></td>
-                    </tr>
-                    <tr>
-                        <th class="table-light">أُدخلت الملاحظات بواسطة</th>
-                        <td>{{ visit.filled_by.full_name|default:'---' }}</td>
-                    </tr>
-                </table>
-            </div>
-            <div class="col-md-6">
-                <table class="table table-bordered">
-                    <tr>
-                        <th class="table-light" style="width: 40%;">تاريخ الزيارة</th>
-                        <td><strong>{{ visit.visit_date|date:'Y/m/d' }}</strong></td>
-                    </tr>
-                    <tr>
-                        <th class="table-light">الصف</th>
-                        <td><strong>{{ visit.student_class.name|default:'---' }}</strong></td>
-                    </tr>
-                    <tr>
-                        <th class="table-light">رقم الحصة</th>
-                        <td><strong>الحصة {{ visit.period }}</strong></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
-        {% if visit.completed %}
-        <div class="mb-4">
-            <h6 class="fw-bold"><i class="bi bi-hand-thumbs-up"></i> أبرز النقاط الإيجابية</h6>
-            <div class="border rounded p-3 bg-light">{{ visit.positive_points|linebreaks|default:'---' }}</div>
-        </div>
-        <div class="mb-4">
-            <h6 class="fw-bold"><i class="bi bi-lightbulb"></i> أبرز النقاط التي تحتاج إلى تطوير</h6>
-            <div class="border rounded p-3 bg-light">{{ visit.development_points|linebreaks|default:'---' }}</div>
-        </div>
-        <div class="mb-4">
-            <h6 class="fw-bold"><i class="bi bi-chat-square-text"></i> ما تم الاتفاق عليه مع المعلم المزار</h6>
-            <div class="border rounded p-3 bg-light">{{ visit.agreement|linebreaks|default:'---' }}</div>
-        </div>
-        {% else %}
-        <p class="text-muted text-center py-4">لم تُدخل ملاحظات الزيارة بعد</p>
-        {% endif %}
-
-        <div class="row mt-5 pt-4" style="font-size: 0.95rem;">
-            <div class="col-4 text-center">
-                <p class="border-top border-2 pt-2 mb-0">توقيع المعلم الزائر</p>
-            </div>
-            <div class="col-4 text-center">
-                <p class="border-top border-2 pt-2 mb-0">توقيع المعلم المزار</p>
-            </div>
-            <div class="col-4 text-center">
-                <p class="border-top border-2 pt-2 mb-0">مدير المدرسة</p>
-            </div>
-        </div>
-        <p class="text-muted text-center mt-4 small">طُبع بتاريخ {{ today|date:'Y-m-d' }}</p>
-    </div>
-    <div class="card-footer no-print text-center">
-        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
-        <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a>
-    </div>
+{% include 'school/includes/report_premium_styles.html' %}
+<div class="report-page">
+<div class="card"><div class="card-body" id="reportArea">
+    {% if info %}<div class="row mb-3 align-items-center"><div class="col-5 text-start"><h6 style="font-size:12px;line-height:1.55">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>{{ info.name_ar|default:'اسم المدرسة' }}</h6></div><div class="col-2 text-center">{% if info.ministry_logo %}<img src="{{ info.ministry_logo }}" alt="شعار الوزارة" style="height:58px;width:auto">{% else %}<img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين" style="height:58px;width:auto">{% endif %}</div><div class="col-5 text-end" dir="ltr"><h6 style="font-size:12px;line-height:1.55">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Yatta Directorate<br>{{ info.name_en|default:'School Name' }}</h6></div></div><hr>{% endif %}
+    <div class="report-title-box"><h5>تقرير الزيارة التبادلية</h5><p>تقرير عن حصة حضرها المعلم الزائر لدى زميله المزار</p></div>
+    <div class="row g-3 mb-4"><div class="col-md-6"><div class="table-responsive"><table class="table table-bordered"><tbody><tr><th>المعلم الزائر</th><td><strong>{{ visit.visitor.full_name }}</strong></td></tr><tr><th>المعلم المزار</th><td><strong>{{ visit.host.full_name }}</strong></td></tr><tr><th>أُدخلت الملاحظات بواسطة</th><td>{{ visit.filled_by.full_name|default:'---' }}</td></tr></tbody></table></div></div><div class="col-md-6"><div class="table-responsive"><table class="table table-bordered"><tbody><tr><th>تاريخ الزيارة</th><td><strong>{{ visit.visit_date|date:'Y/m/d' }}</strong></td></tr><tr><th>الصف</th><td><strong>{{ visit.student_class.name|default:'---' }}</strong></td></tr><tr><th>رقم الحصة</th><td><strong>الحصة {{ visit.period }}</strong></td></tr></tbody></table></div></div></div>
+    {% if visit.completed %}
+    <div class="p-3 mb-3 rounded-3" style="background:#f3f8f4;border:1px solid #dce9df"><h6 class="fw-bold status-ok"><i class="bi bi-hand-thumbs-up"></i> أبرز النقاط الإيجابية</h6><div>{{ visit.positive_points|linebreaks|default:'---' }}</div></div>
+    <div class="p-3 mb-3 rounded-3" style="background:#fffaf1;border:1px solid #efe3cb"><h6 class="fw-bold"><i class="bi bi-lightbulb"></i> أبرز النقاط التي تحتاج إلى تطوير</h6><div>{{ visit.development_points|linebreaks|default:'---' }}</div></div>
+    <div class="p-3 mb-3 rounded-3" style="background:#f8fafc;border:1px solid #e5e9ef"><h6 class="fw-bold"><i class="bi bi-chat-square-text"></i> ما تم الاتفاق عليه مع المعلم المزار</h6><div>{{ visit.agreement|linebreaks|default:'---' }}</div></div>
+    {% else %}<div class="text-muted text-center py-5"><i class="bi bi-hourglass-split" style="font-size:2rem"></i><div class="mt-2">لم تُدخل ملاحظات الزيارة بعد</div></div>{% endif %}
+    <div class="row mt-5 pt-4"><div class="col-4 text-center"><p class="border-top border-2 pt-2 mb-0">توقيع المعلم الزائر</p></div><div class="col-4 text-center"><p class="border-top border-2 pt-2 mb-0">توقيع المعلم المزار</p></div><div class="col-4 text-center"><p class="border-top border-2 pt-2 mb-0">مدير المدرسة</p></div></div>
+    <p class="text-muted text-center mt-4 small">طُبع بتاريخ {{ today|date:'Y-m-d' }}</p>
+</div><div class="card-footer no-print text-center"><button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button> <a href="{% url 'reciprocal_visit_list' %}" class="btn btn-outline-secondary">العودة</a></div></div>
 </div>
+<style>@media print{@page{size:A4 portrait}}</style>
 {% endblock %}
