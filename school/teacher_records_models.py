@@ -22,6 +22,7 @@ class CurriculumProgressRecord(models.Model):
     teacher = models.ForeignKey('school.Teacher', on_delete=models.CASCADE, related_name='curriculum_progress_records', verbose_name='المعلم')
     subject = models.ForeignKey('school.Subject', on_delete=models.PROTECT, related_name='curriculum_progress_records', verbose_name='المبحث')
     student_class = models.ForeignKey('school.Class', on_delete=models.PROTECT, related_name='curriculum_progress_records', verbose_name='الصف')
+    student_classes = models.ManyToManyField('school.Class', blank=True, related_name='curriculum_multi_progress_records', verbose_name='الصفوف')
     record_date = models.DateField('التاريخ')
     academic_year = models.CharField('العام الدراسي', max_length=20)
     assigned_pages = models.PositiveIntegerField('الصفحات المقررة', default=0)
@@ -35,6 +36,23 @@ class CurriculumProgressRecord(models.Model):
     @property
     def remaining_pages(self):
         return max(self.assigned_pages - self.completed_pages, 0)
+
+    @property
+    def selected_classes(self):
+        classes = list(self.student_classes.all())
+        return classes if classes else ([self.student_class] if self.student_class_id else [])
+
+    @property
+    def class_names(self):
+        return '، '.join(c.name for c in self.selected_classes)
+
+    @property
+    def students_count(self):
+        ids = [c.id for c in self.selected_classes]
+        if not ids:
+            return 0
+        from .models import Student
+        return Student.objects.filter(student_class_id__in=ids).count()
 
     class Meta:
         ordering = ['-record_date', '-id']
