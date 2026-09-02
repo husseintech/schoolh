@@ -2,31 +2,18 @@
 {% block title %}إضافة معلم{% endblock %}
 {% block page_heading %}إضافة معلم جديد{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-person-plus-fill"></i> إضافة معلم</div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="row g-3">
-                        {% for field in form %}
-                        <div class="col-md-6">
-                            <label class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                            <div class="text-danger small">{{ field.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
-                        <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">إلغاء</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+<style>
+.form-shell{max-width:1120px;margin:auto}.form-hero{background:linear-gradient(135deg,#eef8f4,#fbfefd);border:1px solid #d8eee5;border-radius:20px;padding:24px;margin-bottom:18px;display:flex;align-items:center;gap:16px}.form-hero-icon{width:58px;height:58px;border-radius:16px;background:#2f8f68;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.7rem;box-shadow:0 8px 18px rgba(47,143,104,.22)}.form-hero h3{margin:0 0 5px;font-weight:800;color:#203b31}.form-hero p{margin:0;color:#72877e}.modern-card{border:0;border-radius:20px;box-shadow:0 10px 30px rgba(31,45,61,.08);overflow:hidden}.modern-card .card-header{background:#fff;border-bottom:1px solid #edf1f5;padding:17px 22px;font-weight:800;color:#2c3e50}.field-wrap{background:#fafbfd;border:1px solid #edf1f5;border-radius:14px;padding:13px 14px;height:100%;transition:.18s}.field-wrap:focus-within{background:#fff;border-color:#a9d8c6;box-shadow:0 0 0 3px rgba(47,143,104,.08)}.field-wrap label{font-weight:700;color:#3b4d60;margin-bottom:7px}.field-wrap input,.field-wrap select,.field-wrap textarea{width:100%}.field-wrap select[multiple]{min-height:130px}.action-bar{display:flex;gap:10px;justify-content:flex-start;border-top:1px solid #edf1f5;margin-top:22px;padding-top:18px}
+</style>
+<div class="form-shell">
+  <div class="form-hero"><div class="form-hero-icon"><i class="bi bi-person-workspace"></i></div><div><h3>إضافة معلم جديد</h3><p>أدخل بيانات المعلم والتخصص والصفوف والمباحث المرتبطة به من مكان واحد.</p></div></div>
+  <div class="card modern-card"><div class="card-header"><i class="bi bi-person-vcard"></i> بيانات المعلم والحساب</div><div class="card-body p-4">
+    <form method="post">{% csrf_token %}
+      <div class="row g-3">
+        {% for field in form %}<div class="{% if field.name == 'classes' or field.name == 'subjects' %}col-md-6{% else %}col-md-6{% endif %}"><div class="field-wrap"><label class="form-label">{{ field.label }}</label>{{ field }}{% if field.help_text %}<div class="form-text text-muted small mt-1">{{ field.help_text }}</div>{% endif %}{% if field.errors %}<div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ field.errors|join:", " }}</div>{% endif %}</div></div>{% endfor %}
+      </div>
+      <div class="action-bar"><button type="submit" class="btn btn-success px-4"><i class="bi bi-save"></i> حفظ المعلم</button><a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary px-4">إلغاء</a></div>
+    </form>
+  </div></div>
 </div>
 {% endblock %}
