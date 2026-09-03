@@ -45,6 +45,10 @@
 .student-dashboard .table{margin-bottom:0}.student-dashboard .table>:not(caption)>*>*{padding:.75rem .6rem;vertical-align:middle}
 .student-dashboard .schedule-table th{background:#f7f9fc}.student-dashboard .schedule-table td{min-width:100px}
 .student-dashboard .survey-banner{border:0;border-radius:18px}
+.survey-reminder-modal .modal-content{border:0;border-radius:26px;overflow:hidden;box-shadow:0 24px 70px rgba(22,42,78,.24)}
+.survey-reminder-modal .reminder-top{background:linear-gradient(135deg,#174a89,#2773c7);color:#fff;padding:30px;text-align:center;position:relative;overflow:hidden}
+.survey-reminder-modal .reminder-icon{width:76px;height:76px;border-radius:24px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);display:flex;align-items:center;justify-content:center;font-size:2.25rem;margin:0 auto 14px}
+.survey-reminder-modal .benefit-item{display:flex;gap:10px;align-items-start;padding:10px 0;color:#42506a}.survey-reminder-modal .benefit-item i{color:#16875b;font-size:1.15rem}
 .student-dashboard .modal-content{border:0;border-radius:20px}
 .student-dashboard .identity-row .details-box{height:100%}
 .student-dashboard .mini-label{font-size:.77rem;color:var(--sd-muted);margin-bottom:4px}
@@ -71,7 +75,7 @@
         <div class="motto">ابدأ يومك بمعرفة ما يهمك، ثم تابع تعلمك وإنجازاتك بخطوات واضحة.</div>
       </div>
       <div class="hero-actions d-none d-md-flex gap-2">
-        <a href="{% url 'ol_student_progress' %}" class="btn btn-light btn-sm"><i class="bi bi-play-circle"></i> تعلّمي</a>
+        {% if 'open_learning_view' in user_perms %}<a href="{% url 'ol_student_progress' %}" class="btn btn-light btn-sm"><i class="bi bi-play-circle"></i> تعلّمي</a>{% endif %}
         <a href="{% url 'my_account' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-person-gear"></i> حسابي</a>
       </div>
     </div>
@@ -95,7 +99,7 @@
   </div>
 
   <div class="row g-3 mb-4">
-    <div class="col-lg-7">
+    <div class="{% if 'open_learning_view' in user_perms %}col-lg-7{% else %}col-12{% endif %}">
       <div class="panel">
         <div class="section-title mb-3"><i class="bi bi-bell-fill text-warning me-1"></i> ما الذي يحتاج انتباهك؟</div>
         {% if unread_messages or warnings or summons %}
@@ -107,19 +111,19 @@
         {% endif %}
       </div>
     </div>
-    <div class="col-lg-5">
+    {% if 'open_learning_view' in user_perms %}<div class="col-lg-5">
       <div class="learning-card h-100">
         <div class="d-flex align-items-start gap-3"><div class="summary-icon"><i class="bi bi-lightbulb-fill"></i></div><div><h3 class="h6 fw-bold mb-1">مساحة التعلم المفتوح</h3><p class="text-muted small mb-3">دروسك، أنشطتك، اختباراتك وإنجازاتك في مكان واحد.</p></div></div>
         <div class="learning-actions d-flex flex-wrap gap-2"><a href="{% url 'ol_student_progress' %}" class="btn btn-primary btn-sm"><i class="bi bi-play-circle"></i> ابدأ التعلم</a><a href="{% url 'ol_my_achievements' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-trophy"></i> إنجازاتي</a></div>
       </div>
-    </div>
+    </div>{% endif %}
   </div>
 
   <div class="section-title"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> وصول سريع</div>
   <div class="row g-2 mb-4">
     <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'student_messages' %}"><i class="bi bi-chat-dots-fill"></i><span><strong class="d-block">رسائلي</strong><small class="text-muted">تواصل المدرسة</small></span></a></div>
     <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'student_absence_report' %}"><i class="bi bi-calendar-check-fill"></i><span><strong class="d-block">حضوري</strong><small class="text-muted">سجل الغياب</small></span></a></div>
-    <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'ol_student_progress' %}"><i class="bi bi-book-half"></i><span><strong class="d-block">تعلّمي</strong><small class="text-muted">الدروس والتقدم</small></span></a></div>
+    {% if 'open_learning_view' in user_perms %}<div class="col-6 col-md-3"><a class="quick-link" href="{% url 'ol_student_progress' %}"><i class="bi bi-book-half"></i><span><strong class="d-block">تعلّمي</strong><small class="text-muted">الدروس والتقدم</small></span></a></div>{% endif %}
     <div class="col-6 col-md-3"><a class="quick-link" href="{% url 'my_account' %}"><i class="bi bi-person-badge-fill"></i><span><strong class="d-block">بياناتي</strong><small class="text-muted">الحساب الشخصي</small></span></a></div>
   </div>
 
@@ -154,6 +158,33 @@
   <div class="panel mb-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><div class="section-title mb-1"><i class="bi bi-whatsapp text-success"></i> مجموعات واتساب للصف</div><div class="small text-muted">روابط التواصل الخاصة بالصف {{ student.student_class.name|default:'' }}</div></div><button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#whatsappModal"><i class="bi bi-whatsapp"></i> عرض الروابط</button></div></div>
   {% endif %}
 </div>
+
+{% if 'survey_add' in user_perms and not has_survey %}
+<div class="modal fade survey-reminder-modal" id="surveyReminderModal" tabindex="-1" aria-labelledby="surveyReminderTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="reminder-top">
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 start-0 m-3" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <div class="reminder-icon"><i class="bi bi-clipboard2-heart-fill"></i></div>
+        <h4 id="surveyReminderTitle" class="fw-bold mb-2">صحتك وراحتك تهمّنا</h4>
+        <p class="mb-0 opacity-75">ساعدنا في تقديم رعاية مدرسية أفضل لك من خلال تعبئة المسح بدقة.</p>
+      </div>
+      <div class="modal-body p-4">
+        <div class="benefit-item"><i class="bi bi-check-circle-fill"></i><span>تُستخدم إجاباتك داخل المدرسة فقط ولمصلحة الطالب، وتُعامل بسرية.</span></div>
+        <div class="benefit-item"><i class="bi bi-whatsapp"></i><span>بعد إكمال الاستمارة ستظهر روابط مجموعات واتساب الخاصة بصفك في لوحة التحكم.</span></div>
+        <div class="d-grid mt-3"><a href="{% url 'survey_form' %}" class="btn btn-primary btn-lg"><i class="bi bi-pencil-square"></i> الانتقال إلى المسح الصحي</a></div>
+        <button type="button" class="btn btn-link text-muted w-100 mt-2" data-bs-dismiss="modal">سأقوم بتعبئته لاحقًا</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var reminder = document.getElementById('surveyReminderModal');
+  if (reminder && window.bootstrap) new bootstrap.Modal(reminder).show();
+});
+</script>
+{% endif %}
 
 {% if whatsapp_groups %}
 <div class="modal fade" id="whatsappModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-whatsapp text-success"></i> روابط واتساب — الصف {{ student.student_class.name|default:'' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">{% for group in whatsapp_groups %}<div class="d-flex justify-content-between align-items-center border rounded-3 p-3 mb-2"><strong>مجموعة الصف</strong>{% if group.link %}<a href="{{ group.link }}" target="_blank" rel="noopener" class="btn btn-success btn-sm">انضمام</a>{% endif %}</div>{% endfor %}</div></div></div></div>

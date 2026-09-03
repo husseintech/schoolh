@@ -15,7 +15,9 @@ def has_perm(user, module, action):
         # module not configured yet → fall back to the role's defaults
         return action in DEFAULT_PERMISSIONS.get(user.profile.role, {}).get(module, [])
     except User.custom_permissions.RelatedObjectDoesNotExist:
-        return False
+        # Accounts created by imports or older workflows may not have a custom
+        # permissions row. They should still receive the role baseline.
+        return action in DEFAULT_PERMISSIONS.get(user.profile.role, {}).get(module, [])
 
 
 def can_view(user, module):
@@ -799,6 +801,14 @@ class StudentSurvey(models.Model):
     special_care_details = models.CharField('تفاصيل الرعاية الخاصة', max_length=500, blank=True)
     emergency_instructions = models.TextField('تعليمات خاصة للطبيب أو المدرسة', blank=True)
 
+    # ── الصحة الرقمية ──
+    # Nullable so existing surveys remain "not answered" instead of being
+    # incorrectly interpreted as a "no" response after this section is added.
+    owns_personal_phone = models.BooleanField('يمتلك جوالاً خاصاً به', null=True, blank=True)
+    parent_monitors_content = models.BooleanField('يراقب ولي الأمر ما يشاهده باستمرار', null=True, blank=True)
+    phone_deprivation_difficulty = models.BooleanField('صعوبة حرمان الطالب من الجوال', null=True, blank=True)
+    unusual_behavior_when_phone_removed = models.BooleanField('تصرفات غريبة عند الحرمان من الجوال', null=True, blank=True)
+
     # ── المسح الاجتماعي ──
     lives_with = models.CharField('يعيش مع', max_length=50, choices=[
         ('parents', 'الأب والأم'), ('father', 'الأب فقط'), ('mother', 'الأم فقط'),
@@ -952,5 +962,3 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f'{self.action} - {self.created_at}'
-
-

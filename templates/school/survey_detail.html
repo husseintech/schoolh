@@ -65,6 +65,18 @@
 </div>
 
 <div class="card mb-4">
+    <div class="card-header bg-warning text-dark"><i class="bi bi-phone-fill"></i> الصحة الرقمية والعادات المرتبطة بالجوال</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3"><small class="text-muted d-block">يمتلك جوالاً خاصاً به</small><strong>{% if survey.owns_personal_phone is None %}لم يُجب{% elif survey.owns_personal_phone %}نعم{% else %}لا{% endif %}</strong></div>
+            <div class="col-md-3"><small class="text-muted d-block">يراقب ولي الأمر ما يشاهده باستمرار</small><strong>{% if survey.parent_monitors_content is None %}لم يُجب{% elif survey.parent_monitors_content %}نعم{% else %}لا{% endif %}</strong></div>
+            <div class="col-md-3"><small class="text-muted d-block">توجد صعوبة في حرمانه من الجوال</small><strong>{% if survey.phone_deprivation_difficulty is None %}لم يُجب{% elif survey.phone_deprivation_difficulty %}نعم{% else %}لا{% endif %}</strong></div>
+            <div class="col-md-3"><small class="text-muted d-block">تصرفات غريبة عند حرمانه من الجوال</small><strong>{% if survey.unusual_behavior_when_phone_removed is None %}لم يُجب{% elif survey.unusual_behavior_when_phone_removed %}نعم{% else %}لا{% endif %}</strong></div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
     <div class="card-header bg-primary text-white"><i class="bi bi-people-fill"></i> المسح الاجتماعي</div>
     <div class="card-body">
         <div class="row g-3">

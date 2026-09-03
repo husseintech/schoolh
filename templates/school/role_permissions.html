@@ -12,9 +12,8 @@ function checkRoleDefaults() {
     var defaults = {{ default_perms|safe }};
     var perms = defaults[role] || {};
     document.querySelectorAll('[name^="perm_"]').forEach(function(cb) {
-        var parts = cb.name.replace('perm_', '').split('_');
-        var module = parts.slice(0, -1).join('_');
-        var action = parts[parts.length - 1];
+        var module = cb.dataset.module;
+        var action = cb.dataset.action;
         cb.checked = perms[module] && perms[module].includes(action);
     });
 }
@@ -24,14 +23,26 @@ function toggleAll(checked) {
 </script>
 {% endblock %}
 {% block content %}
-<div class="card mb-3">
-    <div class="card-header"><i class="bi bi-shield-fill-check"></i> صلاحيات عامة للدور</div>
+<style>
+.role-permissions .intro-card{border:0;border-radius:22px;background:linear-gradient(135deg,#183b73,#2864be);color:#fff;overflow:hidden;position:relative}
+.role-permissions .intro-card:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.08);left:-55px;bottom:-95px}
+.role-permissions .module-card{border:1px solid #e6ebf3;border-radius:16px;padding:16px;height:100%;background:#fff;transition:.18s ease}
+.role-permissions .module-card:hover{border-color:#bfd1ef;box-shadow:0 8px 22px rgba(29,55,95,.07)}
+.role-permissions .permission-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e1e7f0;border-radius:999px;padding:7px 11px;background:#f8fafc;cursor:pointer}
+.role-permissions .permission-chip:has(input:checked){background:#eaf2ff;border-color:#8eb4ef;color:#174f9e}
+.role-permissions .sticky-actions{position:sticky;bottom:12px;z-index:5;border:1px solid #dfe6f0;border-radius:16px;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);box-shadow:0 10px 28px rgba(31,49,78,.12)}
+</style>
+<div class="role-permissions">
+<div class="card intro-card mb-3">
+    <div class="card-body p-4 position-relative" style="z-index:1"><i class="bi bi-shield-fill-check fs-2"></i><h4 class="mt-2">إدارة صلاحيات الدور</h4>
+        <p class="mb-0 opacity-75">ابدأ بالصلاحيات الافتراضية الجاهزة، ثم أضف أو أزل ما يناسب عمل كل دور.</p>
+    </div>
+</div>
+<div class="card mb-3 border-0 shadow-sm">
     <div class="card-body">
-        <p>تتيح هذه الصفحة منح نفس مجموعة الصلاحيات <strong>لجميع حسابات الدور المختار دفعة واحدة</strong>
-        (مثلاً كل المعلمين، أو كل الطلاب، أو كل المديرين).</p>
         <div class="alert alert-warning small mb-3">
             <i class="bi bi-exclamation-triangle-fill"></i>
-            تنبيه: التطبيق يستبدل صلاحيات <strong>كل</strong> حسابات الدور المختار بالصلاحيات المحددة هنا، بما فيها أي تخصيصات سابقة لكل حساب.
+            عند التطبيق ستصبح الاختيارات الظاهرة هي صلاحيات <strong>كل حسابات الدور المختار</strong>، وستستبدل أي تخصيصات فردية سابقة لها.
         </div>
         <form method="get" class="row g-3">
             <div class="col-md-6">
@@ -46,7 +57,7 @@ function toggleAll(checked) {
     </div>
 </div>
 
-<div class="card">
+<div class="card border-0 shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-shield-lock-fill"></i> صلاحيات دور: {% for val, label in roles %}{% if val == selected_role %}{{ label }}{% endif %}{% endfor %}</span>
     </div>
@@ -55,38 +66,30 @@ function toggleAll(checked) {
             {% csrf_token %}
             <input type="hidden" name="role" value="{{ selected_role }}">
             <div class="mb-3 d-flex flex-wrap gap-2">
-                <button type="submit" name="action_kind" value="default" class="btn btn-success"><i class="bi bi-arrow-repeat"></i> استعادة الصلاحيات الافتراضية للدور</button>
-                <button type="submit" name="action_kind" value="custom" class="btn btn-primary"><i class="bi bi-check2-circle"></i> تطبيق الصلاحيات المحددة أدناه</button>
-                <button type="button" class="btn btn-outline-secondary" onclick="checkRoleDefaults()">تعبئة من الصلاحيات الافتراضية</button>
+                <button type="button" class="btn btn-outline-primary" onclick="checkRoleDefaults()"><i class="bi bi-arrow-repeat"></i> إعادة الاختيارات الافتراضية</button>
                 <button type="button" class="btn btn-outline-danger" onclick="toggleAll(true)">تحديد الكل</button>
                 <button type="button" class="btn btn-outline-secondary" onclick="toggleAll(false)">إلغاء الكل</button>
             </div>
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered">
-                    <thead>
-                        <tr>
-                            <th>القسم</th>
-                            {% for a in actions %}
-                            <th class="text-center small">{{ a.label }}</th>
+            <div class="row g-3">
+                {% for m in permission_sections %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="module-card">
+                        <div class="fw-bold mb-3"><i class="bi bi-folder2-open text-primary ms-1"></i>{{ m.label }}</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for a in m.actions %}
+                            <label class="permission-chip"><input type="checkbox" name="perm_{{ m.key }}_{{ a.key }}" data-module="{{ m.key }}" data-action="{{ a.key }}" class="form-check-input mt-0" {% if a.checked %}checked{% endif %}><span class="small">{{ a.label }}</span></label>
                             {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for m in modules %}
-                        <tr>
-                            <td><strong>{{ m.label }}</strong></td>
-                            {% for a in actions %}
-                            <td class="text-center">
-                                <input type="checkbox" name="perm_{{ m.key }}_{{ a.key }}" class="form-check-input">
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <a href="{% url 'account_list' %}" class="btn btn-outline-secondary">رجوع لإدارة الحسابات</a>
+            <div class="sticky-actions p-3 mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span class="small text-muted"><i class="bi bi-info-circle"></i> الاختيارات الافتراضية للدور معروضة تلقائيًا.</span>
+                <div class="d-flex gap-2"><a href="{% url 'account_list' %}" class="btn btn-outline-secondary">رجوع</a><button type="submit" name="action_kind" value="custom" class="btn btn-primary"><i class="bi bi-check2-circle"></i> تطبيق على جميع الحسابات</button></div>
+            </div>
         </form>
     </div>
+</div>
 </div>
 {% endblock %}
