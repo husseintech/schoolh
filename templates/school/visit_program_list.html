@@ -73,7 +73,16 @@
                     {% for e in entries %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ e.teacher.full_name }}</td>
+                        <td>
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                <strong>{{ e.teacher.full_name }}</strong>
+                                {% if 'inspection_visits_view' in user_perms and 'inspection_visits_add' in user_perms %}
+                                <a href="{% url 'inspection_visit_list' %}?teacher_id={{ e.teacher_id }}&amp;program_id={{ e.id }}#new-inspection-visit" class="btn btn-primary btn-sm text-nowrap">
+                                    <i class="bi bi-clipboard2-plus"></i> تسجيل الزيارة
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
                         <td>{{ e.visit_date|date:'Y-m-d' }}</td>
                         <td>{{ e.day_name }}</td>
                         <td>

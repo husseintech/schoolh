@@ -20,6 +20,9 @@
                 <label class="form-label text-muted">الصف</label>
                 <p class="fw-bold">{{ inspection.class_name|default:'---' }}{% if inspection.section %} ({{ inspection.section }}){% endif %}</p>
             </div>
+            <div class="col-12">
+                <a href="{% url 'inspection_visit_report' inspection.id %}" class="btn btn-primary btn-sm"><i class="bi bi-file-earmark-text"></i> مشاهدة تقرير الزيارة</a>
+            </div>
         </div>
         {% endif %}
         {% if visit_entries %}
@@ -34,16 +37,18 @@
                         <th>اليوم</th>
                         <th>الحصة</th>
                         <th>الملاحظات</th>
+                        <th class="text-center">التقرير</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for e in visit_entries %}
+                    {% for row in visit_rows %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td><strong>{{ e.visit_date|date:'Y/m/d' }}</strong></td>
-                        <td>{{ e.day_name }}</td>
-                        <td>{{ e.lesson|default:'---' }}</td>
-                        <td>{{ e.notes|default:'---' }}</td>
+                        <td><strong>{{ row.entry.visit_date|date:'Y/m/d' }}</strong></td>
+                        <td>{{ row.entry.day_name }}</td>
+                        <td>{{ row.entry.lesson|default:'---' }}</td>
+                        <td>{{ row.entry.notes|default:'---' }}</td>
+                        <td class="text-center">{% if row.report %}<a href="{% url 'inspection_visit_report' row.report.id %}" class="btn btn-outline-primary btn-sm text-nowrap"><i class="bi bi-file-earmark-text"></i> مشاهدة التقرير</a>{% else %}<span class="text-muted small">لم يُسجل بعد</span>{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

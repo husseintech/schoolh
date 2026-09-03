@@ -29,6 +29,12 @@
 </div>
 
 {% if selected_teacher %}
+{% if scheduled_visit %}
+<div class="alert alert-info d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-calendar-check-fill fs-4"></i>
+    <div><strong>تم فتح موعد {{ selected_teacher.full_name }} مباشرةً.</strong><div class="small">التاريخ المسجل في برنامج الزيارات: {{ scheduled_visit.visit_date|date:'Y-m-d' }}{% if scheduled_visit.lesson %} — {{ scheduled_visit.lesson }}{% endif %}</div></div>
+</div>
+{% endif %}
 <div class="card mb-4 border-primary">
     <div class="card-header bg-primary text-white">
         <h5 class="mb-0">بيانات المعلم</h5>
@@ -60,7 +66,7 @@
 </div>
 
 {% if 'inspection_visits_add' in user_perms %}
-<div class="card mb-4">
+<div class="card mb-4" id="new-inspection-visit">
     <div class="card-header"><h5 class="mb-0">تسجيل زيارة إشرافية جديدة</h5></div>
     <div class="card-body">
         <form method="post">
@@ -69,7 +75,7 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">تاريخ الزيارة</label>
-                    <input type="date" name="visit_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+                    <input type="date" name="visit_date" class="form-control" value="{% if scheduled_visit %}{{ scheduled_visit.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">رقم الزيارة</label>

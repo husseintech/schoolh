@@ -3648,11 +3648,18 @@ def inspection_visit_list(request):
         return redirect('dashboard')
     teachers = Teacher.objects.all().order_by('full_name')
     selected_teacher = None
+    scheduled_visit = None
     visits = InspectionVisit.objects.none()
     teacher_id = request.GET.get('teacher_id', '')
     if teacher_id:
         selected_teacher = get_object_or_404(Teacher, id=teacher_id)
         visits = InspectionVisit.objects.filter(teacher=selected_teacher).order_by('-visit_date')
+        program_id = request.GET.get('program_id', '')
+        if program_id:
+            scheduled_visit = VisitProgram.objects.filter(
+                id=program_id,
+                teacher=selected_teacher,
+            ).first()
     if request.method == 'POST' and has_perm(request.user, 'inspection_visits', 'add'):
         teacher_id = request.POST.get('teacher_id')
         selected_teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
@@ -3692,6 +3699,7 @@ def inspection_visit_list(request):
     return render(request, 'school/inspection_visit_list.html', {
         'teachers': teachers,
         'selected_teacher': selected_teacher,
+        'scheduled_visit': scheduled_visit,
         'visits': visits,
         'today': date.today(),
     })
@@ -3699,10 +3707,12 @@ def inspection_visit_list(request):
 
 @login_required
 def inspection_visit_report(request, visit_id):
-    if not has_perm(request.user, 'inspection_visits', 'view'):
+    visit = get_object_or_404(InspectionVisit.objects.select_related('teacher__user'), id=visit_id)
+    teacher = getattr(request.user, 'teacher_profile', None)
+    can_view_own_report = teacher is not None and visit.teacher_id == teacher.id
+    if not has_perm(request.user, 'inspection_visits', 'view') and not can_view_own_report:
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    visit = get_object_or_404(InspectionVisit, id=visit_id)
     info = SchoolInfo.objects.first()
     return render(request, 'school/inspection_visit_report.html', {
         'visit': visit,
@@ -4279,7 +4289,14 @@ def teacher_visits(request):
     inspection = teacher.inspection_visits.order_by('-visit_date').first()
     supervisor = teacher.supervisor_visits.order_by('-visit_date').first()
     today = date.today()
-    visit_entries = teacher.visit_program_entries.filter(visit_date__gte=today).order_by('visit_date', '-created_at')
+    visit_entries = list(teacher.visit_program_entries.filter(visit_date__gte=today).order_by('visit_date', '-created_at'))
+    inspection_by_date = {}
+    for recorded_visit in teacher.inspection_visits.order_by('-created_at'):
+        inspection_by_date.setdefault(recorded_visit.visit_date, recorded_visit)
+    visit_rows = [
+        {'entry': entry, 'report': inspection_by_date.get(entry.visit_date)}
+        for entry in visit_entries
+    ]
     assigned = ReciprocalVisit.objects.filter(visitor=teacher).select_related('host', 'student_class').order_by('-visit_date', '-created_at')
     assigned = [v for v in assigned if v.completed or v.visit_date >= today]
     guest = ReciprocalVisit.objects.filter(host=teacher).select_related('visitor', 'student_class').order_by('-visit_date', '-created_at')
@@ -4289,6 +4306,7 @@ def teacher_visits(request):
         'inspection': inspection,
         'supervisor': supervisor,
         'visit_entries': visit_entries,
+        'visit_rows': visit_rows,
         'assigned': assigned,
         'guest': guest,
         'info': info,
