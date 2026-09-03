@@ -1,28 +1,74 @@
 {% extends 'school/base.html' %}
-{% block title %}تقرير آخر دخول{% endblock %}
-{% block page_heading %}تقرير آخر دخول للنظام{% endblock %}
+{% block title %}إحصاءات الدخول{% endblock %}
+{% block page_heading %}إحصاءات الدخول إلى النظام{% endblock %}
 {% block content %}
-{% include 'school/includes/report_premium_styles.html' %}
-<div class="report-page">
-<div class="card">
-    <div class="card-header"><i class="bi bi-clock-history"></i> تقرير آخر تسجيل دخول</div>
-    <div class="card-body">
-        <form method="get" class="row g-2 no-print">
-            <div class="col-md-8"><label class="form-label">رقم الهوية</label><input type="text" name="q" class="form-control" placeholder="أدخل رقم هوية الطالب أو رقم هوية المعلم" value="{{ q }}"></div>
-            <div class="col-md-4 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> بحث</button></div>
-        </form>
-        <div class="report-title-box {% if not results %}d-none{% endif %}"><h5>نتائج آخر تسجيل دخول</h5><p>{% if q %}نتائج البحث عن رقم الهوية: {{ q }}{% endif %}</p></div>
-        {% if results %}
-        <div class="table-responsive mt-3">
-            <table class="table table-bordered align-middle">
-                <thead><tr><th>النوع</th><th>الاسم</th><th>رقم الهوية</th><th>اسم المستخدم</th><th>آخر دخول</th></tr></thead>
-                <tbody>{% for r in results %}<tr><td><span class="badge text-bg-light border text-dark">{{ r.type }}</span></td><td><strong>{{ r.name }}</strong></td><td>{{ r.identity }}</td><td>{{ r.username }}</td><td>{% if r.last_login %}<span class="status-ok">{{ r.last_login|date:'Y-m-d H:i' }}</span>{% else %}<span class="status-bad">لم يسجل الدخول بعد</span>{% endif %}</td></tr>{% endfor %}</tbody>
-            </table>
+<div class="login-analytics">
+    <section class="analytics-hero">
+        <div>
+            <span class="hero-label"><i class="bi bi-activity"></i> متابعة استخدام النظام</span>
+            <h2>لوحة إحصاءات تسجيل الدخول</h2>
+            <p>عرض جميع حسابات المعلمين والطلاب، وعدد مرات دخول كل حساب، وسجل الأوقات بالتفصيل.</p>
         </div>
-        {% elif q %}<div class="text-center text-muted py-5"><i class="bi bi-search" style="font-size:2rem"></i><div class="mt-2">لا توجد نتائج مطابقة</div></div>{% endif %}
-    </div>
+        <div class="hero-total"><span>إجمالي عمليات الدخول المسجلة</span><strong>{{ total_logins }}</strong><small><i class="bi bi-calendar-check"></i> {{ today_logins }} اليوم</small></div>
+    </section>
+
+    <section class="leaders-grid">
+        <article class="leader-card teacher-leader">
+            <div class="leader-icon"><i class="bi bi-trophy-fill"></i></div>
+            <div class="leader-copy"><span>الأكثر دخولًا من المعلمين</span>{% if top_teacher %}<h3>{{ top_teacher.full_name }}</h3><p>{{ top_teacher.login_count }} عملية دخول</p>{% else %}<h3>لا توجد بيانات بعد</h3><p>ستظهر النتيجة بعد أول دخول لمعلم</p>{% endif %}</div>
+            {% if top_teacher %}<a href="{% url 'login_report_detail' top_teacher.user_id %}" aria-label="تقرير {{ top_teacher.full_name }}"><i class="bi bi-arrow-left"></i></a>{% endif %}
+        </article>
+        <article class="leader-card student-leader">
+            <div class="leader-icon"><i class="bi bi-star-fill"></i></div>
+            <div class="leader-copy"><span>الأكثر دخولًا من الطلاب</span>{% if top_student %}<h3>{{ top_student.full_name }}</h3><p>{{ top_student.login_count }} عملية دخول{% if top_student.student_class %} · {{ top_student.student_class.name }}{% endif %}</p>{% else %}<h3>لا توجد بيانات بعد</h3><p>ستظهر النتيجة بعد أول دخول لطالب</p>{% endif %}</div>
+            {% if top_student %}<a href="{% url 'login_report_detail' top_student.user_id %}" aria-label="تقرير {{ top_student.full_name }}"><i class="bi bi-arrow-left"></i></a>{% endif %}
+        </article>
+    </section>
+
+    <section class="stats-grid">
+        <div class="stat-card"><i class="bi bi-person-video3"></i><div><strong>{{ active_teachers }} <small>/ {{ total_teachers }}</small></strong><span>معلمون دخلوا للنظام</span></div></div>
+        <div class="stat-card"><i class="bi bi-mortarboard"></i><div><strong>{{ active_students }} <small>/ {{ total_students }}</small></strong><span>طلاب دخلوا للنظام</span></div></div>
+        <div class="stat-card"><i class="bi bi-clock-history"></i><div><strong>{{ today_logins }}</strong><span>عمليات الدخول اليوم</span></div></div>
+    </section>
+
+    <section class="accounts-panel">
+        <form method="get" class="search-panel no-print">
+            <div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="{{ q }}" placeholder="ابحث بالاسم أو رقم الهوية أو اسم المستخدم…" autocomplete="off">{% if q %}<a href="{% url 'login_report' %}" class="clear-search" title="مسح البحث"><i class="bi bi-x-lg"></i></a>{% endif %}</div>
+            <button type="submit"><i class="bi bi-funnel"></i> تصفية القائمة</button>
+        </form>
+
+        <div class="account-tabs no-print" role="tablist">
+            <button class="account-tab active" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers-pane" type="button" role="tab"><i class="bi bi-person-video3"></i> دخول المعلمين <span>{{ teacher_result_count }}</span></button>
+            <button class="account-tab" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-pane" type="button" role="tab"><i class="bi bi-mortarboard"></i> دخول الطلاب <span>{{ student_result_count }}</span></button>
+        </div>
+        {% if q %}<div class="filter-note"><i class="bi bi-funnel-fill"></i> النتائج المطابقة لعبارة: <strong>{{ q }}</strong></div>{% endif %}
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="teachers-pane" role="tabpanel" aria-labelledby="teachers-tab">
+                <div class="table-responsive"><table class="accounts-table">
+                    <thead><tr><th>#</th><th>المعلم</th><th>رقم الهوية</th><th>اسم المستخدم</th><th>مرات الدخول</th><th>آخر دخول</th><th class="no-print">التقرير</th></tr></thead>
+                    <tbody>{% for teacher in teachers %}<tr>
+                        <td class="row-number">{{ forloop.counter }}</td><td><div class="person-cell"><span class="avatar teacher-avatar">{{ teacher.full_name|first }}</span><strong>{{ teacher.full_name }}</strong></div></td><td>{{ teacher.id_number|default:'—' }}</td><td dir="ltr">{{ teacher.user.username }}</td><td><span class="count-pill">{{ teacher.login_count }}</span></td>
+                        <td>{% if teacher.last_recorded_login %}<span class="last-login">{{ teacher.last_recorded_login|date:'Y-m-d' }}<small>{{ teacher.last_recorded_login|date:'H:i' }}</small></span>{% elif teacher.user.last_login %}<span class="last-login">{{ teacher.user.last_login|date:'Y-m-d' }}<small>{{ teacher.user.last_login|date:'H:i' }}</small></span>{% else %}<span class="never-login">لم يدخل بعد</span>{% endif %}</td>
+                        <td class="no-print"><a class="report-btn" href="{% url 'login_report_detail' teacher.user_id %}"><i class="bi bi-bar-chart-line"></i> التقرير</a></td>
+                    </tr>{% empty %}<tr><td colspan="7"><div class="empty-state"><i class="bi bi-search"></i><strong>لا توجد نتائج مطابقة من المعلمين</strong></div></td></tr>{% endfor %}</tbody>
+                </table></div>
+            </div>
+            <div class="tab-pane fade" id="students-pane" role="tabpanel" aria-labelledby="students-tab">
+                <div class="table-responsive"><table class="accounts-table">
+                    <thead><tr><th>#</th><th>الطالب</th><th>الصف</th><th>رقم الهوية</th><th>مرات الدخول</th><th>آخر دخول</th><th class="no-print">التقرير</th></tr></thead>
+                    <tbody>{% for student in students %}<tr>
+                        <td class="row-number">{{ forloop.counter }}</td><td><div class="person-cell"><span class="avatar student-avatar">{{ student.full_name|first }}</span><div><strong>{{ student.full_name }}</strong><small dir="ltr">{{ student.user.username }}</small></div></div></td><td>{% if student.student_class %}{{ student.student_class.name }}{% else %}بدون صف{% endif %}</td><td>{{ student.student_id }}</td><td><span class="count-pill">{{ student.login_count }}</span></td>
+                        <td>{% if student.last_recorded_login %}<span class="last-login">{{ student.last_recorded_login|date:'Y-m-d' }}<small>{{ student.last_recorded_login|date:'H:i' }}</small></span>{% elif student.user.last_login %}<span class="last-login">{{ student.user.last_login|date:'Y-m-d' }}<small>{{ student.user.last_login|date:'H:i' }}</small></span>{% else %}<span class="never-login">لم يدخل بعد</span>{% endif %}</td>
+                        <td class="no-print"><a class="report-btn" href="{% url 'login_report_detail' student.user_id %}"><i class="bi bi-bar-chart-line"></i> التقرير</a></td>
+                    </tr>{% empty %}<tr><td colspan="7"><div class="empty-state"><i class="bi bi-search"></i><strong>لا توجد نتائج مطابقة من الطلاب</strong></div></td></tr>{% endfor %}</tbody>
+                </table></div>
+            </div>
+        </div>
+    </section>
 </div>
-<div class="mt-3 no-print"><a href="{% url 'dashboard' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> العودة للرئيسية</a></div>
-</div>
-<style>@media print{@page{size:A4 portrait}}</style>
+<style>
+.login-analytics{--ink:#17253a;--muted:#68768a;--line:#e5eaf1;--navy:#173b63;--blue:#2474b8;--green:#16856b;color:var(--ink)}.analytics-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:30px;border-radius:22px;background:linear-gradient(125deg,#102c4c 0%,#1c5686 68%,#2474a5 100%);color:#fff;box-shadow:0 18px 38px rgba(15,46,77,.18);overflow:hidden;position:relative}.analytics-hero:after{content:"";position:absolute;width:260px;height:260px;border:45px solid rgba(255,255,255,.055);border-radius:50%;left:-75px;top:-115px}.hero-label{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.13);font-size:.78rem;font-weight:700}.analytics-hero h2{font-weight:900;margin:12px 0 7px;font-size:1.65rem}.analytics-hero p{margin:0;color:#d9e7f4;font-size:.9rem}.hero-total{min-width:205px;padding:17px 20px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);border-radius:17px;text-align:center;backdrop-filter:blur(7px);z-index:1}.hero-total span,.hero-total small{display:block;color:#dceaf6;font-size:.75rem}.hero-total strong{display:block;font-size:2.35rem;line-height:1.15;margin:6px}.leaders-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}.leader-card{display:flex;align-items:center;gap:14px;padding:20px;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 7px 22px rgba(30,50,75,.06);position:relative;overflow:hidden}.leader-card:before{content:"";position:absolute;inset:0 0 0 auto;width:5px;background:#d2a83e}.student-leader:before{background:var(--green)}.leader-icon{display:grid;place-items:center;width:52px;height:52px;min-width:52px;border-radius:16px;background:#fff6da;color:#c59319;font-size:1.45rem}.student-leader .leader-icon{background:#e6f7f2;color:var(--green)}.leader-copy{min-width:0;flex:1}.leader-copy span{display:block;color:var(--muted);font-size:.75rem;font-weight:700}.leader-copy h3{font-size:1.05rem;font-weight:900;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.leader-copy p{margin:0;color:var(--muted);font-size:.78rem}.leader-card>a{display:grid;place-items:center;width:35px;height:35px;border-radius:50%;background:#f2f5f8;color:var(--navy);text-decoration:none;z-index:1}.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat-card{display:flex;align-items:center;gap:12px;padding:15px 17px;background:#fff;border:1px solid var(--line);border-radius:15px}.stat-card>i{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#edf5fb;color:var(--blue);font-size:1.1rem}.stat-card strong,.stat-card span{display:block}.stat-card strong{font-size:1.15rem;font-weight:900}.stat-card strong small{color:#9aa5b3;font-size:.72rem}.stat-card span{color:var(--muted);font-size:.72rem}.accounts-panel{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 26px rgba(30,50,75,.06);overflow:hidden}.search-panel{display:flex;gap:10px;padding:18px;border-bottom:1px solid var(--line);background:#fbfcfe}.search-input{position:relative;flex:1}.search-input>i{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#8d9aab}.search-input input{width:100%;height:46px;border:1px solid #dbe2ea;border-radius:13px;padding:0 43px 0 40px;background:#fff;outline:0}.search-input input:focus{border-color:#70a6cf;box-shadow:0 0 0 3px rgba(36,116,184,.09)}.clear-search{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#8c98a7}.search-panel button{border:0;border-radius:12px;padding:0 20px;background:var(--navy);color:#fff;font-weight:800}.account-tabs{display:flex;gap:8px;padding:14px 18px 0;border-bottom:1px solid var(--line)}.account-tab{display:flex;align-items:center;gap:8px;padding:11px 17px;border:0;border-bottom:3px solid transparent;background:transparent;color:#6b7889;font-weight:800}.account-tab.active{color:var(--navy);border-bottom-color:var(--blue)}.account-tab span{padding:2px 8px;border-radius:99px;background:#edf1f5;font-size:.7rem}.account-tab.active span{background:#e5f1fa;color:var(--blue)}.filter-note{margin:13px 18px 0;padding:10px 13px;border-radius:10px;background:#f0f7fc;color:#3d6687;font-size:.8rem}.table-responsive{max-height:690px;overflow:auto}.accounts-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem}.accounts-table th{position:sticky;top:0;z-index:2;padding:12px 14px;background:#f6f8fb;color:#536174;border-bottom:1px solid var(--line);font-size:.72rem;white-space:nowrap}.accounts-table td{padding:11px 14px;border-bottom:1px solid #edf0f4;vertical-align:middle}.accounts-table tbody tr:hover{background:#fafcff}.row-number{color:#9aa4b2;font-weight:700}.person-cell{display:flex;align-items:center;gap:10px;min-width:190px}.person-cell strong,.person-cell small{display:block}.person-cell small{color:#8b97a6;font-size:.68rem;margin-top:2px}.avatar{display:grid;place-items:center;width:35px;height:35px;min-width:35px;border-radius:11px;font-weight:900}.teacher-avatar{background:#e9f2fb;color:#276da5}.student-avatar{background:#e8f7f2;color:#16856b}.count-pill{display:inline-grid;place-items:center;min-width:35px;padding:4px 9px;border-radius:99px;background:#eef4fa;color:#225e8d;font-weight:900}.last-login{display:inline-flex;align-items:center;gap:7px;font-weight:700;white-space:nowrap}.last-login small{padding:3px 6px;border-radius:6px;background:#edf1f5;color:#677486}.never-login{color:#a16a30;background:#fff5e8;padding:4px 8px;border-radius:7px;white-space:nowrap}.report-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid #caddec;border-radius:9px;color:#1d6399;text-decoration:none;font-weight:800;white-space:nowrap}.report-btn:hover{background:#eaf4fb;color:#174d77}.empty-state{display:flex;flex-direction:column;align-items:center;gap:8px;padding:45px;color:#8995a5}.empty-state i{font-size:1.8rem}
+@media(max-width:800px){.analytics-hero{align-items:flex-start;flex-direction:column;padding:23px}.hero-total{width:100%}.leaders-grid,.stats-grid{grid-template-columns:1fr}.search-panel{flex-direction:column}.search-panel button{height:44px}.account-tabs{overflow-x:auto}.account-tab{white-space:nowrap}.accounts-table th,.accounts-table td{padding:10px}.leader-card{padding:16px}}@media print{.analytics-hero{background:#eef3f7!important;color:#17253a!important;box-shadow:none}.analytics-hero p,.hero-total span,.hero-total small{color:#536174!important}.leaders-grid,.stats-grid{break-inside:avoid}.accounts-panel{box-shadow:none}.table-responsive{max-height:none;overflow:visible}.accounts-table th{position:static}.tab-pane{display:block!important;opacity:1!important}.tab-pane+.tab-pane{margin-top:10mm}.accounts-table{font-size:8pt}}
+</style>
 {% endblock %}

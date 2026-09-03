@@ -776,6 +776,34 @@ class LoginCounter(models.Model):
         return f'عدد مرات الدخول: {self.count}'
 
 
+class LoginEvent(models.Model):
+    ROLE_CHOICES = [
+        ('teacher', 'معلم'),
+        ('student', 'طالب'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='login_events',
+        verbose_name='الحساب',
+    )
+    role = models.CharField('نوع الحساب', max_length=20, choices=ROLE_CHOICES)
+    logged_at = models.DateTimeField('وقت الدخول', default=timezone.now, db_index=True)
+
+    class Meta:
+        verbose_name = 'عملية دخول'
+        verbose_name_plural = 'سجل عمليات الدخول'
+        ordering = ['-logged_at']
+        indexes = [
+            models.Index(fields=['user', '-logged_at'], name='login_user_time_idx'),
+            models.Index(fields=['role', '-logged_at'], name='login_role_time_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} - {self.logged_at:%Y-%m-%d %H:%M}'
+
+
 class StudentSurvey(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='survey', verbose_name='الطالب')
 
