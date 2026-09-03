@@ -9,10 +9,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
+from django.core.paginator import Paginator
+from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -195,7 +197,10 @@ def login_view(request):
         if user:
             login(request, user)
             try:
-                if user.profile.role == 'student':
+                role = user.profile.role
+                if role in {'student', 'teacher'}:
+                    LoginEvent.objects.create(user=user, role=role)
+                if role == 'student':
                     LoginCounter.increment()
             except (Profile.DoesNotExist, AttributeError):
                 pass
@@ -3613,30 +3618,81 @@ def login_report(request):
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+
     q = request.GET.get('q', '').strip()
-    results = []
+    student_accounts = Student.objects.select_related('user', 'student_class').annotate(
+        login_count=Count('user__login_events'),
+        last_recorded_login=Max('user__login_events__logged_at'),
+    )
+    teacher_accounts = Teacher.objects.select_related('user').annotate(
+        login_count=Count('user__login_events'),
+        last_recorded_login=Max('user__login_events__logged_at'),
+    )
+
+    top_student = student_accounts.filter(login_count__gt=0).order_by('-login_count', 'full_name').first()
+    top_teacher = teacher_accounts.filter(login_count__gt=0).order_by('-login_count', 'full_name').first()
+
     if q:
-        student = Student.objects.filter(student_id=q).select_related('user').first()
-        teacher = Teacher.objects.filter(id_number=q).select_related('user').first()
-        if student and student.user:
-            results.append({
-                'type': 'طالب',
-                'name': student.full_name,
-                'identity': student.student_id,
-                'username': student.user.username,
-                'last_login': student.user.last_login,
-            })
-        if teacher and teacher.user:
-            results.append({
-                'type': 'معلم',
-                'name': teacher.full_name,
-                'identity': teacher.id_number,
-                'username': teacher.user.username,
-                'last_login': teacher.user.last_login,
-            })
-        if not results:
-            messages.info(request, 'لا يوجد حساب مطابق لرقم الهوية المدخل')
-    return render(request, 'school/login_report.html', {'q': q, 'results': results})
+        student_accounts = student_accounts.filter(
+            Q(full_name__icontains=q) | Q(student_id__icontains=q) | Q(user__username__icontains=q)
+        )
+        teacher_accounts = teacher_accounts.filter(
+            Q(full_name__icontains=q) | Q(id_number__icontains=q) | Q(user__username__icontains=q)
+        )
+
+    student_accounts = student_accounts.order_by('-login_count', 'full_name')
+    teacher_accounts = teacher_accounts.order_by('-login_count', 'full_name')
+    today = timezone.localdate()
+
+    return render(request, 'school/login_report.html', {
+        'q': q,
+        'students': student_accounts,
+        'teachers': teacher_accounts,
+        'student_result_count': student_accounts.count(),
+        'teacher_result_count': teacher_accounts.count(),
+        'total_students': Student.objects.count(),
+        'total_teachers': Teacher.objects.count(),
+        'total_logins': LoginEvent.objects.count(),
+        'today_logins': LoginEvent.objects.filter(logged_at__date=today).count(),
+        'active_students': LoginEvent.objects.filter(role='student').values('user_id').distinct().count(),
+        'active_teachers': LoginEvent.objects.filter(role='teacher').values('user_id').distinct().count(),
+        'top_student': top_student,
+        'top_teacher': top_teacher,
+    })
+
+
+@login_required
+def login_report_detail(request, user_id):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+
+    account = get_object_or_404(User, id=user_id)
+    student = Student.objects.filter(user=account).select_related('student_class').first()
+    teacher = Teacher.objects.filter(user=account).first()
+    if not student and not teacher:
+        messages.error(request, 'هذا الحساب لا يعود إلى طالب أو معلم')
+        return redirect('login_report')
+
+    events = LoginEvent.objects.filter(user=account)
+    paginator = Paginator(events, 50)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    person = student or teacher
+    identity = student.student_id if student else teacher.id_number
+
+    return render(request, 'school/login_report_detail.html', {
+        'account': account,
+        'person': person,
+        'identity': identity,
+        'account_type': 'طالب' if student else 'معلم',
+        'student': student,
+        'teacher': teacher,
+        'page_obj': page_obj,
+        'login_count': events.count(),
+        'first_login': events.order_by('logged_at').first(),
+        'last_login_event': events.first(),
+        'today_count': events.filter(logged_at__date=timezone.localdate()).count(),
+    })
 
 
 # ─── Inspection Visits (Principal) ─────────────────────────────────────────────
