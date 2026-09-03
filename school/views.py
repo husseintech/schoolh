@@ -67,8 +67,12 @@ def sort_students_class_first(students):
 def sort_by_student_name(items):
     return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning']
-ACTION_KEYS = ['view', 'add', 'edit', 'delete', 'import', 'export', 'notes', 'complete', 'send', 'whatsapp', 'accounts']
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning']
+ACTION_KEYS = [
+    'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
+    'complete', 'send', 'review', 'generate', 'manage_constraints',
+    'manage_settings', 'whatsapp', 'accounts', 'links',
+]
 MODULE_LABELS = {
     'students': 'الطلاب',
     'teachers': 'المعلمون',
@@ -83,6 +87,7 @@ MODULE_LABELS = {
     'reports': 'التقارير',
     'settings': 'الإعدادات',
     'notes': 'الملاحظات',
+    'discipline': 'المخالفات السلوكية',
     'lateness': 'تأخيرات الطلاب',
     'meetings': 'اجتماعات المعلمين',
     'supervisor_visits': 'زيارات المشرفين',
@@ -108,12 +113,76 @@ ACTION_LABELS = {
     'delete': 'حذف',
     'import': 'استيراد',
     'export': 'تصدير',
+    'print': 'طباعة',
     'notes': 'ملاحظات',
     'complete': 'إكمال',
     'send': 'إرسال',
+    'review': 'مراجعة',
+    'generate': 'توليد',
+    'manage_constraints': 'إدارة القيود',
+    'manage_settings': 'إدارة الإعدادات',
     'whatsapp': 'واتساب',
     'accounts': 'الحسابات',
+    'links': 'الروابط',
 }
+
+
+def permission_schema():
+    """Return only meaningful actions for each module, in a stable UI order."""
+    schema = {}
+    for module in MODULE_KEYS:
+        available = {
+            action
+            for role_permissions in DEFAULT_PERMISSIONS.values()
+            for action in role_permissions.get(module, [])
+        }
+        schema[module] = [action for action in ACTION_KEYS if action in available]
+    return schema
+
+
+def complete_permissions(role, stored=None):
+    """Build an explicit permission snapshot while preserving legacy fallbacks."""
+    stored = stored or {}
+    defaults = UserPermission.get_defaults(role)
+    return {
+        module: [
+            action for action in actions
+            if action in (stored[module] if module in stored else defaults.get(module, []))
+        ]
+        for module, actions in permission_schema().items()
+    }
+
+
+def permissions_from_post(post_data):
+    """Read a complete matrix, including modules whose every action was removed."""
+    result = {module: [] for module in MODULE_KEYS}
+    for module, actions in permission_schema().items():
+        for action in actions:
+            if f'perm_{module}_{action}' in post_data:
+                result[module].append(action)
+    return result
+
+
+def permission_sections(allowed_set=None):
+    allowed_set = allowed_set or set()
+    schema = permission_schema()
+    return [
+        {
+            'key': module,
+            'label': MODULE_LABELS[module],
+            'actions': [
+                {
+                    'key': action,
+                    'label': ACTION_LABELS[action],
+                    'token': f'{module}_{action}',
+                    'checked': f'{module}_{action}' in allowed_set,
+                }
+                for action in schema[module]
+            ],
+        }
+        for module in MODULE_KEYS
+        if schema[module]
+    ]
 
 
 def login_view(request):
@@ -2136,30 +2205,16 @@ def add_account(request):
         if role == 'teacher':
             Teacher.objects.create(user=user, full_name=full_name, phone=phone)
 
-        new_perms = {}
-        if role == 'admin':
-            new_perms = {m: list(ACTION_KEYS) for m in MODULE_KEYS}
-        else:
-            for key, val in request.POST.items():
-                if key.startswith('perm_'):
-                    parts = key.replace('perm_', '', 1).rsplit('_', 1)
-                    if len(parts) == 2:
-                        module, action = parts
-                        new_perms.setdefault(module, []).append(action)
-        if not new_perms:
-            new_perms = UserPermission.get_defaults(role)
+        new_perms = permissions_from_post(request.POST)
         UserPermission.objects.create(user=user, permissions=new_perms)
 
         log_action(request.user, 'إضافة حساب', f'{username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         messages.success(request, f'تم إضافة الحساب: {username} - {dict(Profile.ROLE_CHOICES).get(role, "")}')
         return redirect('account_list')
 
-    modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
-    actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
     return render(request, 'school/add_account.html', {
         'roles': Profile.ROLE_CHOICES,
-        'modules': modules,
-        'actions': actions,
+        'permission_sections': permission_sections(),
         'default_perms': DEFAULT_PERMISSIONS,
     })
 
@@ -2190,16 +2245,7 @@ def edit_account(request, user_id):
             user.set_password(new_password)
             user.save()
 
-        new_perms = {}
-        if profile.role == 'admin':
-            new_perms = {m: list(ACTION_KEYS) for m in MODULE_KEYS}
-        else:
-            for key, val in request.POST.items():
-                if key.startswith('perm_'):
-                    parts = key.replace('perm_', '', 1).rsplit('_', 1)
-                    if len(parts) == 2:
-                        module, action = parts
-                        new_perms.setdefault(module, []).append(action)
+        new_perms = permissions_from_post(request.POST)
         perms.permissions = new_perms
         perms.save()
 
@@ -2207,11 +2253,9 @@ def edit_account(request, user_id):
         messages.success(request, f'تم تحديث الحساب: {user.username}')
         return redirect('account_list')
 
-    modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
-    actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
-
     allowed_set = set()
-    for module, actions_list in perms.permissions.items():
+    effective_permissions = complete_permissions(profile.role, perms.permissions)
+    for module, actions_list in effective_permissions.items():
         for action in actions_list:
             allowed_set.add(f'{module}_{action}')
 
@@ -2220,8 +2264,7 @@ def edit_account(request, user_id):
         'profile': profile,
         'allowed_set': allowed_set,
         'roles': Profile.ROLE_CHOICES,
-        'modules': modules,
-        'actions': actions,
+        'permission_sections': permission_sections(allowed_set),
         'default_perms': DEFAULT_PERMISSIONS,
     })
 
@@ -2250,9 +2293,6 @@ def role_permissions(request):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
 
-    modules = [{'key': k, 'label': MODULE_LABELS[k]} for k in MODULE_KEYS]
-    actions = [{'key': k, 'label': ACTION_LABELS[k]} for k in ACTION_KEYS]
-
     role = request.GET.get('role', 'student')
     if role not in dict(Profile.ROLE_CHOICES):
         role = 'student'
@@ -2260,19 +2300,10 @@ def role_permissions(request):
     if request.method == 'POST':
         role = request.POST.get('role', role)
         action_kind = request.POST.get('action_kind', 'default')  # 'default' | 'custom'
-        new_perms = {}
         if action_kind == 'custom':
-            for key, val in request.POST.items():
-                if key.startswith('perm_'):
-                    parts = key.replace('perm_', '', 1).rsplit('_', 1)
-                    if len(parts) == 2:
-                        module, act = parts
-                        new_perms.setdefault(module, []).append(act)
+            new_perms = permissions_from_post(request.POST)
         else:
-            new_perms = UserPermission.get_defaults(role)
-
-        if not new_perms:
-            new_perms = UserPermission.get_defaults(role)
+            new_perms = complete_permissions(role)
 
         # ensure every user of that role has a UserPermission row
         users = User.objects.filter(profile__role=role)
@@ -2290,10 +2321,15 @@ def role_permissions(request):
     counts = User.objects.filter(profile__role__in=[r for r, _ in Profile.ROLE_CHOICES]).values('profile__role').annotate(n=Count('id'))
     count_map = {c['profile__role']: c['n'] for c in counts}
     role_counts = [(r, label, count_map.get(r, 0)) for r, label in Profile.ROLE_CHOICES]
+    role_defaults = complete_permissions(role)
+    role_allowed_set = {
+        f'{module}_{action}'
+        for module, actions_list in role_defaults.items()
+        for action in actions_list
+    }
     return render(request, 'school/role_permissions.html', {
         'roles': Profile.ROLE_CHOICES,
-        'modules': modules,
-        'actions': actions,
+        'permission_sections': permission_sections(role_allowed_set),
         'default_perms': DEFAULT_PERMISSIONS,
         'selected_role': role,
         'role_counts': role_counts,
@@ -3093,6 +3129,28 @@ def build_survey_stats_data():
         c = cnt(fn)
         device_rows.append({'label': label, 'count': c, 'pct': pct(c)})
 
+    # ── مؤشرات الصحة الرقمية ──
+    # Each percentage uses only surveys that answered the newly-added question,
+    # keeping historical surveys out of the denominator until they are updated.
+    digital_rows = []
+    for label, field, expected, color in [
+        ('يمتلك جوالاً خاصاً به', 'owns_personal_phone', True, 'primary'),
+        ('لا يراقب ولي الأمر ما يشاهده باستمرار', 'parent_monitors_content', False, 'warning'),
+        ('توجد صعوبة في حرمانه من الجوال', 'phone_deprivation_difficulty', True, 'danger'),
+        ('تظهر تصرفات غريبة عند حرمانه من الجوال', 'unusual_behavior_when_phone_removed', True, 'danger'),
+    ]:
+        answered_surveys = [s for s in submitted if getattr(s, field) is not None]
+        matching = [s for s in answered_surveys if getattr(s, field) is expected]
+        answered = len(answered_surveys)
+        digital_rows.append({
+            'label': label,
+            'count': len(matching),
+            'answered': answered,
+            'pct': round(len(matching) * 100.0 / answered, 1) if answered else 0,
+            'color': color,
+            'students': matching,
+        })
+
     living_rows = []
     for val, label in [('parents', 'الأب والأم'), ('father', 'الأب فقط'), ('mother', 'الأم فقط'), ('relative', 'أحد الأقارب'), ('other', 'أخرى')]:
         c = len([s for s in submitted if s.lives_with == val])
@@ -3127,6 +3185,7 @@ def build_survey_stats_data():
         'social_rows': social_rows,
         'supports': supports,
         'device_rows': device_rows,
+        'digital_rows': digital_rows,
         'living_rows': living_rows,
         'critical': critical,
         'class_stats': class_stats,
@@ -3171,7 +3230,7 @@ def survey_stats_print(request, mode):
         })
 
     groups = []
-    for r in data['health_rows'] + data['social_rows'] + data['supports']:
+    for r in data['health_rows'] + data['digital_rows'] + data['social_rows'] + data['supports']:
         if r['students']:
             groups.append({'title': r['label'], 'students': r['students']})
     return render(request, 'school/survey_stats_print.html', {

@@ -3,218 +3,137 @@
 {% block page_heading %}المسح الصحي والاجتماعي{% endblock %}
 {% block content %}
 <style>
-    .survey-q { font-weight: 700; margin: 16px 0 8px; color: #1a2744; }
-    .survey-box { background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 4px 14px 12px; margin-bottom: 8px; }
-    .survey-sub { font-weight: 600; margin: 8px 0 4px; color: #334155; }
-    .survey-check-label { font-weight: 400; }
-    input[type="num"] { }
+.survey-page{--sv-blue:#195aa7;--sv-navy:#17375e;--sv-green:#18865d;--sv-orange:#d98218;--sv-red:#cc4b52;--sv-line:#e4eaf2;--sv-soft:#f6f8fc;color:#263449}
+.survey-hero{background:linear-gradient(135deg,#163b68 0%,#1d64ad 68%,#3b83ca 100%);border-radius:26px;padding:30px;color:#fff;position:relative;overflow:hidden;box-shadow:0 18px 45px rgba(25,90,167,.18)}
+.survey-hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.08);left:-65px;bottom:-135px}
+.survey-hero-icon{width:70px;height:70px;border-radius:22px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:2rem;flex:0 0 auto}
+.student-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;position:relative;z-index:1}.student-chip{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 13px}.student-chip small{display:block;opacity:.7;font-size:.75rem}.student-chip strong{font-size:.92rem}
+.privacy-note{border:1px solid #dce9df;background:#f1faf5;border-radius:18px;padding:16px;color:#276247}.privacy-icon{width:40px;height:40px;border-radius:12px;background:#daf2e3;color:var(--sv-green);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.survey-nav{position:sticky;top:20px;background:#fff;border:1px solid var(--sv-line);border-radius:20px;padding:12px;box-shadow:0 8px 24px rgba(31,50,80,.05)}.survey-nav a{display:flex;align-items:center;gap:10px;color:#536176;text-decoration:none;padding:11px 12px;border-radius:12px;font-size:.9rem}.survey-nav a:hover{background:#edf4fd;color:var(--sv-blue)}.survey-nav i{width:22px;text-align:center}.survey-nav .nav-note{font-size:.76rem;color:#8390a3;padding:8px 11px 4px}
+.survey-section{background:#fff;border:1px solid var(--sv-line);border-radius:22px;margin-bottom:18px;overflow:hidden;box-shadow:0 7px 22px rgba(31,50,80,.035);scroll-margin-top:18px}.section-head{padding:19px 22px;border-bottom:1px solid var(--sv-line);display:flex;align-items:center;gap:13px}.section-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.25rem}.section-head h3{font-size:1.05rem;font-weight:800;margin:0}.section-head p{font-size:.79rem;color:#778398;margin:3px 0 0}.section-body{padding:20px 22px}
+.question-card{border:1px solid #e8edf4;border-radius:16px;padding:16px;margin-bottom:12px;background:#fbfcfe}.question-card:last-child{margin-bottom:0}.question-title{font-weight:750;color:#263449;margin-bottom:12px}.question-hint{font-size:.78rem;color:#7d899b;margin-top:-7px;margin-bottom:10px}
+.binary-options{display:flex;gap:9px;flex-wrap:wrap}.choice-pill{position:relative;margin:0}.choice-pill input{position:absolute;opacity:0;pointer-events:none}.choice-pill span{display:flex;align-items:center;justify-content:center;gap:7px;min-width:92px;padding:9px 16px;border:1px solid #d9e1eb;border-radius:12px;background:#fff;cursor:pointer;transition:.15s ease}.choice-pill input:checked+span{background:#eaf3ff;border-color:#77a7dd;color:#164f91;box-shadow:0 0 0 2px rgba(25,90,167,.08)}.choice-pill input:focus-visible+span{outline:3px solid rgba(25,90,167,.22)}
+.multi-options{display:flex;gap:9px;flex-wrap:wrap}.multi-options .form-check{margin:0;border:1px solid #dfe5ed;border-radius:11px;padding:8px 34px 8px 12px;background:#fff}.details-field{margin-top:12px}.details-field[hidden]{display:none!important}
+.digital-section{border-color:#f0dcb8}.digital-section .section-head{background:linear-gradient(90deg,#fff9ef,#fff)}.digital-question{background:#fffaf2;border-color:#f2dfbf}.digital-badge{font-size:.72rem;background:#fff0d5;color:#915b12;border-radius:999px;padding:5px 9px}
+.optional-grid textarea{min-height:82px}.save-bar{position:sticky;bottom:12px;z-index:6;background:rgba(255,255,255,.96);backdrop-filter:blur(9px);border:1px solid #dce4ee;border-radius:18px;padding:13px 16px;box-shadow:0 12px 34px rgba(31,50,80,.15)}
+.error-summary{border-radius:16px}.error-summary ul{margin-bottom:0}.field-error{font-size:.78rem;color:#b4232d;margin-top:7px}
+.survey-page input.form-control,.survey-page textarea.form-control,.survey-page select.form-select{border-radius:11px;border-color:#dce3ec;padding:.65rem .8rem}.survey-page input:focus,.survey-page textarea:focus,.survey-page select:focus{border-color:#76a6dc;box-shadow:0 0 0 .2rem rgba(25,90,167,.1)}
+.yn-widget>div{display:flex;gap:9px;flex-wrap:wrap}.yn-widget>div>div label{display:flex;align-items:center;gap:7px;min-width:92px;padding:9px 16px;border:1px solid #d9e1eb;border-radius:12px;background:#fff;cursor:pointer}.yn-widget input{margin-left:6px}.yn-widget label:has(input:checked){background:#fff0d7;border-color:#e5aa4d;color:#83510e;box-shadow:0 0 0 2px rgba(217,130,24,.08)}
+@media(max-width:991.98px){.survey-nav{position:static;display:flex;overflow:auto;margin-bottom:14px}.survey-nav .nav-note{display:none}.survey-nav a{white-space:nowrap}.survey-nav a span{display:inline}.student-strip{grid-template-columns:1fr}.survey-hero{padding:23px;border-radius:21px}}
+@media(max-width:575.98px){.section-body{padding:15px}.section-head{padding:16px}.question-card{padding:14px}.choice-pill{flex:1}.choice-pill span{min-width:0}.binary-options .choice-pill{min-width:42%}.survey-hero-icon{width:56px;height:56px;border-radius:17px;font-size:1.55rem}}
 </style>
+
+<div class="survey-page">
+  <section class="survey-hero mb-3">
+    <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
+      <div class="survey-hero-icon"><i class="bi bi-clipboard2-heart-fill"></i></div>
+      <div><div class="small opacity-75 mb-1">بيانات تساعدنا على رعاية الطالب بصورة أفضل</div><h2 class="h4 fw-bold mb-1">المسح الصحي والاجتماعي</h2><p class="mb-0 opacity-75 small">يرجى تعبئة البيانات بدقة؛ ستُستخدم داخل المدرسة فقط ولمصلحة الطالب.</p></div>
+    </div>
+    <div class="student-strip">
+      <div class="student-chip"><small>اسم الطالب</small><strong>{{ student.full_name }}</strong></div>
+      <div class="student-chip"><small>رقم الهوية</small><strong>{{ student.student_id }}</strong></div>
+      <div class="student-chip"><small>الصف</small><strong>{{ student.student_class.name|default:'غير محدد' }}</strong></div>
+    </div>
+  </section>
+
+  <div class="privacy-note d-flex gap-3 align-items-start mb-3"><div class="privacy-icon"><i class="bi bi-shield-lock-fill"></i></div><div><strong>خصوصيتكم محفوظة</strong><div class="small mt-1">تُعامل المعلومات بسرية، ويقتصر استخدامها على المتابعة الصحية والتربوية داخل المدرسة.</div></div></div>
+  {% if submitted_at %}<div class="alert alert-success rounded-4"><i class="bi bi-check-circle-fill"></i> تم حفظ المسح سابقًا — آخر تعبئة: {{ submitted_at|date:'Y/m/d H:i' }}. يمكنك مراجعته وتحديثه.</div>{% endif %}
+  {% if form.errors %}<div class="alert alert-danger error-summary"><strong><i class="bi bi-exclamation-circle-fill"></i> لم يتم الحفظ بعد.</strong> يرجى الإجابة عن الأسئلة المطلوبة في قسم الصحة الرقمية ومراجعة الحقول المبيّنة.</div>{% endif %}
+
+  <form method="post" id="surveyForm">
+    {% csrf_token %}
+    <div class="row g-3 align-items-start">
+      <div class="col-lg-3">
+        <nav class="survey-nav" aria-label="أقسام المسح">
+          <div class="nav-note">أقسام الاستمارة</div>
+          <a href="#general-health"><i class="bi bi-heart-pulse text-danger"></i><span>الصحة العامة</span></a>
+          <a href="#conditions"><i class="bi bi-bandaid text-info"></i><span>الحالات والرعاية</span></a>
+          <a href="#digital-health"><i class="bi bi-phone text-warning"></i><span>الصحة الرقمية</span></a>
+          <a href="#home-learning"><i class="bi bi-house-heart text-primary"></i><span>الأسرة والتعلّم</span></a>
+          <a href="#notes"><i class="bi bi-chat-square-text text-success"></i><span>ملاحظات الأسرة</span></a>
+        </nav>
+      </div>
+
+      <div class="col-lg-9">
+        <section class="survey-section" id="general-health">
+          <div class="section-head"><div class="section-icon bg-danger-subtle text-danger"><i class="bi bi-heart-pulse-fill"></i></div><div><h3>الصحة العامة</h3><p>الأمراض والأدوية والحساسية التي ينبغي للمدرسة معرفتها</p></div></div>
+          <div class="section-body">
+            <div class="question-card"><div class="question-title">هل يعاني الطالب من مرض مزمن؟</div><div class="binary-options" data-toggle-details="chronic-details"><label class="choice-pill"><input type="radio" name="chronic_disease" value="" {% if not form.chronic_disease.value %}checked{% endif %}><span><i class="bi bi-x-circle"></i>لا</span></label><label class="choice-pill"><input type="radio" name="chronic_disease" value="on" {% if form.chronic_disease.value %}checked{% endif %}><span><i class="bi bi-check-circle"></i>نعم</span></label></div><div class="details-field" id="chronic-details" {% if not form.chronic_disease.value %}hidden{% endif %}><input type="text" class="form-control" name="chronic_disease_details" value="{{ form.chronic_disease_details.value|default:'' }}" placeholder="اذكر المرض المزمن"></div></div>
+            <div class="question-card"><div class="question-title">هل يتناول الطالب دواءً بصورة منتظمة؟</div><div class="binary-options" data-toggle-details="medication-details"><label class="choice-pill"><input type="radio" name="regular_medication" value="" {% if not form.regular_medication.value %}checked{% endif %}><span><i class="bi bi-x-circle"></i>لا</span></label><label class="choice-pill"><input type="radio" name="regular_medication" value="on" {% if form.regular_medication.value %}checked{% endif %}><span><i class="bi bi-check-circle"></i>نعم</span></label></div><div class="details-field" id="medication-details" {% if not form.regular_medication.value %}hidden{% endif %}><input type="text" class="form-control" name="medication_name" value="{{ form.medication_name.value|default:'' }}" placeholder="اذكر اسم الدواء"></div></div>
+            <div class="question-card"><div class="question-title">هل لدى الطالب أي حساسية؟</div><div class="binary-options" data-toggle-details="allergy-details"><label class="choice-pill"><input type="radio" name="has_allergy" value="" {% if not form.has_allergy.value %}checked{% endif %}><span><i class="bi bi-x-circle"></i>لا</span></label><label class="choice-pill"><input type="radio" name="has_allergy" value="on" {% if form.has_allergy.value %}checked{% endif %}><span><i class="bi bi-check-circle"></i>نعم</span></label></div><div class="details-field" id="allergy-details" {% if not form.has_allergy.value %}hidden{% endif %}><div class="multi-options"><label class="form-check"><input class="form-check-input" type="checkbox" name="allergy_drugs" {% if form.allergy_drugs.value %}checked{% endif %}> أدوية</label><label class="form-check"><input class="form-check-input" type="checkbox" name="allergy_food" {% if form.allergy_food.value %}checked{% endif %}> أطعمة</label><label class="form-check"><input class="form-check-input" type="checkbox" name="allergy_dust" {% if form.allergy_dust.value %}checked{% endif %}> غبار</label></div><input type="text" class="form-control mt-2" name="allergy_other" value="{{ form.allergy_other.value|default:'' }}" placeholder="حساسية أخرى (اختياري)"></div></div>
+          </div>
+        </section>
+
+        <section class="survey-section" id="conditions">
+          <div class="section-head"><div class="section-icon bg-info-subtle text-info-emphasis"><i class="bi bi-bandaid-fill"></i></div><div><h3>الحالات والرعاية الصحية</h3><p>معلومات عملية تساعد المدرسة في المتابعة اليومية والطوارئ</p></div></div>
+          <div class="section-body">
+            <div class="question-card"><div class="question-title">هل يعاني الطالب من إحدى الحالات التالية؟</div><div class="multi-options exclusive-group"><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="condition_asthma" {% if form.condition_asthma.value %}checked{% endif %}> الربو</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="condition_diabetes" {% if form.condition_diabetes.value %}checked{% endif %}> السكري</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="condition_epilepsy" {% if form.condition_epilepsy.value %}checked{% endif %}> الصرع</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="condition_heart" {% if form.condition_heart.value %}checked{% endif %}> القلب</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="condition_hearing" {% if form.condition_hearing.value %}checked{% endif %}> ضعف السمع</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="condition_vision" {% if form.condition_vision.value %}checked{% endif %}> ضعف البصر</label><label class="form-check"><input class="form-check-input no-solo" type="checkbox" name="condition_none" {% if form.condition_none.value %}checked{% endif %}> لا يوجد</label></div></div>
+            <div class="row g-2">
+              <div class="col-md-6"><div class="question-card h-100"><div class="question-title">هل يحتاج إلى نظارات طبية؟</div><div class="binary-options"><label class="choice-pill"><input type="radio" name="needs_glasses" value="on" {% if form.needs_glasses.value %}checked{% endif %}><span>نعم</span></label><label class="choice-pill"><input type="radio" name="needs_glasses" value="" {% if not form.needs_glasses.value %}checked{% endif %}><span>لا</span></label></div></div></div>
+              <div class="col-md-6"><div class="question-card h-100"><div class="question-title">هل يحتاج رعاية خاصة أثناء الدوام؟</div><div class="binary-options" data-toggle-details="care-details"><label class="choice-pill"><input type="radio" name="special_care" value="on" {% if form.special_care.value %}checked{% endif %}><span>نعم</span></label><label class="choice-pill"><input type="radio" name="special_care" value="" {% if not form.special_care.value %}checked{% endif %}><span>لا</span></label></div><div class="details-field" id="care-details" {% if not form.special_care.value %}hidden{% endif %}><input type="text" class="form-control" name="special_care_details" value="{{ form.special_care_details.value|default:'' }}" placeholder="وضّح الرعاية المطلوبة"></div></div></div>
+            </div>
+            <div class="question-card"><div class="question-title">تعليمات خاصة للطبيب أو المدرسة في حال الطوارئ</div><div class="question-hint">اختياري — اكتب ما يجب أن تعرفه المدرسة عند حدوث طارئ.</div><textarea class="form-control" name="emergency_instructions" rows="3" placeholder="التعليمات الخاصة">{{ form.emergency_instructions.value|default:'' }}</textarea></div>
+          </div>
+        </section>
+
+        <section class="survey-section digital-section" id="digital-health">
+          <div class="section-head"><div class="section-icon bg-warning-subtle text-warning-emphasis"><i class="bi bi-phone-fill"></i></div><div class="flex-grow-1"><h3>الصحة الرقمية والعادات المرتبطة بالجوال</h3><p>إجابات ولي الأمر تساعد في فهم احتياجات الطالب السلوكية والتربوية</p></div><span class="digital-badge">إجابة مطلوبة</span></div>
+          <div class="section-body">
+            <div class="row g-2">
+              <div class="col-md-6"><div class="question-card digital-question h-100"><div class="question-title">هل ابنكم يمتلك جوالاً خاصاً به؟</div><div class="yn-widget">{{ form.owns_personal_phone }}</div>{% for error in form.owns_personal_phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div></div>
+              <div class="col-md-6"><div class="question-card digital-question h-100"><div class="question-title">هل تراقبون ما يشاهده ابنكم باستمرار؟</div><div class="yn-widget">{{ form.parent_monitors_content }}</div>{% for error in form.parent_monitors_content.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div></div>
+              <div class="col-md-6"><div class="question-card digital-question h-100"><div class="question-title">هل تواجهون صعوبة عند حرمان ابنكم من الجوال؟</div><div class="yn-widget">{{ form.phone_deprivation_difficulty }}</div>{% for error in form.phone_deprivation_difficulty.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div></div>
+              <div class="col-md-6"><div class="question-card digital-question h-100"><div class="question-title">هل تلاحظون تصرفات غريبة عليه عند حرمانه من الجوال؟</div><div class="yn-widget">{{ form.unusual_behavior_when_phone_removed }}</div>{% for error in form.unusual_behavior_when_phone_removed.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="survey-section" id="home-learning">
+          <div class="section-head"><div class="section-icon bg-primary-subtle text-primary"><i class="bi bi-house-heart-fill"></i></div><div><h3>الأسرة والبيئة التعليمية</h3><p>الوضع الأسري، الدعم الدراسي، والأدوات المتوفرة في المنزل</p></div></div>
+          <div class="section-body">
+            <div class="question-card"><div class="question-title">مع من يعيش الطالب؟</div><div class="multi-options" data-toggle-details="lives-other"><label class="form-check"><input class="form-check-input" type="radio" name="lives_with" value="parents" {% if form.lives_with.value == 'parents' %}checked{% endif %}> الأب والأم</label><label class="form-check"><input class="form-check-input" type="radio" name="lives_with" value="father" {% if form.lives_with.value == 'father' %}checked{% endif %}> الأب فقط</label><label class="form-check"><input class="form-check-input" type="radio" name="lives_with" value="mother" {% if form.lives_with.value == 'mother' %}checked{% endif %}> الأم فقط</label><label class="form-check"><input class="form-check-input" type="radio" name="lives_with" value="relative" {% if form.lives_with.value == 'relative' %}checked{% endif %}> أحد الأقارب</label><label class="form-check"><input class="form-check-input" type="radio" name="lives_with" value="other" {% if form.lives_with.value == 'other' %}checked{% endif %}> أخرى</label></div><div class="details-field" id="lives-other" {% if form.lives_with.value != 'other' %}hidden{% endif %}><input type="text" class="form-control" name="lives_with_other" value="{{ form.lives_with_other.value|default:'' }}" placeholder="اذكر مع من يعيش الطالب"></div></div>
+            <div class="row g-2"><div class="col-md-6"><div class="question-card h-100"><label class="question-title d-block" for="family-count">عدد أفراد الأسرة</label><input id="family-count" type="number" min="1" class="form-control" name="family_members_count" value="{{ form.family_members_count.value|default_if_none:'' }}"></div></div><div class="col-md-6"><div class="question-card h-100"><label class="question-title d-block" for="siblings-count">عدد الإخوة الذين يدرسون في المدرسة</label><input id="siblings-count" type="number" min="0" class="form-control" name="siblings_in_school_count" value="{{ form.siblings_in_school_count.value|default_if_none:'' }}"></div></div></div>
+            <div class="question-card"><div class="question-title">هل توجد صعوبات تؤثر على دراسة الطالب؟</div><div class="binary-options" data-toggle-details="difficulty-details"><label class="choice-pill"><input type="radio" name="study_difficulties" value="" {% if not form.study_difficulties.value %}checked{% endif %}><span>لا</span></label><label class="choice-pill"><input type="radio" name="study_difficulties" value="on" {% if form.study_difficulties.value %}checked{% endif %}><span>نعم</span></label></div><div class="details-field" id="difficulty-details" {% if not form.study_difficulties.value %}hidden{% endif %}><input type="text" class="form-control" name="study_difficulties_details" value="{{ form.study_difficulties_details.value|default:'' }}" placeholder="وضّح الصعوبات"></div></div>
+            <div class="question-card"><div class="question-title">هل يحتاج الطالب إلى دعم؟</div><div class="multi-options exclusive-group"><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="support_academic" {% if form.support_academic.value %}checked{% endif %}> أكاديمي</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="support_psychological" {% if form.support_psychological.value %}checked{% endif %}> نفسي</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="support_social" {% if form.support_social.value %}checked{% endif %}> اجتماعي</label><label class="form-check"><input class="form-check-input no-solo" type="checkbox" name="support_none" {% if form.support_none.value %}checked{% endif %}> لا يحتاج</label></div></div>
+            <div class="question-card"><div class="question-title">ما التجهيزات المتوفرة للطالب؟</div><div class="multi-options exclusive-group"><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="has_smartphone" {% if form.has_smartphone.value %}checked{% endif %}> هاتف ذكي متاح</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="has_computer" {% if form.has_computer.value %}checked{% endif %}> حاسوب</label><label class="form-check"><input class="form-check-input multi-opt" type="checkbox" name="has_internet" {% if form.has_internet.value %}checked{% endif %}> إنترنت</label><label class="form-check"><input class="form-check-input no-solo" type="checkbox" name="has_no_device" {% if form.has_no_device.value %}checked{% endif %}> لا يتوفر شيء</label></div></div>
+            <div class="row g-2"><div class="col-md-6"><div class="question-card h-100"><div class="question-title">هل لديه مكان مناسب للمذاكرة؟</div><div class="binary-options"><label class="choice-pill"><input type="radio" name="has_study_place" value="on" {% if form.has_study_place.value %}checked{% endif %}><span>نعم</span></label><label class="choice-pill"><input type="radio" name="has_study_place" value="" {% if not form.has_study_place.value %}checked{% endif %}><span>لا</span></label></div></div></div><div class="col-md-6"><div class="question-card h-100"><div class="question-title">هل يشارك في أنشطة خارج المدرسة؟</div><div class="binary-options"><label class="choice-pill"><input type="radio" name="participates_activities" value="on" {% if form.participates_activities.value %}checked{% endif %}><span>نعم</span></label><label class="choice-pill"><input type="radio" name="participates_activities" value="" {% if not form.participates_activities.value %}checked{% endif %}><span>لا</span></label></div></div></div></div>
+            <div class="question-card"><div class="question-title">هل لدى الأسرة ظروف خاصة قد تؤثر على متابعة الطالب؟</div><div class="binary-options" data-toggle-details="family-details"><label class="choice-pill"><input type="radio" name="family_special_conditions" value="" {% if not form.family_special_conditions.value %}checked{% endif %}><span>لا</span></label><label class="choice-pill"><input type="radio" name="family_special_conditions" value="on" {% if form.family_special_conditions.value %}checked{% endif %}><span>نعم</span></label></div><div class="details-field" id="family-details" {% if not form.family_special_conditions.value %}hidden{% endif %}><input type="text" class="form-control" name="family_special_conditions_details" value="{{ form.family_special_conditions_details.value|default:'' }}" placeholder="التوضيح اختياري"></div></div>
+            <div class="question-card"><div class="question-title">هل ترغب الأسرة في التواصل مع المرشد التربوي عند الحاجة؟</div><div class="binary-options"><label class="choice-pill"><input type="radio" name="contact_counselor" value="on" {% if form.contact_counselor.value %}checked{% endif %}><span>نعم</span></label><label class="choice-pill"><input type="radio" name="contact_counselor" value="" {% if not form.contact_counselor.value %}checked{% endif %}><span>لا</span></label></div><div class="question-title mt-3">وسيلة التواصل المفضلة</div><div class="multi-options"><label class="form-check"><input class="form-check-input" type="radio" name="contact_method" value="phone" {% if form.contact_method.value == 'phone' %}checked{% endif %}> اتصال هاتفي</label><label class="form-check"><input class="form-check-input" type="radio" name="contact_method" value="whatsapp" {% if form.contact_method.value == 'whatsapp' %}checked{% endif %}> واتساب</label><label class="form-check"><input class="form-check-input" type="radio" name="contact_method" value="sms" {% if form.contact_method.value == 'sms' %}checked{% endif %}> رسالة نصية</label></div></div>
+          </div>
+        </section>
+
+        <section class="survey-section" id="notes">
+          <div class="section-head"><div class="section-icon bg-success-subtle text-success"><i class="bi bi-chat-square-heart-fill"></i></div><div><h3>ملاحظات الأسرة</h3><p>حقول اختيارية تساعد المدرسة في بناء صورة أشمل عن الطالب</p></div></div>
+          <div class="section-body optional-grid"><div class="row g-3"><div class="col-md-6"><label class="question-title d-block">أبرز نقاط القوة</label><textarea class="form-control" name="strengths" placeholder="ما الذي يتميز به الطالب؟">{{ form.strengths.value|default:'' }}</textarea></div><div class="col-md-6"><label class="question-title d-block">أبرز الصعوبات</label><textarea class="form-control" name="difficulties_notes" placeholder="ما الصعوبات التي يواجهها؟">{{ form.difficulties_notes.value|default:'' }}</textarea></div><div class="col-md-6"><label class="question-title d-block">المواد التي يحتاج فيها إلى دعم</label><textarea class="form-control" name="subjects_need_support">{{ form.subjects_need_support.value|default:'' }}</textarea></div><div class="col-md-6"><label class="question-title d-block">اقتراحات تساعد المدرسة في خدمته</label><textarea class="form-control" name="suggestions">{{ form.suggestions.value|default:'' }}</textarea></div></div></div>
+        </section>
+
+        <div class="save-bar d-flex justify-content-between align-items-center flex-wrap gap-2"><div><strong>أصبحت البيانات جاهزة للحفظ</strong><div class="small text-muted">يمكنك العودة وتعديل المسح في أي وقت.</div></div><button type="submit" class="btn btn-primary btn-lg px-4"><i class="bi bi-check2-circle"></i> حفظ بيانات المسح</button></div>
+      </div>
+    </div>
+  </form>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.survey-pair').forEach(function (pair) {
-        pair.addEventListener('change', function (ev) {
-            var t = ev.target;
-            if (t.type !== 'checkbox') return;
-            var dd = pair.querySelector('[data-field]');
-            if (t.checked) {
-                pair.querySelectorAll('input[type=checkbox]').forEach(function (o) { if (o !== t) o.checked = false; });
-                if (dd) dd.hidden = !t.name;
-            } else if (dd) {
-                dd.hidden = true;
-            }
-        });
+  document.querySelectorAll('[data-toggle-details]').forEach(function (group) {
+    function update() {
+      var target = document.getElementById(group.dataset.toggleDetails);
+      var chosen = group.querySelector('input:checked');
+      if (!target || !chosen) return;
+      var show = chosen.value === 'on' || chosen.value === 'other';
+      target.hidden = !show;
+    }
+    group.addEventListener('change', update); update();
+  });
+  document.querySelectorAll('.exclusive-group').forEach(function (group) {
+    group.addEventListener('change', function (event) {
+      var item = event.target;
+      if (!item.matches('input[type=checkbox]')) return;
+      var none = group.querySelector('.no-solo');
+      if (item === none && item.checked) group.querySelectorAll('.multi-opt').forEach(function (opt) { opt.checked = false; });
+      else if (item.checked && none) none.checked = false;
     });
-    document.querySelectorAll('.survey-multi').forEach(function (grp) {
-        grp.addEventListener('change', function (ev) {
-            var t = ev.target;
-            if (t.type !== 'checkbox') return;
-            var solo = grp.querySelector('.no-solo');
-            if (solo === t) {
-                if (t.checked) grp.querySelectorAll('.multi-opt').forEach(function (o) { o.checked = false; });
-            } else if (solo && t.checked) {
-                solo.checked = false;
-            }
-        });
-    });
+  });
 });
 </script>
-
-<div class="card mb-4">
-    <div class="card-header bg-info text-white"><i class="bi bi-person-circle"></i> بيانات الطالب</div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4"><small class="text-muted d-block">الاسم</small><strong>{{ student.full_name }}</strong></div>
-            <div class="col-md-4"><small class="text-muted d-block">رقم الهوية</small><strong>{{ student.student_id }}</strong></div>
-            <div class="col-md-4"><small class="text-muted d-block">الصف</small><strong>{{ student.student_class.name|default:'غير محدد' }}</strong></div>
-        </div>
-    </div>
-</div>
-
-<div class="alert alert-warning">
-    <i class="bi bi-shield-lock-fill"></i>
-    <strong>ملاحظة مهمة:</strong> تستخدم المعلومات الواردة في هذه الاستبانة لأغراض تربوية وصحية داخل المدرسة فقط، وستُعامل بسرية تامة، ويقتصر استخدامها على متابعة مصلحة الطالب.
-</div>
-
-{% if submitted_at %}
-<div class="alert alert-success text-center"><i class="bi bi-check-circle-fill"></i> تم حفظ بيانات المسح — آخر تعبئة: {{ submitted_at|date:'Y/m/d H:i' }}</div>
-{% endif %}
-
-<form method="post">
-    {% csrf_token %}
-
-    <div class="card mb-4">
-        <div class="card-header bg-danger text-white"><i class="bi bi-heart-pulse-fill"></i> أولاً: المسح الصحي</div>
-        <div class="card-body">
-            <div class="survey-section-title fw-bold mb-2"><i class="bi bi-person-vcard"></i> الحالة الصحية</div>
-            <div class="survey-box">
-                <div class="survey-q fw-bold">1) هل يعاني الطالب من أي مرض مزمن؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="h_c_n" {% if not form.chronic_disease.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_c_n">لا</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="chronic_disease" id="h_c_y" {% if form.chronic_disease.value %}checked{% endif %}> <label class="form-check-label" for="h_c_y">نعم، يرجى التوضيح:</label></div>
-                    <div class="mt-2" data-field {% if not form.chronic_disease.value %}hidden{% endif %}><input type="text" class="form-control" name="chronic_disease_details" value="{{ form.chronic_disease_details.value|default:'' }}" placeholder="يرجى التوضيح"></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يتناول الطالب أدوية بشكل منتظم؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="h_m1" {% if not form.regular_medication.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_m1">لا</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="regular_medication" id="h_m2" {% if form.regular_medication.value %}checked{% endif %}> <label class="form-check-label" for="h_m2">نعم، اذكر اسم الدواء:</label></div>
-                    <div class="mt-2" data-field {% if not form.regular_medication.value %}hidden{% endif %}><input type="text" class="form-control" name="medication_name" value="{{ form.medication_name.value|default:'' }}" placeholder="اذكر اسم الدواء"></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل لدى الطالب أي حساسية؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="h_a1" {% if not form.has_allergy.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_a1">لا</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="has_allergy" id="h_a2" {% if form.has_allergy.value %}checked{% endif %}> <label class="form-check-label" for="h_a2">نعم، تجاه:</label></div>
-                </div>
-                <div class="ms-4 survey-multi mt-2">
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="allergy_drugs" id="h_ad" {% if form.allergy_drugs.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_ad">أدوية</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="allergy_food" id="h_af" {% if form.allergy_food.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_af">أطعمة</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="allergy_dust" id="h_au" {% if form.allergy_dust.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_au">غبار</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="allergy_other" id="h_ao" {% if form.allergy_other.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_ao">أخرى:</label></div>
-                    <input type="text" class="form-control form-control-sm mt-1" name="allergy_other_text" value="{{ form.allergy_other.value|default:'' }}" placeholder="حساسية أخرى (اذكرها)"></div>
-
-                <div class="survey-q fw-bold mt-3">هل يعاني الطالب من:</div>
-                <div class="survey-multi">
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="condition_asthma" id="h_s1" {% if form.condition_asthma.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s1">الربو</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="condition_diabetes" id="h_s2" {% if form.condition_diabetes.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s2">السكري</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="condition_epilepsy" id="h_s3" {% if form.condition_epilepsy.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s3">الصرع</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="condition_heart" id="h_s4" {% if form.condition_heart.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s4">مشاكل في القلب</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="condition_hearing" id="h_s5" {% if form.condition_hearing.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s5">ضعف في السمع</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="condition_vision" id="h_s6" {% if form.condition_vision.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s6">ضعف في البصر</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input no-solo" name="condition_none" id="h_s7" {% if form.condition_none.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_s7">لا يوجد</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يحتاج الطالب إلى نظارات طبية؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="needs_glasses" id="h_g1" {% if form.needs_glasses.value %}checked{% endif %}> <label class="form-check-label" for="h_g1">نعم</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input survey-check-label" id="h_g2" {% if not form.needs_glasses.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_g2">لا</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يحتاج الطالب إلى أي رعاية صحية خاصة أثناء الدوام؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="h_r1" {% if not form.special_care.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="h_r1">لا</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="special_care" id="h_r2" {% if form.special_care.value %}checked{% endif %}> <label class="form-check-label" for="h_r2">نعم، يرجى التوضيح:</label></div>
-                    <div class="mt-2" data-field {% if not form.special_care.value %}hidden{% endif %}><input type="text" class="form-control" name="special_care_details" value="{{ form.special_care_details.value|default:'' }}" placeholder="يرجى التوضيح"></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">في حال حدوث طارئ، هل يوجد تعليمات خاصة للطبيب أو المدرسة؟</div>
-                <textarea class="form-control" name="emergency_instructions" rows="3" placeholder="اكتب أي تعليمات خاصة">{% if form.emergency_instructions.value %}{{ form.emergency_instructions.value }}{% else %}{% endif %}</textarea>
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white"><i class="bi bi-people-fill"></i> ثانياً: المسح الاجتماعي</div>
-        <div class="card-body">
-            <div class="fw-bold mb-2"><i class="bi bi-house-heart"></i> الوضع الأسري</div>
-            <div class="survey-box">
-                <div class="survey-q fw-bold">مع من يعيش الطالب؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="lives_with" value="parents" id="s_l1" {% if form.lives_with.value == 'parents' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_l1">الأب والأم</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="lives_with" value="father" id="s_l2" {% if form.lives_with.value == 'father' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_l2">الأب فقط</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="lives_with" value="mother" id="s_l3" {% if form.lives_with.value == 'mother' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_l3">الأم فقط</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="lives_with" value="relative" id="s_l4" {% if form.lives_with.value == 'relative' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_l4">أحد الأقارب</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="lives_with" value="other" id="s_l5" data-target="--lw-other" {% if form.lives_with.value == 'other' %}checked{% endif %}> <label class="form-check-label" for="s_l5">أخرى:</label></div>
-                    <div class="mt-2" data-field id="--lw-other" {% if form.lives_with.value != 'other' %}hidden{% endif %}><input type="text" class="form-control form-control-sm" name="lives_with_other" value="{{ form.lives_with_other.value|default:'' }}" placeholder="اذكر من يعيش معه"></div>
-                </div>
-
-                <div class="row g-3 mt-2">
-                    <div class="col-md-6"><label class="form-label mb-0 fw-bold">عدد أفراد الأسرة:</label> <input type="number" min="1" class="form-control" name="family_members_count" value="{{ form.family_members_count.value|default_if_none:'' }}"></div>
-                    <div class="col-md-6"><label class="form-label mb-0 fw-bold">عدد الإخوة الذين يدرسون في المدرسة:</label> <input type="number" min="0" class="form-control" name="siblings_in_school_count" value="{{ form.siblings_in_school_count.value|default_if_none:'' }}"></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يعاني الطالب من أي صعوبات تؤثر على دراسته؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="s_d1" {% if not form.study_difficulties.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_d1">لا</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="study_difficulties" id="s_d2" {% if form.study_difficulties.value %}checked{% endif %}> <label class="form-check-label" for="s_d2">نعم، يرجى التوضيح:</label></div>
-                    <div class="mt-2" data-field {% if not form.study_difficulties.value %}hidden{% endif %}><input type="text" class="form-control" name="study_difficulties_details" value="{{ form.study_difficulties_details.value|default:'' }}" placeholder="يرجى التوضيح"></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يحتاج الطالب إلى دعم في أحد الجوانب التالية؟</div>
-                <div class="survey-multi">
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="support_academic" id="s_s1" {% if form.support_academic.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_s1">أكاديمي</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="support_psychological" id="s_s2" {% if form.support_psychological.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_s2">نفسي</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="support_social" id="s_s3" {% if form.support_social.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_s3">اجتماعي</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input no-solo" name="support_none" id="s_s4" {% if form.support_none.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_s4">لا يحتاج</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل لدى الطالب مكان مناسب للمذاكرة في المنزل؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="has_study_place" id="s_p1" {% if form.has_study_place.value %}checked{% endif %}> <label class="form-check-label" for="s_p1">نعم</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="s_p2" {% if not form.has_study_place.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_p2">لا</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يمتلك الطالب:</div>
-                <div class="survey-multi">
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="has_smartphone" id="s_t1" {% if form.has_smartphone.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_t1">هاتف ذكي</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="has_computer" id="s_t2" {% if form.has_computer.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_t2">جهاز حاسوب</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input multi-opt" name="has_internet" id="s_t3" {% if form.has_internet.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_t3">اتصال بالإنترنت</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input no-solo" name="has_no_device" id="s_t4" {% if form.has_no_device.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_t4">لا يتوفر أي منها</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل يشارك الطالب في أنشطة رياضية أو ثقافية خارج المدرسة؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="participates_activities" id="s_a1" {% if form.participates_activities.value %}checked{% endif %}> <label class="form-check-label" for="s_a1">نعم</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="s_a2" {% if not form.participates_activities.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_a2">لا</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل لدى الأسرة أي ظروف خاصة قد تؤثر على متابعة الطالب في المدرسة؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="s_v1" {% if not form.family_special_conditions.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_v1">لا</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="family_special_conditions" id="s_v2" {% if form.family_special_conditions.value %}checked{% endif %}> <label class="form-check-label" for="s_v2">نعم (اختياري):</label></div>
-                    <div class="mt-2" data-field {% if not form.family_special_conditions.value %}hidden{% endif %}><input type="text" class="form-control" name="family_special_conditions_details" value="{{ form.family_special_conditions_details.value|default:'' }}" placeholder="نعم (اختياري)"></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">هل ترغب الأسرة في التواصل مع المرشد التربوي عند الحاجة؟</div>
-                <div class="survey-pair">
-                    <div class="form-check"><input type="checkbox" class="form-check-input" name="contact_counselor" id="s_c1" {% if form.contact_counselor.value %}checked{% endif %}> <label class="form-check-label" for="s_c1">نعم</label></div>
-                    <div class="form-check"><input type="checkbox" class="form-check-input" id="s_c2" {% if not form.contact_counselor.value %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_c2">لا</label></div>
-                </div>
-
-                <div class="survey-q fw-bold mt-3">أفضل وسيلة للتواصل مع ولي الأمر:</div>
-                <div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input" name="contact_method" value="phone" id="s_m1" {% if form.contact_method.value == 'phone' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_m1">اتصال هاتفي</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input" name="contact_method" value="whatsapp" id="s_m2" {% if form.contact_method.value == 'whatsapp' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_m2">واتساب</label></div>
-                    <div class="form-check form-check-inline"><input type="checkbox" class="form-check-input" name="contact_method" value="sms" id="s_m3" {% if form.contact_method.value == 'sms' %}checked{% endif %}> <label class="form-check-label survey-check-label" for="s_m3">رسالة نصية</label></div>
-                </div>
-            </div>
-
-            <div class="fw-bold mt-4 mb-2"><i class="bi bi-pencil-square"></i> أسئلة اختيارية يمكن إضافتها</div>
-            <div class="survey-box">
-                <div class="survey-sub">ما أبرز نقاط القوة لدى ابنكم/ابنتكم؟</div>
-                <textarea class="form-control" name="strengths" rows="2">{% if form.strengths.value %}{{ form.strengths.value }}{% endif %}</textarea>
-                <div class="survey-sub mt-2">ما أبرز الصعوبات التي تواجهه؟</div>
-                <textarea class="form-control" name="difficulties_notes" rows="2">{% if form.difficulties_notes.value %}{{ form.difficulties_notes.value }}{% endif %}</textarea>
-                <div class="survey-sub mt-2">ما المواد التي يحتاج فيها إلى دعم؟</div>
-                <textarea class="form-control" name="subjects_need_support" rows="2">{% if form.subjects_need_support.value %}{{ form.subjects_need_support.value }}{% endif %}</textarea>
-                <div class="survey-sub mt-2">هل لديكم اقتراحات تساعد المدرسة في خدمة الطالب بشكل أفضل؟</div>
-                <textarea class="form-control" name="suggestions" rows="2">{% if form.suggestions.value %}{{ form.suggestions.value }}{% endif %}</textarea>
-            </div>
-        </div>
-    </div>
-
-    <div class="text-center mb-4">
-        <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check2-circle"></i> حفظ بيانات المسح</button>
-    </div>
-</form>
 {% endblock %}

@@ -331,6 +331,35 @@ class SubjectForm(forms.ModelForm):
 
 
 class StudentSurveyForm(forms.ModelForm):
+    YES_NO_CHOICES = (('True', 'نعم'), ('False', 'لا'))
+    YES_NO_FIELD = {
+        'required': True,
+        'choices': YES_NO_CHOICES,
+        'coerce': lambda value: value == 'True',
+        'empty_value': None,
+    }
+
+    owns_personal_phone = forms.TypedChoiceField(
+        label='هل ابنكم يمتلك جوالاً خاصاً به؟',
+        **YES_NO_FIELD,
+        widget=forms.RadioSelect(choices=YES_NO_CHOICES),
+    )
+    parent_monitors_content = forms.TypedChoiceField(
+        label='هل تراقبون ما يشاهده ابنكم باستمرار؟',
+        **YES_NO_FIELD,
+        widget=forms.RadioSelect(choices=YES_NO_CHOICES),
+    )
+    phone_deprivation_difficulty = forms.TypedChoiceField(
+        label='هل تواجهون صعوبة عند حرمان ابنكم من الجوال؟',
+        **YES_NO_FIELD,
+        widget=forms.RadioSelect(choices=YES_NO_CHOICES),
+    )
+    unusual_behavior_when_phone_removed = forms.TypedChoiceField(
+        label='هل تلاحظون تصرفات غريبة على ابنكم عند حرمانه من الجوال؟',
+        **YES_NO_FIELD,
+        widget=forms.RadioSelect(choices=YES_NO_CHOICES),
+    )
+
     class Meta:
         model = StudentSurvey
         fields = [
@@ -343,6 +372,8 @@ class StudentSurveyForm(forms.ModelForm):
             'needs_glasses',
             'special_care', 'special_care_details',
             'emergency_instructions',
+            'owns_personal_phone', 'parent_monitors_content', 'phone_deprivation_difficulty',
+            'unusual_behavior_when_phone_removed',
             # social
             'lives_with', 'lives_with_other',
             'family_members_count', 'siblings_in_school_count',
