@@ -172,9 +172,10 @@ def permissions_from_post(post_data):
     return result
 
 
-def permission_sections(allowed_set=None, mixed_set=None):
+def permission_sections(allowed_set=None, mixed_set=None, assignment_details=None):
     allowed_set = allowed_set or set()
     mixed_set = mixed_set or set()
+    assignment_details = assignment_details or {}
     schema = permission_schema()
     return [
         {
@@ -187,6 +188,9 @@ def permission_sections(allowed_set=None, mixed_set=None):
                     'token': f'{module}_{action}',
                     'checked': f'{module}_{action}' in allowed_set,
                     'mixed': f'{module}_{action}' in mixed_set,
+                    'assigned_count': assignment_details.get(f'{module}_{action}', {}).get('count'),
+                    'total_count': assignment_details.get(f'{module}_{action}', {}).get('total'),
+                    'assigned_users': assignment_details.get(f'{module}_{action}', {}).get('users', []),
                 }
                 for action in schema[module]
             ],
@@ -375,12 +379,12 @@ def student_list(request):
     profile = user.profile
 
     if profile.role == 'admin':
-        students = sort_students(Student.objects.all().select_related('student_class'))
+        students = sort_students(Student.objects.all().select_related('student_class', 'user'))
     elif profile.role == 'teacher':
         try:
             teacher = user.teacher_profile
             classes = teacher.classes.all().order_by('name')
-            students = sort_students(Student.objects.filter(student_class__in=classes).select_related('student_class'))
+            students = sort_students(Student.objects.filter(student_class__in=classes).select_related('student_class', 'user'))
         except Teacher.DoesNotExist:
             students = Student.objects.none()
             classes = Class.objects.none()
@@ -390,7 +394,17 @@ def student_list(request):
 
     if profile.role == 'admin':
         classes = Class.objects.all().order_by('name')
-    return render(request, 'school/student_list.html', {'students': students, 'classes': classes})
+    student_stats = {
+        'total': len(students),
+        'with_class': sum(1 for student in students if student.student_class_id),
+        'without_class': sum(1 for student in students if not student.student_class_id),
+        'active_accounts': sum(1 for student in students if student.user.is_active),
+    }
+    return render(request, 'school/student_list.html', {
+        'students': students,
+        'classes': classes,
+        'student_stats': student_stats,
+    })
 
 
 @login_required
@@ -2313,18 +2327,39 @@ def role_permissions(request):
 
     if request.method == 'POST':
         role = request.POST.get('role', role)
+        if role not in dict(Profile.ROLE_CHOICES):
+            role = 'student'
         action_kind = request.POST.get('action_kind', 'default')  # 'default' | 'custom'
         if action_kind == 'custom':
             new_perms = permissions_from_post(request.POST)
+            preserved_permissions = {
+                (module, action)
+                for module, actions_list in permission_schema().items()
+                for action in actions_list
+                if f'preserve_perm_{module}_{action}' in request.POST
+            }
         else:
             new_perms = complete_permissions(role)
+            preserved_permissions = set()
 
         # ensure every user of that role has a UserPermission row
         users = User.objects.filter(profile__role=role)
         updated = 0
         for u in users:
-            up, _ = UserPermission.objects.get_or_create(user=u, defaults={'permissions': new_perms})
-            up.permissions = new_perms
+            try:
+                current_stored = u.custom_permissions.permissions
+            except User.custom_permissions.RelatedObjectDoesNotExist:
+                current_stored = None
+            current_effective = complete_permissions(role, current_stored)
+            user_perms = {module: list(actions) for module, actions in new_perms.items()}
+            for module, action in preserved_permissions:
+                if action in current_effective.get(module, []):
+                    if action not in user_perms[module]:
+                        user_perms[module].append(action)
+                elif action in user_perms[module]:
+                    user_perms[module].remove(action)
+            up, _ = UserPermission.objects.get_or_create(user=u, defaults={'permissions': user_perms})
+            up.permissions = user_perms
             up.save()
             updated += 1
         role_label = dict(Profile.ROLE_CHOICES).get(role, role)
@@ -2335,8 +2370,11 @@ def role_permissions(request):
     counts = User.objects.filter(profile__role__in=[r for r, _ in Profile.ROLE_CHOICES]).values('profile__role').annotate(n=Count('id'))
     count_map = {c['profile__role']: c['n'] for c in counts}
     role_counts = [(r, label, count_map.get(r, 0)) for r, label in Profile.ROLE_CHOICES]
-    role_users = list(User.objects.filter(profile__role=role).select_related('custom_permissions'))
+    role_users = list(User.objects.filter(profile__role=role).select_related(
+        'custom_permissions', 'teacher_profile', 'student_profile', 'profile'
+    ).order_by('username'))
     permission_counts = defaultdict(int)
+    permission_users = defaultdict(list)
     if role_users:
         for role_user in role_users:
             try:
@@ -2346,7 +2384,18 @@ def role_permissions(request):
             effective = complete_permissions(role, stored_permissions)
             for module, actions_list in effective.items():
                 for action in actions_list:
-                    permission_counts[f'{module}_{action}'] += 1
+                    token = f'{module}_{action}'
+                    permission_counts[token] += 1
+                    if role == 'teacher' and hasattr(role_user, 'teacher_profile'):
+                        display_name = role_user.teacher_profile.full_name
+                    elif role == 'student' and hasattr(role_user, 'student_profile'):
+                        display_name = role_user.student_profile.full_name
+                    else:
+                        display_name = role_user.first_name or role_user.username
+                    permission_users[token].append({
+                        'name': display_name,
+                        'username': role_user.username,
+                    })
         role_allowed_set = {
             token for token, count in permission_counts.items()
             if count == len(role_users)
@@ -2363,12 +2412,22 @@ def role_permissions(request):
             for action in actions_list
         }
         role_mixed_set = set()
+    assignment_details = {
+        f'{module}_{action}': {
+            'count': permission_counts.get(f'{module}_{action}', 0),
+            'total': len(role_users),
+            'users': permission_users.get(f'{module}_{action}', []),
+        }
+        for module, actions_list in permission_schema().items()
+        for action in actions_list
+    }
     return render(request, 'school/role_permissions.html', {
         'roles': Profile.ROLE_CHOICES,
-        'permission_sections': permission_sections(role_allowed_set, role_mixed_set),
+        'permission_sections': permission_sections(role_allowed_set, role_mixed_set, assignment_details),
         'default_perms': DEFAULT_PERMISSIONS,
         'selected_role': role,
         'role_counts': role_counts,
+        'role_user_count': len(role_users),
         'mixed_permissions': bool(role_mixed_set),
     })
 

@@ -49,6 +49,14 @@ class StudentExcelToolsTests(TestCase):
         self.assertContains(response, 'استيراد طلاب')
         self.assertContains(response, 'فحص الطلاب غير الموجودين')
         self.assertContains(response, reverse('check_missing_student_ids'))
+        self.assertEqual(response.context['student_stats'], {
+            'total': 1,
+            'with_class': 1,
+            'without_class': 0,
+            'active_accounts': 1,
+        })
+        self.assertContains(response, 'مركز إدارة الطلاب')
+        self.assertContains(response, 'دليل الطلاب')
 
     def test_identity_check_lists_only_missing_ids_and_writes_nothing(self):
         before_students = Student.objects.count()
