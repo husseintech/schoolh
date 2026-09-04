@@ -3702,6 +3702,9 @@ def inspection_visit_list(request):
     if not has_perm(request.user, 'inspection_visits', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    if request.method == 'POST' and not has_perm(request.user, 'inspection_visits', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة زيارة إشرافية')
+        return redirect('inspection_visit_list')
     teachers = Teacher.objects.all().order_by('full_name')
     selected_teacher = None
     scheduled_visit = None
@@ -3716,7 +3719,7 @@ def inspection_visit_list(request):
                 id=program_id,
                 teacher=selected_teacher,
             ).first()
-    if request.method == 'POST' and has_perm(request.user, 'inspection_visits', 'add'):
+    if request.method == 'POST':
         teacher_id = request.POST.get('teacher_id')
         selected_teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
         if selected_teacher:
