@@ -14,12 +14,16 @@ function checkRoleDefaults() {
     document.querySelectorAll('[name^="perm_"]').forEach(function(cb) {
         var module = cb.dataset.module;
         var action = cb.dataset.action;
+        cb.indeterminate = false;
         cb.checked = perms[module] && perms[module].includes(action);
     });
 }
 function toggleAll(checked) {
-    document.querySelectorAll('[name^="perm_"]').forEach(function(cb) { cb.checked = checked; });
+    document.querySelectorAll('[name^="perm_"]').forEach(function(cb) { cb.indeterminate = false; cb.checked = checked; });
 }
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-mixed="true"]').forEach(function(cb) { cb.indeterminate = true; });
+});
 </script>
 {% endblock %}
 {% block content %}
@@ -29,13 +33,13 @@ function toggleAll(checked) {
 .role-permissions .module-card{border:1px solid #e6ebf3;border-radius:16px;padding:16px;height:100%;background:#fff;transition:.18s ease}
 .role-permissions .module-card:hover{border-color:#bfd1ef;box-shadow:0 8px 22px rgba(29,55,95,.07)}
 .role-permissions .permission-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e1e7f0;border-radius:999px;padding:7px 11px;background:#f8fafc;cursor:pointer}
-.role-permissions .permission-chip:has(input:checked){background:#eaf2ff;border-color:#8eb4ef;color:#174f9e}
+.role-permissions .permission-chip:has(input:checked),.role-permissions .permission-chip:has(input:indeterminate){background:#eaf2ff;border-color:#8eb4ef;color:#174f9e}
 .role-permissions .sticky-actions{position:sticky;bottom:12px;z-index:5;border:1px solid #dfe6f0;border-radius:16px;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);box-shadow:0 10px 28px rgba(31,49,78,.12)}
 </style>
 <div class="role-permissions">
 <div class="card intro-card mb-3">
     <div class="card-body p-4 position-relative" style="z-index:1"><i class="bi bi-shield-fill-check fs-2"></i><h4 class="mt-2">إدارة صلاحيات الدور</h4>
-        <p class="mb-0 opacity-75">ابدأ بالصلاحيات الافتراضية الجاهزة، ثم أضف أو أزل ما يناسب عمل كل دور.</p>
+        <p class="mb-0 opacity-75">تعرض الصفحة الصلاحيات المحفوظة فعليًا، ويمكنك إضافة ما يناسب عمل كل دور أو إزالته.</p>
     </div>
 </div>
 <div class="card mb-3 border-0 shadow-sm">
@@ -44,6 +48,9 @@ function toggleAll(checked) {
             <i class="bi bi-exclamation-triangle-fill"></i>
             عند التطبيق ستصبح الاختيارات الظاهرة هي صلاحيات <strong>كل حسابات الدور المختار</strong>، وستستبدل أي تخصيصات فردية سابقة لها.
         </div>
+        {% if mixed_permissions %}
+        <div class="alert alert-info small mb-3"><i class="bi bi-info-circle-fill"></i> العلامة المتوسطة تعني أن الصلاحية ممنوحة لبعض حسابات هذا الدور فقط. عند التطبيق ستصبح الاختيارات موحدة للجميع.</div>
+        {% endif %}
         <form method="get" class="row g-3">
             <div class="col-md-6">
                 <label class="form-label">اختر الدور</label>
@@ -77,7 +84,7 @@ function toggleAll(checked) {
                         <div class="fw-bold mb-3"><i class="bi bi-folder2-open text-primary ms-1"></i>{{ m.label }}</div>
                         <div class="d-flex flex-wrap gap-2">
                             {% for a in m.actions %}
-                            <label class="permission-chip"><input type="checkbox" name="perm_{{ m.key }}_{{ a.key }}" data-module="{{ m.key }}" data-action="{{ a.key }}" class="form-check-input mt-0" {% if a.checked %}checked{% endif %}><span class="small">{{ a.label }}</span></label>
+                            <label class="permission-chip"><input type="checkbox" name="perm_{{ m.key }}_{{ a.key }}" data-module="{{ m.key }}" data-action="{{ a.key }}" data-mixed="{% if a.mixed %}true{% else %}false{% endif %}" class="form-check-input mt-0" {% if a.checked %}checked{% endif %}><span class="small">{{ a.label }}</span></label>
                             {% endfor %}
                         </div>
                     </div>
@@ -85,7 +92,7 @@ function toggleAll(checked) {
                 {% endfor %}
             </div>
             <div class="sticky-actions p-3 mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span class="small text-muted"><i class="bi bi-info-circle"></i> الاختيارات الافتراضية للدور معروضة تلقائيًا.</span>
+                <span class="small text-muted"><i class="bi bi-info-circle"></i> الاختيارات المعروضة هي الصلاحيات المحفوظة حاليًا.</span>
                 <div class="d-flex gap-2"><a href="{% url 'account_list' %}" class="btn btn-outline-secondary">رجوع</a><button type="submit" name="action_kind" value="custom" class="btn btn-primary"><i class="bi bi-check2-circle"></i> تطبيق على جميع الحسابات</button></div>
             </div>
         </form>

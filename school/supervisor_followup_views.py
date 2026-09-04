@@ -16,6 +16,12 @@ def _can_followup(user):
     return has_perm(user, 'supervisor_visits', 'edit') or user.profile.role in ('admin', 'vice_principal')
 
 
+def _teacher_scope(user):
+    if user.profile.role != 'teacher':
+        return None
+    return getattr(user, 'teacher_profile', None)
+
+
 def _is_followed(visit):
     return hasattr(visit, 'management_followup') or bool((visit.admin_followup or '').strip())
 
@@ -26,13 +32,19 @@ def supervisor_visit_list(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
 
+    scoped_teacher = _teacher_scope(request.user)
     teachers = Teacher.objects.all().order_by('full_name')
+    if scoped_teacher:
+        teachers = teachers.filter(id=scoped_teacher.id)
     selected_teacher = None
     teacher_id = request.GET.get('teacher_id', '').strip()
     status = request.GET.get('status', '').strip()
 
     visits = SupervisorVisit.objects.select_related('teacher').select_related('management_followup')
-    if teacher_id:
+    if scoped_teacher:
+        selected_teacher = scoped_teacher
+        visits = visits.filter(teacher=scoped_teacher)
+    elif teacher_id:
         selected_teacher = get_object_or_404(Teacher, id=teacher_id)
         visits = visits.filter(teacher=selected_teacher)
     elif not status:
@@ -48,7 +60,7 @@ def supervisor_visit_list(request):
         if not has_perm(request.user, 'supervisor_visits', 'add'):
             messages.error(request, 'ليس لديك صلاحية للإضافة')
             return redirect('supervisor_visit_list')
-        teacher_id = request.POST.get('teacher_id')
+        teacher_id = str(scoped_teacher.id) if scoped_teacher else request.POST.get('teacher_id')
         selected_teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
         if not selected_teacher:
             messages.error(request, 'الرجاء اختيار معلم')
@@ -91,8 +103,11 @@ def supervisor_visit_list(request):
     for visit in visits:
         visit.followed = _is_followed(visit)
 
-    pending_count = SupervisorVisit.objects.filter(management_followup__isnull=True, admin_followup='').count()
-    followed_count = SupervisorVisit.objects.exclude(management_followup__isnull=True, admin_followup='').count()
+    count_visits = SupervisorVisit.objects.all()
+    if scoped_teacher:
+        count_visits = count_visits.filter(teacher=scoped_teacher)
+    pending_count = count_visits.filter(management_followup__isnull=True, admin_followup='').count()
+    followed_count = count_visits.exclude(management_followup__isnull=True, admin_followup='').count()
     return render(request, 'school/supervisor_visit_list.html', {
         'teachers': teachers,
         'selected_teacher': selected_teacher,
@@ -113,6 +128,10 @@ def supervisor_visit_report(request, visit_id):
         SupervisorVisit.objects.select_related('teacher').select_related('management_followup'),
         id=visit_id,
     )
+    scoped_teacher = _teacher_scope(request.user)
+    if scoped_teacher and visit.teacher_id != scoped_teacher.id:
+        messages.error(request, 'هذا التقرير لا يخص حسابك')
+        return redirect('dashboard')
     followup = getattr(visit, 'management_followup', None)
     return render(request, 'school/supervisor_visit_report.html', {
         'visit': visit,
@@ -131,6 +150,10 @@ def supervisor_visit_followup(request, visit_id):
         return redirect('dashboard')
 
     visit = get_object_or_404(SupervisorVisit.objects.select_related('teacher'), id=visit_id)
+    scoped_teacher = _teacher_scope(request.user)
+    if scoped_teacher and visit.teacher_id != scoped_teacher.id:
+        messages.error(request, 'هذه الزيارة لا تخص حسابك')
+        return redirect('dashboard')
     followup = SupervisorVisitFollowup.objects.filter(visit=visit).first()
 
     if request.method == 'POST':
@@ -165,6 +188,10 @@ def supervisor_visits_report(request):
 
     visits = SupervisorVisit.objects.select_related('teacher').select_related('management_followup').order_by('-visit_date')
     teachers = Teacher.objects.all().order_by('full_name')
+    scoped_teacher = _teacher_scope(request.user)
+    if scoped_teacher:
+        visits = visits.filter(teacher=scoped_teacher)
+        teachers = teachers.filter(id=scoped_teacher.id)
     selected_teacher_id = request.GET.get('teacher_id', '').strip()
     status = request.GET.get('status', '').strip()
     if selected_teacher_id:
