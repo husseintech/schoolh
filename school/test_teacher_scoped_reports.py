@@ -187,3 +187,39 @@ class RolePermissionPersistenceTests(TestCase):
                 UserPermission.objects.get(user=user).permissions['inspection_visits'],
                 [],
             )
+
+    def test_mixed_permission_shows_count_and_assigned_account(self):
+        UserPermission.objects.create(
+            user=self.teacher_users[0],
+            permissions={'inspection_visits': ['view']},
+        )
+
+        response = self.client.get(reverse('role_permissions'), {'role': 'teacher'})
+        action = self._inspection_view_action(response)
+
+        self.assertTrue(action['mixed'])
+        self.assertEqual(action['assigned_count'], 1)
+        self.assertEqual(action['total_count'], 2)
+        self.assertEqual(action['assigned_users'], [{
+            'name': 'permission-teacher-0',
+            'username': 'permission-teacher-0',
+        }])
+        self.assertContains(response, 'عرض الحسابات الممنوحة (1)')
+        self.assertContains(response, 'permission-teacher-0')
+
+    def test_untouched_mixed_permission_is_preserved_on_bulk_save(self):
+        UserPermission.objects.create(
+            user=self.teacher_users[0],
+            permissions={'inspection_visits': ['view']},
+        )
+
+        self.client.post(reverse('role_permissions'), {
+            'role': 'teacher',
+            'action_kind': 'custom',
+            'preserve_perm_inspection_visits_view': '1',
+        })
+
+        first_permissions = UserPermission.objects.get(user=self.teacher_users[0]).permissions
+        second_permissions = UserPermission.objects.get(user=self.teacher_users[1]).permissions
+        self.assertEqual(first_permissions['inspection_visits'], ['view'])
+        self.assertEqual(second_permissions['inspection_visits'], [])
