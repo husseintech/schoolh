@@ -11,5 +11,11 @@
       "src": "/(.*)",
       "dest": "school_management/wsgi.py"
     }
+  ],
+  "crons": [
+    {
+      "path": "/",
+      "schedule": "43 3 * * *"
+    }
   ]
 }
