@@ -28,6 +28,13 @@ def sort_students(students):
     return sorted(students, key=lambda s: arabic_sort_key(s.full_name))
 
 
+def current_teacher_scope(user):
+    """Return the linked teacher only when the signed-in account is a teacher."""
+    if getattr(getattr(user, 'profile', None), 'role', None) != 'teacher':
+        return None
+    return getattr(user, 'teacher_profile', None)
+
+
 def log_action(user, action, details=''):
     if not user or not user.is_authenticated:
         return
@@ -165,8 +172,9 @@ def permissions_from_post(post_data):
     return result
 
 
-def permission_sections(allowed_set=None):
+def permission_sections(allowed_set=None, mixed_set=None):
     allowed_set = allowed_set or set()
+    mixed_set = mixed_set or set()
     schema = permission_schema()
     return [
         {
@@ -178,6 +186,7 @@ def permission_sections(allowed_set=None):
                     'label': ACTION_LABELS[action],
                     'token': f'{module}_{action}',
                     'checked': f'{module}_{action}' in allowed_set,
+                    'mixed': f'{module}_{action}' in mixed_set,
                 }
                 for action in schema[module]
             ],
@@ -2326,18 +2335,41 @@ def role_permissions(request):
     counts = User.objects.filter(profile__role__in=[r for r, _ in Profile.ROLE_CHOICES]).values('profile__role').annotate(n=Count('id'))
     count_map = {c['profile__role']: c['n'] for c in counts}
     role_counts = [(r, label, count_map.get(r, 0)) for r, label in Profile.ROLE_CHOICES]
-    role_defaults = complete_permissions(role)
-    role_allowed_set = {
-        f'{module}_{action}'
-        for module, actions_list in role_defaults.items()
-        for action in actions_list
-    }
+    role_users = list(User.objects.filter(profile__role=role).select_related('custom_permissions'))
+    permission_counts = defaultdict(int)
+    if role_users:
+        for role_user in role_users:
+            try:
+                stored_permissions = role_user.custom_permissions.permissions
+            except User.custom_permissions.RelatedObjectDoesNotExist:
+                stored_permissions = None
+            effective = complete_permissions(role, stored_permissions)
+            for module, actions_list in effective.items():
+                for action in actions_list:
+                    permission_counts[f'{module}_{action}'] += 1
+        role_allowed_set = {
+            token for token, count in permission_counts.items()
+            if count == len(role_users)
+        }
+        role_mixed_set = {
+            token for token, count in permission_counts.items()
+            if 0 < count < len(role_users)
+        }
+    else:
+        role_defaults = complete_permissions(role)
+        role_allowed_set = {
+            f'{module}_{action}'
+            for module, actions_list in role_defaults.items()
+            for action in actions_list
+        }
+        role_mixed_set = set()
     return render(request, 'school/role_permissions.html', {
         'roles': Profile.ROLE_CHOICES,
-        'permission_sections': permission_sections(role_allowed_set),
+        'permission_sections': permission_sections(role_allowed_set, role_mixed_set),
         'default_perms': DEFAULT_PERMISSIONS,
         'selected_role': role,
         'role_counts': role_counts,
+        'mixed_permissions': bool(role_mixed_set),
     })
 
 
@@ -2643,10 +2675,17 @@ def visit_program_list(request):
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    if request.method == 'POST' and not has_perm(request.user, 'visit_program', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة موعد زيارة')
+        return redirect('visit_program_list')
+    scoped_teacher = current_teacher_scope(request.user)
     teachers = Teacher.objects.all().order_by('full_name')
     entries = VisitProgram.objects.select_related('teacher')
-    if request.method == 'POST' and has_perm(request.user, 'visit_program', 'add'):
-        teacher_id = request.POST.get('teacher_id')
+    if scoped_teacher:
+        teachers = teachers.filter(id=scoped_teacher.id)
+        entries = entries.filter(teacher=scoped_teacher)
+    if request.method == 'POST':
+        teacher_id = str(scoped_teacher.id) if scoped_teacher else request.POST.get('teacher_id')
         teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
         if teacher:
             VisitProgram.objects.create(
@@ -2671,7 +2710,11 @@ def visit_program_delete(request, entry_id):
     if not has_perm(request.user, 'visit_program', 'delete'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    entry = get_object_or_404(VisitProgram, id=entry_id)
+    entries = VisitProgram.objects.all()
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        entries = entries.filter(teacher=scoped_teacher)
+    entry = get_object_or_404(entries, id=entry_id)
     entry.delete()
     messages.success(request, 'تم حذف السجل بنجاح')
     return redirect('visit_program_list')
@@ -2682,7 +2725,11 @@ def visit_program_update(request, entry_id):
     if not has_perm(request.user, 'visit_program', 'add'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    entry = get_object_or_404(VisitProgram, id=entry_id)
+    entries = VisitProgram.objects.all()
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        entries = entries.filter(teacher=scoped_teacher)
+    entry = get_object_or_404(entries, id=entry_id)
     if request.method == 'POST':
         entry.notes = request.POST.get('notes', '')
         visit_date = request.POST.get('visit_date', '')
@@ -2701,6 +2748,9 @@ def visit_program_report(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     entries = VisitProgram.objects.select_related('teacher').order_by('-visit_date', 'teacher__full_name')
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        entries = entries.filter(teacher=scoped_teacher)
     info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
         'entries': entries,
@@ -2714,6 +2764,9 @@ def visit_program_missing_notes_report(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     entries = VisitProgram.objects.filter(Q(notes__isnull=True) | Q(notes='')).filter(visit_date__gte=date.today()).select_related('teacher').order_by('visit_date', 'teacher__full_name')
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        entries = entries.filter(teacher=scoped_teacher)
     info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
         'entries': entries,
@@ -3705,11 +3758,14 @@ def inspection_visit_list(request):
     if request.method == 'POST' and not has_perm(request.user, 'inspection_visits', 'add'):
         messages.error(request, 'ليس لديك صلاحية لإضافة زيارة إشرافية')
         return redirect('inspection_visit_list')
+    scoped_teacher = current_teacher_scope(request.user)
     teachers = Teacher.objects.all().order_by('full_name')
+    if scoped_teacher:
+        teachers = teachers.filter(id=scoped_teacher.id)
     selected_teacher = None
     scheduled_visit = None
     visits = InspectionVisit.objects.none()
-    teacher_id = request.GET.get('teacher_id', '')
+    teacher_id = str(scoped_teacher.id) if scoped_teacher else request.GET.get('teacher_id', '')
     if teacher_id:
         selected_teacher = get_object_or_404(Teacher, id=teacher_id)
         visits = InspectionVisit.objects.filter(teacher=selected_teacher).order_by('-visit_date')
@@ -3720,7 +3776,7 @@ def inspection_visit_list(request):
                 teacher=selected_teacher,
             ).first()
     if request.method == 'POST':
-        teacher_id = request.POST.get('teacher_id')
+        teacher_id = str(scoped_teacher.id) if scoped_teacher else request.POST.get('teacher_id')
         selected_teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
         if selected_teacher:
             visit = InspectionVisit.objects.create(
@@ -3767,7 +3823,10 @@ def inspection_visit_list(request):
 @login_required
 def inspection_visit_report(request, visit_id):
     visit = get_object_or_404(InspectionVisit.objects.select_related('teacher__user'), id=visit_id)
-    teacher = getattr(request.user, 'teacher_profile', None)
+    teacher = current_teacher_scope(request.user)
+    if teacher and visit.teacher_id != teacher.id:
+        messages.error(request, 'هذا التقرير لا يخص حسابك')
+        return redirect('dashboard')
     can_view_own_report = teacher is not None and visit.teacher_id == teacher.id
     if not has_perm(request.user, 'inspection_visits', 'view') and not can_view_own_report:
         messages.error(request, 'ليس لديك صلاحية')
@@ -3785,6 +3844,9 @@ def inspection_visits_all_report(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     visits = InspectionVisit.objects.all().select_related('teacher').order_by('-visit_date')
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        visits = visits.filter(teacher=scoped_teacher)
     info = SchoolInfo.objects.first()
     return render(request, 'school/inspection_visits_all_report.html', {
         'visits': visits,
@@ -4097,8 +4159,12 @@ def teacher_followups(request):
     if not has_perm(request.user, 'teacher_followup', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    if request.method == 'POST' and has_perm(request.user, 'teacher_followup', 'add'):
-        teacher_id = request.POST.get('teacher_id', '')
+    if request.method == 'POST' and not has_perm(request.user, 'teacher_followup', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة متابعة')
+        return redirect('teacher_followups')
+    scoped_teacher = current_teacher_scope(request.user)
+    if request.method == 'POST':
+        teacher_id = str(scoped_teacher.id) if scoped_teacher else request.POST.get('teacher_id', '')
         teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
         if not teacher:
             messages.error(request, 'اختر معلماً')
@@ -4131,6 +4197,9 @@ def teacher_followups(request):
         followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher', 'created_by').order_by('teacher__full_name', '-follow_date')
         month_value, month_label_text = f'{year}-{mon:02d}', month_label(year, mon)
     teachers = Teacher.objects.all().order_by('full_name')
+    if scoped_teacher:
+        followups = followups.filter(teacher=scoped_teacher)
+        teachers = teachers.filter(id=scoped_teacher.id)
     return render(request, 'school/teacher_followups.html', {
         'followups': followups,
         'teachers': teachers,
@@ -4149,7 +4218,11 @@ def teacher_followup_delete(request, followup_id):
     if not has_perm(request.user, 'teacher_followup', 'delete'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    f = get_object_or_404(TeacherFollowup, id=followup_id)
+    followups = TeacherFollowup.objects.all()
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        followups = followups.filter(teacher=scoped_teacher)
+    f = get_object_or_404(followups, id=followup_id)
     f.delete()
     messages.success(request, 'تم حذف متابعة المعلم')
     return redirect('teacher_followups')
@@ -4169,6 +4242,9 @@ def teacher_followup_report(request):
         year, mon = parse_month(month)
         followups = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).select_related('teacher').order_by('teacher__full_name', '-follow_date')
         month_value, month_label_text = f'{year}-{mon:02d}', month_label(year, mon)
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        followups = followups.filter(teacher=scoped_teacher)
     info = SchoolInfo.objects.first()
     return render(request, 'school/teacher_followup_report.html', {
         'followups': followups,
@@ -4196,6 +4272,9 @@ def teacher_followup_missing(request):
         followed_ids = TeacherFollowup.objects.filter(follow_date__year=year, follow_date__month=mon).values_list('teacher_id', flat=True)
         month_value, month_label_text = f'{year}-{mon:02d}', month_label(year, mon)
     missing = Teacher.objects.exclude(id__in=followed_ids).order_by('full_name')
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        missing = missing.filter(id=scoped_teacher.id)
     info = SchoolInfo.objects.first()
     return render(request, 'school/teacher_followup_missing.html', {
         'missing': missing,
@@ -4204,7 +4283,7 @@ def teacher_followup_missing(request):
         'month_value': month_value,
         'month_label': month_label_text,
         'is_all': is_all,
-        'total_teachers': Teacher.objects.count(),
+        'total_teachers': 1 if scoped_teacher else Teacher.objects.count(),
         'info': info,
     })
 
@@ -4214,8 +4293,12 @@ def reciprocal_visit_list(request):
     if not has_perm(request.user, 'reciprocal_visits', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    if request.method == 'POST' and has_perm(request.user, 'reciprocal_visits', 'add'):
-        visitor_id = request.POST.get('visitor_id', '')
+    if request.method == 'POST' and not has_perm(request.user, 'reciprocal_visits', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة زيارة تبادلية')
+        return redirect('reciprocal_visit_list')
+    scoped_teacher = current_teacher_scope(request.user)
+    if request.method == 'POST':
+        visitor_id = str(scoped_teacher.id) if scoped_teacher else request.POST.get('visitor_id', '')
         host_id = request.POST.get('host_id', '')
         visitor = get_object_or_404(Teacher, id=visitor_id) if visitor_id else None
         host = get_object_or_404(Teacher, id=host_id) if host_id else None
@@ -4239,6 +4322,8 @@ def reciprocal_visit_list(request):
         return redirect('reciprocal_visit_list')
     visits = ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class').order_by('-visit_date', '-created_at')
     teachers = Teacher.objects.all().order_by('full_name')
+    if scoped_teacher:
+        visits = visits.filter(Q(visitor=scoped_teacher) | Q(host=scoped_teacher))
     classes = Class.objects.all().order_by('name')
     info = SchoolInfo.objects.first()
     return render(request, 'school/reciprocal_visits.html', {
@@ -4259,6 +4344,10 @@ def reciprocal_visit_print(request, visit_id):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     visit = get_object_or_404(ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class'), id=visit_id)
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher and scoped_teacher not in (visit.visitor, visit.host):
+        messages.error(request, 'هذه الزيارة لا تخص حسابك')
+        return redirect('dashboard')
     info = SchoolInfo.objects.first()
     return render(request, 'school/reciprocal_visit_print.html', {
         'visit': visit,
@@ -4273,6 +4362,10 @@ def reciprocal_visit_report(request, visit_id):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     visit = get_object_or_404(ReciprocalVisit.objects.select_related('visitor', 'host', 'student_class', 'filled_by'), id=visit_id)
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher and scoped_teacher not in (visit.visitor, visit.host):
+        messages.error(request, 'هذه الزيارة لا تخص حسابك')
+        return redirect('dashboard')
     info = SchoolInfo.objects.first()
     return render(request, 'school/reciprocal_visit_report.html', {
         'visit': visit,
@@ -4288,6 +4381,11 @@ def reciprocal_visits_room_report(request):
         return redirect('dashboard')
     pending = ReciprocalVisit.objects.filter(completed=False).select_related('visitor', 'host', 'student_class').order_by('visit_date', '-created_at')
     done = ReciprocalVisit.objects.filter(completed=True).select_related('visitor', 'host', 'student_class').order_by('-visit_date', '-created_at')
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        teacher_filter = Q(visitor=scoped_teacher) | Q(host=scoped_teacher)
+        pending = pending.filter(teacher_filter)
+        done = done.filter(teacher_filter)
     info = SchoolInfo.objects.first()
     return render(request, 'school/reciprocal_visits_room_report.html', {
         'pending': pending,
@@ -4334,6 +4432,10 @@ def reciprocal_visit_delete(request, visit_id):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     visit = get_object_or_404(ReciprocalVisit, id=visit_id)
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher and scoped_teacher not in (visit.visitor, visit.host):
+        messages.error(request, 'هذه الزيارة لا تخص حسابك')
+        return redirect('dashboard')
     visit.delete()
     messages.success(request, 'تم حذف الزيارة التبادلية')
     return redirect('reciprocal_visit_list')
