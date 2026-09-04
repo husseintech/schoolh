@@ -1629,11 +1629,27 @@ def leave_list(request):
 
 @login_required
 def add_leave(request, student_id=None):
-    if request.user.profile.role not in ['admin', 'teacher']:
+    if not has_perm(request.user, 'leaves', 'add'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
+
+    allowed_students = Student.objects.all()
+    if request.user.profile.role == 'teacher':
+        try:
+            teacher = request.user.teacher_profile
+            allowed_students = Student.objects.filter(
+                student_class__in=teacher.classes.all()
+            ).distinct()
+        except Teacher.DoesNotExist:
+            allowed_students = Student.objects.none()
+
+    initial = {}
+    if student_id:
+        initial['student'] = get_object_or_404(allowed_students, id=student_id)
+
     if request.method == 'POST':
         form = StudentLeaveForm(request.POST)
+        form.fields['student'].queryset = allowed_students
         if form.is_valid():
             leave = form.save(commit=False)
             leave.approved_by = request.user
@@ -1647,18 +1663,12 @@ def add_leave(request, student_id=None):
                 )
             log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.leave_date}')
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
-            return redirect('leave_list')
+            if request.user.profile.role == 'admin':
+                return redirect('leave_list')
+            return redirect('student_list')
     else:
-        initial = {}
-        if student_id:
-            initial['student'] = get_object_or_404(Student, id=student_id)
         form = StudentLeaveForm(initial=initial)
-        if request.user.profile.role == 'teacher':
-            try:
-                teacher = request.user.teacher_profile
-                form.fields['student'].queryset = Student.objects.filter(student_class__in=teacher.classes.all())
-            except Teacher.DoesNotExist:
-                form.fields['student'].queryset = Student.objects.none()
+        form.fields['student'].queryset = allowed_students
     return render(request, 'school/add_leave.html', {'form': form})
 
 
@@ -1942,15 +1952,27 @@ def message_list(request):
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    messages_qs = Message.objects.filter(recipient__isnull=True).order_by('-created_at')
+    messages_qs = Message.objects.filter(
+        Q(recipient=request.user) | Q(recipient__isnull=True)
+    ).select_related('sender', 'recipient').order_by('-created_at')
     return render(request, 'school/message_list.html', {'messages_qs': messages_qs})
 
 
 @login_required
 def send_message(request, user_id=None):
-    if request.user.profile.role not in ['admin', 'teacher']:
+    if not has_perm(request.user, 'messages', 'send'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
+
+    is_student = request.user.profile.role == 'student'
+    if is_student:
+        allowed_recipients = User.objects.filter(
+            is_active=True,
+            profile__role='admin',
+        ).exclude(id=request.user.id)
+    else:
+        allowed_recipients = User.objects.filter(is_active=True).exclude(id=request.user.id)
+
     if request.method == 'POST':
         recipient_id = request.POST.get('recipient_id')
         subject = request.POST.get('subject', '').strip()
@@ -1958,7 +1980,7 @@ def send_message(request, user_id=None):
         if not recipient_id or not subject or not content:
             messages.error(request, 'الموضوع والرسالة مطلوبان')
             return redirect('send_message_to', user_id=recipient_id or 0)
-        recipient = get_object_or_404(User, id=recipient_id)
+        recipient = get_object_or_404(allowed_recipients, id=recipient_id)
         Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
         send_push(
             recipient,
@@ -1968,16 +1990,18 @@ def send_message(request, user_id=None):
         )
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
-    students = sort_students(Student.objects.all().select_related('student_class'))
-    teachers = Teacher.objects.all().order_by('full_name')
-    admins = User.objects.filter(profile__role__in=['admin', 'vice_principal', 'secretary']).select_related('profile').order_by('first_name')
+    students = [] if is_student else sort_students(Student.objects.all().select_related('student_class'))
+    teachers = Teacher.objects.none() if is_student else Teacher.objects.all().order_by('full_name')
+    admin_roles = ['admin'] if is_student else ['admin', 'vice_principal', 'secretary']
+    admins = allowed_recipients.filter(profile__role__in=admin_roles).select_related('profile').order_by('first_name')
     if user_id:
-        recipient = get_object_or_404(User, id=user_id)
+        recipient = get_object_or_404(allowed_recipients, id=user_id)
         return render(request, 'school/send_message_form.html', {'recipient': recipient})
     return render(request, 'school/send_message.html', {
         'students': students,
         'teachers': teachers,
         'admins': admins,
+        'student_admin_only': is_student,
     })
 
 

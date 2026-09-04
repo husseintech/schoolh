@@ -23,6 +23,15 @@ class HomePrincipalMessageTests(TestCase):
         self.assertContains(response, 'مدرسة الاختبار الأساسية')
         self.assertContains(response, 'توظّف التكنولوجيا')
         self.assertContains(response, 'أولياء الأمور إلى المتابعة')
+        self.assertContains(response, 'data-bs-target="#loginModal"')
+        self.assertContains(response, 'id="loginModal"')
+        self.assertEqual(response.content.decode().count('name="username"'), 1)
+
+        content = response.content.decode()
+        self.assertLess(
+            content.index('id="principal-message"'),
+            content.index('class="welcome-zone"'),
+        )
 
     def test_authenticated_home_also_shows_principal_message(self):
         admin = User.objects.create_user(username='home-admin', password='safe-password')
@@ -35,3 +44,5 @@ class HomePrincipalMessageTests(TestCase):
         self.assertContains(response, 'كلمة مدير المدرسة')
         self.assertContains(response, 'مدير الاختبار')
         self.assertContains(response, 'توظّف التكنولوجيا')
+        self.assertContains(response, 'تواصل مع إدارة المدرسة')
+        self.assertContains(response, 'فيسبوك المدرسة')
