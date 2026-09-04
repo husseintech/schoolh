@@ -1,0 +1,17 @@
+<section class="contact-zone" id="school-contact">
+  <div class="container">
+    <div class="contact-panel">
+      <div class="contact-copy">
+        <h4>تواصل مع إدارة المدرسة</h4>
+        <p>قنوات التواصل الرسمية للمدرسة تبقى في متناولك بعد تسجيل الدخول.</p>
+        {% if school_info and school_info.principal_name %}<span class="principal-name"><i class="bi bi-person-badge"></i> مدير المدرسة: {{ school_info.principal_name }}</span>{% endif %}
+      </div>
+      <div class="contact-links">
+        {% if contact_settings.school_mobile %}<a class="contact-link" href="tel:{{ contact_settings.school_mobile }}"><i class="bi bi-telephone"></i> اتصال</a>{% endif %}
+        {% if whatsapp_number %}<a class="contact-link whatsapp" href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> واتساب</a>{% endif %}
+        {% if school_info and school_info.latitude and school_info.longitude %}<button type="button" class="contact-link" data-bs-toggle="modal" data-bs-target="#schoolMapModal"><i class="bi bi-geo-alt"></i> موقع المدرسة</button>{% endif %}
+        <a class="contact-link" href="https://www.facebook.com/ALMANSOUR.SCHOOL.YATTA" target="_blank" rel="noopener"><i class="bi bi-facebook"></i> فيسبوك المدرسة</a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -2,6 +2,16 @@
 {% block title %}إرسال رسالة{% endblock %}
 {% block page_heading %}إرسال رسالة{% endblock %}
 {% block content %}
+{% if student_admin_only %}
+<style>.student-admin-message{max-width:850px;margin:auto}.student-admin-hero{background:linear-gradient(135deg,#173f61,#246e86);color:#fff;border-radius:21px;padding:25px;box-shadow:0 13px 30px rgba(23,63,97,.16)}.student-admin-hero .icon{width:53px;height:53px;border-radius:16px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:1.35rem}.admin-recipient{border:1px solid #e2e9ef;border-radius:15px;padding:14px;display:flex;align-items:center;gap:12px;background:#fff}.admin-recipient .avatar{width:43px;height:43px;border-radius:13px;background:#eaf3f8;color:#205d7a;display:grid;place-items:center}.admin-recipient .send-link{margin-right:auto}</style>
+<div class="student-admin-message">
+  <div class="student-admin-hero mb-3"><div class="d-flex align-items-center gap-3"><div class="icon"><i class="bi bi-chat-heart-fill"></i></div><div><h4 class="fw-bold mb-1">تواصل مع مدير المدرسة</h4><p class="mb-0 opacity-75">يمكنك إرسال رسالتك بأمان إلى حسابات مدير المدرسة فقط.</p></div></div></div>
+  <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-3 p-md-4"><h6 class="fw-bold mb-3">اختر حساب المدير</h6><div class="d-grid gap-2">
+    {% for a in admins %}<div class="admin-recipient"><div class="avatar"><i class="bi bi-person-badge-fill"></i></div><div><strong class="d-block">{{ a.first_name|default:a.username }}</strong><small class="text-muted">مدير المدرسة</small></div><a href="{% url 'send_message_to' a.id %}" class="btn btn-primary btn-sm send-link"><i class="bi bi-envelope-plus ms-1"></i>إرسال رسالة</a></div>
+    {% empty %}<div class="text-center text-muted py-4"><i class="bi bi-person-x d-block fs-2 mb-2"></i>لا يوجد حساب مدير متاح حالياً</div>{% endfor %}
+  </div></div></div>
+</div>
+{% else %}
 <ul class="nav nav-tabs mb-3" id="msgTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-pane" type="button" role="tab" aria-controls="students-pane" aria-selected="true">
@@ -149,6 +159,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

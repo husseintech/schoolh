@@ -5,12 +5,11 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="bi bi-envelope-fill"></i> الرسائل ({{ messages_qs|length }})</span>
-        {% if messages_qs %}
-        <form method="post" action="{% url 'delete_all_received_messages' %}" onsubmit="return confirm('هل أنت متأكد من مسح جميع الرسائل المستلمة؟')">
+        <div class="d-flex gap-2 flex-wrap"><a href="{% url 'send_message' %}" class="btn btn-primary btn-sm"><i class="bi bi-envelope-plus"></i> إرسال رسالة إلى مدير المدرسة</a>
+        {% if messages_qs %}<form method="post" action="{% url 'delete_all_received_messages' %}" onsubmit="return confirm('هل أنت متأكد من مسح جميع الرسائل المستلمة؟')">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash-fill"></i> مسح جميع الرسائل</button>
-        </form>
-        {% endif %}
+        </form>{% endif %}</div>
     </div>
     <div class="card-body p-0">
         {% if messages_qs %}
