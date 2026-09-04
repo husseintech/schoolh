@@ -28,10 +28,11 @@ class HomePrincipalMessageTests(TestCase):
         self.assertEqual(response.content.decode().count('name="username"'), 1)
 
         content = response.content.decode()
-        self.assertLess(
-            content.index('id="principal-message"'),
-            content.index('class="welcome-zone"'),
-        )
+        welcome_position = content.index('class="welcome-zone"')
+        principal_position = content.index('id="principal-message"')
+        quick_links_position = content.index('class="quick-zone"')
+        self.assertLess(welcome_position, principal_position)
+        self.assertLess(principal_position, quick_links_position)
 
     def test_authenticated_home_also_shows_principal_message(self):
         admin = User.objects.create_user(username='home-admin', password='safe-password')
