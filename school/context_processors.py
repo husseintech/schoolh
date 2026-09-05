@@ -10,7 +10,17 @@ def user_permissions(request):
     recent_notifications = []
     unread_messages_count = 0
     recent_messages = []
+    account_display_name = ''
     if request.user.is_authenticated:
+        user = request.user
+        role = getattr(getattr(user, 'profile', None), 'role', None)
+        relation = {'teacher': 'teacher_profile', 'student': 'student_profile'}.get(role)
+        person = getattr(user, relation, None) if relation else None
+        account_display_name = (
+            (getattr(person, 'full_name', '') or '').strip()
+            or user.get_full_name().strip()
+            or user.username
+        )
         send_visit_reminders()
         modules_actions = [
             ('students', 'view'), ('students', 'add'), ('students', 'edit'),
@@ -56,6 +66,7 @@ def user_permissions(request):
         unread_messages_count = Message.objects.filter(recipient=request.user, is_read=False).count()
         recent_messages = Message.objects.filter(recipient=request.user)[:5]
     return {
+        'account_display_name': account_display_name,
         'user_perms': perms,
         'school_info': SchoolInfo.objects.first(),
         'unread_notifications_count': unread_count,
