@@ -1,0 +1,46 @@
+name: Production Database Health Check
+
+on:
+  schedule:
+    # Daily check of the database currently configured in Vercel (Neon in production).
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-database-health-check
+  cancel-in-progress: true
+
+jobs:
+  check-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query the production database health endpoint
+        env:
+          HEALTHCHECK_URL: https://schoolhh.vercel.app/health/database/
+        run: |
+          set -euo pipefail
+          request_url="${HEALTHCHECK_URL}?run=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          status_code=$(curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --location \
+            --retry 3 \
+            --retry-all-errors \
+            --retry-delay 20 \
+            --connect-timeout 20 \
+            --max-time 90 \
+            --header "Cache-Control: no-cache" \
+            --output health-response.json \
+            --write-out "%{http_code}" \
+            "$request_url")
+
+          test "$status_code" = "200"
+          jq --exit-status \
+            '.status == "ok" and .database == "reachable"' \
+            health-response.json
+          echo "Production database responded successfully (HTTP ${status_code})."

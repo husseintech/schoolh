@@ -33,7 +33,7 @@
             --success-color: #27ae60;
             --warning-color: #f39c12;
             --info-color: #17a2b8;
-            --sidebar-width: 250px;
+            --sidebar-width: 288px;
         }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -41,91 +41,308 @@
             overflow-x: hidden;
         }
         .sidebar {
+            --sidebar-accent: #38bdf8;
+            --sidebar-accent-rgb: 56, 189, 248;
             position: fixed;
             top: 0;
             right: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color) 0%, #1a252f 100%);
+            background:
+                radial-gradient(circle at 90% 3%, rgba(var(--sidebar-accent-rgb), 0.19), transparent 28%),
+                radial-gradient(circle at 5% 72%, rgba(99, 102, 241, 0.13), transparent 32%),
+                linear-gradient(165deg, #0d1b2d 0%, #07111f 54%, #050b14 100%);
             color: #fff;
             z-index: 1000;
-            transition: all 0.3s ease;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-left: 1px solid rgba(255,255,255,0.08);
+            box-shadow: -18px 0 45px rgba(2, 8, 23, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .sidebar--admin {
+            --sidebar-accent: #fbbf24;
+            --sidebar-accent-rgb: 251, 191, 36;
+        }
+        .sidebar--teacher {
+            --sidebar-accent: #34d399;
+            --sidebar-accent-rgb: 52, 211, 153;
+        }
+        .sidebar--student {
+            --sidebar-accent: #38bdf8;
+            --sidebar-accent-rgb: 56, 189, 248;
+        }
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: linear-gradient(to bottom, #000, transparent 75%);
         }
         .sidebar .brand {
-            padding: 20px 15px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 1;
+            padding: 17px 18px 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: right;
+        }
+        .sidebar .brand-logo-shell {
+            width: 52px;
+            height: 52px;
+            flex: 0 0 52px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+        .sidebar .brand-copy {
+            min-width: 0;
+            flex: 1;
         }
         .sidebar .brand h4 {
-            margin: 10px 0 0;
-            font-weight: 700;
-            font-size: 1.05rem;
+            margin: 0;
+            font-weight: 800;
+            font-size: 0.98rem;
+            line-height: 1.45;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .brand-logo {
-            max-width: 120px;
-            max-height: 120px;
-            border-radius: 8px;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         .sidebar .brand small {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.8rem;
+            display: block;
+            margin-top: 2px;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.68rem;
+            letter-spacing: 0.03em;
+        }
+        .sidebar-close {
+            display: none;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            flex: 0 0 34px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 11px;
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+        }
+        .sidebar-user-card {
+            position: relative;
+            z-index: 1;
+            margin: 6px 14px 10px;
+            padding: 11px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.045));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+        }
+        .sidebar-user-avatar {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: linear-gradient(145deg, rgba(var(--sidebar-accent-rgb), 0.95), rgba(var(--sidebar-accent-rgb), 0.55));
+            color: #07111f;
+            font-size: 1rem;
+            font-weight: 900;
+            box-shadow: 0 8px 20px rgba(var(--sidebar-accent-rgb), 0.2);
+        }
+        .sidebar-user-meta {
+            min-width: 0;
+            flex: 1;
+        }
+        .sidebar-user-name {
+            display: block;
+            overflow: hidden;
+            color: #fff;
+            font-size: 0.84rem;
+            font-weight: 750;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .sidebar-role-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 3px;
+            color: var(--sidebar-accent);
+            font-size: 0.66rem;
+            font-weight: 700;
+        }
+        .sidebar-role-chip::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 9px currentColor;
+        }
+        .sidebar-search {
+            position: relative;
+            z-index: 1;
+            margin: 0 14px 8px;
+        }
+        .sidebar-search i {
+            position: absolute;
+            top: 50%;
+            right: 13px;
+            z-index: 2;
+            color: rgba(255,255,255,0.48);
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .sidebar-search input {
+            width: 100%;
+            height: 40px;
+            padding: 8px 38px 8px 13px;
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 13px;
+            outline: none;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-size: 0.76rem;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sidebar-search input::placeholder {
+            color: rgba(255,255,255,0.42);
+        }
+        .sidebar-search input:focus {
+            border-color: rgba(var(--sidebar-accent-rgb), 0.65);
+            background: rgba(255,255,255,0.09);
+            box-shadow: 0 0 0 3px rgba(var(--sidebar-accent-rgb), 0.12);
+        }
+        .sidebar-nav {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            min-height: 0;
+            padding: 3px 10px 20px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--sidebar-accent-rgb), 0.42) transparent;
+        }
+        .sidebar-nav::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            border-radius: 99px;
+            background: rgba(var(--sidebar-accent-rgb), 0.42);
         }
         .sidebar .nav-item {
             width: 100%;
         }
         .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-            border-right: 3px solid transparent;
-            transition: all 0.2s ease;
+            position: relative;
+            min-height: 42px;
+            margin: 3px 3px;
+            padding: 7px 10px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: rgba(255,255,255,0.72);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 9px;
+            font-size: 0.79rem;
+            font-weight: 600;
+            line-height: 1.35;
+            transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
         }
         .sidebar .nav-link:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.075);
             color: #fff;
-            border-right-color: var(--secondary-color);
+            border-color: rgba(255,255,255,0.08);
+            transform: translateX(-2px);
         }
         .sidebar .nav-link.active {
-            background: rgba(255,255,255,0.15);
+            background: linear-gradient(110deg, rgba(var(--sidebar-accent-rgb), 0.25), rgba(var(--sidebar-accent-rgb), 0.09));
             color: #fff;
-            border-right-color: var(--secondary-color);
+            border-color: rgba(var(--sidebar-accent-rgb), 0.28);
+            box-shadow: inset -3px 0 0 var(--sidebar-accent), 0 8px 22px rgba(0,0,0,0.11);
         }
-        .sidebar .nav-link i {
-            width: 20px;
+        .sidebar .nav-link > i:first-child {
+            width: 28px;
+            height: 28px;
+            flex: 0 0 28px;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            background: rgba(255,255,255,0.065);
+            color: rgba(255,255,255,0.77);
+            font-size: 0.86rem;
             text-align: center;
         }
+        .sidebar .nav-link.active > i:first-child {
+            background: rgba(var(--sidebar-accent-rgb), 0.2);
+            color: var(--sidebar-accent);
+        }
         .sidebar .nav-section {
-            padding: 15px 20px 5px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
-            letter-spacing: 1px;
+            color: rgba(255,255,255,0.58);
         }
         .sidebar .nav-toggle {
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            background: none;
-            border: none;
-            padding: 12px 20px 5px;
+            min-height: 39px;
+            margin: 7px 0 2px;
+            padding: 6px 8px;
+            border: 1px solid transparent;
+            border-radius: 11px;
+            background: transparent;
             cursor: pointer;
             text-align: right;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.5);
-            transition: color 0.2s ease;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.55);
+            transition: color 0.2s ease, background 0.2s ease;
         }
         .sidebar .nav-toggle:hover {
+            background: rgba(255,255,255,0.045);
             color: #fff;
         }
+        .sidebar .nav-section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar .section-icon {
+            width: 24px;
+            height: 24px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: rgba(var(--sidebar-accent-rgb), 0.09);
+            color: var(--sidebar-accent);
+            font-size: 0.76rem;
+        }
         .sidebar .nav-toggle .bi-chevron-down {
+            width: 22px;
+            height: 22px;
+            display: grid;
+            place-items: center;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.045);
+            font-size: 0.66rem;
             transition: transform 0.3s ease;
         }
         .sidebar .nav-toggle.open .bi-chevron-down {
@@ -135,7 +352,44 @@
             display: none;
         }
         .sidebar .nav-collapse .nav-link {
-            padding-right: 35px;
+            padding-right: 12px;
+        }
+        .sidebar .nav-link .badge {
+            margin-right: auto;
+            padding: 4px 7px;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        }
+        .sidebar .sidebar-logout {
+            color: #fda4af;
+        }
+        .sidebar .sidebar-logout:hover {
+            border-color: rgba(251, 113, 133, 0.2);
+            background: rgba(190, 24, 93, 0.12);
+            color: #fecdd3;
+        }
+        .sidebar-filter-hidden {
+            display: none !important;
+        }
+        .sidebar-no-results {
+            padding: 28px 14px;
+            color: rgba(255,255,255,0.45);
+            text-align: center;
+            font-size: 0.76rem;
+        }
+        .sidebar-no-results i {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--sidebar-accent);
+            font-size: 1.35rem;
+        }
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            border: 0;
+            background: rgba(2, 6, 23, 0.58);
+            backdrop-filter: blur(3px);
         }
         .main-content {
             margin-right: var(--sidebar-width);
@@ -294,10 +548,15 @@
         }
         .sidebar-toggle {
             display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--primary-color);
+            width: 42px;
+            height: 42px;
+            place-items: center;
+            border: 1px solid #e2e8f0;
+            border-radius: 13px;
+            background: #fff;
+            color: #172033;
+            font-size: 1.35rem;
+            box-shadow: 0 5px 16px rgba(15, 23, 42, 0.08);
             cursor: pointer;
         }
         .page-title {
@@ -319,22 +578,43 @@
 
         @media (max-width: 768px) {
             .sidebar {
-                right: -280px;
+                right: 0;
+                width: min(88vw, 310px);
+                transform: translateX(110%);
+                box-shadow: none;
             }
             .sidebar.show {
-                right: 0;
+                transform: translateX(0);
+                box-shadow: -24px 0 55px rgba(2, 6, 23, 0.4);
             }
             .main-content {
                 margin-right: 0;
             }
             .sidebar-toggle {
+                display: grid;
+            }
+            .sidebar-close {
+                display: grid;
+            }
+            .sidebar-backdrop.show {
                 display: block;
+            }
+            body.sidebar-open {
+                overflow: hidden;
             }
             .page-content {
                 padding: 15px;
             }
             .top-bar {
                 padding: 10px 15px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .sidebar,
+            .sidebar .nav-link,
+            .sidebar .nav-toggle .bi-chevron-down {
+                transition: none !important;
             }
         }
 
@@ -471,17 +751,45 @@
     </script>
     {% if user.is_authenticated %}
     <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
+    <aside class="sidebar sidebar--{{ user.profile.role }}" id="sidebar" aria-label="القائمة الرئيسية">
         <div class="brand">
+            <div class="brand-logo-shell">
             {% if school_info.school_logo %}
             <img src="{{ school_info.school_logo }}" alt="شعار المدرسة" class="brand-logo">
+            {% else %}
+            <i class="bi bi-mortarboard-fill fs-4" aria-hidden="true"></i>
             {% endif %}
-            <h4>إدارة مدرسة {{ school_info.name_ar }}</h4>
+            </div>
+            <div class="brand-copy">
+                <h4>{{ school_info.name_ar|default:'النظام المدرسي' }}</h4>
+                <small>بوابة المدرسة الرقمية</small>
+            </div>
+            <button class="sidebar-close" type="button" data-sidebar-close aria-label="إغلاق القائمة">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
+
+        <div class="sidebar-user-card">
+            <div class="sidebar-user-avatar" aria-hidden="true">{{ user.first_name|first|default:user.username|first|upper }}</div>
+            <div class="sidebar-user-meta">
+                <span class="sidebar-user-name">{{ user.first_name|default:user.username }}</span>
+                <span class="sidebar-role-chip">{{ user.profile.get_role_display }}</span>
+            </div>
+            <a href="{% url 'my_account' %}" class="text-white-50" title="إعدادات حسابي" aria-label="إعدادات حسابي">
+                <i class="bi bi-gear"></i>
+            </a>
+        </div>
+
+        <div class="sidebar-search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" id="sidebarSearch" placeholder="ابحث في القائمة..." autocomplete="off" aria-label="البحث في القائمة">
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
 
         {% if user.is_authenticated %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-main" aria-expanded="false">
-            <span>القائمة الرئيسية</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-grid-1x2-fill"></i></span><span>القائمة الرئيسية</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-main">
         <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
@@ -500,7 +808,7 @@
 
         {% if 'students_view' in user_perms or 'students_add' in user_perms or 'notes_view' in user_perms or 'levels_view' in user_perms or 'discipline_view' in user_perms or 'discipline_add' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-students" aria-expanded="false">
-            <span>الطلاب</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-people-fill"></i></span><span>الطلاب</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-students">
         {% endif %}
@@ -535,7 +843,7 @@
 
         {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms or 'nominations_view' in user_perms or 'guardians_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-teachers" aria-expanded="false">
-            <span>المعلمون</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-person-workspace"></i></span><span>المعلمون</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-teachers">
         {% endif %}
@@ -580,7 +888,7 @@
 
         {% if 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'visit_program_view' in user_perms or 'absence_view' in user_perms or 'schedule_view' in user_perms or 'certificates_view' in user_perms or 'exams_view' in user_perms or 'survey_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-admin" aria-expanded="false">
-            <span>الإدارة</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-building-gear"></i></span><span>الإدارة</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-admin">
         {% endif %}
@@ -670,7 +978,7 @@
 
         {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms or 'no_objection_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-secretary" aria-expanded="false">
-            <span>السكرتير</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-folder2-open"></i></span><span>السكرتير</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-secretary">
         {% endif %}
@@ -689,13 +997,13 @@
             <i class="bi bi-file-earmark-check"></i> لا مانع
         </a>
         {% endif %}
-        {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms %}
+        {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms or 'no_objection_view' in user_perms %}
         </div>
         {% endif %}
 
         {% if 'messages_view' in user_perms or 'messages_send' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-messages" aria-expanded="false">
-            <span>الرسائل والإشعارات</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-chat-left-text-fill"></i></span><span>الرسائل والإشعارات</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-messages">
         {% endif %}
@@ -729,7 +1037,7 @@
 
         {% if user.profile.role == 'teacher' %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-visits" aria-expanded="false">
-            <span>الزيارات</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-calendar2-check-fill"></i></span><span>الزيارات</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-visits">
         <a href="{% url 'teacher_visits' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_visits' or 'reciprocal_visit' in request.resolver_match.url_name %}active{% endif %}">
@@ -746,7 +1054,7 @@
 
         {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms or user.profile.role == 'admin' %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-settings" aria-expanded="false">
-            <span>الإعدادات</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-sliders"></i></span><span>الإعدادات</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-settings">
         {% endif %}
@@ -790,25 +1098,31 @@
         {% endif %}
 
         <button class="nav-section nav-toggle" type="button" data-target="collapse-account" aria-expanded="false">
-            <span>الحساب</span><i class="bi bi-chevron-down"></i>
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-person-circle"></i></span><span>الحساب</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse" id="collapse-account">
         <a href="{% url 'my_account' %}" class="nav-link {% if request.resolver_match.url_name == 'my_account' %}active{% endif %}">
             <i class="bi bi-person-circle"></i> حسابي
         </a>
-        <a href="{% url 'logout' %}" class="nav-link text-danger">
+        <a href="{% url 'logout' %}" class="nav-link sidebar-logout">
             <i class="bi bi-box-arrow-left"></i> تسجيل خروج
         </a>
         </div>
+        <div class="sidebar-no-results" id="sidebarNoResults" hidden>
+            <i class="bi bi-search"></i>
+            لا توجد نتيجة مطابقة في القائمة
+        </div>
+        </nav>
         {% endif %}
 
-    </div>
+    </aside>
+    <button class="sidebar-backdrop" type="button" data-sidebar-close aria-label="إغلاق القائمة"></button>
 
     <!-- Main Content -->
     <div class="main-content">
         <div class="top-bar">
             <div>
-                <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                <button class="sidebar-toggle" type="button" data-sidebar-open aria-controls="sidebar" aria-expanded="false" aria-label="فتح القائمة">
                     <i class="bi bi-list"></i>
                 </button>
                 <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
@@ -958,18 +1272,76 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         $(document).ready(function() {
-            $('.nav-toggle').on('click', function() {
-                var target = $('#' + $(this).data('target'));
-                target.slideToggle(200);
-                $(this).toggleClass('open');
-                $(this).attr('aria-expanded', $(this).hasClass('open'));
-            });
-            $('.nav-collapse').each(function() {
-                if ($(this).find('.nav-link.active').length > 0) {
-                    $(this).show();
-                    $('.nav-toggle[data-target="' + this.id + '"]').addClass('open').attr('aria-expanded', 'true');
+            var storageKey = 'schoolh_sidebar_sections_{{ user.profile.role }}';
+            var toggles = $('.sidebar .nav-toggle');
+            var searchInput = document.getElementById('sidebarSearch');
+            var noResults = document.getElementById('sidebarNoResults');
+
+            function savedSections() {
+                try {
+                    return JSON.parse(localStorage.getItem(storageKey) || '[]');
+                } catch (e) {
+                    return [];
                 }
+            }
+
+            function saveSections() {
+                var openIds = [];
+                toggles.filter('.open').each(function() {
+                    openIds.push($(this).data('target'));
+                });
+                try { localStorage.setItem(storageKey, JSON.stringify(openIds)); } catch (e) {}
+            }
+
+            function setSection(toggle, open, animate) {
+                var target = $('#' + $(toggle).data('target'));
+                $(toggle).toggleClass('open', open).attr('aria-expanded', open ? 'true' : 'false');
+                if (animate) {
+                    target.stop(true, true)[open ? 'slideDown' : 'slideUp'](180);
+                } else {
+                    target.toggle(open);
+                }
+            }
+
+            var initialOpen = savedSections();
+            $('.sidebar .nav-link.active').each(function() {
+                var parentId = $(this).closest('.nav-collapse').attr('id');
+                if (parentId && initialOpen.indexOf(parentId) === -1) initialOpen.push(parentId);
             });
+            if (!initialOpen.length && document.getElementById('collapse-main')) initialOpen.push('collapse-main');
+            toggles.each(function() {
+                setSection(this, initialOpen.indexOf($(this).data('target')) !== -1, false);
+            });
+
+            toggles.on('click', function() {
+                setSection(this, !$(this).hasClass('open'), true);
+                saveSections();
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    var query = this.value.trim().toLocaleLowerCase('ar');
+                    var links = $('.sidebar-nav .nav-link');
+                    var visibleCount = 0;
+
+                    links.each(function() {
+                        var matches = !query || this.textContent.toLocaleLowerCase('ar').indexOf(query) !== -1;
+                        $(this).toggleClass('sidebar-filter-hidden', !matches);
+                        if (matches) visibleCount += 1;
+                    });
+
+                    toggles.each(function() {
+                        var target = $('#' + $(this).data('target'));
+                        var hasMatch = target.find('.nav-link:not(.sidebar-filter-hidden)').length > 0;
+                        $(this).toggleClass('sidebar-filter-hidden', !!query && !hasMatch);
+                        if (query) target.toggle(hasMatch);
+                        else target.toggle($(this).hasClass('open'));
+                    });
+
+                    if (noResults) noResults.hidden = visibleCount !== 0;
+                });
+            }
+
             $('.select2').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'اختر...',
@@ -979,13 +1351,39 @@
                 $('.toast').toast('hide');
             }, 5000);
         });
-        document.addEventListener('click', function(e) {
+
+        (function () {
             var sidebar = document.getElementById('sidebar');
-            var toggle = document.querySelector('.sidebar-toggle');
-            if (sidebar && toggle && !sidebar.contains(e.target) && !toggle.contains(e.target) && sidebar.classList.contains('show')) {
-                sidebar.classList.remove('show');
+            var backdrop = document.querySelector('.sidebar-backdrop');
+            var openButton = document.querySelector('[data-sidebar-open]');
+            var closeButtons = document.querySelectorAll('[data-sidebar-close]');
+            if (!sidebar || !openButton) return;
+
+            function openSidebar() {
+                sidebar.classList.add('show');
+                if (backdrop) backdrop.classList.add('show');
+                document.body.classList.add('sidebar-open');
+                openButton.setAttribute('aria-expanded', 'true');
             }
-        });
+
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                if (backdrop) backdrop.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
+                openButton.setAttribute('aria-expanded', 'false');
+            }
+
+            openButton.addEventListener('click', openSidebar);
+            closeButtons.forEach(function (button) { button.addEventListener('click', closeSidebar); });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') closeSidebar();
+            });
+            sidebar.querySelectorAll('.nav-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (window.innerWidth <= 768) closeSidebar();
+                });
+            });
+        })();
     </script>
     <script>
         // PWA + Web Push
