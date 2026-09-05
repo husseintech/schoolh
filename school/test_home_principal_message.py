@@ -2,10 +2,36 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Profile, SchoolInfo
+from .models import Profile, SchoolInfo, Student, Teacher
 
 
 class HomePrincipalMessageTests(TestCase):
+    def test_account_name_comes_from_student_or_teacher_record(self):
+        for role, model in [('teacher', Teacher), ('student', Student)]:
+            with self.subTest(role=role):
+                user = User.objects.create_user(username=f'123456-{role}', first_name='اسم قديم')
+                Profile.objects.create(user=user, role=role)
+                fields = {'student_id': user.username} if role == 'student' else {}
+                model.objects.create(user=user, full_name='أحمد محمد علي', **fields)
+                self.client.force_login(user)
+                response = self.client.get(reverse('home'))
+                self.assertEqual(response.context['account_display_name'], 'أحمد محمد علي')
+                self.assertContains(response, '<span class="sidebar-user-name">أحمد محمد علي</span>', html=True)
+                user.refresh_from_db()
+                self.assertEqual(user.username, f'123456-{role}')
+                self.client.logout()
+
+    def test_account_name_fallback_without_person_record(self):
+        user = User.objects.create_user(username='123456', first_name='أحمد', last_name='علي')
+        Profile.objects.create(user=user, role='teacher')
+        self.client.force_login(user)
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.context['account_display_name'], 'أحمد علي')
+        user.first_name = user.last_name = ''
+        user.save()
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.context['account_display_name'], '123456')
+
     def setUp(self):
         SchoolInfo.objects.create(
             name_ar='مدرسة الاختبار الأساسية',

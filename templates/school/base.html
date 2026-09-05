@@ -770,9 +770,9 @@
         </div>
 
         <div class="sidebar-user-card">
-            <div class="sidebar-user-avatar" aria-hidden="true">{{ user.first_name|first|default:user.username|first|upper }}</div>
+            <div class="sidebar-user-avatar" aria-hidden="true">{{ account_display_name|first|upper }}</div>
             <div class="sidebar-user-meta">
-                <span class="sidebar-user-name">{{ user.first_name|default:user.username }}</span>
+                <span class="sidebar-user-name">{{ account_display_name }}</span>
                 <span class="sidebar-role-chip">{{ user.profile.get_role_display }}</span>
             </div>
             <a href="{% url 'my_account' %}" class="text-white-50" title="إعدادات حسابي" aria-label="إعدادات حسابي">
@@ -1198,9 +1198,9 @@
                         <span class="badge bg-{% if user.profile.role == 'admin' %}danger{% elif user.profile.role == 'teacher' %}success{% else %}info{% endif %}">
                             {{ user.profile.get_role_display }}
                         </span>
-                        {{ user.first_name|default:user.username }}
+                        {{ account_display_name }}
                     </span>
-                    <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                    <div class="avatar">{{ account_display_name|first|upper }}</div>
                 </a>
                 <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger ms-2" title="تسجيل الخروج">
                     <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">خروج</span>
