@@ -23,6 +23,7 @@ from .enhancement_models import (
 from .learning_views import learning_suite_ready
 from .services.learning_events import enhancements_ready, notify_lesson_students
 from .services.smart_assessment import generate_assignment_draft, generate_quiz_draft
+from .services.ai_service import AIServiceUnavailable
 from .views import _can_manage, _is_admin, _role, _teacher_of
 
 
@@ -59,7 +60,11 @@ def smart_quiz_generate(request, lesson_id):
     if difficulty not in {'easy', 'medium', 'hard'}:
         difficulty = 'medium'
 
-    draft = generate_quiz_draft(lesson, count=count, difficulty=difficulty)
+    try:
+        draft = generate_quiz_draft(lesson, count=count, difficulty=difficulty)
+    except AIServiceUnavailable as exc:
+        messages.warning(request, str(exc))
+        return redirect('ol_lesson_builder', lesson_id=lesson.id)
     quiz = LessonQuiz.objects.create(
         lesson=lesson,
         title=draft['title'],
@@ -98,7 +103,11 @@ def smart_assignment_generate(request, lesson_id):
     difficulty = request.POST.get('difficulty', 'medium')
     if difficulty not in {'easy', 'medium', 'hard'}:
         difficulty = 'medium'
-    draft = generate_assignment_draft(lesson, difficulty=difficulty)
+    try:
+        draft = generate_assignment_draft(lesson, difficulty=difficulty)
+    except AIServiceUnavailable as exc:
+        messages.warning(request, str(exc))
+        return redirect('ol_lesson_builder', lesson_id=lesson.id)
     LessonAssignment.objects.create(
         lesson=lesson,
         title=draft['title'],

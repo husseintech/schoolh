@@ -10,7 +10,6 @@ class OpenLearningConfig(AppConfig):
         from . import learning_models  # noqa: F401
         from . import enhancement_models  # noqa: F401
 
-        # Install a production-safe AI provider selector. It prefers Gemini when
-        # configured, but falls back to the built-in local generator at no cost.
+        # Select a real provider; unavailable AI must never return template text.
         from .services.provider_runtime import install_provider_override
         install_provider_override()

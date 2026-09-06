@@ -127,7 +127,12 @@ def generate_quiz_draft(lesson, count=5, difficulty='medium'):
     if _is_multiplication_topic(searchable):
         questions = _math_mcqs(count, difficulty)
     else:
-        questions = _generic_questions(context, count)
+        from .ai_service import get_provider, AIServiceUnavailable
+        provider = get_provider()
+        brief = (lesson.ai_payload or {}).get('_brief')
+        if not provider or not brief:
+            raise AIServiceUnavailable('أنشئ حزمة تعلم مخصصة للدرس أولًا، وتأكد من تفعيل اتصال الذكاء الاصطناعي.')
+        questions = provider.generate_quiz(context, brief, count, difficulty)
     return {
         'title': f'اختبار ذكي - {context["title"]}',
         'instructions': (
@@ -150,11 +155,11 @@ def generate_assignment_draft(lesson, difficulty='medium'):
             'تستخدم فيها الضرب واكتب خطوات الحل بوضوح.'
         )
     else:
-        instructions = (
-            f'أنجز مهمة قصيرة حول درس «{context["title"]}»: لخص الفكرة الرئيسة في 5-7 أسطر، '
-            'ثم قدم مثالاً أو تطبيقاً من الحياة اليومية، وأجب عن سؤال واحد من أسئلة التقويم الموجودة في الدرس.\n\n'
-            f'الأهداف التي ينبغي أن يظهرها الحل:\n{objective_text}'
-        )
+        from .ai_service import AIServiceUnavailable
+        worksheet = (lesson.ai_payload or {}).get('worksheet') or []
+        if not worksheet:
+            raise AIServiceUnavailable('أنشئ ورقة عمل ضمن حزمة تعلم مخصصة أولًا ليكون الواجب مرتبطًا بالدرس.')
+        instructions = '\n\n'.join(f'{i}. {item["question"]}' for i, item in enumerate(worksheet[:4], 1))
     return {
         'title': f'واجب ذكي - {context["title"]}',
         'instructions': instructions,

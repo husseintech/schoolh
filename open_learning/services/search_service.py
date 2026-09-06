@@ -6,6 +6,9 @@
 import os
 import re
 import time
+import html
+from concurrent.futures import ThreadPoolExecutor
+from html.parser import HTMLParser
 from urllib.parse import unquote, urlparse, parse_qs
 
 import requests
@@ -38,11 +41,42 @@ KNOWN_EDUCATIONAL = ['youtube.com', 'moe.gov', 'google', 'wikipedia', 'britannic
 
 
 def _words(value):
-    return [w for w in TITLE_FILLERS.sub(' ', value or '').lower().split() if w]
+    value = re.sub(r'[\u064b-\u065f\u0670ـ]', '', value or '')
+    value = re.sub('[أإآ]', 'ا', value).replace('ى', 'ي')
+    return [w[2:] if w.startswith('ال') and len(w) > 4 else w
+            for w in TITLE_FILLERS.sub(' ', value).lower().split() if w]
 
 
 def _core_lesson_words(value):
-    return [w for w in _words(value) if len(w) > 2 and w not in STOP_WORDS]
+    stop = set(_words(' '.join(STOP_WORDS)))
+    return [w for w in _words(value) if len(w) > 2 and w not in stop]
+
+
+class SearchResultParser(HTMLParser):
+    """DuckDuckGo anchors do not guarantee attribute order or quote style."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.items = []
+        self.current = None
+        self.capture = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        classes = attrs.get('class', '').split()
+        if tag == 'a' and 'result__a' in classes:
+            self.current = {'url': attrs.get('href', ''), 'title': '', 'snippet': ''}
+            self.items.append(self.current)
+            self.capture = ('title', tag)
+        elif 'result__snippet' in classes and self.current is not None:
+            self.capture = ('snippet', tag)
+
+    def handle_data(self, text):
+        if self.capture and self.current is not None:
+            self.current[self.capture[0]] += text
+
+    def handle_endtag(self, tag):
+        if self.capture and tag == self.capture[1]:
+            self.capture = None
 
 
 class SearchService:
@@ -56,12 +90,19 @@ class SearchService:
         """بحث متعدد، ثم رفض أي نتيجة لا تشير فعلاً إلى موضوع الدرس."""
         results = []
         seen_urls = set()
-        for spec in QUERY_TEMPLATES:
+        # Three complementary queries run together instead of eight serial requests.
+        specs = [QUERY_TEMPLATES[i] for i in (0, 2, 7)]
+        def fetch(spec):
             query = spec['query'].format(title=lesson_title, grade=grade, subject=subject)
             try:
-                raw = self._search(query, limit=max_per_group)
+                return spec, self._search(query, limit=max_per_group), None
             except SearchUnavailable:
-                continue
+                return spec, [], 'unavailable'
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            batches = list(executor.map(fetch, specs))
+        if all(error for _, _, error in batches):
+            raise SearchUnavailable('تعذر الوصول إلى محرك المصادر أو حجب الطلبات. حاول لاحقًا؛ يمكن لمدير النظام إعداد محرك بحث بديل.')
+        for spec, raw, error in batches:
             group = spec['group']
             for item in raw:
                 norm = normalize_url(item['url'])
@@ -72,49 +113,49 @@ class SearchService:
                     continue
                 seen_urls.add(norm)
                 results.append(item)
-            time.sleep(0.4)
         return results
 
     def _search(self, query, limit):
-        if self.provider == 'google' and self.google_cse_id and self.google_api_key:
+        if self.provider == 'google':
+            if not self.google_cse_id or not self.google_api_key:
+                raise SearchUnavailable('محرك البحث غير مهيأ.')
             return self._search_google(query, limit)
         return self._search_duckduckgo(query, limit)
 
     def _search_duckduckgo(self, query, limit):
         url = 'https://html.duckduckgo.com/html/'
         try:
-            resp = requests.post(url, data={'q': query}, headers={'User-Agent': USER_AGENT}, timeout=25)
+            resp = requests.get(url, params={'q': query}, headers={'User-Agent': USER_AGENT}, timeout=(3, 8))
             resp.raise_for_status()
         except requests.RequestException as exc:
-            raise SearchUnavailable(f'تعذر البحث: {exc}') from exc
-        html = resp.text
+            raise SearchUnavailable('تعذر الاتصال بمحرك البحث.') from exc
+        page = resp.text
+        if resp.status_code == 202 or 'anomaly.js' in page or 'anomaly-modal' in page:
+            raise SearchUnavailable('محرك البحث يطلب تحققًا بشريًا؛ لم يُنفذ البحث.')
+        parser = SearchResultParser()
+        parser.feed(page)
         items = []
-        for m in re.finditer(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', html, re.IGNORECASE | re.DOTALL):
-            href, title_html = m.group(1), m.group(2)
-            real_url = self._extract_duckduckgo_url(href)
+        for item in parser.items:
+            real_url = self._extract_duckduckgo_url(item['url'])
             if not real_url or not real_url.startswith('http'):
                 continue
-            title = re.sub(r'<[^>]+>', '', title_html)
-            title = re.sub(r'\s+', ' ', title).strip()
-            snippet = ''
-            sm = re.search(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html[html.find(href):], re.IGNORECASE | re.DOTALL)
-            if sm:
-                snippet = re.sub(r'<[^>]+>', '', sm.group(1))
-                snippet = re.sub(r'\s+', ' ', snippet).strip()
+            title = re.sub(r'\s+', ' ', item['title']).strip()
+            snippet = re.sub(r'\s+', ' ', item['snippet']).strip()
             if title and real_url.startswith(('https://', 'http://')):
                 items.append({'title': title, 'url': real_url, 'snippet': snippet})
             if len(items) >= limit:
                 break
-        if not items:
-            raise SearchUnavailable('لا توجد نتائج بحث')
+        if not items and 'no-results' not in page:
+            raise SearchUnavailable('تعذر قراءة نتائج محرك البحث.')
         return items
 
     @staticmethod
     def _extract_duckduckgo_url(href):
-        if href.startswith('//duckduckgo.com/l/'):
+        href = html.unescape(href)
+        if href.startswith(('/l/', '//duckduckgo.com/l/', 'https://duckduckgo.com/l/')):
             qs = parse_qs(urlparse(href).query)
             if 'uddg' in qs:
-                return unquote(qs['uddg'][0])
+                return qs['uddg'][0]
         if href.startswith('http'):
             return href
         return None
@@ -129,11 +170,11 @@ class SearchService:
             'hl': 'ar',
         }
         try:
-            resp = requests.get(url, params=params, timeout=25)
+            resp = requests.get(url, params=params, timeout=(3, 8))
             resp.raise_for_status()
             data = resp.json()
         except (requests.RequestException, ValueError) as exc:
-            raise SearchUnavailable(f'تعذر البحث: {exc}') from exc
+            raise SearchUnavailable('تعذر الاتصال بمحرك البحث المهيأ؛ راجع إعداداته وحد الاستخدام.') from exc
         items = []
         for item in data.get('items', []):
             items.append({
@@ -141,17 +182,22 @@ class SearchService:
                 'url': item.get('link', ''),
                 'snippet': re.sub(r'\s+', ' ', item.get('snippet', '')).strip(),
             })
-        if not items:
-            raise SearchUnavailable('لا توجد نتائج بحث')
         return items
 
     def validate_url(self, url):
+        import ipaddress
+        import socket
         try:
-            resp = requests.head(url, headers={'User-Agent': USER_AGENT}, timeout=10, allow_redirects=True)
-            if resp.status_code >= 400:
-                resp = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=10, stream=True)
-            return resp.status_code < 400
-        except requests.RequestException:
+            parsed = urlparse(url)
+            if not normalize_url(url) or parsed.port not in (None, 80, 443):
+                return False
+            addresses = socket.getaddrinfo(parsed.hostname, parsed.port or 443)
+            if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):
+                return False
+            # Never follow an untrusted search result's redirects on the server.
+            with requests.head(url, headers={'User-Agent': USER_AGENT}, timeout=(2, 3), allow_redirects=False) as resp:
+                return 200 <= resp.status_code < 400 or resp.status_code in (403, 405)
+        except (requests.RequestException, OSError, ValueError):
             return False
 
     def is_relevant(self, item, lesson_title, subject=''):
@@ -160,7 +206,7 @@ class SearchService:
         lesson_terms = _core_lesson_words(lesson_title)
         subject_terms = [w for w in _words(subject) if len(w) > 2 and w not in STOP_WORDS]
         if lesson_terms:
-            return any(term in haystack for term in lesson_terms)
+            return sum(term in haystack for term in lesson_terms) / len(lesson_terms) >= 0.5
         if subject_terms:
             return any(term in haystack for term in subject_terms)
         return False
@@ -197,7 +243,8 @@ class SearchService:
             score += 5
         if 'شرح' in text or 'درس' in text or 'تعليم' in text:
             score += 4
-        if any(dom in url for dom in KNOWN_EDUCATIONAL):
+        host = urlparse(url).hostname or ''
+        if any(host == dom or host.endswith('.' + dom) for dom in KNOWN_EDUCATIONAL):
             score += 8
         if IMAGE_EXT_RE.search(url):
             score += 3
@@ -226,7 +273,7 @@ class SearchService:
             return 'reading'
         if 'video' in text or 'فيديو' in text:
             return 'video'
-        return 'article' if 'article' in text else 'link'
+        return 'reading' if 'article' in text else 'link'
 
     @staticmethod
     def _source_name(url):

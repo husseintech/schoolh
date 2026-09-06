@@ -1,0 +1,44 @@
+{% if lesson.ai_payload.worked_examples %}
+<div class="p-3 rounded-4 mb-4" style="background:#edf7f8">
+    <h3 class="h5">مصادر تعلّم داخل الدرس</h3>
+    <p class="mb-0 text-muted">أمثلة وورقة عمل يمكنك دراستها هنا دون الانتقال إلى موقع آخر.</p>
+</div>
+<h4 class="h6 text-primary">أمثلة محلولة خطوة بخطوة</h4>
+<div class="row g-3 mb-4">
+{% for example in lesson.ai_payload.worked_examples %}
+    <article class="col-md-6"><div class="border rounded-4 p-3 h-100">
+        <strong>{{ example.problem }}</strong>
+        <ol class="mt-2">{% for step in example.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+        <div class="alert alert-success mb-0">{{ example.answer }}</div>
+    </div></article>
+{% endfor %}
+</div>
+<h4 class="h6 text-primary">انتبه لهذه الأخطاء</h4>
+{% for item in lesson.ai_payload.misconceptions %}
+<div class="border-start border-warning border-4 p-3 mb-2 bg-light rounded">
+    <strong>{{ item.mistake }}</strong><p class="mb-0 mt-1">{{ item.correction }}</p>
+</div>
+{% endfor %}
+<h4 class="h6 text-primary mt-4">ورقة عمل · جرّب بنفسك</h4>
+{% for item in lesson.ai_payload.worksheet %}
+<article class="border rounded-4 p-3 mb-2">
+    <strong>{{ forloop.counter }}. {{ item.question }}</strong>
+    <details class="mt-2"><summary class="text-primary">أحتاج تلميحًا</summary><p>{{ item.hint }}</p></details>
+    {% if can_manage %}<details class="mt-2"><summary>الإجابة النموذجية · للمعلم</summary><p>{{ item.answer }}</p><small>يقيس الهدف {{ item.objective_index|add:'1' }}</small></details>{% endif %}
+</article>
+{% endfor %}
+{% if can_manage %}
+<details class="border rounded-4 p-3 my-4" open>
+    <summary class="fw-bold text-primary">خطة الحصة · دليل المعلم</summary>
+    <div class="table-responsive mt-3"><table class="table table-bordered align-middle">
+        <thead><tr><th>المرحلة</th><th>الدقائق</th><th>دور المعلم</th><th>مهمة الطلاب</th><th>دليل التعلم</th></tr></thead>
+        <tbody>{% for step in lesson.ai_payload.lesson_plan %}<tr>
+            <td>{{ step.phase }}<small class="d-block text-muted">الهدف {{ step.objective_index|add:'1' }}</small></td><td>{{ step.minutes }}</td><td>{{ step.teacher_action }}</td><td>{{ step.student_action }}</td><td>{{ step.assessment }}</td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+    <p class="small text-muted">راجع الأمثلة والإجابات وحدود المنهاج قبل اعتماد الحزمة.</p>
+    {% for note in lesson.ai_payload.assumptions %}<p class="small mb-1">• {{ note }}</p>{% endfor %}
+</details>
+{% endif %}
+<hr class="my-4">
+{% endif %}

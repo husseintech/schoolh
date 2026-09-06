@@ -202,6 +202,10 @@ def weekly_plan_detail(request, plan_id):
         'is_admin': _is_admin(request),
         'editable': editable,
         'review': review,
+        'approved_ai_objectives': {
+            str(item.pk): '\n'.join(item.ai_payload.get('objectives', []))
+            for item in lessons if item.ai_status == 'approved' and item.ai_payload.get('_version') == 2
+        },
     })
 
 

@@ -142,6 +142,7 @@
                             <td>
                                 {% if editable %}
                                 <textarea name="objectives_{{ row.index }}" class="form-control form-control-sm" rows="3" placeholder="الأهداف (اضغط Enter للانتقال لسطر جديد)">{{ row.day.objectives|default:'' }}</textarea>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-copy-objectives="{{ row.index }}">استخدام أهداف الحزمة المعتمدة</button>
                                 {% else %}
                                 <div class="small" style="white-space:pre-wrap">{{ row.day.objectives|default:''|linebreaksbr }}</div>
                                 {% endif %}
@@ -220,4 +221,21 @@
 .plan-table th, .plan-table td { vertical-align: top; }
 .plan-day-empty { background-color: #e7f1ff; }
 </style>
+{% if editable %}
+{{ approved_ai_objectives|json_script:'approved-ai-objectives' }}
+<p id="objectiveImportStatus" class="small text-primary" role="status" aria-live="polite"></p>
+<script>
+document.querySelectorAll('[data-copy-objectives]').forEach(function(button) {
+    button.addEventListener('click', function() {
+        const index = this.dataset.copyObjectives;
+        const lesson = document.querySelector('[name="lesson_' + index + '"]').value;
+        const objectives = JSON.parse(document.getElementById('approved-ai-objectives').textContent)[lesson];
+        const status = document.getElementById('objectiveImportStatus');
+        if (!objectives) { status.textContent = 'اختر درسًا له حزمة مخصصة معتمدة أولًا.'; return; }
+        document.querySelector('[name="objectives_' + index + '"]').value = objectives;
+        status.textContent = 'نُقلت الأهداف. راجعها ثم احفظ الخطة.';
+    });
+});
+</script>
+{% endif %}
 {% endblock %}
