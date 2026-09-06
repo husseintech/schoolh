@@ -313,6 +313,8 @@ def lesson_detail(request, lesson_id):
         return redirect('open_learning_list')
 
     can_manage = _can_manage(request, lesson)
+    from .services.open_sources import teacher_search_links
+    from .ai_forms import SelectedSourceForm
     if role == 'student':
         visible_resources = lesson.resources.filter(status='approved')
     else:
@@ -322,6 +324,8 @@ def lesson_detail(request, lesson_id):
         'role': role,
         'is_admin': _is_admin(request),
         'can_manage': can_manage,
+        'search_links': teacher_search_links(lesson) if can_manage else [],
+        'selected_source_form': SelectedSourceForm() if can_manage else None,
         'ai_visible': lesson.ai_visible_to_students,
         'visible_resources': visible_resources.order_by('-relevance_score', '-created_at'),
     })

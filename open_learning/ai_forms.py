@@ -1,6 +1,23 @@
 from django import forms
 
 
+class SelectedSourceForm(forms.Form):
+    title = forms.CharField(label='عنوان المادة المختارة', max_length=200,
+                           widget=forms.TextInput(attrs={'class': 'form-control'}))
+    url = forms.URLField(label='رابط المادة نفسها', max_length=2000,
+                         widget=forms.URLInput(attrs={'class': 'form-control', 'dir': 'ltr', 'placeholder': 'https://…'}))
+    resource_type = forms.ChoiceField(label='نوع المصدر', choices=[('video', 'فيديو'), ('reading', 'قراءة / ورقة عمل'),
+        ('image', 'صورة'), ('simulation', 'محاكاة'), ('activity', 'نشاط'), ('link', 'رابط')],
+        widget=forms.Select(attrs={'class': 'form-select'}))
+
+    def clean_url(self):
+        from .services.ai_service import normalize_url
+        url = self.cleaned_data['url']
+        if not normalize_url(url):
+            raise forms.ValidationError('أدخل رابط http أو https صالحًا دون معلومات تسجيل دخول.')
+        return url
+
+
 class LessonBriefForm(forms.Form):
     grade = forms.IntegerField(label='الصف الدراسي المستهدف', min_value=1, max_value=12,
                                widget=forms.NumberInput(attrs={'class': 'form-control'}))

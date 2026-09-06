@@ -10,7 +10,7 @@
     <div class="alert alert-warning">توليد المحتوى الحقيقي غير مهيأ. في إعدادات Vercel أضف <code>AI_API_KEY</code> كمفتاح سري صالح من Google AI Studio، واضبط <code>AI_PROVIDER=gemini</code> و<code>AI_MODEL=gemini-2.5-flash</code> ثم أعد النشر. لا ترسل المفتاح في الرسائل.</div>
     {% endif %}
     <p>محرك المصادر: {{ search_provider }} {% if not search_configured %}— الإعداد غير مكتمل{% endif %}.</p>
-    <p class="small text-muted mb-0">إذا تعذّر البحث المجاني، يمكن إعداد Google Programmable Search للحسابات المؤهلة عبر <code>SEARCH_PROVIDER=google</code> و<code>GOOGLE_CSE_ID</code> و<code>GOOGLE_CSE_API_KEY</code>. خدمة البحث منفصلة عن نموذج إنشاء الدروس. راجع حدود الاستخدام والتكلفة لدى المزود.</p>
+    <p class="small text-muted mb-0">الخيار الافتراضي <code>open_catalog</code> يبحث في المكتبات المفتوحة دون بطاقة أو مفتاح بحث، مع أزرار بحث موجّه للفيديو والأنشطة. إذا ظهر اسم محرك قديم، اضبط <code>SEARCH_PROVIDER=open_catalog</code> ثم أعد النشر. البحث منفصل عن حصة Gemini. نتائج المكتبات مراجع إثرائية تحتاج مراجعة المعلم وليست دروسًا مضمونة المطابقة للصف.</p>
 </div></div>
 <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-3">

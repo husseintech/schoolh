@@ -1,0 +1,39 @@
+<section class="card border-0 shadow-sm rounded-4 mb-4" aria-label="مصادر الدرس المجانية">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start mb-3">
+            <div><span class="badge bg-success-subtle text-success mb-2">للمعلم · اكتشاف ومراجعة</span>
+                <h3 class="h5">اختر ما يخدم مفهوم الدرس</h3>
+                <p class="text-muted mb-0">ابدأ بمصادر الحزمة الداخلية، أو ابحث عن شرح مرئي ونشاط مناسب لطلابك.</p>
+            </div>
+            <a class="btn btn-primary" href="{% url 'open_learning_ai_generate' lesson.id %}"><i class="bi bi-stars"></i> بناء شرح وورقة عمل داخل الموقع</a>
+        </div>
+        <h4 class="h6 mt-4">بحث موجّه في مواقع خارجية</h4>
+        <p class="small text-muted">هذه أزرار تفتح نتائج البحث في متصفحك، وليست مصادر عثر عليها النظام أو اعتمدها. لا تُضاف نتائجها إلى الدرس تلقائيًا.</p>
+        <div class="row g-3">
+            {% for link in search_links %}
+            <div class="col-md-6"><a class="d-block text-decoration-none border rounded-4 p-3 h-100" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+                <i class="bi {{ link.icon }} fs-4 text-primary"></i>
+                <strong class="d-block text-dark mt-2">{{ link.title }}</strong>
+                <span class="small d-block text-muted mt-1">{{ link.description }}</span>
+                <span class="small d-block text-primary mt-2">فتح البحث <i class="bi bi-box-arrow-up-right"></i></span>
+            </a></div>
+            {% endfor %}
+        </div>
+        <div class="bg-light rounded-3 p-3 mt-3 small">
+            <strong>قبل اعتماد المصدر:</strong> هل يشرح المفهوم المطلوب؟ هل يناسب الصف؟ هل أمثلته وإجاباته صحيحة؟ هل يمكن استخدامه دون شراء؟
+            قد تتضمن نتائج المواقع الخارجية مواد مدفوعة أو غير مناسبة؛ اختر المجاني الملائم ثم انسخ رابط المادة نفسها وأضفه أدناه.
+        </div>
+        <details class="border rounded-3 p-3 mt-3" {% if selected_source_form.errors %}open{% endif %}>
+            <summary class="fw-bold text-primary">إضافة مصدر اخترته من البحث</summary>
+            <form method="post" action="{% url 'open_learning_ai_search' lesson.id %}" class="mt-3">
+                {% csrf_token %}<input type="hidden" name="action" value="add_selected">
+                {% for field in selected_source_form %}
+                <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+                    {% for error in field.errors %}<p class="text-danger small">{{ error }}</p>{% endfor %}
+                </div>{% endfor %}
+                <button class="btn btn-success" type="submit">حفظ المصدر للمراجعة</button>
+                <p class="small text-muted mt-2 mb-0">لن يظهر للطلاب حتى تضغط اعتماد المصدر.</p>
+            </form>
+        </details>
+    </div>
+</section>

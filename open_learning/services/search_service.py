@@ -1,7 +1,7 @@
 """محرك البحث عن المصادر التعليمية.
 
 روابط حقيقية فقط من نتائج البحث الفعلية، مع حاجز ملاءمة إلزامي قبل إرجاع
-أي نتيجة إلى طبقة الحفظ. المحرك مجاني افتراضياً عبر DuckDuckGo.
+أي نتيجة إلى طبقة الحفظ. الافتراضي مكتبات ويكيميديا العامة دون مفتاح أو اشتراك.
 """
 import os
 import re
@@ -81,13 +81,16 @@ class SearchResultParser(HTMLParser):
 
 class SearchService:
     def __init__(self):
-        self.provider = os.getenv('SEARCH_PROVIDER', 'duckduckgo').strip().lower()
+        self.provider = os.getenv('SEARCH_PROVIDER', 'open_catalog').strip().lower() or 'open_catalog'
+        self.warnings = []
         self.google_cse_id = os.getenv('GOOGLE_CSE_ID', '').strip()
         self.google_api_key = os.getenv('GOOGLE_CSE_API_KEY', '').strip()
         self.domain_cap = int(os.getenv('SEARCH_DOMAIN_CAP', '2'))
 
     def search_all(self, lesson_title, grade, subject, max_per_group=4):
         """بحث متعدد، ثم رفض أي نتيجة لا تشير فعلاً إلى موضوع الدرس."""
+        if self.provider == 'open_catalog':
+            return self._search_open_catalog(lesson_title, subject, max_per_group)
         results = []
         seen_urls = set()
         # Three complementary queries run together instead of eight serial requests.
@@ -113,6 +116,22 @@ class SearchService:
                     continue
                 seen_urls.add(norm)
                 results.append(item)
+        return results
+
+    def _search_open_catalog(self, title, subject, limit):
+        from .open_sources import CATALOGS, CatalogUnavailable, catalog_search
+        results, successes = [], 0
+        self.warnings = []
+        # Wikimedia recommends sequential requests; at most one per library.
+        for host, name, namespace, kind in CATALOGS:
+            try:
+                items = catalog_search(host, name, namespace, kind, title, limit)
+                successes += 1
+                results.extend(item for item in items if self.is_relevant(item, title, subject))
+            except CatalogUnavailable as exc:
+                self.warnings.append(str(exc))
+        if not successes:
+            raise SearchUnavailable('تعذر الاتصال بالمكتبات المفتوحة الآن. يمكنك استخدام البحث الموجّه في صفحة المصادر أو حزمة الدرس الداخلية.')
         return results
 
     def _search(self, query, limit):
@@ -226,8 +245,10 @@ class SearchService:
 
         group = item.get('group', 'general')
         rtype = self._detect_type(group, url, text)
-        source_name = self._source_name(url)
+        source_name = item.get('catalog_name') or self._source_name(url)
         description = (snippet[:220] or f'مصدر عن {lesson_title}').strip()
+        if item.get('catalog_reference'):
+            description = f'مرجع إثرائي من {source_name}؛ ليس درسًا مخصصًا للصف. راجع ملاءمته وحقوق الاستخدام في صفحة المصدر. ' + description
 
         score = 35
         score += 20 if language == 'ar' else (10 if language == 'en' else 0)
@@ -258,6 +279,7 @@ class SearchService:
             'description': description[:480],
             'relevance_score': score,
             'group': group,
+            'catalog_reference': bool(item.get('catalog_reference')),
         }
 
     @staticmethod
