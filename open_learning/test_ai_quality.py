@@ -118,6 +118,7 @@ class AIQualityServiceTests(SimpleTestCase):
 
     def test_search_all_propagates_failure_and_recognizes_arabic_variants(self):
         service = SearchService()
+        service.provider = 'duckduckgo'
         with patch.object(service, '_search', side_effect=SearchUnavailable('blocked')):
             with self.assertRaises(SearchUnavailable): service.search_all('الإعراب', '4', 'عربي')
         self.assertTrue(service.is_relevant({'title': 'اعراب الفاعل', 'snippet': ''}, 'الإعراب'))

@@ -7,6 +7,7 @@
     <h2 class="h4">{{ title }}</h2>
     <p class="mb-0">درس واضح النطاق، يناسب طلابك، ويحوّل الفهم إلى تطبيق.</p>
 </div>
+{% if source_search %}{% include 'open_learning/_source_discovery.html' %}{% endif %}
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body">
         <h6 class="mb-3"><i class="bi bi-book-fill text-primary"></i> {{ lesson.title }} — {{ lesson.subject.name }} ({% for c in lesson.student_classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %})</h6>
@@ -36,7 +37,7 @@
             <p class="small text-muted">الحزمة تتضمن أهدافًا قابلة للقياس، شرحًا، أمثلة محلولة، ورقة عمل وخطة حصة. راجع الدقة وملاءمة المنهاج قبل اعتمادها. تعديل المواصفات يعيد إنشاء الحزمة بعد طلبك.</p>
             {% endif %}
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-stars"></i> تنفيذ الآن
+                <i class="bi bi-stars"></i> {% if source_search %}جلب مراجع من المكتبات المفتوحة{% else %}تنفيذ الآن{% endif %}
             </button>
             <a href="{% url 'open_learning_lesson_detail' lesson.id %}" class="btn btn-outline-secondary">إلغاء</a>
         </form>

@@ -8,11 +8,12 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.utils import timezone
 
 from .models import LearningLesson, LearningResource, LearningResourceLibrary
-from .ai_forms import LessonBriefForm
+from .ai_forms import LessonBriefForm, SelectedSourceForm
 from .services.ai_service import (
     AIServiceUnavailable, get_provider, lesson_content_hash, merge_section,
 )
 from .services.search_service import SearchService, SearchUnavailable
+from .services.open_sources import teacher_search_links
 from .services.usage import CACHE_OPERATION, log_usage, recent_ai_operation
 from .views import _can_manage, _is_admin, _role
 
@@ -242,15 +243,20 @@ def _execute_resource_search(request, lesson, operation, update_mode):
     try:
         raw_results = searcher.search_all(lesson.title, grade, subject)
     except SearchUnavailable as exc:
-        log_usage(request.user, lesson, operation, provider='web_search', success=False, error=str(exc))
+        log_usage(request.user, lesson, operation, provider=searcher.provider, success=False, error=str(exc))
         messages.warning(request, str(exc))
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
     classified = [searcher.classify(item, lesson.title, grade, subject) for item in raw_results]
+    if searcher.warnings:
+        messages.info(request, 'بعض المكتبات لم تستجب؛ عرضنا نتائج المكتبات المتاحة. البحث الموجّه متاح أيضًا.')
     classified = searcher.deduplicate_by_domain(classified)
     classified = sorted(classified, key=lambda item: item['relevance_score'], reverse=True)[:8]
     with ThreadPoolExecutor(max_workers=4) as executor:
-        checks = list(executor.map(searcher.validate_url, [item['url'] for item in classified]))
+        # Page IDs from the fixed public catalog API already identify existing pages.
+        # Avoid a second round of HEAD requests that many reference sites disallow.
+        checks = list(executor.map(
+            lambda item: item.get('catalog_reference') or searcher.validate_url(item['url']), classified))
     valid_urls = {item['url'] for item, valid in zip(classified, checks) if valid}
 
     added = skipped_dup = skipped_invalid = skipped_archived = 0
@@ -294,7 +300,7 @@ def _execute_resource_search(request, lesson, operation, update_mode):
         existing_urls.add(norm)
 
     duration_ms = int((time.monotonic() - started) * 1000)
-    log_usage(request.user, lesson, operation, provider='web_search', duration_ms=duration_ms,
+    log_usage(request.user, lesson, operation, provider=searcher.provider, duration_ms=duration_ms,
               success=bool(added or skipped_dup), tokens=None)
     if not added:
         if skipped_dup:
@@ -319,18 +325,33 @@ def ai_search_resources(request, lesson_id):
     if not _can_manage(request, lesson):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('open_learning_list')
-    if request.method == 'POST':
+    selected_form = SelectedSourceForm(request.POST if request.method == 'POST' and request.POST.get('action') == 'add_selected' else None)
+    if request.method == 'POST' and request.POST.get('action') == 'add_selected':
+        if selected_form.is_valid():
+            from .services.ai_service import normalize_url
+            fields = selected_form.cleaned_data
+            norm = normalize_url(fields['url'])
+            if any(normalize_url(url) == norm for url in lesson.resources.values_list('url', flat=True)):
+                messages.info(request, 'هذا الرابط موجود بالفعل؛ لم نكرره.')
+            else:
+                LearningResource.objects.create(lesson=lesson, **fields, status='pending', created_by=request.user,
+                                                source_name='اختيار المعلم', is_ai_generated=False)
+                messages.success(request, 'حُفظ المصدر بانتظار مراجعتك واعتماده قبل عرضه للطلاب.')
+            return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
+    elif request.method == 'POST':
         return _execute_resource_search(request, lesson, 'search_resources', update_mode=False)
     return render(request, 'open_learning/ai_confirm.html', {
         'lesson': lesson,
-        'title': 'البحث الذكي عن مصادر',
+        'title': 'استوديو مصادر الدرس',
+        'source_search': True,
+        'selected_source_form': selected_form,
+        'search_links': teacher_search_links(lesson),
         'message': (
-            'سيبحث النظام عن مصادر متنوعة (فيديو، شرح، محاكاة، نشاط، تجربة، صور) باستعلامات متعددة، '
-            'يتحقق من صحة الروابط، يصنفها ويرتبها حسب الملاءمة، ثم يحفظها بانتظار اعتمادك. '
-            'لا تُحذف أي مصادر موجودة.'
+            'البحث التلقائي يجلب مراجع من المكتبات المفتوحة، ويرتبها حسب كلمات الدرس ويحفظها بانتظار مراجعتك. '
+            'هذه مراجع إثرائية وليست دروسًا مطابقة للصف تلقائيًا. للفيديو والأنشطة استخدم البحث الموجّه أدناه.'
         ),
         'action_url': 'open_learning_ai_search',
-        'cost_notice': True,
+        'cost_notice': False,
     })
 
 
@@ -345,12 +366,15 @@ def ai_update_resources(request, lesson_id):
     return render(request, 'open_learning/ai_confirm.html', {
         'lesson': lesson,
         'title': 'تحديث المصادر',
+        'selected_source_form': SelectedSourceForm(),
+        'source_search': True,
+        'search_links': teacher_search_links(lesson),
         'message': (
             'سيتم البحث عن مصادر جديدة فقط، مع منع التكرار وعدم حذف المصادر القديمة. '
-            'قد يستهلك هذا عملية ذكاء اصطناعي. هل تريد المتابعة؟'
+            'المكتبات المفتوحة الافتراضية لا تحتاج مفتاحًا مدفوعًا ولا تستخدم حصة Gemini.'
         ),
         'action_url': 'open_learning_ai_update',
-        'cost_notice': True,
+        'cost_notice': False,
     })
 
 
