@@ -52,6 +52,38 @@ def _core_lesson_words(value):
     return [w for w in _words(value) if len(w) > 2 and w not in stop]
 
 
+def lesson_search_topics(title, subject=''):
+    """Split explicit review headings, without guessing a syllabus or URLs."""
+    title = re.sub(r'^\s*مراجعة\s+(?:عامة\s*)?', '', title or '')
+    # The ل belongs to the removed review heading, not to the concept itself.
+    title = re.sub(r'^لل', 'ال', title)
+    parts = re.split(r'[,،؛;]+|\s+(?:مع|و)\s+|\s+و(?=ال|حروف)', title)
+    arabic_subject = any(word.startswith('عرب') for word in _words(subject))
+    aliases = {
+        'حروف': ('أبجدية عربية', 'الحروف الهجائية'),
+        'حركات': ('تشكيل لغة', 'الحركات القصيرة'),
+    }
+    topics = []
+    for part in parts:
+        part = re.sub(r'^\s*(?:مع\s+|و(?=ال|حروف))', '', part).strip()
+        key = ' '.join(_core_lesson_words(part))
+        if not key:
+            continue
+        candidates = aliases.get(key, (part,)) if arabic_subject else (part,)
+        for candidate in candidates:
+            if candidate not in topics:
+                topics.append(candidate)
+    return topics[:6]
+
+
+def matches_topic(item, topic):
+    words = set(_words((item.get('title') or '') + ' ' + (item.get('snippet') or '')))
+    terms = set(_core_lesson_words(topic))
+    # Short concepts need all their terms: "حروف المد" must not match حروف alone.
+    required = len(terms) if len(terms) <= 2 else (len(terms) + 1) // 2
+    return bool(terms) and len(terms & words) >= required
+
+
 class SearchResultParser(HTMLParser):
     """DuckDuckGo anchors do not guarantee attribute order or quote style."""
     def __init__(self):
@@ -122,12 +154,15 @@ class SearchService:
         from .open_sources import CATALOGS, CatalogUnavailable, catalog_search
         results, successes = [], 0
         self.warnings = []
+        topics = lesson_search_topics(title, subject)
+        if not topics:
+            return []
         # Wikimedia recommends sequential requests; at most one per library.
         for host, name, namespace, kind in CATALOGS:
             try:
-                items = catalog_search(host, name, namespace, kind, title, limit)
+                items = catalog_search(host, name, namespace, kind, topics, limit)
                 successes += 1
-                results.extend(item for item in items if self.is_relevant(item, title, subject))
+                results.extend(item for item in items if any(matches_topic(item, topic) for topic in topics))
             except CatalogUnavailable as exc:
                 self.warnings.append(str(exc))
         if not successes:

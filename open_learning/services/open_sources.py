@@ -24,10 +24,15 @@ def catalog_search(host, name, namespace, kind, title, limit=4):
     # Hosts come only from the fixed catalog, never user input or search results.
     if host not in {catalog[0] for catalog in CATALOGS}:
         raise CatalogUnavailable('مكتبة غير معروفة')
-    query = re.sub(r'[^\w\s\u0600-\u06ff]', ' ', title).strip()[:200]
+    # Quote each cleaned concept; only our code may introduce search operators.
+    # One OR query per library keeps the request budget unchanged for review lessons.
+    titles = title if isinstance(title, (list, tuple)) else [title]
+    phrases = [' '.join(re.sub(r'[^\w\s]', ' ', value).split())[:100]
+               for value in titles[:6]]
+    query = ' OR '.join('"' + phrase + '"' for phrase in phrases if phrase)
     if not query:
         return []
-    key = 'open-sources-v1:' + hashlib.sha256(f'{host}:{query}:{limit}'.encode()).hexdigest()
+    key = 'open-sources-v2:' + hashlib.sha256(f'{host}:{query}:{limit}'.encode()).hexdigest()
     cached = cache.get(key)
     if cached is not None:
         return cached

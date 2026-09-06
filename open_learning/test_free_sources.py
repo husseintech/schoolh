@@ -10,7 +10,7 @@ from school.models import Profile, Student, Teacher
 
 from . import test_ai_quality as quality
 from .services.open_sources import CATALOGS, CatalogUnavailable, catalog_search, teacher_search_links
-from .services.search_service import SearchService, SearchUnavailable
+from .services.search_service import SearchService, SearchUnavailable, lesson_search_topics
 
 
 def api_response(rows):
@@ -26,6 +26,37 @@ class OpenCatalogTests(SimpleTestCase):
     def test_default_is_keyless_catalog(self):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(SearchService().provider, 'open_catalog')
+
+    def test_second_grade_review_accepts_individual_concepts_not_political_movements(self):
+        title = 'مراجعة عامة للحروف ، مع الحركات وحروف المد'
+        topics = lesson_search_topics(title, 'اللغة العربية')
+        self.assertIn('أبجدية عربية', topics)
+        self.assertIn('تشكيل لغة', topics)
+        self.assertIn('حروف المد', topics)
+        self.assertFalse(any('مراجعة' in topic for topic in topics))
+        items = [
+            {'title': 'أبجدية عربية', 'snippet': 'الحروف الهجائية'},
+            {'title': 'تشكيل (لغة)', 'snippet': 'الفتحة والضمة والكسرة'},
+            {'title': 'حروف المد', 'snippet': 'الألف والواو والياء'},
+            {'title': 'الحركات السياسية', 'snippet': 'مراجعة عامة للحركات'},
+            {'title': 'حروف الجر', 'snippet': 'حروف اللغة العربية'},
+        ]
+        service = SearchService()
+        service.provider = 'open_catalog'
+        with patch('open_learning.services.open_sources.catalog_search', side_effect=[items, [], []]) as search:
+            results = service.search_all(title, '2', 'اللغة العربية')
+        self.assertEqual(results, items[:3])
+        self.assertEqual(search.call_count, 3)
+
+    def test_compound_queries_are_quoted_and_cannot_inject_search_operators(self):
+        with patch('open_learning.services.open_sources.requests.get', return_value=api_response([])) as get:
+            catalog_search(*CATALOGS[0], ['حروف المد', 'الحركات القصيرة', '" OR insource:test'])
+        query = get.call_args.kwargs['params']['srsearch']
+        self.assertEqual(query, '"حروف المد" OR "الحركات القصيرة" OR "OR insource test"')
+
+    def test_arabic_letter_aliases_are_not_used_for_other_subjects(self):
+        self.assertEqual(lesson_search_topics('الحركات', 'العلوم'), ['الحركات'])
+        self.assertEqual(lesson_search_topics('دورة الماء', 'العلوم'), ['دورة الماء'])
 
     def test_canonical_page_link_and_cache(self):
         response = api_response([{'pageid': 321, 'title': 'الفاعل', 'snippet': '<span>الفاعل</span> &amp; إعرابه'}])

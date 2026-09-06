@@ -306,7 +306,7 @@ def _execute_resource_search(request, lesson, operation, update_mode):
         if skipped_dup:
             messages.info(request, 'المصادر المناسبة التي عثرنا عليها موجودة بالفعل في الدرس؛ لم نكررها.')
         else:
-            messages.warning(request, 'لم نعثر على مصادر جديدة مناسبة يمكن إضافتها. جرّب عنوانًا أدق، أو أنشئ حزمة الدرس داخل الموقع من زر بناء حزمة تعلم مخصصة.')
+            messages.warning(request, 'لم تُضف مراجع جديدة من المكتبات المتاحة؛ قد لا تغطي محاور الدرس أو لم تجتز النتائج شروط الإضافة. يمكنك بناء حزمة تعلم مخصصة للصف داخل الموقع، أو استخدام البحث الموجّه عن فيديو وأوراق عمل.')
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
     summary = f'أُضيف {added} مصدر جديد (بانتظار اعتمادك).'
     if skipped_dup:
