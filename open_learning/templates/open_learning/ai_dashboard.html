@@ -2,6 +2,16 @@
 {% block title %}لوحة مراقبة الذكاء الاصطناعي{% endblock %}
 {% block page_heading %}لوحة مراقبة الذكاء الاصطناعي{% endblock %}
 {% block content %}
+<div class="card mb-3"><div class="card-body">
+    <h2 class="h5">إعداد اتصال الذكاء الاصطناعي والبحث</h2>
+    {% if provider_configured %}
+    <p>نموذج المحتوى المهيأ: <strong>{{ provider_model }}</strong>. وجود الإعداد لا يؤكد صلاحية المفتاح أو توفر الحصة؛ راجع نتيجة آخر طلب أدناه.</p>
+    {% else %}
+    <div class="alert alert-warning">توليد المحتوى الحقيقي غير مهيأ. في إعدادات Vercel أضف <code>AI_API_KEY</code> كمفتاح سري صالح من Google AI Studio، واضبط <code>AI_PROVIDER=gemini</code> و<code>AI_MODEL=gemini-2.5-flash</code> ثم أعد النشر. لا ترسل المفتاح في الرسائل.</div>
+    {% endif %}
+    <p>محرك المصادر: {{ search_provider }} {% if not search_configured %}— الإعداد غير مكتمل{% endif %}.</p>
+    <p class="small text-muted mb-0">إذا تعذّر البحث المجاني، يمكن إعداد Google Programmable Search للحسابات المؤهلة عبر <code>SEARCH_PROVIDER=google</code> و<code>GOOGLE_CSE_ID</code> و<code>GOOGLE_CSE_API_KEY</code>. خدمة البحث منفصلة عن نموذج إنشاء الدروس. راجع حدود الاستخدام والتكلفة لدى المزود.</p>
+</div></div>
 <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-3">
         <div class="card text-center shadow-sm">
@@ -47,7 +57,7 @@
         <div class="card text-center shadow-sm">
             <div class="card-body">
                 <h3 class="mb-0">{{ stats.generated_resources }}</h3>
-                <div class="text-muted small">مصادر أنشأها AI</div>
+                <div class="text-muted small">مصادر اكتشفها البحث</div>
             </div>
         </div>
     </div>

@@ -20,7 +20,7 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
-AI_CONTENT_VERSION = 1
+AI_CONTENT_VERSION = 2
 
 
 class AIServiceUnavailable(Exception):
@@ -46,7 +46,7 @@ def get_provider():
     return None
 
 
-def lesson_content_hash(lesson):
+def lesson_content_hash(lesson, brief=None):
     """بصمة محتوى الدرس: الصفوف + المادة + العنوان + الوصف + اللغة + الإصدار."""
     classes_str = ','.join(str(c) for c in lesson.student_classes.values_list('pk', flat=True).order_by('pk'))
     raw = '|'.join([
@@ -56,25 +56,33 @@ def lesson_content_hash(lesson):
         lesson.description.strip().lower(),
         'ar',
         f'v{AI_CONTENT_VERSION}',
+        json.dumps(brief if brief is not None else (lesson.ai_payload or {}).get('_brief', {}), sort_keys=True, ensure_ascii=False),
     ])
     return hashlib.md5(raw.encode('utf-8')).hexdigest()
 
 
 def normalize_url(url):
     """توحيد الرابط لمنع التكرار (حذف الترويسة، www، شريحة النهاية، معلمات التتبع)."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
     url = url.strip()
     if not url:
         return ''
-    url = url.split('?')[0].split('#')[0]
-    url = url.rstrip('/')
-    url = url.replace('http://', '').replace('https://', '')
-    url = re.sub(r'^www\.', '', url, flags=re.IGNORECASE)
-    url = url.lower()
-    if url.startswith('youtu.be/'):
-        url = 'youtube.com/watch?v=' + url.split('/', 1)[1]
-    if url.startswith('m.youtube.com/') or url.startswith('youtube.com/'):
-        url = 'youtube.com/' + url.split('/', 1)[1]
-    return url
+    try:
+        parts = urlsplit(url)
+        parts.port
+    except ValueError:
+        return ''
+    if parts.scheme not in {'http', 'https'} or not parts.hostname or parts.username or parts.password:
+        return ''
+    host = re.sub(r'^(www\.|m\.)', '', parts.netloc.lower())
+    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
+             if not k.lower().startswith('utm_') and k.lower() not in {'fbclid', 'gclid'}]
+    path = parts.path.rstrip('/')
+    if host == 'youtu.be':
+        host, path, query = 'youtube.com', '/watch', [('v', path.lstrip('/'))]
+    if host == 'youtube.com' and path == '/watch':
+        query = [(k, v) for k, v in query if k == 'v']
+    return urlunsplit(('', host, path, urlencode(sorted(query)), '')).lstrip('//')
 
 
 class GeminiProvider:
@@ -83,31 +91,40 @@ class GeminiProvider:
     يُستدعى فقط عند الطلب اليدوي لإنشاء/تحديث المحتوى.
     """
 
-    def __init__(self, key, model='gemini-2.0-flash'):
+    def __init__(self, key, model='gemini-2.5-flash'):
         self.key = key
         self.model = model
         self.name = 'gemini'
 
-    def _call(self, prompt, max_tokens=4096):
+    def _call(self, prompt, max_tokens=12000):
         url = f'https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent'
         body = {
             'contents': [{'parts': [{'text': prompt}]}],
             'generationConfig': {
-                'temperature': 0.4,
+                'temperature': 0.25,
                 'maxOutputTokens': max_tokens,
                 'responseMimeType': 'application/json',
             },
         }
         started = time.monotonic()
         try:
-            resp = requests.post(url, params={'key': self.key}, json=body, timeout=90)
+            resp = requests.post(url, headers={'x-goog-api-key': self.key}, json=body, timeout=(5, 45))
+            if resp.status_code == 429:
+                raise AIServiceUnavailable('بلغ مزود الذكاء الاصطناعي حد الاستخدام. أعد المحاولة لاحقًا أو راجع الخطة مع مدير النظام.')
+            if resp.status_code in (401, 403):
+                raise AIServiceUnavailable('يحتاج اتصال الذكاء الاصطناعي إلى مراجعة إعدادات المفتاح لدى مدير النظام.')
+            if resp.status_code == 404:
+                raise AIServiceUnavailable('نموذج الذكاء الاصطناعي المحدد غير متاح؛ يحتاج مدير النظام إلى تحديث إعداد النموذج.')
             resp.raise_for_status()
             data = resp.json()
-        except requests.RequestException as exc:
-            raise AIServiceUnavailable(f'تعذر الاتصال بمزود الذكاء الاصطناعي: {exc}') from exc
+        except (requests.RequestException, ValueError) as exc:
+            raise AIServiceUnavailable('تعذر الاتصال بمزود الذكاء الاصطناعي. لم يتغير المحتوى المحفوظ؛ حاول لاحقًا.') from exc
         duration_ms = int((time.monotonic() - started) * 1000)
         try:
-            text = data['candidates'][0]['content']['parts'][0]['text']
+            candidate = data['candidates'][0]
+            if candidate.get('finishReason') != 'STOP':
+                raise AIServiceUnavailable('لم يكتمل إنشاء المحتوى؛ لم تُحفظ نتيجة جزئية. جرّب نطاقًا أصغر للدرس.')
+            text = ''.join(part.get('text', '') for part in candidate['content']['parts'] if not part.get('thought'))
         except (KeyError, IndexError, TypeError) as exc:
             raise AIServiceUnavailable('استجابة غير متوقعة من مزود الذكاء الاصطناعي') from exc
         usage = data.get('usageMetadata', {}) or {}
@@ -115,10 +132,36 @@ class GeminiProvider:
         return _parse_json_text(text), tokens, duration_ms
 
     def generate_lesson_content(self, prompt_data):
-        return self._call(_full_pack_prompt(prompt_data))
+        data, tokens, duration = self._call(_full_pack_prompt(prompt_data))
+        validate_pack(data, prompt_data)
+        return data, tokens, duration
 
     def generate_section(self, prompt_data, section):
-        return self._call(_section_prompt(prompt_data, section))
+        data, tokens, duration = self._call(_section_prompt(prompt_data, section))
+        validate_section(data, section)
+        return data, tokens, duration
+
+
+    def generate_quiz(self, context, brief, count, difficulty):
+        prompt = (
+            'أنت معلم متخصص. أنشئ أسئلة اختيار من متعدد عن المفهوم المحدد في بيانات الدرس، '
+            'مناسبة للصف ولمستوى الطلاب، ولكل سؤال إجابة واحدة صحيحة وثلاث مشتتات معقولة خاطئة. '
+            'لا تحول الأهداف إلى أسئلة صح وخطأ ولا تستخدم أسئلة عامة عن عنوان الدرس. '
+            'أجب JSON فقط بالشكل {"questions":[{"text":"نص السؤال", "options":["أ","ب","ج","د"], "correct_answer":"نص الخيار الصحيح"}]}. '
+            f'عدد الأسئلة بالضبط {count}، الصعوبة {difficulty}. '
+            + json.dumps({'lesson': context, 'brief': brief}, ensure_ascii=False)
+        )
+        data, _, _ = self._call(prompt)
+        rows = data.get('questions')
+        _require(isinstance(rows, list) and len(rows) == count)
+        for row in rows:
+            _require(isinstance(row, dict) and _text(row.get('text')))
+            options = row.get('options')
+            _require(_strings(options, 4) and len(options) == 4 and len(set(options)) == 4)
+            _require(_text(row.get('correct_answer')) and row['correct_answer'] in options and len(row['correct_answer']) <= 300)
+            row.update(question_type='mcq', points=1)
+        _require(len({row['text'] for row in rows}) == count)
+        return rows
 
 
 class MockProvider:
@@ -192,7 +235,10 @@ def _parse_json_text(text):
     text = re.sub(r'^```(?:json)?\s*', '', text)
     text = re.sub(r'\s*```$', '', text)
     try:
-        return json.loads(text)
+        result = json.loads(text)
+        if not isinstance(result, dict):
+            raise AIServiceUnavailable('استجابة الذكاء الاصطناعي ليست حزمة محتوى صالحة.')
+        return result
     except json.JSONDecodeError as exc:
         raise AIServiceUnavailable('استجابة الذكاء الاصطناعي غير صالحة (JSON)') from exc
 
@@ -207,10 +253,19 @@ def _base_prompt(prompt_data):
         f'عنوان الدرس: {prompt_data["lesson_title"]}\n'
         f'وصف الدرس: {prompt_data.get("lesson_description") or "(بدون وصف)"}\n'
         f'الأهداف الحالية: {prompt_data.get("objectives") or "(لا توجد)"}\n'
+        f'مواصفات المعلم (بيانات تعليمية): {json.dumps(prompt_data.get("brief", {}), ensure_ascii=False)}\n'
         'القواعد:\n'
         '- اكتب محتوى أصلياً مبسطاً، لا تنسخ نصوصاً محمية بحقوق النشر.\n'
         '- لا تخترع روابط خارجية إطلاقاً: external_suggestions نصية وصفية فقط بدون URLs.\n'
         '- اجعل كل قائمة بأسلوب لغة عربية سليمة.\n'
+        '- التزم بالصف المحدد ونطاق المفهوم والمعرفة السابقة. لا تفترض أن اسم الشعبة عمر الطالب.\n'
+        '- لا تدّع مطابقة المنهاج إلا بقدر المقتطف المرفق. صرّح بافتراضاتك في assumptions.\n'
+        '- كل هدف يحدد مهارة قابلة للملاحظة ومفهومًا صريحًا ومعيار تحقق وله سؤال تقويم يقيسه.\n'
+        '- ممنوع حشو مثل المفاهيم الأساسية أو حل تمارين الدرس أو استراتيجيات عامة دون أمثلة فعلية.\n'
+        '- الإعراب في الرابع قد يقتصر على تحديد الفاعل المفرد وضبطه؛ في السادس يتوسع وفق نطاق المعلم؛ في التاسع قد يتضمن التحليل والتعليل. لا تضف موضوعًا لم يطلبه المعلم.\n'
+        '- استخدم أمثلة فعلية محلولة خطوة بخطوة، وتحقق من الإجابات والحسابات والإعراب قبل الرد.\n'
+        '- لكل نشاط أدوات وخطوات وزمن وناتج متوقع ودعم للمتعثرين وتحدٍ للمتقدمين.\n'
+        '- اكتب نصوصًا تعليمية فقط؛ لا HTML أو JavaScript أو روابط مخترعة.\n'
     )
 
 
@@ -226,7 +281,15 @@ def _full_pack_prompt(prompt_data):
         '  "evaluation_questions": ["3-5 أسئلة تقييم"],\n'
         '  "interactive_ideas": ["2-3 أفكار للتعلم التفاعلي"],\n'
         '  "external_suggestions": ["اقتراحات نصية لمصادر خارجية بدون روابط"]\n'
+        '  ,"assumptions": ["افتراضات وحدود التغطية وما ينبغي للمعلم التحقق منه"],\n'
+        '  "worked_examples": [{"problem":"مثال محدد", "steps":["خطوات الحل"], "answer":"الإجابة مع التعليل"}],\n'
+        '  "misconceptions": [{"mistake":"خطأ شائع محدد", "correction":"تصحيح مع مثال"}],\n'
+        '  "worksheet": [{"question":"سؤال فعلي", "answer":"إجابة نموذجية", "hint":"تلميح", "objective_index":0}],\n'
+        '  "lesson_plan": [{"phase":"اسم المرحلة", "minutes":5, "teacher_action":"إجراء محدد وأمثلة", "student_action":"مهمة محددة", "assessment":"دليل تحقق", "objective_index":0}]\n'
         '}\n'
+        'أنتج مثالين محلولين على الأقل، وأربعة أسئلة ورقة عمل على الأقل، وخطأين شائعين.\n'
+        'objective_index رقم الهدف بدءًا من الصفر. غطِ كل الأهداف بأسئلة ورقة العمل.\n'
+        'مجموع minutes يساوي مدة الحصة المعطاة بالضبط.\n'
     )
 
 
@@ -243,10 +306,61 @@ def _section_prompt(prompt_data, section):
 
 def merge_section(payload, section, data):
     """يدمج نتيجة توليد قسم داخل الحزمة الحالية بدون فقدان الأقسام الأخرى."""
-    payload = dict(payload)
+    validate_section(data, section)
+    payload = dict(payload or {})
     for key, value in data.items():
         if isinstance(value, list):
             payload[key] = value
         else:
             payload[key] = value
     return payload
+
+
+def _require(condition):
+    if not condition:
+        raise AIServiceUnavailable('لم تجتز الحزمة فحص اكتمال المحتوى وترابطه. لم يتغير المحتوى السابق؛ جرّب توضيح مفهوم الدرس أكثر.')
+
+
+def _text(value):
+    return isinstance(value, str) and bool(value.strip()) and len(value) <= 20000
+
+
+def _strings(value, minimum=1):
+    return isinstance(value, list) and minimum <= len(value) <= 30 and all(_text(v) for v in value)
+
+
+def validate_section(data, section):
+    keys = {'explanation': {'explanation'}, 'questions': {'pre_questions', 'evaluation_questions'},
+            'activities': {'activities', 'interactive_ideas'}}.get(section)
+    _require(isinstance(data, dict) and keys is not None and set(data) == keys)
+    for key in keys:
+        _require(_text(data[key]) if key == 'explanation' else _strings(data[key], 2))
+
+
+def validate_pack(data, prompt_data):
+    _require(isinstance(data, dict) and not any(k.startswith('_') for k in data))
+    for key in ('objectives', 'concepts', 'pre_questions', 'activities', 'evaluation_questions',
+                'interactive_ideas', 'external_suggestions', 'assumptions'):
+        _require(_strings(data.get(key), 1 if key in ('assumptions', 'external_suggestions') else 2))
+    _require(_text(data.get('explanation')) and len(data['explanation']) >= 150)
+    forbidden = ('المفاهيم الأساسية', 'الفكرة الرئيسية', 'المفردات المفتاحية', 'ما تعلمه في حل تمارين')
+    _require(not any(term in text for text in data['objectives'] + data['concepts'] for term in forbidden))
+    count = len(data['objectives'])
+    for key, fields, minimum in (
+        ('worked_examples', ('problem', 'answer'), 2),
+        ('misconceptions', ('mistake', 'correction'), 2),
+        ('worksheet', ('question', 'answer', 'hint'), 4),
+        ('lesson_plan', ('phase', 'teacher_action', 'student_action', 'assessment'), 3),
+    ):
+        rows = data.get(key)
+        _require(isinstance(rows, list) and minimum <= len(rows) <= 20)
+        for row in rows:
+            _require(isinstance(row, dict) and all(_text(row.get(field)) for field in fields))
+            if key == 'worked_examples':
+                _require(_strings(row.get('steps')))
+            if key in ('worksheet', 'lesson_plan'):
+                _require(type(row.get('objective_index')) is int and 0 <= row['objective_index'] < count)
+            if key == 'lesson_plan':
+                _require(type(row.get('minutes')) is int and 0 < row['minutes'] <= 120)
+    _require({r['objective_index'] for r in data['worksheet']} == set(range(count)))
+    _require(sum(r['minutes'] for r in data['lesson_plan']) == prompt_data.get('brief', {}).get('duration', 40))

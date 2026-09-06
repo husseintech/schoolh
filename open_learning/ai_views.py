@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,6 +8,7 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.utils import timezone
 
 from .models import LearningLesson, LearningResource, LearningResourceLibrary
+from .ai_forms import LessonBriefForm
 from .services.ai_service import (
     AIServiceUnavailable, get_provider, lesson_content_hash, merge_section,
 )
@@ -15,14 +17,16 @@ from .services.usage import CACHE_OPERATION, log_usage, recent_ai_operation
 from .views import _can_manage, _is_admin, _role
 
 
-def _prompt_data(lesson):
+def _prompt_data(lesson, brief=None):
     classes = ', '.join(lesson.student_classes.values_list('name', flat=True))
+    brief = brief if brief is not None else (lesson.ai_payload or {}).get('_brief', {})
     return {
-        'grade': classes or '',
+        'grade': brief.get('grade') or classes or '',
         'subject': lesson.subject.name if lesson.subject else '',
         'lesson_title': lesson.title,
         'lesson_description': lesson.description,
-        'objectives': None,
+        'objectives': (lesson.ai_payload or {}).get('objectives'),
+        'brief': brief,
     }
 
 
@@ -56,9 +60,13 @@ def ai_generate_content(request, lesson_id):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('open_learning_list')
 
-    if request.method == 'POST':
+    brief_form = LessonBriefForm(request.POST if request.method == 'POST' else None,
+                                 initial=(lesson.ai_payload or {}).get('_brief') or {
+                                     'focus': lesson.description, 'duration': 40, 'learner_level': 'mixed'})
+    if request.method == 'POST' and brief_form.is_valid():
         lesson.refresh_from_db()
-        current_hash = lesson_content_hash(lesson)
+        brief = brief_form.cleaned_data
+        current_hash = lesson_content_hash(lesson, brief)
 
         if lesson.ai_payload and lesson.content_hash == current_hash:
             log_usage(request.user, lesson, CACHE_OPERATION, provider='cache')
@@ -73,7 +81,9 @@ def ai_generate_content(request, lesson_id):
         )
         if cached_lesson:
             lesson.ai_payload = cached_lesson.ai_payload
-            lesson.ai_status = 'approved'
+            lesson.ai_status = 'pending'
+            lesson.ai_reviewed_by = None
+            lesson.ai_review_note = ''
             lesson.ai_generated_at = cached_lesson.ai_generated_at
             lesson.content_hash = current_hash
             lesson.save()
@@ -82,7 +92,7 @@ def ai_generate_content(request, lesson_id):
                 if _link_reused_resource(lesson, src):
                     linked += 1
             log_usage(request.user, lesson, CACHE_OPERATION, provider='cache')
-            msg = 'حزمة التعلم المخزنة من درس مشابه معتمدة سابقاً — أُعيد استخدامها بالكامل دون أي استهلاك.'
+            msg = 'استُخدمت حزمة مطابقة للمواصفات؛ راجعها قبل اعتمادها لهذا الدرس.'
             if linked:
                 msg += f' (رُبط {linked} من الموارد المخزنة)'
             messages.info(request, msg)
@@ -92,21 +102,31 @@ def ai_generate_content(request, lesson_id):
         if not provider:
             log_usage(request.user, lesson, 'generate_content', provider='none', success=False,
                       error='مزود الذكاء الاصطناعي غير مهيأ (AI_API_KEY)')
-            messages.error(request, 'تعذر إنشاء المحتوى الذكي حالياً، ولكن الدروس والمصادر المحفوظة ما زالت متاحة.')
-            return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
+            messages.error(request, 'التوليد الحقيقي غير مفعّل. يحتاج مدير النظام إلى إعداد اتصال الذكاء الاصطناعي. لن نستبدل درسك بقالب عام.')
+            return render(request, 'open_learning/ai_confirm.html', {
+                'lesson': lesson, 'title': 'بناء حزمة تعلم مخصصة', 'brief_form': brief_form,
+                'action_url': 'open_learning_ai_generate', 'cost_notice': True,
+                'message': 'احتفظ بهذه التفاصيل حتى يفعّل مدير النظام اتصال الذكاء الاصطناعي.',
+            })
 
         if recent_ai_operation(lesson.pk, 'generate_content'):
             messages.info(request, 'تم إنشاء المحتوى الذكي لهذا الدرس مؤخراً — اعرض النتيجة المحفوظة أو انتظر قليلاً.')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
         try:
-            data, tokens, duration_ms = provider.generate_lesson_content(_prompt_data(lesson))
+            data, tokens, duration_ms = provider.generate_lesson_content(_prompt_data(lesson, brief))
         except AIServiceUnavailable as exc:
             log_usage(request.user, lesson, 'generate_content', provider=provider.name, model=provider.model,
                       success=False, error=str(exc))
-            messages.error(request, 'تعذر إنشاء المحتوى الذكي حاليًا، ولكن الدروس والمصادر المحفوظة ما زالت متاحة.')
-            return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
+            messages.error(request, str(exc))
+            return render(request, 'open_learning/ai_confirm.html', {
+                'lesson': lesson, 'title': 'بناء حزمة تعلم مخصصة', 'brief_form': brief_form,
+                'action_url': 'open_learning_ai_generate', 'cost_notice': True,
+                'message': 'راجع التفاصيل وأعد المحاولة؛ لم يتغير المحتوى المحفوظ.',
+            })
 
+        data['_brief'] = brief
+        data['_version'] = 2
         lesson.ai_payload = data
         lesson.ai_status = 'pending'
         lesson.content_hash = current_hash
@@ -121,7 +141,8 @@ def ai_generate_content(request, lesson_id):
 
     return render(request, 'open_learning/ai_confirm.html', {
         'lesson': lesson,
-        'title': 'إنشاء محتوى ذكي للدرس',
+        'title': 'بناء حزمة تعلم مخصصة',
+        'brief_form': brief_form,
         'message': (
             'سيطلب النظام من الذكاء الاصطناعي إنشاء: الأهداف، الشرح المبسط، المفاهيم، الأسئلة التمهيدية، '
             'الأنشطة، أسئلة التقييم، أفكار التعلم التفاعلي، والاقتراحات الإثرائية. '
@@ -152,11 +173,14 @@ def ai_regenerate_section(request, lesson_id):
     operation = SECTION_OPERATIONS[op_key]
 
     if request.method == 'POST':
+        if not (lesson.ai_payload or {}).get('_brief'):
+            messages.info(request, 'حدّد مفهوم الدرس والصف أولًا لبناء حزمة مخصصة.')
+            return redirect('open_learning_ai_generate', lesson_id=lesson.pk)
         provider = get_provider()
         if not provider:
             log_usage(request.user, lesson, operation, provider='none', success=False,
                       error='مزود الذكاء الاصطناعي غير مهيأ (AI_API_KEY)')
-            messages.error(request, 'تعذر توليد هذا القسم حالياً، والمحتوى المحفوظ ما زال متاحاً.')
+            messages.error(request, 'اتصال الذكاء الاصطناعي غير مفعّل؛ يرجى مراجعة مدير النظام.')
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
         if recent_ai_operation(lesson.pk, operation):
             messages.info(request, 'تم توليد هذا القسم مؤخراً — اعرض النتيجة المحفوظة أو انتظر قليلاً.')
@@ -167,12 +191,14 @@ def ai_regenerate_section(request, lesson_id):
         except AIServiceUnavailable as exc:
             log_usage(request.user, lesson, operation, provider=provider.name, model=provider.model,
                       success=False, error=str(exc))
-            messages.error(request, 'تعذر توليد هذا القسم حالياً، والمحتوى المحفوظ ما زال متاحاً.')
+            messages.error(request, str(exc))
             return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
         lesson.ai_payload = merge_section(lesson.ai_payload, op_key, data)
         lesson.ai_status = 'pending'
         lesson.ai_reviewed_by = None
+        lesson.ai_review_note = ''
+        lesson.ai_generated_at = timezone.now()
         lesson.save()
         log_usage(request.user, lesson, operation, provider=provider.name, model=provider.model,
                   tokens=tokens, duration_ms=int(duration_ms or 0))
@@ -209,57 +235,73 @@ def _execute_resource_search(request, lesson, operation, update_mode):
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
     searcher = SearchService()
-    grade = ', '.join(lesson.student_classes.values_list('name', flat=True))
+    brief = (lesson.ai_payload or {}).get('_brief', {})
+    grade = f'الصف {brief["grade"]}' if brief.get('grade') else ', '.join(lesson.student_classes.values_list('name', flat=True))
     subject = lesson.subject.name if lesson.subject else ''
     started = time.monotonic()
     try:
         raw_results = searcher.search_all(lesson.title, grade, subject)
     except SearchUnavailable as exc:
         log_usage(request.user, lesson, operation, provider='web_search', success=False, error=str(exc))
-        messages.error(request, 'تعذر البحث عن مصادر حالياً، والمصادر المحفوظة ما زالت متاحة.')
+        messages.warning(request, str(exc))
         return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
 
     classified = [searcher.classify(item, lesson.title, grade, subject) for item in raw_results]
     classified = searcher.deduplicate_by_domain(classified)
+    classified = sorted(classified, key=lambda item: item['relevance_score'], reverse=True)[:8]
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        checks = list(executor.map(searcher.validate_url, [item['url'] for item in classified]))
+    valid_urls = {item['url'] for item, valid in zip(classified, checks) if valid}
 
     added = skipped_dup = skipped_invalid = skipped_archived = 0
+    from .services.ai_service import normalize_url
+    existing_urls = {normalize_url(url) for url in lesson.resources.values_list('url', flat=True)}
     for item in classified:
-        from .services.ai_service import normalize_url
         norm = normalize_url(item['url'])
-        if not norm:
+        if not norm or len(norm) > 500:
+            continue
+        if norm in existing_urls:
+            skipped_dup += 1
             continue
         library = LearningResourceLibrary.objects.filter(normalized_url=norm).first()
         if library:
             if library.status == 'archived':
                 skipped_archived += 1
                 continue
-            if lesson.resources.filter(library_id=library.pk).exists():
+            if lesson.resources.filter(Q(library_id=library.pk) | Q(url=item['url'])).exists():
                 skipped_dup += 1
                 continue
         else:
-            if not searcher.validate_url(item['url']):
+            if item['url'] not in valid_urls:
                 skipped_invalid += 1
                 continue
             library = LearningResourceLibrary.objects.create(
-                title=item['title'], url=item['url'], normalized_url=norm,
+                title=item['title'][:200], url=item['url'], normalized_url=norm,
                 resource_type=item['resource_type'], source_name=item['source_name'],
                 language=item['language'], relevance_score=item['relevance_score'],
-                grade_level=grade, description=item['description'],
+                grade_level=grade[:100], description=item['description'],
                 status='pending', is_ai_generated=True, ai_generated_at=timezone.now(),
                 created_by=request.user,
             )
         LearningResource.objects.create(
-            lesson=lesson, title=library.title, resource_type=library.resource_type,
+            lesson=lesson, title=library.title[:200], resource_type=library.resource_type,
             url=library.url, description=library.description, status='pending',
             language=library.language, source_name=library.source_name,
             relevance_score=library.relevance_score, is_ai_generated=True,
-            ai_generated_at=library.ai_generated_at, library=library,
+            ai_generated_at=library.ai_generated_at, library=library, created_by=request.user,
         )
         added += 1
+        existing_urls.add(norm)
 
     duration_ms = int((time.monotonic() - started) * 1000)
     log_usage(request.user, lesson, operation, provider='web_search', duration_ms=duration_ms,
-              success=True, tokens=None)
+              success=bool(added or skipped_dup), tokens=None)
+    if not added:
+        if skipped_dup:
+            messages.info(request, 'المصادر المناسبة التي عثرنا عليها موجودة بالفعل في الدرس؛ لم نكررها.')
+        else:
+            messages.warning(request, 'لم نعثر على مصادر جديدة مناسبة يمكن إضافتها. جرّب عنوانًا أدق، أو أنشئ حزمة الدرس داخل الموقع من زر بناء حزمة تعلم مخصصة.')
+        return redirect('open_learning_lesson_detail', lesson_id=lesson.pk)
     summary = f'أُضيف {added} مصدر جديد (بانتظار اعتمادك).'
     if skipped_dup:
         summary += f' {skipped_dup} مكرراً تجاوزه النظام.'
@@ -384,7 +426,13 @@ def ai_dashboard(request):
         'lessons_with_ai': LearningLesson.objects.exclude(ai_status='none').count(),
     }
     recent_logs = AIUsageLog.objects.select_related('user', 'lesson')[:30]
+    provider = get_provider()
+    searcher = SearchService()
     return render(request, 'open_learning/ai_dashboard.html', {
+        'provider_configured': bool(provider),
+        'provider_model': getattr(provider, 'model', ''),
+        'search_provider': searcher.provider,
+        'search_configured': searcher.provider != 'google' or bool(searcher.google_api_key and searcher.google_cse_id),
         'stats': stats,
         'recent_logs': recent_logs,
         'lesson': None,

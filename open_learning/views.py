@@ -323,7 +323,7 @@ def lesson_detail(request, lesson_id):
         'is_admin': _is_admin(request),
         'can_manage': can_manage,
         'ai_visible': lesson.ai_visible_to_students,
-        'visible_resources': visible_resources,
+        'visible_resources': visible_resources.order_by('-relevance_score', '-created_at'),
     })
 
 
