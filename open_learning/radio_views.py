@@ -9,13 +9,13 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.encoding import escape_uri_path
+from school.models import has_perm
 
 from .google_drive import GoogleDriveService
 from .models import SchoolRadioEntry, SchoolRadioFile
 from .radio_forms import SchoolRadioEntryForm
 from .services.ai_service import AIServiceUnavailable, get_provider
 from .services.usage import log_usage
-from .views import _is_admin
 
 
 RADIO_FOLDER_NAME = 'ملف الإذاعة المدرسية'
@@ -27,10 +27,10 @@ ALLOWED_MIME_TYPES = {
 }
 
 
-def _admin_required(request):
-    if _is_admin(request):
+def _radio_permission_required(request, action):
+    if has_perm(request.user, 'school_radio', action):
         return None
-    messages.error(request, 'ملف الإذاعة المدرسية متاح لمدير المدرسة فقط')
+    messages.error(request, 'ليس لديك صلاحية لتنفيذ هذا الإجراء في ملف الإذاعة المدرسية')
     return redirect('home')
 
 
@@ -100,7 +100,7 @@ def _upload_files(request, entry):
 
 @login_required
 def school_radio_list(request):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'view')
     if denied:
         return denied
     entries = _entry_queryset()
@@ -128,7 +128,7 @@ def school_radio_list(request):
 
 @login_required
 def school_radio_add(request):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'add')
     if denied:
         return denied
     form = SchoolRadioEntryForm(
@@ -153,7 +153,7 @@ def school_radio_add(request):
 
 @login_required
 def school_radio_edit(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'edit')
     if denied:
         return denied
     entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
@@ -179,7 +179,7 @@ def school_radio_edit(request, entry_id):
 
 @login_required
 def school_radio_detail(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'view')
     if denied:
         return denied
     entry = get_object_or_404(_entry_queryset(), pk=entry_id)
@@ -191,7 +191,7 @@ def school_radio_detail(request, entry_id):
 
 @login_required
 def school_radio_add_files(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'edit')
     if denied:
         return denied
     entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
@@ -209,7 +209,7 @@ def school_radio_add_files(request, entry_id):
 
 @login_required
 def school_radio_file_open(request, file_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'view')
     if denied:
         return denied
     radio_file = get_object_or_404(SchoolRadioFile, pk=file_id)
@@ -229,7 +229,7 @@ def school_radio_file_open(request, file_id):
 
 @login_required
 def school_radio_file_delete(request, file_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'edit')
     if denied:
         return denied
     radio_file = get_object_or_404(SchoolRadioFile, pk=file_id)
@@ -295,7 +295,7 @@ def _generate_radio_content(request, entry, operation):
 
 @login_required
 def school_radio_generate_word(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'generate')
     if denied:
         return denied
     entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
@@ -306,7 +306,7 @@ def school_radio_generate_word(request, entry_id):
 
 @login_required
 def school_radio_generate_program(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'generate')
     if denied:
         return denied
     entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
@@ -317,7 +317,7 @@ def school_radio_generate_program(request, entry_id):
 
 @login_required
 def school_radio_approve_ai(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'review')
     if denied:
         return denied
     entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
@@ -334,7 +334,7 @@ def school_radio_approve_ai(request, entry_id):
 
 @login_required
 def school_radio_delete(request, entry_id):
-    denied = _admin_required(request)
+    denied = _radio_permission_required(request, 'delete')
     if denied:
         return denied
     entry = get_object_or_404(SchoolRadioEntry.objects.prefetch_related('files'), pk=entry_id)

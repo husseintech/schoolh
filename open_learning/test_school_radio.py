@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-from school.models import Class, Profile, Student
+from school.models import Class, Profile, Student, UserPermission
 
 from .google_drive import GoogleDriveService
 from .models import AIUsageLog, SchoolRadioEntry, SchoolRadioFile
@@ -36,6 +36,12 @@ class SchoolRadioFlowTests(TestCase):
         values.update(kwargs)
         return SchoolRadioEntry.objects.create(**values)
 
+    def grant_radio(self, *actions):
+        UserPermission.objects.update_or_create(
+            user=self.student_user,
+            defaults={'permissions': {'school_radio': list(actions)}},
+        )
+
     def test_admin_can_create_entry_with_presenters_and_participants(self):
         response = self.client.post(reverse('ol_school_radio_add'), {
             'event_date': '2026-09-08',
@@ -54,11 +60,85 @@ class SchoolRadioFlowTests(TestCase):
         self.assertEqual(list(entry.presenters.all()), [self.student])
         self.assertEqual(list(entry.participants.all()), [self.student])
 
-    def test_non_admin_cannot_view_or_create_radio_records(self):
+    def test_account_without_radio_permission_cannot_view_or_create_records(self):
         self.client.force_login(self.student_user)
         self.assertRedirects(self.client.get(reverse('ol_school_radio_list')), reverse('home'))
         self.assertRedirects(self.client.post(reverse('ol_school_radio_add'), {}), reverse('home'))
         self.assertEqual(SchoolRadioEntry.objects.count(), 0)
+
+    def test_individual_view_permission_shows_navigation_and_allows_read_only_access(self):
+        entry = self.create_entry()
+        self.grant_radio('view')
+        self.client.force_login(self.student_user)
+
+        home = self.client.get(reverse('home'))
+        listing = self.client.get(reverse('ol_school_radio_list'))
+
+        self.assertContains(home, reverse('ol_school_radio_list'))
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, entry.title)
+        self.assertNotContains(listing, reverse('ol_school_radio_add'))
+        self.assertEqual(self.client.get(reverse('ol_school_radio_detail', args=[entry.pk])).status_code, 200)
+        self.assertRedirects(
+            self.client.get(reverse('ol_school_radio_edit', args=[entry.pk])),
+            reverse('home'),
+        )
+
+    def test_radio_navigation_is_hidden_without_view_permission(self):
+        self.client.force_login(self.student_user)
+
+        response = self.client.get(reverse('home'))
+
+        self.assertNotContains(response, reverse('ol_school_radio_list'))
+
+    def test_individual_full_grant_allows_account_to_create_radio_record(self):
+        self.grant_radio('view', 'add', 'edit', 'delete', 'generate', 'review')
+        self.client.force_login(self.student_user)
+
+        response = self.client.post(reverse('ol_school_radio_add'), {
+            'event_date': '2026-09-09',
+            'title': 'إذاعة بحساب مفوض',
+            'topic': 'العلم',
+            'category': 'educational',
+            'presenters': [self.student.pk],
+            'participants': [],
+            'additional_presenters': '',
+            'additional_participants': '',
+            'notes': '',
+        })
+
+        entry = SchoolRadioEntry.objects.get(title='إذاعة بحساب مفوض')
+        self.assertRedirects(response, reverse('ol_school_radio_detail', args=[entry.pk]))
+        self.assertEqual(entry.created_by, self.student_user)
+
+    def test_radio_actions_are_protected_independently_from_view(self):
+        entry = self.create_entry()
+        self.grant_radio('view')
+        self.client.force_login(self.student_user)
+
+        protected_requests = [
+            self.client.post(reverse('ol_school_radio_add_files', args=[entry.pk])),
+            self.client.post(reverse('ol_school_radio_generate_word', args=[entry.pk]), {'topic': 'العلم'}),
+            self.client.post(reverse('ol_school_radio_approve_ai', args=[entry.pk])),
+            self.client.post(reverse('ol_school_radio_delete', args=[entry.pk])),
+        ]
+
+        for response in protected_requests:
+            self.assertRedirects(response, reverse('home'))
+        self.assertTrue(SchoolRadioEntry.objects.filter(pk=entry.pk).exists())
+
+    def test_account_permissions_page_lists_school_radio_actions(self):
+        response = self.client.get(reverse('edit_account', args=[self.student_user.pk]))
+        section = next(
+            item for item in response.context['permission_sections']
+            if item['key'] == 'school_radio'
+        )
+
+        self.assertEqual(section['label'], 'ملف الإذاعة المدرسية')
+        self.assertEqual(
+            {action['key'] for action in section['actions']},
+            {'view', 'add', 'edit', 'delete', 'generate', 'review'},
+        )
 
     def test_invalid_date_filter_is_ignored(self):
         self.create_entry()

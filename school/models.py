@@ -74,6 +74,7 @@ DEFAULT_PERMISSIONS = {
         'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
         'no_objection': ['view', 'add', 'edit', 'delete'],
         'open_learning': ['view', 'add', 'edit', 'delete', 'review'],
+        'school_radio': ['view', 'add', 'edit', 'delete', 'generate', 'review'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],

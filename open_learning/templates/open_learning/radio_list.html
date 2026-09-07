@@ -7,9 +7,9 @@
         <h4 class="mb-1"><i class="bi bi-mic-fill text-primary"></i> ملف الإذاعة المدرسية</h4>
         <p class="text-muted mb-0">أرشيف الإذاعات اليومية وصور الكلمات والطلبة المشاركين</p>
     </div>
-    <a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
+    {% if 'school_radio_add' in user_perms %}<a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> إضافة إذاعة
-    </a>
+    </a>{% endif %}
 </div>
 
 {% if not gdrive_connected %}
@@ -71,9 +71,9 @@
         <a href="{% url 'ol_school_radio_detail' entry.id %}" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-eye"></i> استعراض الملف
         </a>
-        <a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-sm btn-outline-secondary">
+        {% if 'school_radio_edit' in user_perms %}<a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> تعديل
-        </a>
+        </a>{% endif %}
     </div>
 </div>
 {% empty %}
@@ -82,7 +82,7 @@
         <i class="bi bi-broadcast-pin"></i>
         <h5>لا توجد إذاعات محفوظة بعد</h5>
         <p>ابدأ بإضافة أول سجل للإذاعة المدرسية وصورها.</p>
-        <a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">إضافة إذاعة</a>
+        {% if 'school_radio_add' in user_perms %}<a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">إضافة إذاعة</a>{% endif %}
     </div>
 </div>
 {% endfor %}

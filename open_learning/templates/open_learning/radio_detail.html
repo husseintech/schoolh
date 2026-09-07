@@ -6,11 +6,11 @@
     <a href="{% url 'ol_school_radio_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> ملف الإذاعة</a>
     <div class="d-flex gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
-        <a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-outline-primary"><i class="bi bi-pencil"></i> تعديل</a>
-        <form method="post" action="{% url 'ol_school_radio_delete' entry.id %}" onsubmit="return confirm('حذف سجل الإذاعة وجميع ملفاته من Google Drive؟');">
+        {% if 'school_radio_edit' in user_perms %}<a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-outline-primary"><i class="bi bi-pencil"></i> تعديل</a>{% endif %}
+        {% if 'school_radio_delete' in user_perms %}<form method="post" action="{% url 'ol_school_radio_delete' entry.id %}" onsubmit="return confirm('حذف سجل الإذاعة وجميع ملفاته من Google Drive؟');">
             {% csrf_token %}
             <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
-        </form>
+        </form>{% endif %}
     </div>
 </div>
 
@@ -72,10 +72,10 @@
                     </a>
                     {% endif %}
                     <div class="small mt-2 text-truncate" title="{{ file.file_name }}">{{ file.file_name }}</div>
-                    <form method="post" action="{% url 'ol_school_radio_file_delete' file.id %}" class="mt-2 no-print" onsubmit="return confirm('حذف هذا الملف؟');">
+                    {% if 'school_radio_edit' in user_perms %}<form method="post" action="{% url 'ol_school_radio_file_delete' file.id %}" class="mt-2 no-print" onsubmit="return confirm('حذف هذا الملف؟');">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
-                    </form>
+                    </form>{% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -84,7 +84,7 @@
         <div class="alert alert-info"><i class="bi bi-info-circle"></i> لم تُرفع صور أو ملفات لهذا اليوم بعد.</div>
         {% endif %}
 
-        <form method="post" enctype="multipart/form-data" action="{% url 'ol_school_radio_add_files' entry.id %}" data-radio-upload="sequential" class="no-print">
+        {% if 'school_radio_edit' in user_perms %}<form method="post" enctype="multipart/form-data" action="{% url 'ol_school_radio_add_files' entry.id %}" data-radio-upload="sequential" class="no-print">
             {% csrf_token %}
             <label class="form-label">إضافة صور أو ملفات جديدة</label>
             <div class="input-group">
@@ -97,11 +97,11 @@
             <div class="form-text">يمكن اختيار 4 أو 5 أو 6 صور معًا من الهاتف. صور JPEG الكبيرة تُضغط تلقائيًا قبل الرفع.</div>
             {% if not gdrive_connected %}<div class="text-warning small">اربط Google Drive من إعدادات التخزين أولًا.</div>{% endif %}
             <div class="small text-primary mt-1" data-upload-status></div>
-        </form>
+        </form>{% endif %}
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 no-print">
+{% if 'school_radio_generate' in user_perms %}<div class="card shadow-sm mb-3 no-print">
     <div class="card-header bg-white">
         <h5 class="mb-0"><i class="bi bi-stars text-warning"></i> مساعد الإذاعة بالذكاء الاصطناعي</h5>
     </div>
@@ -132,16 +132,16 @@
             </div>
         </div>
     </div>
-</div>
+</div>{% endif %}
 
 {% if entry.ai_status == 'pending' %}
 <div class="alert alert-warning no-print">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="bi bi-exclamation-triangle"></i> المحتوى الآتي مسودة بانتظار مراجعتك.</span>
-        <form method="post" action="{% url 'ol_school_radio_approve_ai' entry.id %}">
+        {% if 'school_radio_review' in user_perms %}<form method="post" action="{% url 'ol_school_radio_approve_ai' entry.id %}">
             {% csrf_token %}
             <button class="btn btn-success"><i class="bi bi-check2-circle"></i> اعتماد المحتوى بعد المراجعة</button>
-        </form>
+        </form>{% endif %}
     </div>
 </div>
 {% endif %}
