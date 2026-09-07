@@ -1,5 +1,8 @@
 from django.urls import path
-from . import views, ai_views, plans_views, progress_views, learning_views, report_views, enhancement_views, extra_views
+from . import (
+    views, ai_views, plans_views, progress_views, learning_views, report_views,
+    enhancement_views, extra_views, radio_views,
+)
 
 urlpatterns = [
     path('', views.lesson_list, name='open_learning_list'),
@@ -76,4 +79,16 @@ urlpatterns = [
     path('teacher-plans/add/', views.teacher_plan_add, name='ol_teacher_plan_add'),
     path('teacher-plans/<int:plan_id>/delete/', views.teacher_plan_delete, name='ol_teacher_plan_delete'),
     path('teacher-plans/files/<int:file_id>/open/', views.teacher_plan_file_open, name='ol_teacher_plan_file_open'),
+
+    path('school-radio/', radio_views.school_radio_list, name='ol_school_radio_list'),
+    path('school-radio/add/', radio_views.school_radio_add, name='ol_school_radio_add'),
+    path('school-radio/<int:entry_id>/', radio_views.school_radio_detail, name='ol_school_radio_detail'),
+    path('school-radio/<int:entry_id>/edit/', radio_views.school_radio_edit, name='ol_school_radio_edit'),
+    path('school-radio/<int:entry_id>/delete/', radio_views.school_radio_delete, name='ol_school_radio_delete'),
+    path('school-radio/<int:entry_id>/files/add/', radio_views.school_radio_add_files, name='ol_school_radio_add_files'),
+    path('school-radio/files/<int:file_id>/open/', radio_views.school_radio_file_open, name='ol_school_radio_file_open'),
+    path('school-radio/files/<int:file_id>/delete/', radio_views.school_radio_file_delete, name='ol_school_radio_file_delete'),
+    path('school-radio/<int:entry_id>/ai/word/', radio_views.school_radio_generate_word, name='ol_school_radio_generate_word'),
+    path('school-radio/<int:entry_id>/ai/program/', radio_views.school_radio_generate_program, name='ol_school_radio_generate_program'),
+    path('school-radio/<int:entry_id>/ai/approve/', radio_views.school_radio_approve_ai, name='ol_school_radio_approve_ai'),
 ]

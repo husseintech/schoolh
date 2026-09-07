@@ -5,7 +5,7 @@ from django.db import models
 from django.core.signing import Signer, BadSignature
 from django.utils import timezone
 from django.contrib.auth.models import User
-from school.models import Class, Subject, Teacher
+from school.models import Class, Student, Subject, Teacher
 
 
 class LearningLesson(models.Model):
@@ -218,6 +218,8 @@ class AIUsageLog(models.Model):
         'search_resources': 'بحث ذكي عن مصادر',
         'update_resources': 'تحديث المصادر',
         'cache_hit': 'استخدام مخزّن',
+        'radio_word': 'إنشاء كلمة للإذاعة المدرسية',
+        'radio_program': 'إنشاء برنامج إذاعي مدرسي',
     }
 
     @property
@@ -451,3 +453,80 @@ class TeacherPlanFile(models.Model):
 
     def __str__(self):
         return self.file_name or 'ملف'
+
+
+class SchoolRadioEntry(models.Model):
+    CATEGORY_CHOICES = [
+        ('general', 'عامة'),
+        ('national', 'وطنية'),
+        ('religious', 'دينية'),
+        ('educational', 'تعليمية'),
+        ('health', 'صحية'),
+        ('environmental', 'بيئية'),
+        ('social', 'اجتماعية'),
+        ('other', 'أخرى'),
+    ]
+    AI_STATUS_CHOICES = [
+        ('none', 'بدون محتوى ذكي'),
+        ('pending', 'مسودة بانتظار المراجعة'),
+        ('approved', 'تمت مراجعته واعتماده'),
+    ]
+
+    event_date = models.DateField('تاريخ الإذاعة')
+    title = models.CharField('عنوان الإذاعة', max_length=200, default='الإذاعة المدرسية')
+    topic = models.CharField('موضوع الإذاعة', max_length=300, blank=True)
+    category = models.CharField('نوع المناسبة', max_length=20, choices=CATEGORY_CHOICES, default='general')
+    presenters = models.ManyToManyField(
+        Student, blank=True, related_name='presented_school_radio_entries', verbose_name='الطلبة المقدّمون'
+    )
+    participants = models.ManyToManyField(
+        Student, blank=True, related_name='school_radio_entries', verbose_name='الطلبة المشاركون'
+    )
+    additional_presenters = models.TextField('أسماء مقدّمين إضافيين', blank=True)
+    additional_participants = models.TextField('أسماء مشاركين إضافيين', blank=True)
+    notes = models.TextField('ملاحظات', blank=True)
+    ai_word = models.JSONField('الكلمة المولّدة', default=dict, blank=True)
+    ai_program = models.JSONField('البرنامج الإذاعي المولّد', default=dict, blank=True)
+    ai_status = models.CharField('حالة المحتوى الذكي', max_length=20, choices=AI_STATUS_CHOICES, default='none')
+    ai_generated_at = models.DateTimeField('تاريخ التوليد', null=True, blank=True)
+    ai_reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name='راجع المحتوى الذكي'
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='school_radio_entries', verbose_name='أدخل بواسطة'
+    )
+    created_at = models.DateTimeField('تاريخ الإنشاء', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تعديل', auto_now=True)
+
+    class Meta:
+        verbose_name = 'إذاعة مدرسية'
+        verbose_name_plural = 'ملف الإذاعة المدرسية'
+        ordering = ['-event_date', '-created_at']
+
+    def __str__(self):
+        return f'{self.title} - {self.event_date}'
+
+
+class SchoolRadioFile(models.Model):
+    entry = models.ForeignKey(
+        SchoolRadioEntry, on_delete=models.CASCADE, related_name='files', verbose_name='سجل الإذاعة'
+    )
+    file_name = models.CharField('اسم الملف', max_length=300)
+    file_type = models.CharField('نوع الملف', max_length=100, blank=True)
+    file_size = models.PositiveIntegerField('حجم الملف (بايت)', null=True, blank=True)
+    google_drive_file_id = models.CharField('معرّف ملف Google Drive', max_length=200, blank=True)
+    google_drive_url = models.TextField('رابط الملف في Drive', blank=True)
+    order = models.PositiveSmallIntegerField('الترتيب', default=0)
+    uploaded_at = models.DateTimeField('تاريخ الرفع', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'ملف إذاعة مدرسية'
+        verbose_name_plural = 'ملفات الإذاعة المدرسية'
+        ordering = ['order', 'uploaded_at']
+
+    @property
+    def is_image(self):
+        return self.file_type.startswith('image/')
+
+    def __str__(self):
+        return self.file_name

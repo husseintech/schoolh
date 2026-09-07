@@ -103,7 +103,12 @@ class GoogleDriveService:
         return {'Authorization': f'Bearer {creds["access_token"]}'}
 
     def _find_folder(self, name, parent_id):
-        q = "mimeType='application/vnd.google-apps.folder' and name=%s and '%s' in parents and trashed=false" % (repr(name), parent_id)
+        escaped_name = str(name).replace('\\', '\\\\').replace("'", "\\'")
+        escaped_parent = str(parent_id).replace('\\', '\\\\').replace("'", "\\'")
+        q = (
+            "mimeType='application/vnd.google-apps.folder' "
+            f"and name='{escaped_name}' and '{escaped_parent}' in parents and trashed=false"
+        )
         resp = requests.get(
             'https://www.googleapis.com/drive/v3/files',
             headers=self._auth_headers(),
@@ -166,16 +171,21 @@ class GoogleDriveService:
         return resp.json()
 
     def ensure_folder(self, name, parent_id=None):
-        parent = parent_id or self.root_folder_id
-        if not parent:
-            return None
+        parent = parent_id or self.root_folder_id or 'root'
         return self._build_folder(name, parent)
 
-    def upload_to_folder(self, filename, data, mimetype, folder_name):
-        parent = self.ensure_folder(folder_name)
-        metadata = {'name': filename}
-        if parent:
-            metadata['parents'] = [parent]
+    def ensure_folder_path(self, folder_names):
+        """Create or reuse a nested folder path under the configured root."""
+        parent = self.root_folder_id or 'root'
+        for name in folder_names:
+            clean_name = ' '.join(str(name or '').split())[:200]
+            if not clean_name:
+                continue
+            parent = self._build_folder(clean_name, parent)
+        return parent
+
+    def upload_to_folder_id(self, filename, data, mimetype, parent):
+        metadata = {'name': filename, 'parents': [parent]}
         boundary = '----schoolh_drive_boundary'
         head = (
             f'--{boundary}\r\n'
@@ -185,18 +195,25 @@ class GoogleDriveService:
             f'Content-Type: {mimetype}\r\n\r\n'
         ).encode('utf-8')
         tail = f'\r\n--{boundary}--\r\n'.encode('utf-8')
-        payload = head + data + tail
         headers = self._auth_headers()
         headers['Content-Type'] = f'multipart/related; boundary={boundary}'
         resp = requests.post(
             'https://www.googleapis.com/upload/drive/v3/files',
             params={'uploadType': 'multipart', 'fields': 'id,webViewLink,name,mimeType,size'},
             headers=headers,
-            data=payload,
+            data=head + data + tail,
             timeout=120,
         )
         resp.raise_for_status()
         return resp.json()
+
+    def upload_to_folder(self, filename, data, mimetype, folder_name):
+        parent = self.ensure_folder(folder_name)
+        return self.upload_to_folder_id(filename, data, mimetype, parent)
+
+    def upload_to_folder_path(self, filename, data, mimetype, folder_names):
+        parent = self.ensure_folder_path(folder_names)
+        return self.upload_to_folder_id(filename, data, mimetype, parent)
 
     def delete_file(self, file_id):
         resp = requests.delete(

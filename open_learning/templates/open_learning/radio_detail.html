@@ -1,0 +1,190 @@
+{% extends 'school/base.html' %}
+{% block title %}{{ entry.title }}{% endblock %}
+{% block page_heading %}تفاصيل الإذاعة المدرسية{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3 no-print">
+    <a href="{% url 'ol_school_radio_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right"></i> ملف الإذاعة</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+        <a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-outline-primary"><i class="bi bi-pencil"></i> تعديل</a>
+        <form method="post" action="{% url 'ol_school_radio_delete' entry.id %}" onsubmit="return confirm('حذف سجل الإذاعة وجميع ملفاته من Google Drive؟');">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h3 class="mb-1"><i class="bi bi-mic-fill text-primary"></i> {{ entry.title }}</h3>
+                <div class="text-muted">
+                    <i class="bi bi-calendar3"></i> {{ entry.event_date|date:"Y/m/d" }}
+                    <span class="badge bg-light text-dark border me-2">{{ entry.get_category_display }}</span>
+                </div>
+            </div>
+            <span class="badge {% if entry.ai_status == 'approved' %}bg-success{% elif entry.ai_status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ entry.get_ai_status_display }}
+            </span>
+        </div>
+        {% if entry.topic %}<p class="mt-3 mb-2"><strong>موضوع الإذاعة:</strong> {{ entry.topic }}</p>{% endif %}
+        <div class="row g-3 mt-1">
+            <div class="col-md-6">
+                <h6><i class="bi bi-megaphone text-primary"></i> الطلبة المقدّمون</h6>
+                {% for student in entry.presenters.all %}
+                <span class="badge bg-light text-dark border mb-1">{{ student.full_name }}{% if student.student_class %} — {{ student.student_class.name }}{% endif %}</span>
+                {% empty %}<span class="text-muted">لم تُحدد أسماء من قائمة الطلاب.</span>{% endfor %}
+                {% if entry.additional_presenters %}<div class="mt-2" style="white-space:pre-line">{{ entry.additional_presenters }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-people text-success"></i> الطلبة المشاركون</h6>
+                {% for student in entry.participants.all %}
+                <span class="badge bg-light text-dark border mb-1">{{ student.full_name }}{% if student.student_class %} — {{ student.student_class.name }}{% endif %}</span>
+                {% empty %}<span class="text-muted">لم تُحدد أسماء من قائمة الطلاب.</span>{% endfor %}
+                {% if entry.additional_participants %}<div class="mt-2" style="white-space:pre-line">{{ entry.additional_participants }}</div>{% endif %}
+            </div>
+        </div>
+        {% if entry.notes %}<hr><div><strong>ملاحظات:</strong><div style="white-space:pre-line">{{ entry.notes }}</div></div>{% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0"><i class="bi bi-images text-success"></i> صور وملفات هذا اليوم ({{ entry.files.count }})</h5>
+        <span class="small text-muted">محفوظة في Google Drive</span>
+    </div>
+    <div class="card-body">
+        {% if entry.files.all %}
+        <div class="row g-3 mb-4">
+            {% for file in entry.files.all %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="border rounded-3 p-2 h-100 text-center position-relative">
+                    {% if file.is_image %}
+                    <a href="{% url 'ol_school_radio_file_open' file.id %}" target="_blank">
+                        <img src="{% url 'ol_school_radio_file_open' file.id %}" alt="{{ file.file_name }}"
+                             class="img-fluid rounded" loading="lazy" style="height:190px;width:100%;object-fit:cover;">
+                    </a>
+                    {% else %}
+                    <a href="{% url 'ol_school_radio_file_open' file.id %}" target="_blank" class="d-flex flex-column justify-content-center align-items-center text-decoration-none" style="height:190px;">
+                        <i class="bi bi-file-earmark-pdf text-danger" style="font-size:4rem;"></i>
+                        <span>فتح ملف PDF</span>
+                    </a>
+                    {% endif %}
+                    <div class="small mt-2 text-truncate" title="{{ file.file_name }}">{{ file.file_name }}</div>
+                    <form method="post" action="{% url 'ol_school_radio_file_delete' file.id %}" class="mt-2 no-print" onsubmit="return confirm('حذف هذا الملف؟');">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info"><i class="bi bi-info-circle"></i> لم تُرفع صور أو ملفات لهذا اليوم بعد.</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" action="{% url 'ol_school_radio_add_files' entry.id %}" data-radio-upload="sequential" class="no-print">
+            {% csrf_token %}
+            <label class="form-label">إضافة صور أو ملفات جديدة</label>
+            <div class="input-group">
+                <input type="file" name="files" class="form-control" multiple required
+                       accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf">
+                <button class="btn btn-success" data-submit-button {% if not gdrive_connected %}disabled{% endif %}>
+                    <i class="bi bi-cloud-arrow-up"></i> رفع إلى Drive
+                </button>
+            </div>
+            <div class="form-text">يمكن اختيار 4 أو 5 أو 6 صور معًا من الهاتف. صور JPEG الكبيرة تُضغط تلقائيًا قبل الرفع.</div>
+            {% if not gdrive_connected %}<div class="text-warning small">اربط Google Drive من إعدادات التخزين أولًا.</div>{% endif %}
+            <div class="small text-primary mt-1" data-upload-status></div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 no-print">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-stars text-warning"></i> مساعد الإذاعة بالذكاء الاصطناعي</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-light border">
+            المحتوى الناتج مسودة مساعدة. راجع المعلومات، وبصورة خاصة نصوص القرآن والحديث ومصادرها، قبل قراءتها في الإذاعة.
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <form method="post" action="{% url 'ol_school_radio_generate_word' entry.id %}">
+                    {% csrf_token %}
+                    <label class="form-label">موضوع الكلمة</label>
+                    <input type="text" name="topic" value="{{ entry.topic }}" maxlength="300" required class="form-control mb-2" placeholder="مثال: يوم الأسير الفلسطيني">
+                    <button class="btn btn-outline-primary w-100" onclick="this.disabled=true;this.form.submit();">
+                        <i class="bi bi-file-text"></i> إنشاء كلمة من فقرتين أو ثلاث
+                    </button>
+                </form>
+            </div>
+            <div class="col-lg-6">
+                <form method="post" action="{% url 'ol_school_radio_generate_program' entry.id %}">
+                    {% csrf_token %}
+                    <label class="form-label">موضوع البرنامج الكامل</label>
+                    <input type="text" name="topic" value="{{ entry.topic }}" maxlength="300" required class="form-control mb-2" placeholder="مثال: القدس الشريف">
+                    <button class="btn btn-primary w-100" onclick="this.disabled=true;this.form.submit();">
+                        <i class="bi bi-broadcast"></i> إنشاء إذاعة كاملة
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if entry.ai_status == 'pending' %}
+<div class="alert alert-warning no-print">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-exclamation-triangle"></i> المحتوى الآتي مسودة بانتظار مراجعتك.</span>
+        <form method="post" action="{% url 'ol_school_radio_approve_ai' entry.id %}">
+            {% csrf_token %}
+            <button class="btn btn-success"><i class="bi bi-check2-circle"></i> اعتماد المحتوى بعد المراجعة</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if entry.ai_word %}
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white"><h5 class="mb-0"><i class="bi bi-file-text text-primary"></i> {{ entry.ai_word.title }}</h5></div>
+    <div class="card-body">
+        {% for paragraph in entry.ai_word.paragraphs %}<p class="lh-lg">{{ paragraph }}</p>{% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if entry.ai_program %}
+<div class="card shadow-sm mb-3 radio-program">
+    <div class="card-header bg-white"><h4 class="mb-0 text-center">{{ entry.ai_program.title }}</h4></div>
+    <div class="card-body">
+        <section class="mb-4"><h5><i class="bi bi-mic"></i> المقدمة</h5><p class="lh-lg">{{ entry.ai_program.opening }}</p></section>
+        <section class="mb-4">
+            <h5><i class="bi bi-book"></i> القرآن الكريم — سورة {{ entry.ai_program.quran.surah }} ({{ entry.ai_program.quran.start_verse }}–{{ entry.ai_program.quran.end_verse }})</h5>
+            <div class="alert alert-light border lh-lg fs-5">
+                {% for verse in entry.ai_program.quran.verses %}{{ verse.text }} <span class="text-muted">﴿{{ verse.number }}﴾</span> {% endfor %}
+            </div>
+        </section>
+        <section class="mb-4">
+            <h5><i class="bi bi-chat-quote"></i> الحديث الشريف</h5>
+            <blockquote class="blockquote"><p>{{ entry.ai_program.hadith.text }}</p></blockquote>
+            <div class="small text-muted">الراوي: {{ entry.ai_program.hadith.narrator }} — المصدر: {{ entry.ai_program.hadith.source }}</div>
+        </section>
+        <section class="mb-4"><h5><i class="bi bi-card-text"></i> كلمة الصباح</h5>{% for paragraph in entry.ai_program.word %}<p class="lh-lg">{{ paragraph }}</p>{% endfor %}</section>
+        <section class="mb-4"><h5><i class="bi bi-lightbulb"></i> هل تعلم؟</h5><ul>{% for item in entry.ai_program.did_you_know %}<li class="mb-2">{{ item }}</li>{% endfor %}</ul></section>
+        <section class="mb-4"><h5><i class="bi bi-gem"></i> حكمة اليوم</h5><p class="lead">{{ entry.ai_program.wisdom }}</p></section>
+        <section class="mb-4">
+            <h5><i class="bi bi-people"></i> توزيع الأدوار</h5>
+            <div class="table-responsive"><table class="table table-bordered"><thead><tr><th>الدور</th><th>ما يقدّمه</th></tr></thead><tbody>
+                {% for item in entry.ai_program.presenter_plan %}<tr><td>{{ item.speaker }}</td><td>{{ item.cue }}</td></tr>{% endfor %}
+            </tbody></table></div>
+        </section>
+        <section><h5><i class="bi bi-flag"></i> الختام</h5><p class="lh-lg">{{ entry.ai_program.closing }}</p></section>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script src="/static/open_learning/radio_upload.js"></script>
+{% endblock %}

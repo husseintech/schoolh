@@ -1,0 +1,89 @@
+{% extends 'school/base.html' %}
+{% block title %}ملف الإذاعة المدرسية{% endblock %}
+{% block page_heading %}ملف الإذاعة المدرسية{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-mic-fill text-primary"></i> ملف الإذاعة المدرسية</h4>
+        <p class="text-muted mb-0">أرشيف الإذاعات اليومية وصور الكلمات والطلبة المشاركين</p>
+    </div>
+    <a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> إضافة إذاعة
+    </a>
+</div>
+
+{% if not gdrive_connected %}
+<div class="alert alert-warning">
+    <i class="bi bi-google"></i>
+    Google Drive غير متصل حاليًا؛ يمكن إنشاء السجلات، لكن رفع الصور يحتاج إلى ربطه من إعدادات التخزين.
+</div>
+{% endif %}
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label">بحث بالعنوان أو الموضوع أو اسم الطالب</label>
+            <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="اكتب كلمة للبحث">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button class="btn btn-outline-primary flex-grow-1"><i class="bi bi-search"></i> بحث</button>
+            <a href="{% url 'ol_school_radio_list' %}" class="btn btn-outline-secondary">مسح</a>
+        </div>
+    </div>
+</form>
+
+{% for entry in entries %}
+<div class="card mb-3 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1">
+                    <a class="text-decoration-none" href="{% url 'ol_school_radio_detail' entry.id %}">
+                        {{ entry.title }}
+                    </a>
+                </h5>
+                <div class="text-muted">
+                    <i class="bi bi-calendar3"></i> {{ entry.event_date|date:"Y/m/d" }}
+                    <span class="badge bg-light text-dark border me-2">{{ entry.get_category_display }}</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge {% if entry.ai_status == 'approved' %}bg-success{% elif entry.ai_status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    {{ entry.get_ai_status_display }}
+                </span>
+                <span class="badge bg-primary"><i class="bi bi-paperclip"></i> {{ entry.files.count }}</span>
+            </div>
+        </div>
+        {% if entry.topic %}<p class="mt-2 mb-2"><strong>الموضوع:</strong> {{ entry.topic }}</p>{% endif %}
+        <div class="small text-muted mb-3">
+            <span><i class="bi bi-megaphone"></i> المقدّمون: {{ entry.presenters.count }}</span>
+            <span class="mx-2">|</span>
+            <span><i class="bi bi-people"></i> المشاركون: {{ entry.participants.count }}</span>
+        </div>
+        <a href="{% url 'ol_school_radio_detail' entry.id %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye"></i> استعراض الملف
+        </a>
+        <a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil"></i> تعديل
+        </a>
+    </div>
+</div>
+{% empty %}
+<div class="card">
+    <div class="empty-state">
+        <i class="bi bi-broadcast-pin"></i>
+        <h5>لا توجد إذاعات محفوظة بعد</h5>
+        <p>ابدأ بإضافة أول سجل للإذاعة المدرسية وصورها.</p>
+        <a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">إضافة إذاعة</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

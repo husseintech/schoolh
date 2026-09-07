@@ -1,0 +1,91 @@
+{% extends 'school/base.html' %}
+{% block title %}{% if entry %}تعديل الإذاعة{% else %}إضافة إذاعة مدرسية{% endif %}{% endblock %}
+{% block page_heading %}{% if entry %}تعديل الإذاعة المدرسية{% else %}إضافة إذاعة مدرسية{% endif %}{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-mic-fill text-primary"></i> بيانات الإذاعة المدرسية</h5>
+        <a href="{% if entry %}{% url 'ol_school_radio_detail' entry.id %}{% else %}{% url 'ol_school_radio_list' %}{% endif %}" class="btn btn-sm btn-outline-secondary">رجوع</a>
+    </div>
+    <div class="card-body">
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data" data-radio-upload>
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.event_date.label }} <span class="text-danger">*</span></label>
+                    {{ form.event_date }}
+                    {% for error in form.event_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">{{ form.title.label }} <span class="text-danger">*</span></label>
+                    {{ form.title }}
+                    {% for error in form.title.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">{{ form.topic.label }}</label>
+                    {{ form.topic }}
+                    <div class="form-text">يُستخدم هذا الموضوع أيضًا لإنشاء الكلمة أو البرنامج الإذاعي بالذكاء الاصطناعي.</div>
+                    {% for error in form.topic.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.category.label }}</label>
+                    {{ form.category }}
+                    {% for error in form.category.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.presenters.label }}</label>
+                    {{ form.presenters }}
+                    <div class="form-text">يمكن البحث بالاسم واختيار أكثر من طالب.</div>
+                    {% for error in form.presenters.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.participants.label }}</label>
+                    {{ form.participants }}
+                    <div class="form-text">اختر جميع الطلبة المشاركين في فقرات الإذاعة.</div>
+                    {% for error in form.participants.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.additional_presenters.label }}</label>
+                    {{ form.additional_presenters }}
+                    {% for error in form.additional_presenters.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.additional_participants.label }}</label>
+                    {{ form.additional_participants }}
+                    {% for error in form.additional_participants.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {% for error in form.notes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">صور وملفات الإذاعة</label>
+                    <input type="file" name="files" class="form-control" multiple
+                           accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf">
+                    <div class="form-text">
+                        يمكن اختيار عدة صور أو التصوير من كاميرا الهاتف. تُضغط صور الكاميرا الكبيرة تلقائيًا ثم تُرفع إلى
+                        «ملف الإذاعة المدرسية / تاريخ الإذاعة» في Google Drive. الحد الأقصى 10 ملفات في المرة و10 ميغابايت للملف.
+                    </div>
+                    {% if not gdrive_connected %}
+                    <div class="text-warning small mt-1"><i class="bi bi-exclamation-triangle"></i> Drive غير متصل؛ سيُحفظ السجل دون الملفات.</div>
+                    {% endif %}
+                    <div class="small text-primary mt-1" data-upload-status></div>
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary" data-submit-button>
+                    <i class="bi bi-check-lg"></i> {% if entry %}حفظ التعديلات{% else %}إنشاء الملف{% endif %}
+                </button>
+                <a href="{% if entry %}{% url 'ol_school_radio_detail' entry.id %}{% else %}{% url 'ol_school_radio_list' %}{% endif %}" class="btn btn-outline-secondary">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/open_learning/radio_upload.js"></script>
+{% endblock %}

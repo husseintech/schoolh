@@ -906,6 +906,9 @@
         <a href="{% url 'ol_teacher_plans' %}" class="nav-link {% if request.resolver_match.url_name == 'ol_teacher_plans' %}active{% endif %}">
             <i class="bi bi-file-earmark-image"></i> خطط المعلمين
         </a>
+        <a href="{% url 'ol_school_radio_list' %}" class="nav-link {% if 'ol_school_radio' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-mic-fill"></i> ملف الإذاعة المدرسية
+        </a>
         {% endif %}
         {% if 'announcements_view' in user_perms %}
         <a href="{% url 'announcement_list' %}" class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}">
