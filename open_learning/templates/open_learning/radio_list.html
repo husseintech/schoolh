@@ -7,9 +7,12 @@
         <h4 class="mb-1"><i class="bi bi-mic-fill text-primary"></i> ملف الإذاعة المدرسية</h4>
         <p class="text-muted mb-0">أرشيف الإذاعات اليومية وصور الكلمات والطلبة المشاركين</p>
     </div>
-    {% if 'school_radio_add' in user_perms %}<a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> إضافة إذاعة
-    </a>{% endif %}
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'ol_school_radio_participation_report' %}" class="btn btn-outline-primary"><i class="bi bi-bar-chart-fill"></i> تقرير مشاركة الطلاب</a>
+        {% if 'school_radio_add' in user_perms %}<a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> إضافة إذاعة
+        </a>{% endif %}
+    </div>
 </div>
 
 {% if not gdrive_connected %}

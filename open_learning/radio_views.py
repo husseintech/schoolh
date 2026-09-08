@@ -9,11 +9,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.encoding import escape_uri_path
-from school.models import has_perm
+from school.models import Class, has_perm
 
 from .google_drive import GoogleDriveService
 from .models import SchoolRadioEntry, SchoolRadioFile
 from .radio_forms import SchoolRadioEntryForm
+from .radio_reports import build_radio_participation_report
 from .services.ai_service import AIServiceUnavailable, get_provider
 from .services.usage import log_usage
 
@@ -123,6 +124,34 @@ def school_radio_list(request):
         'entries': entries,
         'filters': {'q': query, 'date_from': date_from, 'date_to': date_to},
         'gdrive_connected': GoogleDriveService().is_connected(),
+    })
+
+
+@login_required
+def school_radio_participation_report(request):
+    denied = _radio_permission_required(request, 'view')
+    if denied:
+        return denied
+    query = request.GET.get('q', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    raw_class_id = request.GET.get('class_id', '').strip()
+    class_id = int(raw_class_id) if raw_class_id.isdigit() else None
+    report = build_radio_participation_report(
+        date_from=_iso_date(date_from),
+        date_to=_iso_date(date_to),
+        query=query,
+        class_id=class_id,
+    )
+    return render(request, 'open_learning/radio_participation_report.html', {
+        'report': report,
+        'classes': Class.objects.order_by('name'),
+        'filters': {
+            'q': query,
+            'date_from': date_from,
+            'date_to': date_to,
+            'class_id': raw_class_id,
+        },
     })
 
 

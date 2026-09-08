@@ -105,6 +105,18 @@
     .maintenance-link { color:#8b96a3; font-size:.78rem; text-decoration:none; }
     .maintenance-link:hover { color:#c0392b; }
 
+    .radio-overview { background:linear-gradient(135deg,#f5f9ff,#fff); }
+    .radio-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .radio-metric { border:1px solid #e3eaf4; border-radius:13px; padding:13px; background:#fff; }
+    .radio-metric strong { display:block; color:#174f9e; font-size:1.4rem; }
+    .radio-metric span { color:#74808d; font-size:.76rem; }
+    .radio-leaders { display:flex; flex-direction:column; gap:7px; }
+    .radio-leader { display:flex; align-items:center; gap:9px; padding:9px 11px; background:#fff; border:1px solid #e7edf5; border-radius:12px; }
+    .radio-rank { width:29px; height:29px; flex:0 0 29px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#e8f1ff; color:#1755a0; font-weight:800; }
+    .radio-leader-name { flex:1; min-width:0; font-size:.83rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .radio-leader-count { font-size:.74rem; color:#667585; white-space:nowrap; }
+    @media (max-width:575.98px) { .radio-metrics { grid-template-columns:1fr; } }
+
     @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; animation:none !important; }
     }
@@ -166,6 +178,42 @@
     <a class="qa-btn" href="{% url 'add_note' %}"><i class="bi bi-sticky"></i> إضافة ملاحظة</a>
     <a class="qa-btn" href="{% url 'send_message' %}"><i class="bi bi-send"></i> إرسال رسالة</a>
 </section>
+{% endif %}
+
+{% if radio_summary %}
+<div class="panel radio-overview mt-4">
+    <div class="panel-head">
+        <h5><i class="bi bi-mic-fill"></i> ملخص الإذاعة المدرسية</h5>
+        <a href="{% url 'ol_school_radio_participation_report' %}" class="btn btn-sm btn-primary"><i class="bi bi-bar-chart-fill"></i> التقرير الكامل</a>
+    </div>
+    <div class="panel-body">
+        <div class="row g-3 align-items-stretch">
+            <div class="col-lg-6">
+                <div class="radio-metrics h-100">
+                    <div class="radio-metric"><strong>{{ radio_summary.broadcast_count }}</strong><span>إذاعة مسجلة</span></div>
+                    <div class="radio-metric"><strong>{{ radio_summary.unique_student_count }}</strong><span>طالبًا شاركوا</span></div>
+                    <div class="radio-metric"><strong>{{ radio_summary.participation_count }}</strong><span>إجمالي مرات المشاركة</span></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="fw-bold small mb-2"><i class="bi bi-trophy-fill text-warning"></i> أكثر الطلاب مشاركة</div>
+                {% if radio_summary.rows %}
+                <div class="radio-leaders">
+                    {% for row in radio_summary.rows %}
+                    <div class="radio-leader">
+                        <span class="radio-rank">{{ forloop.counter }}</span>
+                        <span class="radio-leader-name">{{ row.student.full_name }}{% if row.student.student_class %} — {{ row.student.student_class.name }}{% endif %}</span>
+                        <span class="radio-leader-count">{{ row.total_count }} مشاركة</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="all-good py-3"><i class="bi bi-mic-mute"></i><div>لم تُسجل مشاركات طلاب بعد.</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 <div class="row g-4 mt-1">

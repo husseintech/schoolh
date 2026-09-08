@@ -1,0 +1,93 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير مشاركة الطلاب في الإذاعة{% endblock %}
+{% block page_heading %}تقرير مشاركة الطلاب في الإذاعة المدرسية{% endblock %}
+{% block content %}
+<style>
+    .radio-report-hero{background:linear-gradient(135deg,#183b73,#2864be);color:#fff;border:0;border-radius:20px;overflow:hidden}
+    .report-stat{border:1px solid #e4eaf2;border-radius:15px;padding:16px;background:#fff;height:100%}
+    .report-stat i{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:#eaf2ff;color:#1f5fae;font-size:1.15rem}
+    .report-stat .value{font-size:1.65rem;font-weight:800;color:#183b73;margin-top:9px}
+    .report-stat .label{font-size:.82rem;color:#6c7887}
+    .rank-badge{width:31px;height:31px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#edf3fb;color:#1d5ba5;font-weight:800}
+    @media print{.no-print,.sidebar,.topbar{display:none!important}.main-content{margin:0!important;padding:0!important}.card{box-shadow:none!important}}
+</style>
+
+<div class="card radio-report-hero mb-3">
+    <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h3 class="mb-1"><i class="bi bi-trophy-fill"></i> مشاركة الطلاب في الإذاعة المدرسية</h3>
+            <p class="mb-0 opacity-75">ترتيب الطلاب حسب عدد الإذاعات التي شاركوا فيها، مع بيان مرات التقديم والمشاركة.</p>
+        </div>
+        <div class="d-flex gap-2 no-print">
+            <button type="button" class="btn btn-light" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+            <a href="{% url 'ol_school_radio_list' %}" class="btn btn-outline-light"><i class="bi bi-arrow-right"></i> ملف الإذاعة</a>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="card card-body mb-3 no-print">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">اسم الطالب أو رقم الهوية</label>
+            <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="ابحث عن طالب">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">الصف</label>
+            <select name="class_id" class="form-select">
+                <option value="">جميع الصفوف</option>
+                {% for class in classes %}<option value="{{ class.id }}" {% if class.id|stringformat:"s" == filters.class_id %}selected{% endif %}>{{ class.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> تطبيق</button>
+            <a href="{% url 'ol_school_radio_participation_report' %}" class="btn btn-outline-secondary">مسح</a>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="report-stat"><i class="bi bi-mic-fill"></i><div class="value">{{ report.broadcast_count }}</div><div class="label">إذاعة ضمن الفترة</div></div></div>
+    <div class="col-6 col-lg-3"><div class="report-stat"><i class="bi bi-people-fill"></i><div class="value">{{ report.unique_student_count }}</div><div class="label">طالبًا شاركوا</div></div></div>
+    <div class="col-6 col-lg-3"><div class="report-stat"><i class="bi bi-stars"></i><div class="value">{{ report.participation_count }}</div><div class="label">إجمالي مرات المشاركة</div></div></div>
+    <div class="col-6 col-lg-3"><div class="report-stat"><i class="bi bi-award-fill"></i>{% if report.top_student %}<div class="value fs-5">{{ report.top_student.student.full_name }}</div><div class="label">الأكثر مشاركة — {{ report.top_student.total_count }} مرات</div>{% else %}<div class="value">—</div><div class="label">لا توجد مشاركات</div>{% endif %}</div></div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0"><i class="bi bi-list-ol text-primary"></i> ترتيب الطلاب المشاركين</h5>
+        <span class="small text-muted">تُحسب مشاركة الطالب مرة واحدة في الإذاعة نفسها حتى لو كان مقدّمًا ومشاركًا.</span>
+    </div>
+    <div class="card-body p-0">
+        {% if report.rows %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light"><tr><th class="text-center">الترتيب</th><th>اسم الطالب</th><th>الصف</th><th class="text-center">مرات التقديم</th><th class="text-center">مرات المشاركة</th><th class="text-center">الإجمالي</th></tr></thead>
+                <tbody>
+                    {% for row in report.rows %}
+                    <tr>
+                        <td class="text-center"><span class="rank-badge">{{ forloop.counter }}</span></td>
+                        <td><strong>{{ row.student.full_name }}</strong><div class="small text-muted" dir="ltr">{{ row.student.student_id }}</div></td>
+                        <td>{{ row.student.student_class.name|default:'بدون صف' }}</td>
+                        <td class="text-center">{{ row.presenter_count }}</td>
+                        <td class="text-center">{{ row.participant_count }}</td>
+                        <td class="text-center"><span class="badge bg-primary fs-6">{{ row.total_count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>لا توجد مشاركات طلاب مطابقة للفلاتر المختارة.</div>
+        {% endif %}
+    </div>
+</div>
+<div class="small text-muted mt-2"><i class="bi bi-info-circle"></i> يعتمد التقرير على الطلاب المختارين من قوائم الطلاب داخل سجل الإذاعة؛ الأسماء المكتوبة في خانة «أسماء إضافية» لا تدخل في الإحصاء لأنها غير مرتبطة بحساب طالب.</div>
+{% endblock %}

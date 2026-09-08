@@ -260,6 +260,10 @@ def dashboard(request):
         today_lateness = StudentLateness.objects.filter(date=today).count()
         today_absence = StudentAbsence.objects.filter(absence_date=today).count()
         recent_notes = list(Note.objects.select_related('student__student_class', 'created_by').order_by('-created_at')[:6])
+        radio_summary = None
+        if profile.role == 'admin' and has_perm(request.user, 'school_radio', 'view'):
+            from open_learning.radio_reports import build_radio_participation_report
+            radio_summary = build_radio_participation_report(limit=5)
         return render(request, 'school/admin_dashboard.html', {
             'students_count': students_count,
             'notes_count': notes_count,
@@ -270,6 +274,7 @@ def dashboard(request):
             'today_str': today_str,
             'recent_notes': recent_notes,
             'show_quick_actions': profile.role in ('admin', 'vice_principal'),
+            'radio_summary': radio_summary,
         })
     elif profile.role == 'teacher':
         try:

@@ -63,6 +63,7 @@ class SchoolRadioFlowTests(TestCase):
     def test_account_without_radio_permission_cannot_view_or_create_records(self):
         self.client.force_login(self.student_user)
         self.assertRedirects(self.client.get(reverse('ol_school_radio_list')), reverse('home'))
+        self.assertRedirects(self.client.get(reverse('ol_school_radio_participation_report')), reverse('home'))
         self.assertRedirects(self.client.post(reverse('ol_school_radio_add'), {}), reverse('home'))
         self.assertEqual(SchoolRadioEntry.objects.count(), 0)
 
@@ -110,6 +111,86 @@ class SchoolRadioFlowTests(TestCase):
         entry = SchoolRadioEntry.objects.get(title='إذاعة بحساب مفوض')
         self.assertRedirects(response, reverse('ol_school_radio_detail', args=[entry.pk]))
         self.assertEqual(entry.created_by, self.student_user)
+
+    def test_participation_report_counts_each_student_once_per_broadcast(self):
+        second_user = User.objects.create_user('radio-student-2')
+        Profile.objects.create(user=second_user, role='student')
+        second_student = Student.objects.create(
+            user=second_user,
+            student_id='992233445',
+            full_name='طالب مشارك متكرر',
+            student_class=self.grade,
+        )
+        first_entry = self.create_entry(event_date=date(2026, 9, 8))
+        second_entry = self.create_entry(event_date=date(2026, 9, 9), title='إذاعة ثانية')
+        old_entry = self.create_entry(event_date=date(2025, 9, 8), title='إذاعة قديمة')
+        first_entry.presenters.add(self.student)
+        first_entry.participants.add(self.student, second_student)
+        second_entry.presenters.add(self.student)
+        second_entry.participants.add(second_student)
+        old_entry.participants.add(second_student)
+
+        response = self.client.get(reverse('ol_school_radio_participation_report'))
+        rows = response.context['report']['rows']
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['student'] for row in rows], [second_student, self.student])
+        self.assertEqual(rows[0]['total_count'], 3)
+        self.assertEqual(rows[0]['participant_count'], 3)
+        self.assertEqual(rows[1]['total_count'], 2)
+        self.assertEqual(rows[1]['presenter_count'], 2)
+        self.assertEqual(rows[1]['participant_count'], 1)
+        self.assertEqual(response.context['report']['participation_count'], 5)
+        self.assertContains(response, 'تُحسب مشاركة الطالب مرة واحدة')
+
+    def test_participation_report_filters_by_date(self):
+        current_entry = self.create_entry(event_date=date(2026, 9, 8))
+        old_entry = self.create_entry(event_date=date(2025, 9, 8), title='إذاعة قديمة')
+        current_entry.presenters.add(self.student)
+        old_entry.participants.add(self.student)
+
+        response = self.client.get(reverse('ol_school_radio_participation_report'), {
+            'date_from': '2026-01-01',
+            'date_to': '2026-12-31',
+        })
+        report = response.context['report']
+
+        self.assertEqual(report['broadcast_count'], 1)
+        self.assertEqual(report['participation_count'], 1)
+        self.assertEqual(report['rows'][0]['total_count'], 1)
+
+    def test_view_permission_allows_individual_account_to_open_participation_report(self):
+        self.grant_radio('view')
+        self.client.force_login(self.student_user)
+
+        response = self.client.get(reverse('ol_school_radio_participation_report'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'تقرير مشاركة الطلاب في الإذاعة')
+
+    def test_admin_dashboard_shows_top_radio_participants(self):
+        second_user = User.objects.create_user('radio-dashboard-student')
+        Profile.objects.create(user=second_user, role='student')
+        second_student = Student.objects.create(
+            user=second_user,
+            student_id='993344556',
+            full_name='الأكثر مشاركة في الإذاعة',
+            student_class=self.grade,
+        )
+        for day in (8, 9, 10):
+            entry = self.create_entry(event_date=date(2026, 9, day), title=f'إذاعة {day}')
+            entry.participants.add(second_student)
+        self.create_entry(event_date=date(2026, 9, 11), title='إذاعة لطالب آخر').participants.add(self.student)
+
+        response = self.client.get(reverse('dashboard'))
+        summary = response.context['radio_summary']
+
+        self.assertEqual(summary['broadcast_count'], 4)
+        self.assertEqual(summary['unique_student_count'], 2)
+        self.assertEqual(summary['participation_count'], 4)
+        self.assertEqual(summary['top_student']['student'], second_student)
+        self.assertContains(response, 'الأكثر مشاركة في الإذاعة')
+        self.assertContains(response, 'ملخص الإذاعة المدرسية')
 
     def test_radio_actions_are_protected_independently_from_view(self):
         entry = self.create_entry()

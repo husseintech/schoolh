@@ -82,6 +82,7 @@ urlpatterns = [
 
     path('school-radio/', radio_views.school_radio_list, name='ol_school_radio_list'),
     path('school-radio/add/', radio_views.school_radio_add, name='ol_school_radio_add'),
+    path('school-radio/reports/participation/', radio_views.school_radio_participation_report, name='ol_school_radio_participation_report'),
     path('school-radio/<int:entry_id>/', radio_views.school_radio_detail, name='ol_school_radio_detail'),
     path('school-radio/<int:entry_id>/edit/', radio_views.school_radio_edit, name='ol_school_radio_edit'),
     path('school-radio/<int:entry_id>/delete/', radio_views.school_radio_delete, name='ol_school_radio_delete'),
