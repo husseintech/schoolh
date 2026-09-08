@@ -221,8 +221,17 @@ class GoogleDriveService:
             headers=self._auth_headers(),
             timeout=30,
         )
-        if resp.status_code not in (204, 200):
+        if resp.status_code not in (204, 200, 404):
             resp.raise_for_status()
+        return True
+
+    def delete_named_folder(self, name, parent_id=None):
+        """Delete a dedicated feature folder and all its contents when it exists."""
+        parent = parent_id or self.root_folder_id or 'root'
+        folder_id = self._find_folder(name, parent)
+        if not folder_id:
+            return False
+        self.delete_file(folder_id)
         return True
 
     def get_file(self, file_id):

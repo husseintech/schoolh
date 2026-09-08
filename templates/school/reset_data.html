@@ -41,7 +41,7 @@
                         <tbody>
                             {% for c in counts %}
                             <tr>
-                                <td>{{ c.label }}</td>
+                                <td>{{ c.label }}{% if c.detail %}<div class="small text-muted mt-1">{{ c.detail }}</div>{% endif %}</td>
                                 <td><span class="badge bg-secondary">{{ c.count }}</span></td>
                                 <td class="text-center">
                                     <form method="post" style="display:inline" onsubmit="return confirm('سيتم حذف {{ c.count }} سجل من «{{ c.label }}» نهائياً. هل أنت متأكد؟')">

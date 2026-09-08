@@ -192,6 +192,129 @@ class SchoolRadioFlowTests(TestCase):
         self.assertContains(response, 'الأكثر مشاركة في الإذاعة')
         self.assertContains(response, 'ملخص الإذاعة المدرسية')
 
+    def test_reset_page_lists_school_radio_records_and_drive_files(self):
+        entry = self.create_entry()
+        SchoolRadioFile.objects.create(
+            entry=entry,
+            file_name='radio-photo.jpg',
+            file_type='image/jpeg',
+            google_drive_file_id='drive-radio-photo',
+        )
+
+        response = self.client.get(reverse('reset_data'))
+        radio_row = next(item for item in response.context['counts'] if item['key'] == 'school_radio')
+
+        self.assertEqual(radio_row['count'], 1)
+        self.assertIn('1 صورة/ملف', radio_row['detail'])
+        self.assertContains(response, 'ملف الإذاعة المدرسية وصورها')
+
+    def test_confirmed_radio_reset_deletes_records_without_touching_students(self):
+        self.create_entry()
+
+        response = self.client.post(reverse('reset_data'), {
+            'action': 'flush_one',
+            'key': 'school_radio',
+            'confirm': 'YES',
+        })
+
+        self.assertRedirects(response, reverse('reset_data'))
+        self.assertFalse(SchoolRadioEntry.objects.exists())
+        self.assertTrue(Student.objects.filter(pk=self.student.pk).exists())
+
+    def test_radio_reset_deletes_dedicated_drive_folder_before_database_records(self):
+        entry = self.create_entry()
+        SchoolRadioFile.objects.create(
+            entry=entry,
+            file_name='radio-photo.jpg',
+            file_type='image/jpeg',
+            google_drive_file_id='drive-radio-photo',
+        )
+
+        with patch('open_learning.radio_maintenance.GoogleDriveService') as service_class:
+            service = service_class.return_value
+            service.is_connected.return_value = True
+            service.delete_named_folder.return_value = True
+            response = self.client.post(reverse('reset_data'), {
+                'action': 'flush_one',
+                'key': 'school_radio',
+                'confirm': 'YES',
+            })
+
+        self.assertRedirects(response, reverse('reset_data'))
+        service.delete_named_folder.assert_called_once_with('ملف الإذاعة المدرسية')
+        self.assertFalse(SchoolRadioEntry.objects.exists())
+        self.assertFalse(SchoolRadioFile.objects.exists())
+
+    def test_radio_reset_keeps_database_records_when_drive_delete_fails(self):
+        entry = self.create_entry()
+        radio_file = SchoolRadioFile.objects.create(
+            entry=entry,
+            file_name='radio-photo.jpg',
+            file_type='image/jpeg',
+            google_drive_file_id='drive-radio-photo',
+        )
+
+        with patch('open_learning.radio_maintenance.GoogleDriveService') as service_class:
+            service = service_class.return_value
+            service.is_connected.return_value = True
+            service.delete_named_folder.side_effect = RuntimeError('Drive unavailable')
+            response = self.client.post(reverse('reset_data'), {
+                'action': 'flush_one',
+                'key': 'school_radio',
+                'confirm': 'YES',
+            }, follow=True)
+
+        self.assertTrue(SchoolRadioEntry.objects.filter(pk=entry.pk).exists())
+        self.assertTrue(SchoolRadioFile.objects.filter(pk=radio_file.pk).exists())
+        self.assertContains(response, 'لم تُحذف سجلات قاعدة البيانات')
+
+    def test_radio_reset_keeps_database_records_when_drive_folder_is_missing(self):
+        entry = self.create_entry()
+        SchoolRadioFile.objects.create(
+            entry=entry,
+            file_name='radio-photo.jpg',
+            file_type='image/jpeg',
+            google_drive_file_id='drive-radio-photo',
+        )
+
+        with patch('open_learning.radio_maintenance.GoogleDriveService') as service_class:
+            service = service_class.return_value
+            service.is_connected.return_value = True
+            service.delete_named_folder.return_value = False
+            response = self.client.post(reverse('reset_data'), {
+                'action': 'flush_one',
+                'key': 'school_radio',
+                'confirm': 'YES',
+            }, follow=True)
+
+        self.assertTrue(SchoolRadioEntry.objects.filter(pk=entry.pk).exists())
+        self.assertContains(response, 'لم يُعثر على مجلد الإذاعة')
+
+    def test_radio_reset_requires_explicit_confirmation(self):
+        entry = self.create_entry()
+
+        response = self.client.post(reverse('reset_data'), {
+            'action': 'flush_one',
+            'key': 'school_radio',
+        })
+
+        self.assertRedirects(response, reverse('reset_data'))
+        self.assertTrue(SchoolRadioEntry.objects.filter(pk=entry.pk).exists())
+
+    def test_non_admin_cannot_reset_school_radio_even_with_radio_permissions(self):
+        entry = self.create_entry()
+        self.grant_radio('view', 'add', 'edit', 'delete', 'generate', 'review')
+        self.client.force_login(self.student_user)
+
+        response = self.client.post(reverse('reset_data'), {
+            'action': 'flush_one',
+            'key': 'school_radio',
+            'confirm': 'YES',
+        })
+
+        self.assertRedirects(response, reverse('dashboard'))
+        self.assertTrue(SchoolRadioEntry.objects.filter(pk=entry.pk).exists())
+
     def test_radio_actions_are_protected_independently_from_view(self):
         entry = self.create_entry()
         self.grant_radio('view')
@@ -322,3 +445,14 @@ class SchoolRadioServiceTests(SimpleTestCase):
         data['quran']['end_verse'] = 6
         with self.assertRaises(AIServiceUnavailable):
             validate_radio_program(data)
+
+    def test_delete_named_drive_folder_removes_the_dedicated_radio_folder(self):
+        service = GoogleDriveService()
+        service.root_folder_id = 'root-id'
+        with patch.object(service, '_find_folder', return_value='radio-folder-id') as find, \
+             patch.object(service, 'delete_file') as delete:
+            deleted = service.delete_named_folder('ملف الإذاعة المدرسية')
+
+        self.assertTrue(deleted)
+        find.assert_called_once_with('ملف الإذاعة المدرسية', 'root-id')
+        delete.assert_called_once_with('radio-folder-id')

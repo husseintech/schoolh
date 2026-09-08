@@ -14,12 +14,12 @@ from school.models import Class, has_perm
 from .google_drive import GoogleDriveService
 from .models import SchoolRadioEntry, SchoolRadioFile
 from .radio_forms import SchoolRadioEntryForm
+from .radio_maintenance import RADIO_FOLDER_NAME
 from .radio_reports import build_radio_participation_report
 from .services.ai_service import AIServiceUnavailable, get_provider
 from .services.usage import log_usage
 
 
-RADIO_FOLDER_NAME = 'ملف الإذاعة المدرسية'
 MAX_FILES_PER_REQUEST = 10
 MAX_FILE_SIZE = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf'}

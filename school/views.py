@@ -4019,6 +4019,19 @@ CLEARABLE_TABLES = [
     ('summons', 'استدعاءات أولياء الأمور', GuardianSummons, ['student']),
 ]
 
+
+def get_clearable_tables():
+    """Central registry for every feature that offers independent year-start clearing.
+
+    Project rule: every new feature that stores operational records must be
+    registered here and covered by a reset-safety test before release.
+    """
+    from open_learning.models import SchoolRadioEntry
+    return [
+        *CLEARABLE_TABLES,
+        ('school_radio', 'ملف الإذاعة المدرسية وصورها', SchoolRadioEntry, []),
+    ]
+
 DEPENDENT_MODELS = {
     'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter, StudentWarning, GuardianSummons],
     'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup, ReciprocalVisit],
@@ -4033,6 +4046,7 @@ def reset_data(request):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     if request.method == 'POST':
+        clearable_tables = get_clearable_tables()
         action = request.POST.get('action', '')
         confirm = request.POST.get('confirm', '')
         if confirm != 'YES':
@@ -4040,8 +4054,29 @@ def reset_data(request):
             return redirect('reset_data')
         if action == 'flush_one':
             key = request.POST.get('key', '')
-            for k, label, model, deps in CLEARABLE_TABLES:
+            for k, label, model, deps in clearable_tables:
                 if k == key:
+                    if key == 'school_radio':
+                        from open_learning.radio_maintenance import (
+                            SchoolRadioMaintenanceError,
+                            clear_school_radio_records,
+                        )
+                        try:
+                            result = clear_school_radio_records()
+                        except SchoolRadioMaintenanceError as exc:
+                            messages.error(request, str(exc))
+                            return redirect('reset_data')
+                        details = (
+                            f"{label}: {result['entry_count']} إذاعة، "
+                            f"{result['file_count']} ملف"
+                        )
+                        log_action(request.user, 'تفريغ بيانات', details)
+                        messages.success(
+                            request,
+                            f"تم تفريغ ملف الإذاعة المدرسية: {result['entry_count']} إذاعة "
+                            f"و{result['file_count']} ملف.",
+                        )
+                        return redirect('reset_data')
                     log_action(request.user, 'تفريغ بيانات', label)
                     model.objects.all().delete()
                     messages.success(request, f'تم تفريغ: {label}')
@@ -4077,7 +4112,15 @@ def reset_data(request):
                 Subject.objects.all().delete()
                 messages.success(request, 'تم تفريغ المواد وجميع بياناتهم المرتبطة')
             return redirect('reset_data')
-    counts = [{'key': k, 'label': label, 'count': model.objects.count()} for k, label, model, deps in CLEARABLE_TABLES]
+    counts = [
+        {'key': k, 'label': label, 'count': model.objects.count()}
+        for k, label, model, deps in get_clearable_tables()
+    ]
+    from open_learning.models import SchoolRadioFile
+    for item in counts:
+        if item['key'] == 'school_radio':
+            item['detail'] = f"{SchoolRadioFile.objects.count()} صورة/ملف محفوظ في Google Drive"
+            break
     return render(request, 'school/reset_data.html', {
         'counts': counts,
         'full_groups': [('students', 'الطلاب'), ('teachers', 'المعلمون'), ('classes', 'الصفوف'), ('subjects', 'المواد')],
