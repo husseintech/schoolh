@@ -43,6 +43,23 @@ def normalize_grade_row_count(raw_value):
     return DEFAULT_GRADE_REGISTER_ROWS
 
 
+def grade_register_row_heights(row_count):
+    """Return safe A4 row heights, including Chrome's print header/footer reserve."""
+    row_count = normalize_grade_row_count(row_count)
+    if row_count >= 47:
+        # Dense registers need an extra bottom reserve. Some Chrome/printer
+        # combinations reserve about 20 mm for print headers and footers even
+        # though the CSS page itself is A4-sized.
+        return {
+            'stage': 220 / row_count,
+            'upper': 216 / row_count,
+        }
+    return {
+        'stage': 242 / row_count,
+        'upper': 238 / row_count,
+    }
+
+
 def class_grade(class_name):
     """Extract grades 1–6 from numeric or Arabic class labels."""
     normalized = (class_name or '').strip().translate(ARABIC_DIGIT_TRANSLATION)

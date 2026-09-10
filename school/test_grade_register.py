@@ -9,6 +9,7 @@ from school.grade_register import (
     class_grade,
     grade_book_type,
     grade_label,
+    grade_register_row_heights,
     normalize_book_type,
     normalize_grade_row_count,
 )
@@ -47,6 +48,15 @@ class GradeRegisterHelperTests(SimpleTestCase):
 
     def test_grade_label_keeps_the_recorded_class_name(self):
         self.assertEqual(grade_label(1, '1أ'), 'الصف الأول الأساسي (1أ)')
+
+    def test_fifty_rows_use_safe_print_height_without_shrinking_normal_books(self):
+        normal = grade_register_row_heights(40)
+        dense = grade_register_row_heights(50)
+
+        self.assertAlmostEqual(normal['stage'], 6.05)
+        self.assertAlmostEqual(normal['upper'], 5.95)
+        self.assertAlmostEqual(dense['stage'], 4.4)
+        self.assertAlmostEqual(dense['upper'], 4.32)
 
 
 class GradeRegisterAccessTests(TestCase):
@@ -177,6 +187,8 @@ class GradeRegisterAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.count(b'data-page-kind="grade-marks"'), 2)
+        self.assertEqual(response.context['stage_row_height'], '4.400')
+        self.assertEqual(response.context['upper_row_height'], '4.320')
         self.assertContains(response, 'الصف الخامس الأساسي (الخامس ب)', count=2)
         self.assertContains(response, 'اختبار<br>قصير 1', count=2)
         self.assertContains(response, '10%', count=4)

@@ -39,6 +39,7 @@ from .grade_register import (
     class_grade,
     grade_book_type,
     grade_label,
+    grade_register_row_heights,
     normalize_book_type,
     normalize_grade_row_count,
 )
@@ -3721,6 +3722,7 @@ def _grade_register_context(request):
             classes_taught.append(item['class_name'])
 
     start_year = normalize_start_year(request.GET.get('year'))
+    row_heights = grade_register_row_heights(row_count)
     return {
         'teachers': teachers,
         'selected_teacher': selected_teacher,
@@ -3738,8 +3740,8 @@ def _grade_register_context(request):
         'start_year': start_year,
         'academic_year': f'{start_year}/{start_year + 1}',
         # A slightly smaller body is reserved for the wider upper-basic header.
-        'stage_row_height': f'{242 / row_count:.3f}',
-        'upper_row_height': f'{238 / row_count:.3f}',
+        'stage_row_height': f"{row_heights['stage']:.3f}",
+        'upper_row_height': f"{row_heights['upper']:.3f}",
         'info': SchoolInfo.objects.first(),
     }
 
