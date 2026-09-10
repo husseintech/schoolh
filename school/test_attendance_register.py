@@ -224,6 +224,7 @@ class AttendanceRegisterAccessTests(TestCase):
         self.assertTrue(any(day['shaded'] for day in august['days']))
         self.assertTrue(any(not day['shaded'] for day in august['days']))
         self.assertContains(response, '--status-row-height:7.286mm')
+        self.assertContains(response, '--attendance-row-height:6.514mm')
         self.assertNotContains(response, 'august-column')
 
     def test_teacher_can_choose_50_rows_and_enable_full_august_shading(self):

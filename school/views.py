@@ -3561,7 +3561,9 @@ def _attendance_register_context(request):
         # Keep a decimal point in inline CSS even when Django's Arabic locale
         # formats ordinary numbers with a comma.
         'status_row_height': f'{255 / row_count:.3f}',
-        'attendance_row_height': f'{241 / row_count:.3f}',
+        # Reserve the monthly footer plus a safe printable bottom margin. Some
+        # browser/printer combinations clip the last footer row at the edge.
+        'attendance_row_height': f'{228 / row_count:.3f}',
         'annual_row_height': f'{240 / row_count:.3f}',
         'start_year': start_year,
         'academic_year': f'{start_year}/{start_year + 1}',
