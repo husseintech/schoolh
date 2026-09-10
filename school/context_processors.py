@@ -12,6 +12,7 @@ def user_permissions(request):
     recent_messages = []
     account_display_name = ''
     show_attendance_register = False
+    show_grade_register = False
     if request.user.is_authenticated:
         user = request.user
         role = getattr(getattr(user, 'profile', None), 'role', None)
@@ -25,6 +26,7 @@ def user_permissions(request):
         show_attendance_register = role == 'admin' or bool(
             role == 'teacher' and person and getattr(person, 'guardian_class', None)
         )
+        show_grade_register = role in ('admin', 'teacher')
         send_visit_reminders()
         modules_actions = [
             ('students', 'view'), ('students', 'add'), ('students', 'edit'),
@@ -74,6 +76,7 @@ def user_permissions(request):
     return {
         'account_display_name': account_display_name,
         'show_attendance_register': show_attendance_register,
+        'show_grade_register': show_grade_register,
         'user_perms': perms,
         'school_info': SchoolInfo.objects.first(),
         'unread_notifications_count': unread_count,

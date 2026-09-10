@@ -31,6 +31,17 @@ from .attendance_register import (
     normalize_row_count,
     normalize_start_year,
 )
+from .grade_register import (
+    BOOK_TYPE_LABELS,
+    MAX_GRADE_REGISTER_ROWS,
+    MIN_GRADE_REGISTER_ROWS,
+    build_grade_student_rows,
+    class_grade,
+    grade_book_type,
+    grade_label,
+    normalize_book_type,
+    normalize_grade_row_count,
+)
 
 
 def sort_students(students):
@@ -3612,6 +3623,165 @@ def attendance_register_print(request):
         messages.error(request, 'اختر معلماً مرتبطاً بصف بصفته مربيًا للصف')
         return redirect('attendance_register')
     return render(request, 'school/attendance_register_print.html', context)
+
+
+def _grade_register_selection(request):
+    """Resolve an administrator-selected teacher or the signed-in teacher."""
+    role = request.user.profile.role
+    if role == 'admin':
+        teachers = Teacher.objects.all().order_by('full_name')
+        teacher_id = request.GET.get('teacher', '').strip()
+        selected_teacher = (
+            teachers.filter(pk=int(teacher_id)).first()
+            if teacher_id.isdigit() else
+            (teachers.first() if not teacher_id else None)
+        )
+        return teachers, selected_teacher
+    if role == 'teacher':
+        return (), getattr(request.user, 'teacher_profile', None)
+    return (), None
+
+
+def _grade_register_context(request):
+    teachers, selected_teacher = _grade_register_selection(request)
+    if not selected_teacher:
+        return {
+            'teachers': teachers,
+            'selected_teacher': None,
+            'assignments': [],
+        }
+
+    schedule_assignments = list(
+        TeacherScheduleEntry.objects.filter(
+            teacher=selected_teacher,
+            subject__isnull=False,
+            student_class__isnull=False,
+        )
+        # Clear the model's day/period ordering before DISTINCT. Otherwise
+        # SQLite/PostgreSQL may include those ordering columns in the query and
+        # repeat the same class-subject pair for every weekly lesson.
+        .order_by()
+        .values(
+            'student_class_id',
+            'student_class__name',
+            'subject_id',
+            'subject__name',
+        )
+        .distinct()
+    )
+    prepared = []
+    unknown_assignments = []
+    for item in schedule_assignments:
+        grade = class_grade(item['student_class__name'])
+        book_type = grade_book_type(grade)
+        assignment = {
+            'class_id': item['student_class_id'],
+            'class_name': item['student_class__name'],
+            'subject_id': item['subject_id'],
+            'subject_name': item['subject__name'],
+            'grade': grade,
+            'book_type': book_type,
+        }
+        if book_type:
+            assignment['grade_label'] = grade_label(grade, assignment['class_name'])
+            prepared.append(assignment)
+        else:
+            unknown_assignments.append(assignment)
+
+    prepared.sort(key=lambda item: (
+        item['grade'],
+        arabic_sort_key(item['class_name']),
+        arabic_sort_key(item['subject_name']),
+    ))
+    available_types = {item['book_type'] for item in prepared}
+    selected_type = normalize_book_type(request.GET.get('book_type'), available_types)
+    row_count = normalize_grade_row_count(request.GET.get('rows'))
+    class_ids = {item['class_id'] for item in prepared}
+    students_by_class = {
+        class_id: sort_students(Student.objects.filter(student_class_id=class_id))
+        for class_id in class_ids
+    }
+    assignments = []
+    for item in prepared:
+        if item['book_type'] != selected_type:
+            continue
+        students = students_by_class[item['class_id']]
+        assignments.append({
+            **item,
+            'student_count': len(students),
+            'students_omitted': max(0, len(students) - row_count),
+            'student_rows': build_grade_student_rows(students[:row_count], row_count),
+        })
+
+    classes_taught = []
+    seen_class_ids = set()
+    for item in prepared:
+        if item['class_id'] not in seen_class_ids:
+            seen_class_ids.add(item['class_id'])
+            classes_taught.append(item['class_name'])
+
+    start_year = normalize_start_year(request.GET.get('year'))
+    return {
+        'teachers': teachers,
+        'selected_teacher': selected_teacher,
+        'assignments': assignments,
+        'all_assignments': prepared,
+        'unknown_assignments': unknown_assignments,
+        'available_types': available_types,
+        'book_type': selected_type,
+        'book_type_label': BOOK_TYPE_LABELS[selected_type],
+        'book_type_options': BOOK_TYPE_LABELS.items(),
+        'classes_taught': classes_taught,
+        'row_count': row_count,
+        'row_options': range(MIN_GRADE_REGISTER_ROWS, MAX_GRADE_REGISTER_ROWS + 1),
+        'page_count': len(assignments) * 2,
+        'start_year': start_year,
+        'academic_year': f'{start_year}/{start_year + 1}',
+        # A slightly smaller body is reserved for the wider upper-basic header.
+        'stage_row_height': f'{242 / row_count:.3f}',
+        'upper_row_height': f'{238 / row_count:.3f}',
+        'info': SchoolInfo.objects.first(),
+    }
+
+
+def _grade_register_role_allowed(request):
+    return request.user.profile.role in ('admin', 'teacher')
+
+
+@login_required
+def grade_register(request):
+    if not _grade_register_role_allowed(request):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى دفتر العلامات')
+        return redirect('dashboard')
+    context = _grade_register_context(request)
+    if request.user.profile.role == 'teacher' and not context['selected_teacher']:
+        messages.error(request, 'لا يوجد حساب معلم مرتبط بحسابك')
+        return redirect('dashboard')
+    return render(request, 'school/grade_register.html', context)
+
+
+@login_required
+def grade_register_cover(request):
+    if not _grade_register_role_allowed(request):
+        messages.error(request, 'ليس لديك صلاحية لطباعة غلاف دفتر العلامات')
+        return redirect('dashboard')
+    context = _grade_register_context(request)
+    if not context['selected_teacher'] or not context['classes_taught']:
+        messages.error(request, 'لا توجد صفوف مرتبطة بهذا المعلم في الجدول اليومي')
+        return redirect('grade_register')
+    return render(request, 'school/grade_register_cover.html', context)
+
+
+@login_required
+def grade_register_print(request):
+    if not _grade_register_role_allowed(request):
+        messages.error(request, 'ليس لديك صلاحية لطباعة دفتر العلامات')
+        return redirect('dashboard')
+    context = _grade_register_context(request)
+    if not context['selected_teacher'] or not context['assignments']:
+        messages.error(request, 'لا توجد صفوف ومباحث من النوع المحدد في الجدول اليومي لهذا المعلم')
+        return redirect('grade_register')
+    return render(request, 'school/grade_register_print.html', context)
 
 
 @login_required

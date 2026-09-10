@@ -1,0 +1,104 @@
+{% extends 'school/base.html' %}
+{% block title %}دفتر العلامات{% endblock %}
+{% block content %}
+<div class="grade-register-home">
+  <div class="grade-register-hero mb-4">
+    <div>
+      <span class="grade-register-kicker"><i class="bi bi-journal-text"></i> سجلات العلامات الرسمية</span>
+      <h2>دفتر العلامات</h2>
+      <p>دفتر فارغ للطباعة مع أسماء الطلاب، مبني على صفوف المعلم ومباحثه في الجدول اليومي.</p>
+    </div>
+    <div class="grade-register-count"><strong>{{ page_count|default:0 }}</strong><span>صفحة علامات</span></div>
+  </div>
+
+  {% if request.user.profile.role == 'admin' %}
+  <form method="get" class="card border-0 shadow-sm mb-4 register-selector">
+    <div class="card-body p-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-5">
+          <label class="form-label fw-bold" for="gradeTeacher">المعلم</label>
+          <select class="form-select" id="gradeTeacher" name="teacher" required>
+            {% for teacher in teachers %}<option value="{{ teacher.id }}" {% if selected_teacher.id == teacher.id %}selected{% endif %}>{{ teacher.full_name }}</option>{% empty %}<option value="">لا يوجد معلمون</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label fw-bold" for="bookType">نوع دفتر العلامات</label>
+          <select class="form-select" id="bookType" name="book_type">
+            {% for value, label in book_type_options %}<option value="{{ value }}" {% if value == book_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-2">
+          <label class="form-label fw-bold" for="gradeYear">بداية العام</label>
+          <input class="form-control" id="gradeYear" name="year" type="number" min="2020" max="2100" value="{{ start_year|default:'2026' }}" required>
+        </div>
+        <div class="col-lg-1">
+          <label class="form-label fw-bold" for="gradeRows">الأسطر</label>
+          <select class="form-select" id="gradeRows" name="rows">{% for option in row_options %}<option value="{{ option }}" {% if option == row_count %}selected{% endif %}>{{ option }}</option>{% endfor %}</select>
+        </div>
+        <div class="col-lg-1 d-grid"><button class="btn btn-primary" type="submit"><i class="bi bi-arrow-repeat"></i></button></div>
+      </div>
+    </div>
+  </form>
+  {% elif selected_teacher %}
+  <form method="get" class="card border-0 shadow-sm mb-4 register-selector">
+    <div class="card-body p-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-4"><div class="register-fixed-value"><small>المعلم</small><strong>{{ selected_teacher.full_name }}</strong></div></div>
+        <div class="col-lg-3">
+          <label class="form-label fw-bold" for="bookType">نوع دفتر العلامات</label>
+          <select class="form-select" id="bookType" name="book_type">{% for value, label in book_type_options %}<option value="{{ value }}" {% if value == book_type %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        </div>
+        <div class="col-lg-2"><label class="form-label fw-bold" for="gradeYear">بداية العام</label><input class="form-control" id="gradeYear" name="year" type="number" min="2020" max="2100" value="{{ start_year }}" required></div>
+        <div class="col-lg-1"><label class="form-label fw-bold" for="gradeRows">الأسطر</label><select class="form-select" id="gradeRows" name="rows">{% for option in row_options %}<option value="{{ option }}" {% if option == row_count %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+        <div class="col-lg-2 d-grid"><button class="btn btn-primary" type="submit"><i class="bi bi-arrow-repeat"></i> تجهيز</button></div>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if selected_teacher %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm grade-register-summary">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center gap-3 mb-3"><span class="grade-register-avatar"><i class="bi bi-person-vcard"></i></span><div><small class="text-muted">دفتر المعلم</small><h4 class="mb-0">{{ selected_teacher.full_name }}</h4></div></div>
+          <div class="summary-grid mb-3">
+            <div><small>النوع المحدد</small><strong>{{ book_type_label }}</strong></div>
+            <div><small>العام الدراسي</small><strong>{{ academic_year }}</strong></div>
+            <div><small>عدد الأسطر</small><strong>{{ row_count }}</strong></div>
+            <div><small>صفحات العلامات</small><strong>{{ page_count }}</strong></div>
+          </div>
+          <div class="mb-3"><div class="small text-muted fw-bold mb-2">جميع الصفوف التي يدرسها</div><div class="class-chips">{% for class_name in classes_taught %}<span>{{ class_name }}</span>{% empty %}<span class="empty">لا توجد صفوف مسجلة في الجدول اليومي</span>{% endfor %}</div></div>
+          {% if assignments %}
+          <div class="assignment-list">
+            {% for assignment in assignments %}
+            <div class="assignment-item">
+              <div><strong>{{ assignment.grade_label }}</strong><small>{{ assignment.subject_name }} — {{ assignment.student_count }} طالبًا</small></div>
+              <span>صفحتان</span>
+            </div>
+            {% if assignment.students_omitted %}<div class="alert alert-warning py-2 small">لن تظهر أسماء آخر {{ assignment.students_omitted }} من طلاب {{ assignment.class_name }} لأن عدد الأسطر المختار أقل من عدد الطلاب.</div>{% endif %}
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle-fill"></i> لا توجد صفوف ومباحث من نوع «{{ book_type_label }}» مرتبطة بهذا المعلم في الجدول اليومي.</div>
+          {% endif %}
+          {% if unknown_assignments %}<div class="alert alert-light border mt-3 mb-0 small"><i class="bi bi-info-circle"></i> توجد {{ unknown_assignments|length }} ارتباطات لم يمكن تحديد مرحلتها من اسم الصف، لذلك لم تدخل في الدفتر.</div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="register-print-options h-100">
+        {% if classes_taught %}<a class="register-print-card" target="_blank" rel="noopener" href="{% url 'grade_register_cover' %}?teacher={{ selected_teacher.id }}&amp;book_type={{ book_type }}&amp;year={{ start_year }}&amp;rows={{ row_count }}"><span class="print-card-icon cover"><i class="bi bi-file-earmark-person"></i></span><span><strong>طباعة الغلاف</strong><small>غلاف مستقل باسم المعلم وجميع صفوفه</small></span><i class="bi bi-box-arrow-up-left"></i></a>{% endif %}
+        {% if assignments %}<a class="register-print-card" target="_blank" rel="noopener" href="{% url 'grade_register_print' %}?teacher={{ selected_teacher.id }}&amp;book_type={{ book_type }}&amp;year={{ start_year }}&amp;rows={{ row_count }}"><span class="print-card-icon book"><i class="bi bi-printer-fill"></i></span><span><strong>طباعة صفحات العلامات</strong><small>{{ page_count }} صفحة، دون صفحة التعليمات</small></span><i class="bi bi-box-arrow-up-left"></i></a>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm"><div class="card-body text-center py-5"><i class="bi bi-person-x display-5 text-muted"></i><h4 class="mt-3">لا يوجد معلم محدد</h4></div></div>
+  {% endif %}
+</div>
+
+<style>
+.grade-register-home{max-width:1150px;margin:auto}.grade-register-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:28px;border-radius:24px;color:#fff;background:linear-gradient(135deg,#4b2d72,#7852a6);box-shadow:0 18px 38px rgba(75,45,114,.2)}.grade-register-kicker{display:inline-flex;gap:7px;align-items:center;font-size:.76rem;font-weight:800;opacity:.86}.grade-register-hero h2{margin:8px 0 6px;font-size:1.65rem;font-weight:850}.grade-register-hero p{margin:0;font-size:.84rem;opacity:.82}.grade-register-count{width:112px;height:112px;display:grid;place-content:center;text-align:center;border:1px solid rgba(255,255,255,.22);border-radius:28px;background:rgba(255,255,255,.12)}.grade-register-count strong{font-size:2.15rem;line-height:1}.grade-register-count span{margin-top:6px;font-size:.65rem}.register-selector,.grade-register-summary{border-radius:20px!important}.register-fixed-value{height:100%;padding:10px 14px;border:1px solid #e0e7f0;border-radius:12px;background:#f8fafc}.register-fixed-value small,.register-fixed-value strong{display:block}.register-fixed-value small{color:#7b8799;font-size:.7rem}.grade-register-avatar{width:52px;height:52px;display:grid;place-items:center;border-radius:16px;color:#684193;background:#f0e8fa;font-size:1.35rem}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.summary-grid div{padding:12px;border:1px solid #ebe5f2;border-radius:12px;background:#fcfaff}.summary-grid small,.summary-grid strong{display:block}.summary-grid small{color:#80738e;font-size:.67rem}.summary-grid strong{margin-top:4px;font-size:.82rem}.class-chips{display:flex;flex-wrap:wrap;gap:8px}.class-chips span{padding:6px 12px;border-radius:20px;color:#5d377e;background:#f1e7fb;font-size:.75rem;font-weight:800}.class-chips span.empty{color:#7a8798;background:#f1f3f6}.assignment-list{display:grid;gap:8px}.assignment-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #e7e0ee;border-radius:13px}.assignment-item strong,.assignment-item small{display:block}.assignment-item small{margin-top:3px;color:#7b7184;font-size:.7rem}.assignment-item>span{flex:0 0 auto;padding:5px 10px;border-radius:15px;color:#275d48;background:#e5f5ed;font-size:.68rem;font-weight:800}.register-print-options{display:flex;flex-direction:column;justify-content:center;gap:14px}.register-print-card{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;padding:20px;border:1px solid #e4dcec;border-radius:18px;color:#39284c;background:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(56,35,78,.07);transition:.18s ease}.register-print-card:hover{transform:translateY(-2px);border-color:#b99bcf;color:#5d2d82}.register-print-card strong,.register-print-card small{display:block}.register-print-card small{margin-top:4px;color:#7a8798;font-size:.7rem;line-height:1.6}.print-card-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:14px;font-size:1.25rem}.print-card-icon.cover{color:#8b5d13;background:#fff3d5}.print-card-icon.book{color:#5a327d;background:#f0e6f7}@media(max-width:767px){.grade-register-hero{align-items:flex-start;padding:22px}.grade-register-count{width:82px;height:82px;flex:0 0 82px;border-radius:21px}.grade-register-count strong{font-size:1.65rem}.grade-register-hero h2{font-size:1.25rem}.summary-grid{grid-template-columns:1fr 1fr}}
+</style>
+{% endblock %}

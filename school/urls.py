@@ -56,6 +56,9 @@ urlpatterns = [
     path('teachers/attendance-register/', views.attendance_register, name='attendance_register'),
     path('teachers/attendance-register/cover/', views.attendance_register_cover, name='attendance_register_cover'),
     path('teachers/attendance-register/print/', views.attendance_register_print, name='attendance_register_print'),
+    path('teachers/grade-register/', views.grade_register, name='grade_register'),
+    path('teachers/grade-register/cover/', views.grade_register_cover, name='grade_register_cover'),
+    path('teachers/grade-register/print/', views.grade_register_print, name='grade_register_print'),
     path('notes/report/', views.notes_report, name='notes_report'),
 
     # Classes

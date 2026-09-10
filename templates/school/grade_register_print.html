@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>دفتر العلامات — {{ selected_teacher.full_name }} — {{ book_type_label }}</title>
+  <link rel="stylesheet" href="/static/school/css/grade_register.css?v=20260910">
+</head>
+<body class="grade-print-document" style="--stage-row-height:{{ stage_row_height }}mm;--upper-row-height:{{ upper_row_height }}mm">
+  <div class="grade-toolbar">
+    <span>{{ page_count }} صفحة — {{ book_type_label }} — {{ row_count }} سطرًا — {{ selected_teacher.full_name }}</span>
+    <button type="button" onclick="window.print()">طباعة صفحات العلامات</button>
+    <a href="{% url 'grade_register' %}?teacher={{ selected_teacher.id }}&amp;book_type={{ book_type }}&amp;year={{ start_year }}&amp;rows={{ row_count }}">العودة</a>
+  </div>
+
+  <main>
+    {% for assignment in assignments %}
+      {% if book_type == 'stage' %}
+        <section class="grade-page marks-page stage-marks-page" data-page-kind="grade-marks" data-semester="1" data-class="{{ assignment.class_id }}" data-subject="{{ assignment.subject_id }}">
+          <div class="grade-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>المعلم: {{ selected_teacher.full_name }}</span><span>العام الدراسي: {{ academic_year }}</span></div>
+          <h1>الفصل الدراسي الأول</h1>
+          <div class="grade-page-meta"><strong>{{ assignment.grade_label }}</strong><strong>المبحث: {{ assignment.subject_name }}</strong></div>
+          <table class="marks-table stage-table" aria-label="علامات الفصل الأول {{ assignment.class_name }} {{ assignment.subject_name }}">
+            <colgroup><col class="number-col"><col class="student-col"><col class="stage-mark-col"><col class="stage-mark-col"><col class="stage-mark-col"><col class="stage-mark-col"><col class="stage-total-col"></colgroup>
+            <thead><tr><th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th><th colspan="4">الشهر</th><th rowspan="2">معدل<br>الفصل الأول</th></tr><tr><th>أيلول</th><th>تشرين الأول</th><th>تشرين الثاني</th><th>كانون الأول</th></tr></thead>
+            <tbody>{% for row in assignment.student_rows %}<tr{% if row.number|divisibleby:'5' %} class="group-end"{% endif %}><td>{{ row.number }}</td><td class="student-name">{{ row.name }}</td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}</tbody>
+          </table>
+        </section>
+
+        <section class="grade-page marks-page stage-marks-page" data-page-kind="grade-marks" data-semester="2" data-class="{{ assignment.class_id }}" data-subject="{{ assignment.subject_id }}">
+          <div class="grade-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>المعلم: {{ selected_teacher.full_name }}</span><span>العام الدراسي: {{ academic_year }}</span></div>
+          <h1>الفصل الدراسي الثاني</h1>
+          <div class="grade-page-meta"><strong>{{ assignment.grade_label }}</strong><strong>المبحث: {{ assignment.subject_name }}</strong></div>
+          <table class="marks-table stage-table" aria-label="علامات الفصل الثاني {{ assignment.class_name }} {{ assignment.subject_name }}">
+            <colgroup><col class="number-col"><col class="student-col"><col class="stage-mark-col"><col class="stage-mark-col"><col class="stage-mark-col"><col class="stage-mark-col"><col class="stage-total-col"></colgroup>
+            <thead><tr><th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th><th colspan="4">الشهر</th><th rowspan="2">معدل<br>الفصل الثاني</th></tr><tr><th>شباط</th><th>آذار</th><th>نيسان</th><th>أيار</th></tr></thead>
+            <tbody>{% for row in assignment.student_rows %}<tr{% if row.number|divisibleby:'5' %} class="group-end"{% endif %}><td>{{ row.number }}</td><td class="student-name">{{ row.name }}</td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}</tbody>
+          </table>
+        </section>
+      {% else %}
+        <section class="grade-page marks-page upper-marks-page" data-page-kind="grade-marks" data-semester="1" data-class="{{ assignment.class_id }}" data-subject="{{ assignment.subject_id }}">
+          <div class="grade-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>المعلم: {{ selected_teacher.full_name }}</span><span>العام الدراسي: {{ academic_year }}</span></div>
+          <h1>الفصل الدراسي الأول</h1>
+          <div class="grade-page-meta"><strong>{{ assignment.grade_label }}</strong><strong>المبحث: {{ assignment.subject_name }}</strong></div>
+          <table class="marks-table upper-table" aria-label="علامات الفصل الأول {{ assignment.class_name }} {{ assignment.subject_name }}">
+            <colgroup><col class="number-col"><col class="student-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-total-col"></colgroup>
+            <thead><tr><th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th><th>اختبار<br>قصير 1</th><th>اختبار<br>نصف الفصل</th><th>اختبار<br>قصير 2</th><th>التقويم<br>النوعي</th><th>اختبار<br>نهاية الفصل</th><th rowspan="2">مجموع علامات<br>الفصل الأول</th></tr><tr class="weights"><th>10%</th><th>20%</th><th>10%</th><th>20%</th><th>40%</th></tr></thead>
+            <tbody>{% for row in assignment.student_rows %}<tr{% if row.number|divisibleby:'5' %} class="group-end"{% endif %}><td>{{ row.number }}</td><td class="student-name">{{ row.name }}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}</tbody>
+          </table>
+        </section>
+
+        <section class="grade-page marks-page upper-marks-page" data-page-kind="grade-marks" data-semester="2" data-class="{{ assignment.class_id }}" data-subject="{{ assignment.subject_id }}">
+          <div class="grade-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>المعلم: {{ selected_teacher.full_name }}</span><span>العام الدراسي: {{ academic_year }}</span></div>
+          <h1>الفصل الدراسي الثاني</h1>
+          <div class="grade-page-meta"><strong>{{ assignment.grade_label }}</strong><strong>المبحث: {{ assignment.subject_name }}</strong></div>
+          <table class="marks-table upper-table upper-second-table" aria-label="علامات الفصل الثاني {{ assignment.class_name }} {{ assignment.subject_name }}">
+            <colgroup><col class="number-col"><col class="student-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-mark-col"><col class="upper-total-col"><col class="makeup-col"></colgroup>
+            <thead><tr><th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th><th>اختبار<br>قصير 1</th><th>اختبار<br>نصف الفصل</th><th>اختبار<br>قصير 2</th><th>التقويم<br>النوعي</th><th>اختبار<br>نهاية الفصل</th><th rowspan="2">مجموع علامات<br>الفصل الثاني</th><th rowspan="2">علامة<br>الإكمال</th></tr><tr class="weights"><th>10%</th><th>20%</th><th>10%</th><th>20%</th><th>40%</th></tr></thead>
+            <tbody>{% for row in assignment.student_rows %}<tr{% if row.number|divisibleby:'5' %} class="group-end"{% endif %}><td>{{ row.number }}</td><td class="student-name">{{ row.name }}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}</tbody>
+          </table>
+        </section>
+      {% endif %}
+    {% endfor %}
+  </main>
+</body>
+</html>
