@@ -1,0 +1,266 @@
+:root {
+  --register-ink: #050505;
+  --register-line: #111;
+  --register-shade: #d7d7d7;
+  --register-soft: #f0f0f0;
+}
+
+* { box-sizing: border-box; }
+html { direction: rtl; }
+body.print-document {
+  margin: 0;
+  color: var(--register-ink);
+  background: #e9edf2;
+  font-family: Tahoma, Arial, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.register-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px;
+  color: #fff;
+  background: #173f78;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .18);
+}
+.register-toolbar button,
+.register-toolbar a {
+  border: 0;
+  border-radius: 9px;
+  padding: 9px 15px;
+  color: #173f78;
+  background: #fff;
+  font: 700 13px Tahoma, Arial, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+.register-toolbar .toolbar-note { margin-left: 10px; font-size: 12px; opacity: .82; }
+
+.register-page {
+  position: relative;
+  width: 200mm;
+  height: 287mm;
+  margin: 10mm auto;
+  padding: 3mm;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(34, 47, 62, .16);
+}
+.register-page:last-child { page-break-after: auto; break-after: auto; }
+.register-page__heading {
+  margin: 0 0 1.5mm;
+  text-align: center;
+  font-size: 13pt;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.page-school-line {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1mm;
+  font-size: 7pt;
+  font-weight: 700;
+}
+
+.register-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #000;
+}
+.register-table th,
+.register-table td {
+  border: .35mm solid var(--register-line);
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.register-table th { background: var(--register-soft); font-weight: 800; }
+
+/* Cover */
+.cover-page { padding: 7mm; }
+.cover-frame {
+  height: 100%;
+  padding: 7mm;
+  border: 1.2mm double #172f55;
+  outline: .35mm solid #9c7b35;
+  outline-offset: -4mm;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(31, 74, 127, .08), transparent 22%),
+    radial-gradient(circle at 87% 88%, rgba(156, 123, 53, .09), transparent 24%),
+    #fff;
+}
+.cover-ministry {
+  display: grid;
+  grid-template-columns: 32mm 1fr 32mm;
+  align-items: center;
+  gap: 5mm;
+  text-align: center;
+}
+.cover-logo-box { height: 28mm; display: grid; place-items: center; }
+.cover-logo-box img { max-width: 28mm; max-height: 27mm; object-fit: contain; }
+.cover-logo-fallback {
+  width: 24mm;
+  height: 24mm;
+  display: grid;
+  place-items: center;
+  border: .5mm solid #244f84;
+  border-radius: 50%;
+  color: #244f84;
+  font-size: 7pt;
+  font-weight: 800;
+}
+.cover-ministry-copy { font-weight: 800; line-height: 1.85; }
+.cover-ministry-copy .basmala { margin-bottom: 4mm; font-size: 13pt; }
+.cover-ministry-copy .country { font-size: 13pt; }
+.cover-ministry-copy .ministry { font-size: 12pt; }
+.cover-ministry-copy .directorate { font-size: 11pt; }
+.cover-divider { width: 72%; margin: 8mm auto; border: 0; border-top: .6mm solid #9c7b35; }
+.cover-school { text-align: center; }
+.cover-school small { display: block; color: #566273; font-size: 8pt; }
+.cover-school h2 { margin: 2mm 0 0; color: #173f78; font-size: 18pt; }
+.cover-title-box {
+  margin: 17mm auto 14mm;
+  padding: 9mm 5mm;
+  border: .7mm solid #173f78;
+  border-radius: 4mm;
+  text-align: center;
+  background: linear-gradient(135deg, #f4f7fb, #fff);
+}
+.cover-title-box span { display: block; color: #9c7b35; font-size: 9pt; font-weight: 800; }
+.cover-title-box h1 { margin: 3mm 0 0; color: #132b4e; font-size: 27pt; letter-spacing: .4mm; }
+.cover-details {
+  width: 82%;
+  margin: auto;
+  border-collapse: separate;
+  border-spacing: 0 3mm;
+  font-size: 12pt;
+}
+.cover-details th { width: 34%; padding: 4mm; border-radius: 0 3mm 3mm 0; color: #fff; background: #173f78; }
+.cover-details td { padding: 4mm; border: .4mm solid #b8c4d3; border-right: 0; border-radius: 3mm 0 0 3mm; font-weight: 800; background: #fff; }
+.cover-year { margin-top: 15mm; text-align: center; }
+.cover-year small { display: block; margin-bottom: 2mm; color: #687386; font-size: 8pt; }
+.cover-year strong { display: inline-block; padding: 3mm 12mm; border-top: .5mm solid #9c7b35; border-bottom: .5mm solid #9c7b35; font-size: 18pt; }
+.cover-footer { position: absolute; right: 14mm; bottom: 14mm; left: 14mm; display: flex; justify-content: space-between; color: #5c6674; font-size: 7pt; }
+
+/* Student status page */
+.student-status-table { font-size: 5.3pt; }
+.student-status-table thead tr:first-child { height: 8mm; }
+.student-status-table thead tr:last-child { height: 5mm; }
+.student-status-table tbody tr { height: 4.65mm; }
+.student-status-table .status-number { width: 4%; }
+.student-status-table .status-name { width: 19%; }
+.student-status-table .status-place { width: 6%; }
+.student-status-table .status-narrow { width: 3.3%; }
+.student-status-table .status-date { width: 7%; }
+.student-status-table .status-fee { width: 6%; }
+.student-status-table .status-note { width: 8%; }
+.student-status-table .student-name-cell { padding: 0 1mm; text-align: right; font-size: 6pt; font-weight: 700; white-space: nowrap; }
+
+/* Monthly attendance pages */
+.month-page { padding-top: 2.2mm; }
+.month-page .register-page__heading { margin-bottom: .8mm; font-size: 10pt; }
+.month-meta {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 4mm;
+  align-items: center;
+  min-height: 5mm;
+  padding: .6mm 1.5mm;
+  border: .35mm solid #111;
+  border-bottom: 0;
+  font-size: 6.5pt;
+  font-weight: 700;
+}
+.attendance-table { direction: rtl; font-size: 5.2pt; }
+.attendance-table col.serial-col { width: 4.2%; }
+.attendance-table col.name-col { width: 20.5%; }
+.attendance-table col.day-col { width: 2.2%; }
+.attendance-table col.total-col { width: 7.1%; }
+.attendance-table thead tr { height: 15mm; }
+.attendance-table thead th { background: #f4f4f4; }
+.attendance-table .serial-head { font-size: 7pt; }
+.attendance-table .name-head { font-size: 11pt; }
+.attendance-table .total-head { font-size: 5pt; line-height: 1.35; writing-mode: vertical-rl; }
+.day-head { position: relative; overflow: hidden; }
+.day-head .day-name {
+  position: absolute;
+  top: .7mm;
+  right: 50%;
+  height: 10.5mm;
+  transform: translateX(50%);
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  font-size: 4.3pt;
+  font-weight: 700;
+}
+.day-head .day-number { position: absolute; right: 0; bottom: .2mm; left: 0; font-size: 4.6pt; }
+.attendance-table tbody tr { height: 4.35mm; }
+.attendance-table .student-name-cell { padding: 0 .8mm; text-align: right; font-size: 6pt; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.attendance-table .is-shaded { background: var(--register-shade) !important; }
+.attendance-table .is-missing { background: #fff !important; }
+.attendance-table tfoot tr:first-child { height: 4.8mm; }
+.attendance-table tfoot tr:not(:first-child) { height: 5.2mm; }
+.attendance-table tfoot td { padding: .6mm; font-size: 6pt; font-weight: 700; }
+.attendance-table .footer-writing { text-align: center; }
+
+/* Annual summary */
+.annual-meta { padding: 1.6mm; border: .35mm solid #111; border-bottom: 0; text-align: right; font-size: 7pt; font-weight: 700; }
+.annual-table { font-size: 5.5pt; }
+.annual-table col.annual-number { width: 4.5%; }
+.annual-table col.annual-name { width: 22%; }
+.annual-table col.annual-month { width: 4.2%; }
+.annual-table col.annual-summary { width: 5.5%; }
+.annual-table col.annual-total { width: 8%; }
+.annual-table thead tr:first-child { height: 8mm; }
+.annual-table thead tr:last-child { height: 6mm; }
+.annual-table tbody tr { height: 4.55mm; }
+.annual-table .student-name-cell { padding: 0 .8mm; text-align: right; font-size: 6pt; font-weight: 700; white-space: nowrap; }
+.annual-table .august-column { background: #c4c4c4; }
+.annual-table tfoot tr { height: 8mm; }
+.annual-table tfoot td { padding: 1mm; font-size: 7pt; font-weight: 800; }
+
+/* Final summary */
+.summary-page { padding: 8mm 7mm; }
+.summary-basmala { margin: 0 0 2mm; text-align: center; font-size: 12pt; }
+.summary-table { margin-bottom: 6mm; font-size: 7pt; }
+.summary-table th { padding: 1.3mm .6mm; }
+.summary-table td { height: 8mm; padding: 1mm; }
+.summary-table .semester-cell { width: 11%; font-weight: 800; writing-mode: vertical-rl; }
+.summary-table .month-cell { width: 21%; text-align: right; padding-right: 2mm; font-weight: 700; }
+.summary-table .principal-cell { width: 16%; font-weight: 700; }
+.summary-total-row td { height: 9mm; font-weight: 800; background: #f2f2f2; }
+.year-summary-title { margin: 4mm 0 2mm; padding: 2.5mm; border: .5mm solid #111; text-align: center; font-size: 13pt; font-weight: 800; background: #f2f2f2; }
+.year-summary-grid { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.year-summary-grid th,.year-summary-grid td { height: 11mm; border: .4mm solid #111; text-align: center; }
+.year-summary-grid th { width: 29%; background: #f1f1f1; }
+.summary-signatures { display: flex; justify-content: space-between; gap: 15mm; margin-top: 10mm; font-size: 8pt; }
+.summary-signatures div { width: 42%; padding-top: 8mm; border-top: .35mm solid #333; text-align: center; }
+
+@media screen and (max-width: 820px) {
+  .register-toolbar { flex-wrap: wrap; }
+  .register-toolbar .toolbar-note { width: 100%; margin: 0; text-align: center; }
+  .register-page { transform-origin: top center; }
+}
+
+@page { size: A4 portrait; margin: 5mm; }
+@media print {
+  html, body.print-document { width: auto; height: auto; background: #fff; }
+  .register-toolbar { display: none !important; }
+  .register-page {
+    width: 200mm;
+    height: 287mm;
+    margin: 0;
+    padding: 3mm;
+    box-shadow: none;
+  }
+  .cover-page { padding: 7mm; }
+}

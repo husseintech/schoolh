@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>غلاف دفتر الحضور والغياب — {{ guardian_class.name }}</title>
+  <link rel="stylesheet" href="/static/school/css/attendance_register.css?v=20260910">
+</head>
+<body class="print-document">
+  <div class="register-toolbar">
+    <span class="toolbar-note">غلاف مستقل — {{ selected_teacher.full_name }} — {{ guardian_class.name }}</span>
+    <button type="button" onclick="window.print()">طباعة الغلاف</button>
+    <a href="{% url 'attendance_register' %}?teacher={{ selected_teacher.id }}&amp;year={{ start_year }}">العودة</a>
+  </div>
+
+  <main class="register-page cover-page" data-page-kind="cover">
+    <div class="cover-frame">
+      <header class="cover-ministry">
+        <div class="cover-logo-box">
+          {% if info and info.ministry_logo %}<img src="{{ info.ministry_logo }}" alt="شعار الوزارة">{% else %}<span class="cover-logo-fallback">فلسطين</span>{% endif %}
+        </div>
+        <div class="cover-ministry-copy">
+          <div class="basmala">بسم الله الرحمن الرحيم</div>
+          <div class="country">دولة فلسطين</div>
+          <div class="ministry">وزارة التربية والتعليم العالي</div>
+          <div class="directorate">مديرية التربية والتعليم / يطا</div>
+        </div>
+        <div class="cover-logo-box">
+          {% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span class="cover-logo-fallback">المدرسة</span>{% endif %}
+        </div>
+      </header>
+
+      <hr class="cover-divider">
+      <section class="cover-school">
+        <small>اسم المدرسة</small>
+        <h2>{{ info.name_ar|default:'اسم المدرسة' }}</h2>
+      </section>
+
+      <section class="cover-title-box">
+        <span>السجل الرسمي لمربي الصف</span>
+        <h1>دفتر الحضور والغياب</h1>
+      </section>
+
+      <table class="cover-details" aria-label="بيانات دفتر الحضور والغياب">
+        <tr><th>اسم المعلم</th><td>{{ selected_teacher.full_name }}</td></tr>
+        <tr><th>الصف والشعبة</th><td>{{ guardian_class.name }}</td></tr>
+        {% if info and info.national_number %}<tr><th>الرقم الوطني للمدرسة</th><td>{{ info.national_number }}</td></tr>{% endif %}
+      </table>
+
+      <div class="cover-year"><small>العام الدراسي</small><strong>{{ academic_year }}</strong></div>
+      <footer class="cover-footer">
+        <span>مربي الصف: {{ selected_teacher.full_name }}</span>
+        <span>مدير المدرسة: {{ info.principal_name|default:'........................' }}</span>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>

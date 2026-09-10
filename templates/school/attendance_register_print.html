@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>دفتر الحضور والغياب — {{ guardian_class.name }} — {{ academic_year }}</title>
+  <link rel="stylesheet" href="/static/school/css/attendance_register.css?v=20260910">
+</head>
+<body class="print-document">
+  <div class="register-toolbar">
+    <span class="toolbar-note">14 صفحة — {{ selected_teacher.full_name }} — {{ guardian_class.name }} — {{ academic_year }}</span>
+    <button type="button" onclick="window.print()">طباعة الدفتر كاملاً</button>
+    <a href="{% url 'attendance_register' %}?teacher={{ selected_teacher.id }}&amp;year={{ start_year }}">العودة</a>
+  </div>
+
+  <main>
+    <section class="register-page student-status-page" data-page-kind="student-status">
+      <div class="page-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>الصف: {{ guardian_class.name }}</span></div>
+      <h1 class="register-page__heading">جدول أحوال الطلاب</h1>
+      <table class="register-table student-status-table" aria-label="جدول أحوال الطلاب">
+        <colgroup>
+          <col class="status-number"><col class="status-name"><col class="status-place">
+          <col class="status-narrow"><col class="status-narrow"><col class="status-narrow">
+          <col class="status-narrow"><col class="status-narrow"><col class="status-narrow">
+          <col class="status-date"><col class="status-date">
+          <col class="status-narrow"><col class="status-narrow"><col class="status-narrow">
+          <col class="status-fee"><col class="status-fee"><col class="status-fee"><col class="status-note">
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2">العدد<br>المتسلسل</th>
+            <th rowspan="2">اسم الطالب</th>
+            <th rowspan="2">مكان<br>الولادة</th>
+            <th colspan="3">تاريخ الميلاد</th>
+            <th colspan="3">العمر في أول أيلول</th>
+            <th rowspan="2">تاريخ دخول<br>الصف الحالي</th>
+            <th rowspan="2">تاريخ دخول<br>الصف الأول</th>
+            <th colspan="3">العمر عند دخول الصف الأول</th>
+            <th rowspan="2">الرسوم المدرسية<br>بالشيكل</th>
+            <th rowspan="2">رقم وصل<br>المدفوعات</th>
+            <th rowspan="2">رقمه في سجل<br>المدرسة العام</th>
+            <th rowspan="2">ملاحظات</th>
+          </tr>
+          <tr>
+            <th>يوم</th><th>شهر</th><th>سنة</th>
+            <th>يوم</th><th>شهر</th><th>سنة</th>
+            <th>يوم</th><th>شهر</th><th>سنة</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in student_rows %}
+          <tr>
+            <td>{{ row.number }}</td><td class="student-name-cell">{{ row.name }}</td><td></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    {% for month in months %}
+    <section class="register-page month-page" data-page-kind="attendance-month" data-month="{{ month.number }}">
+      <h1 class="register-page__heading">جدول الحضور</h1>
+      <div class="month-meta">
+        <span>عدد الاجتماعات في كل يوم من الشهر: {{ month.name }} ( {{ month.number }} )</span>
+        <span>الفصل: {{ month.semester }}</span>
+        <span>السنة الدراسية: {{ academic_year }}</span>
+      </div>
+      <table class="register-table attendance-table" aria-label="جدول حضور شهر {{ month.name }}">
+        <colgroup>
+          <col class="serial-col"><col class="name-col">
+          {% for day in month.days %}<col class="day-col">{% endfor %}
+          <col class="total-col">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="serial-head">الرقم</th>
+            <th class="name-head">اسم الطالب</th>
+            {% for day in month.days %}
+            <th class="day-head{% if day.shaded %} is-shaded{% endif %}{% if not day.exists %} is-missing{% endif %}">
+              {% if day.exists %}<span class="day-name">{{ day.weekday_name }}</span><span class="day-number">{{ day.number }}</span>{% endif %}
+            </th>
+            {% endfor %}
+            <th class="total-head">مجموع الاجتماعات بالشهر</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in student_rows %}
+          <tr>
+            <td>{{ row.number }}</td>
+            <td class="student-name-cell">{{ row.name }}</td>
+            {% for day in month.days %}<td class="{% if day.shaded %}is-shaded {% endif %}{% if not day.exists %}is-missing{% endif %}"></td>{% endfor %}
+            <td></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2">مجموع الحضور اليومي</td>{% for day in month.days %}<td class="{% if day.shaded %}is-shaded {% endif %}{% if not day.exists %}is-missing{% endif %}"></td>{% endfor %}<td></td></tr>
+          <tr><td colspan="2" rowspan="2">متابعة مدير المدرسة</td><td colspan="20" rowspan="2" class="footer-writing"></td><td colspan="12">مجموع الحضور في الشهر</td></tr>
+          <tr><td colspan="12">متوسط حضور الصف</td></tr>
+        </tfoot>
+      </table>
+    </section>
+    {% endfor %}
+
+    <section class="register-page annual-page" data-page-kind="annual-summary">
+      <div class="page-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>العام الدراسي: {{ academic_year }}</span></div>
+      <h1 class="register-page__heading">الخلاصة السنوية للحضور والغياب</h1>
+      <div class="annual-meta">الصف: {{ guardian_class.name }}</div>
+      <table class="register-table annual-table" aria-label="الخلاصة السنوية للحضور والغياب">
+        <colgroup>
+          <col class="annual-number"><col class="annual-name">
+          {% for month in months %}<col class="annual-month">{% endfor %}
+          <col class="annual-summary"><col class="annual-summary"><col class="annual-summary"><col class="annual-total">
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th>
+            {% for month in months %}<th class="{% if month.number == 8 %}august-column{% endif %}">{{ month.name }}</th>{% endfor %}
+            <th colspan="3">مجموع الغياب</th><th>مجموع الحضور</th>
+          </tr>
+          <tr>
+            {% for month in months %}<th class="{% if month.number == 8 %}august-column{% endif %}">{{ month.number }}</th>{% endfor %}
+            <th>ف 1</th><th>ف 2</th><th>1 + 2</th><th>من الدوام الكلي<br>........</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in student_rows %}
+          <tr>
+            <td>{{ row.number }}</td><td class="student-name-cell">{{ row.name }}</td>
+            {% for month in months %}<td class="{% if month.number == 8 %}august-column{% endif %}"></td>{% endfor %}
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr><td colspan="2">متابعة مدير المدرسة</td><td colspan="15"></td></tr></tfoot>
+      </table>
+    </section>
+
+    <section class="register-page summary-page" data-page-kind="final-summary">
+      <p class="summary-basmala">بسم الله الرحمن الرحيم</p>
+      <h1 class="register-page__heading">جدول الخلاصة</h1>
+      <table class="register-table summary-table" aria-label="جدول خلاصة الفصل الأول">
+        <thead>
+          <tr><th>الفصل</th><th>الشهر</th><th>عدد الاجتماعات</th><th>عدد الطلاب</th><th>مجموع الحضور لو لم يكن غياب</th><th>مجموع الحضور</th><th>متوسط الحضور</th><th>النسبة المئوية للحضور</th><th>متابعة مدير المدرسة</th></tr>
+        </thead>
+        <tbody>
+          {% for month in first_semester_months %}
+          <tr>
+            {% if forloop.first %}<td class="semester-cell" rowspan="6">الفصل الدراسي الأول<br>{{ academic_year }}</td>{% endif %}
+            <td class="month-cell">{{ month.name }} ({{ month.number }}) — {{ month.year }}</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td class="principal-cell">{{ info.principal_name|default:'................' }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="summary-total-row"><td colspan="2">المجموع للفصل الدراسي الأول</td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+        </tbody>
+      </table>
+
+      <table class="register-table summary-table" aria-label="جدول خلاصة الفصل الثاني">
+        <thead>
+          <tr><th>الفصل</th><th>الشهر</th><th>عدد الاجتماعات</th><th>عدد الطلاب</th><th>مجموع الحضور لو لم يكن غياب</th><th>مجموع الحضور</th><th>متوسط الحضور</th><th>النسبة المئوية للحضور</th><th>متابعة مدير المدرسة</th></tr>
+        </thead>
+        <tbody>
+          {% for month in second_semester_months %}
+          <tr>
+            {% if forloop.first %}<td class="semester-cell" rowspan="5">الفصل الدراسي الثاني<br>{{ academic_year }}</td>{% endif %}
+            <td class="month-cell">{{ month.name }} ({{ month.number }}) — {{ month.year }}</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td class="principal-cell">{{ info.principal_name|default:'................' }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="summary-total-row"><td colspan="2">المجموع للفصل الدراسي الثاني</td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="year-summary-title">الخلاصة السنوية للفصلين</div>
+      <table class="year-summary-grid" aria-label="الخلاصة السنوية للفصلين">
+        <tr><th>الفصل الدراسي الأول</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+        <tr><th>الفصل الدراسي الثاني</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+        <tr><th>مجموع الفصلين</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+      </table>
+      <div class="summary-signatures"><div>مربي الصف: {{ selected_teacher.full_name }}</div><div>مدير المدرسة: {{ info.principal_name|default:'................' }}</div></div>
+    </section>
+  </main>
+</body>
+</html>

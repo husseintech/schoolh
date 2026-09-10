@@ -53,6 +53,9 @@ urlpatterns = [
     path('teachers/<int:teacher_id>/reset-password/', views.reset_teacher_password, name='reset_teacher_password'),
     path('teachers/report/', views.teachers_report, name='teachers_report'),
     path('teachers/cards/', views.teacher_cards_report, name='teacher_cards_report'),
+    path('teachers/attendance-register/', views.attendance_register, name='attendance_register'),
+    path('teachers/attendance-register/cover/', views.attendance_register_cover, name='attendance_register_cover'),
+    path('teachers/attendance-register/print/', views.attendance_register_print, name='attendance_register_print'),
     path('notes/report/', views.notes_report, name='notes_report'),
 
     # Classes

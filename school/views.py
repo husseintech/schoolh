@@ -23,6 +23,12 @@ from .services import send_push
 from .services import send_whatsapp_message
 from .arabic_sort import arabic_sort_key
 from .student_guide import build_student_guide_tasks
+from .attendance_register import (
+    MAX_REGISTER_STUDENTS,
+    build_school_year_months,
+    build_student_rows,
+    normalize_start_year,
+)
 
 
 def sort_students(students):
@@ -3499,6 +3505,97 @@ def guardian_assign(request):
         'teachers': teachers,
         'classes': classes,
     })
+
+
+def _attendance_register_selection(request):
+    """Resolve a guardian teacher without allowing cross-class teacher access."""
+    role = request.user.profile.role
+    if role == 'admin':
+        teachers = Teacher.objects.select_related('guardian_class').filter(
+            guardian_class__isnull=False,
+        ).order_by('full_name')
+        teacher_id = request.GET.get('teacher', '').strip()
+        selected_teacher = (
+            teachers.filter(pk=int(teacher_id)).first()
+            if teacher_id.isdigit() else
+            (teachers.first() if not teacher_id else None)
+        )
+        return teachers, selected_teacher
+    if role == 'teacher':
+        teacher = getattr(request.user, 'teacher_profile', None)
+        guardian_class = getattr(teacher, 'guardian_class', None) if teacher else None
+        return (), teacher if guardian_class else None
+    return (), None
+
+
+def _attendance_register_context(request):
+    teachers, selected_teacher = _attendance_register_selection(request)
+    if not selected_teacher:
+        return {
+            'teachers': teachers,
+            'selected_teacher': None,
+            'guardian_class': None,
+        }
+    guardian_class = selected_teacher.guardian_class
+    students = sort_students(Student.objects.filter(student_class=guardian_class))
+    start_year = normalize_start_year(request.GET.get('year'))
+    months = build_school_year_months(start_year)
+    return {
+        'teachers': teachers,
+        'selected_teacher': selected_teacher,
+        'guardian_class': guardian_class,
+        'student_rows': build_student_rows(students[:MAX_REGISTER_STUDENTS]),
+        'student_count': len(students),
+        'students_overflow': len(students) > MAX_REGISTER_STUDENTS,
+        'start_year': start_year,
+        'academic_year': f'{start_year}/{start_year + 1}',
+        'months': months,
+        'first_semester_months': [month for month in months if month['semester'] == 'الأول'],
+        'second_semester_months': [month for month in months if month['semester'] == 'الثاني'],
+        'info': SchoolInfo.objects.first(),
+    }
+
+
+@login_required
+def attendance_register(request):
+    role = request.user.profile.role
+    if role not in ('admin', 'teacher'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى دفتر الحضور والغياب')
+        return redirect('dashboard')
+    context = _attendance_register_context(request)
+    if role == 'teacher' and not context['selected_teacher']:
+        messages.error(request, 'لا يظهر دفتر الحضور والغياب إلا لمربي الصف')
+        return redirect('dashboard')
+    return render(request, 'school/attendance_register.html', context)
+
+
+@login_required
+def attendance_register_cover(request):
+    role = request.user.profile.role
+    if role not in ('admin', 'teacher'):
+        messages.error(request, 'ليس لديك صلاحية لطباعة هذا الغلاف')
+        return redirect('dashboard')
+    context = _attendance_register_context(request)
+    if not context['selected_teacher']:
+        messages.error(request, 'اختر معلماً مرتبطاً بصف بصفته مربيًا للصف')
+        return redirect('attendance_register')
+    return render(request, 'school/attendance_register_cover.html', context)
+
+
+@login_required
+def attendance_register_print(request):
+    role = request.user.profile.role
+    if role not in ('admin', 'teacher'):
+        messages.error(request, 'ليس لديك صلاحية لطباعة هذا الدفتر')
+        return redirect('dashboard')
+    context = _attendance_register_context(request)
+    if not context['selected_teacher']:
+        messages.error(request, 'اختر معلماً مرتبطاً بصف بصفته مربيًا للصف')
+        return redirect('attendance_register')
+    if context['students_overflow']:
+        messages.error(request, 'عدد طلاب الصف يتجاوز الحد المخصص للدفتر وهو 47 طالباً')
+        return redirect('attendance_register')
+    return render(request, 'school/attendance_register_print.html', context)
 
 
 @login_required
