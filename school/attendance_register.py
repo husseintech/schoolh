@@ -36,7 +36,9 @@ OFFICIAL_HOLIDAYS = {
 # exception tied to that school year makes the August page ready for normal use
 # in later years without a code change.
 FULLY_SHADED_AUGUST_START_YEARS = {2026}
-MAX_REGISTER_STUDENTS = 47
+MIN_REGISTER_STUDENTS = 35
+MAX_REGISTER_STUDENTS = 50
+DEFAULT_REGISTER_STUDENTS = 47
 
 
 def academic_year_start(today=None):
@@ -53,10 +55,21 @@ def normalize_start_year(raw_value, *, today=None):
     return value if 2020 <= value <= 2100 else default
 
 
-def build_month_page(month_number, month_name, semester, start_year):
+def normalize_row_count(raw_value):
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        return DEFAULT_REGISTER_STUDENTS
+    return value if MIN_REGISTER_STUDENTS <= value <= MAX_REGISTER_STUDENTS else DEFAULT_REGISTER_STUDENTS
+
+
+def build_month_page(month_number, month_name, semester, start_year, *, shade_august_fully=None):
     year = start_year if month_number >= 8 else start_year + 1
     days_in_month = calendar.monthrange(year, month_number)[1]
-    shade_all = month_number == 8 and start_year in FULLY_SHADED_AUGUST_START_YEARS
+    default_august_shading = start_year in FULLY_SHADED_AUGUST_START_YEARS
+    shade_all = month_number == 8 and (
+        default_august_shading if shade_august_fully is None else shade_august_fully
+    )
     days = []
     for day_number in range(1, 32):
         exists = day_number <= days_in_month
@@ -91,19 +104,25 @@ def build_month_page(month_number, month_name, semester, start_year):
     }
 
 
-def build_school_year_months(start_year):
+def build_school_year_months(start_year, *, shade_august_fully=None):
     return [
-        build_month_page(month_number, month_name, semester, start_year)
+        build_month_page(
+            month_number,
+            month_name,
+            semester,
+            start_year,
+            shade_august_fully=shade_august_fully,
+        )
         for month_number, month_name, semester in SCHOOL_YEAR_MONTHS
     ]
 
 
-def build_student_rows(students):
+def build_student_rows(students, row_count=DEFAULT_REGISTER_STUDENTS):
     students = list(students)
     return [
         {
             'number': index + 1,
             'name': students[index].full_name if index < len(students) else '',
         }
-        for index in range(MAX_REGISTER_STUDENTS)
+        for index in range(row_count)
     ]

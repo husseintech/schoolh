@@ -7,6 +7,7 @@ from django.urls import reverse
 from school.attendance_register import (
     build_school_year_months,
     build_student_rows,
+    normalize_row_count,
 )
 from school.models import Class, Profile, SchoolInfo, Student, Teacher
 
@@ -65,6 +66,25 @@ class AttendanceRegisterCalendarTests(SimpleTestCase):
         self.assertEqual(len(rows), 47)
         self.assertEqual(rows[0], {'number': 1, 'name': 'الطالب الأول'})
         self.assertEqual(rows[-1], {'number': 47, 'name': ''})
+
+    def test_row_count_can_be_selected_only_between_35_and_50(self):
+        self.assertEqual(normalize_row_count(35), 35)
+        self.assertEqual(normalize_row_count('50'), 50)
+        self.assertEqual(normalize_row_count(34), 47)
+        self.assertEqual(normalize_row_count(51), 47)
+        self.assertEqual(normalize_row_count('invalid'), 47)
+
+    def test_student_rows_follow_the_selected_manual_count(self):
+        self.assertEqual(len(build_student_rows([], 35)), 35)
+        self.assertEqual(len(build_student_rows([], 50)), 50)
+
+    def test_august_full_shading_can_be_disabled_without_removing_weekends(self):
+        august = build_school_year_months(2026, shade_august_fully=False)[0]
+
+        self.assertFalse(august['shade_all'])
+        for day in august['days']:
+            weekday = date(2026, 8, day['number']).weekday()
+            self.assertEqual(day['shaded'], weekday in (4, 5))
 
 
 class AttendanceRegisterAccessTests(TestCase):
@@ -185,3 +205,39 @@ class AttendanceRegisterAccessTests(TestCase):
         self.assertContains(response, '2026/2027')
         self.assertContains(response, 'حسين حمامدة')
         self.assertEqual(response.content.count(b'data-page-kind="cover"'), 1)
+
+    def test_admin_can_choose_35_rows_and_disable_full_august_shading(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse('attendance_register_print'), {
+            'teacher': self.guardian.id,
+            'year': 2026,
+            'rows': 35,
+            'shade_august': 0,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['row_count'], 35)
+        self.assertEqual(len(response.context['student_rows']), 35)
+        self.assertFalse(response.context['shade_august'])
+        august = response.context['months'][0]
+        self.assertTrue(any(day['shaded'] for day in august['days']))
+        self.assertTrue(any(not day['shaded'] for day in august['days']))
+        self.assertContains(response, '--status-row-height:7.286mm')
+        self.assertNotContains(response, 'august-column')
+
+    def test_teacher_can_choose_50_rows_and_enable_full_august_shading(self):
+        self.client.force_login(self.guardian_user)
+
+        response = self.client.get(reverse('attendance_register_print'), {
+            'teacher': self.other_teacher.id,
+            'year': 2026,
+            'rows': 50,
+            'shade_august': 1,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['selected_teacher'], self.guardian)
+        self.assertEqual(response.context['row_count'], 50)
+        self.assertTrue(response.context['shade_august'])
+        self.assertTrue(all(day['shaded'] for day in response.context['months'][0]['days']))

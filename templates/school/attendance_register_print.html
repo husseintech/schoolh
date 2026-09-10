@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>دفتر الحضور والغياب — {{ guardian_class.name }} — {{ academic_year }}</title>
-  <link rel="stylesheet" href="/static/school/css/attendance_register.css?v=20260910">
+  <link rel="stylesheet" href="/static/school/css/attendance_register.css?v=20260910-2">
 </head>
-<body class="print-document">
+<body class="print-document" style="--status-row-height:{{ status_row_height }}mm;--attendance-row-height:{{ attendance_row_height }}mm;--annual-row-height:{{ annual_row_height }}mm">
   <div class="register-toolbar">
-    <span class="toolbar-note">14 صفحة — {{ selected_teacher.full_name }} — {{ guardian_class.name }} — {{ academic_year }}</span>
+    <span class="toolbar-note">14 صفحة — {{ row_count }} سطرًا — {{ selected_teacher.full_name }} — {{ guardian_class.name }} — {{ academic_year }}</span>
     <button type="button" onclick="window.print()">طباعة الدفتر كاملاً</button>
-    <a href="{% url 'attendance_register' %}?teacher={{ selected_teacher.id }}&amp;year={{ start_year }}">العودة</a>
+    <a href="{% url 'attendance_register' %}?teacher={{ selected_teacher.id }}&amp;year={{ start_year }}&amp;rows={{ row_count }}&amp;shade_august={% if shade_august %}1{% else %}0{% endif %}">العودة</a>
   </div>
 
   <main>
@@ -118,11 +118,11 @@
         <thead>
           <tr>
             <th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th>
-            {% for month in months %}<th class="{% if month.number == 8 %}august-column{% endif %}">{{ month.name }}</th>{% endfor %}
+            {% for month in months %}<th class="{% if month.number == 8 and shade_august %}august-column{% endif %}">{{ month.name }}</th>{% endfor %}
             <th colspan="3">مجموع الغياب</th><th>مجموع الحضور</th>
           </tr>
           <tr>
-            {% for month in months %}<th class="{% if month.number == 8 %}august-column{% endif %}">{{ month.number }}</th>{% endfor %}
+            {% for month in months %}<th class="{% if month.number == 8 and shade_august %}august-column{% endif %}">{{ month.number }}</th>{% endfor %}
             <th>ف 1</th><th>ف 2</th><th>1 + 2</th><th>من الدوام الكلي<br>........</th>
           </tr>
         </thead>
@@ -130,7 +130,7 @@
           {% for row in student_rows %}
           <tr>
             <td>{{ row.number }}</td><td class="student-name-cell">{{ row.name }}</td>
-            {% for month in months %}<td class="{% if month.number == 8 %}august-column{% endif %}"></td>{% endfor %}
+            {% for month in months %}<td class="{% if month.number == 8 and shade_august %}august-column{% endif %}"></td>{% endfor %}
             <td></td><td></td><td></td><td></td>
           </tr>
           {% endfor %}

@@ -155,7 +155,7 @@ body.print-document {
 .student-status-table { font-size: 5.3pt; }
 .student-status-table thead tr:first-child { height: 8mm; }
 .student-status-table thead tr:last-child { height: 5mm; }
-.student-status-table tbody tr { height: 4.65mm; }
+.student-status-table tbody tr { height: var(--status-row-height, 5.425mm); }
 .student-status-table .status-number { width: 4%; }
 .student-status-table .status-name { width: 19%; }
 .student-status-table .status-place { width: 6%; }
@@ -203,7 +203,7 @@ body.print-document {
   font-weight: 700;
 }
 .day-head .day-number { position: absolute; right: 0; bottom: .2mm; left: 0; font-size: 4.6pt; }
-.attendance-table tbody tr { height: 4.35mm; }
+.attendance-table tbody tr { height: var(--attendance-row-height, 5.128mm); }
 .attendance-table .student-name-cell { padding: 0 .8mm; text-align: right; font-size: 6pt; font-weight: 700; white-space: nowrap; overflow: hidden; }
 .attendance-table .is-shaded { background: var(--register-shade) !important; }
 .attendance-table .is-missing { background: #fff !important; }
@@ -222,7 +222,7 @@ body.print-document {
 .annual-table col.annual-total { width: 8%; }
 .annual-table thead tr:first-child { height: 8mm; }
 .annual-table thead tr:last-child { height: 6mm; }
-.annual-table tbody tr { height: 4.55mm; }
+.annual-table tbody tr { height: var(--annual-row-height, 5.106mm); }
 .annual-table .student-name-cell { padding: 0 .8mm; text-align: right; font-size: 6pt; font-weight: 700; white-space: nowrap; }
 .annual-table .august-column { background: #c4c4c4; }
 .annual-table tfoot tr { height: 8mm; }

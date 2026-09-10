@@ -25,8 +25,10 @@ from .arabic_sort import arabic_sort_key
 from .student_guide import build_student_guide_tasks
 from .attendance_register import (
     MAX_REGISTER_STUDENTS,
+    MIN_REGISTER_STUDENTS,
     build_school_year_months,
     build_student_rows,
+    normalize_row_count,
     normalize_start_year,
 )
 
@@ -3539,17 +3541,32 @@ def _attendance_register_context(request):
     guardian_class = selected_teacher.guardian_class
     students = sort_students(Student.objects.filter(student_class=guardian_class))
     start_year = normalize_start_year(request.GET.get('year'))
-    months = build_school_year_months(start_year)
+    row_count = normalize_row_count(request.GET.get('rows'))
+    shade_august_raw = request.GET.get('shade_august')
+    shade_august_fully = None
+    if shade_august_raw in ('0', 'false', 'off'):
+        shade_august_fully = False
+    elif shade_august_raw in ('1', 'true', 'on'):
+        shade_august_fully = True
+    months = build_school_year_months(start_year, shade_august_fully=shade_august_fully)
     return {
         'teachers': teachers,
         'selected_teacher': selected_teacher,
         'guardian_class': guardian_class,
-        'student_rows': build_student_rows(students[:MAX_REGISTER_STUDENTS]),
+        'student_rows': build_student_rows(students[:row_count], row_count),
         'student_count': len(students),
-        'students_overflow': len(students) > MAX_REGISTER_STUDENTS,
+        'students_omitted': max(0, len(students) - row_count),
+        'row_count': row_count,
+        'row_options': range(MIN_REGISTER_STUDENTS, MAX_REGISTER_STUDENTS + 1),
+        # Keep a decimal point in inline CSS even when Django's Arabic locale
+        # formats ordinary numbers with a comma.
+        'status_row_height': f'{255 / row_count:.3f}',
+        'attendance_row_height': f'{241 / row_count:.3f}',
+        'annual_row_height': f'{240 / row_count:.3f}',
         'start_year': start_year,
         'academic_year': f'{start_year}/{start_year + 1}',
         'months': months,
+        'shade_august': months[0]['shade_all'],
         'first_semester_months': [month for month in months if month['semester'] == 'الأول'],
         'second_semester_months': [month for month in months if month['semester'] == 'الثاني'],
         'info': SchoolInfo.objects.first(),
@@ -3591,9 +3608,6 @@ def attendance_register_print(request):
     context = _attendance_register_context(request)
     if not context['selected_teacher']:
         messages.error(request, 'اختر معلماً مرتبطاً بصف بصفته مربيًا للصف')
-        return redirect('attendance_register')
-    if context['students_overflow']:
-        messages.error(request, 'عدد طلاب الصف يتجاوز الحد المخصص للدفتر وهو 47 طالباً')
         return redirect('attendance_register')
     return render(request, 'school/attendance_register_print.html', context)
 
