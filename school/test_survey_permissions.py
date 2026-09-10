@@ -72,12 +72,16 @@ class SurveyDigitalHealthTests(TestCase):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse('dashboard'))
-        self.assertContains(response, 'صحتك وراحتك تهمّنا')
-        self.assertContains(response, 'بعد إكمال الاستمارة ستظهر روابط مجموعات واتساب')
+        tasks = response.context['student_guide_tasks']
+        self.assertContains(response, 'id="studentVoiceGuide"')
+        self.assertEqual(tasks[0]['key'], 'survey')
+        self.assertEqual(tasks[0]['action_label'], 'ابدأ تعبئة المسح')
+        self.assertIn('تُعامل بياناته بسرية', tasks[0]['message'])
 
         StudentSurvey.objects.create(student=self.student)
         response = self.client.get(reverse('dashboard'))
-        self.assertNotContains(response, 'id="surveyReminderModal"')
+        self.assertContains(response, 'id="studentVoiceGuide"')
+        self.assertNotIn('survey', [task['key'] for task in response.context['student_guide_tasks']])
 
 
 class PermissionBaselineTests(TestCase):

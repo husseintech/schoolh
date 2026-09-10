@@ -1,0 +1,209 @@
+.student-guide {
+  --guide-blue: #225fcb;
+  --guide-blue-dark: #174995;
+  --guide-ink: #15233b;
+  --guide-muted: #647188;
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 1080;
+  display: flex;
+  direction: ltr;
+  align-items: flex-end;
+  gap: 0;
+  max-width: calc(100vw - 20px);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(42px);
+  transition: opacity .3s ease, transform .45s cubic-bezier(.2,.85,.25,1.2), visibility .3s;
+}
+
+.student-guide.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.student-guide__card {
+  direction: rtl;
+  width: min(370px, calc(100vw - 165px));
+  margin: 0 0 24px -12px;
+  overflow: hidden;
+  border: 1px solid #dce6f6;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 20px 55px rgba(25, 51, 93, .22);
+  pointer-events: auto;
+  position: relative;
+}
+
+.student-guide__card::after {
+  content: "";
+  position: absolute;
+  left: -9px;
+  bottom: 34px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-left: 1px solid #dce6f6;
+  border-bottom: 1px solid #dce6f6;
+  transform: rotate(45deg);
+}
+
+.student-guide__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--guide-blue-dark), var(--guide-blue));
+}
+
+.student-guide__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.student-guide__top-actions { display: flex; gap: 5px; }
+.student-guide__icon-btn,
+.student-guide__nav-btn {
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.student-guide__icon-btn {
+  width: 29px;
+  height: 29px;
+  color: #fff;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .15);
+}
+.student-guide__icon-btn:hover,
+.student-guide__icon-btn:focus-visible { background: rgba(255, 255, 255, .28); }
+
+.student-guide__body { padding: 15px 17px 13px; }
+.student-guide__status {
+  display: inline-block;
+  margin-bottom: 7px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #174995;
+  background: #e9f1ff;
+  font-size: .69rem;
+  font-weight: 800;
+}
+.student-guide__status.tone-warning { color: #92520b; background: #fff1d7; }
+.student-guide__status.tone-attention { color: #a12c39; background: #fde9ec; }
+.student-guide__status.tone-success { color: #146b49; background: #e4f7ee; }
+.student-guide__title { margin: 0 0 5px; color: var(--guide-ink); font-size: 1.04rem; font-weight: 850; }
+.student-guide__message { margin: 0; min-height: 54px; color: var(--guide-muted); font-size: .84rem; line-height: 1.72; }
+.student-guide__primary-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.student-guide__primary-actions .btn { border-radius: 10px; font-weight: 750; }
+
+.student-guide__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 13px;
+  border-top: 1px solid #edf1f7;
+  background: #f9fbfe;
+}
+.student-guide__pager { display: flex; align-items: center; gap: 7px; color: #6c7890; font-size: .72rem; }
+.student-guide__nav-btn { width: 26px; height: 26px; border-radius: 50%; color: #2058b7; background: #e9f1ff; }
+.student-guide__nav-btn:hover,
+.student-guide__nav-btn:focus-visible { color: #fff; background: #2058b7; }
+.student-guide__later { border: 0; padding: 4px; color: #738097; background: transparent; font-size: .7rem; cursor: pointer; }
+.student-guide__later:hover,
+.student-guide__later:focus-visible { color: #244f99; text-decoration: underline; }
+
+.student-guide__mascot {
+  width: 165px;
+  height: 238px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+  position: relative;
+  filter: drop-shadow(0 13px 12px rgba(20, 39, 72, .22));
+  animation: student-guide-float 3.2s ease-in-out infinite;
+}
+.student-guide__mascot img { width: 100%; height: 100%; object-fit: contain; object-position: bottom center; }
+.student-guide__task-badge {
+  position: absolute;
+  top: 20px;
+  left: 17px;
+  z-index: 2;
+  min-width: 27px;
+  height: 27px;
+  padding: 0 7px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+  background: #dc3545;
+  box-shadow: 0 4px 10px rgba(150, 35, 49, .28);
+  font-size: .72rem;
+  font-weight: 850;
+  line-height: 21px;
+}
+
+.student-guide-launcher {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 1080;
+  width: 76px;
+  height: 86px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 22px;
+  color: #fff;
+  background: linear-gradient(145deg, #174995, #286bda);
+  box-shadow: 0 12px 30px rgba(29, 73, 145, .3);
+}
+.student-guide-launcher img { position: absolute; left: 7px; bottom: 17px; width: 62px; height: 82px; object-fit: contain; object-position: top center; }
+.student-guide-launcher span { position: absolute; right: 0; bottom: 0; left: 0; padding: 4px; background: rgba(18, 50, 105, .9); font-size: .67rem; font-weight: 800; }
+
+@keyframes student-guide-float {
+  0%, 100% { transform: translateY(0) rotate(-.5deg); }
+  50% { transform: translateY(-8px) rotate(.5deg); }
+}
+
+@media (max-width: 575.98px) {
+  .student-guide { right: 5px; left: 5px; max-width: none; }
+  .student-guide__mascot { width: 105px; height: 154px; flex: 0 0 105px; }
+  .student-guide__task-badge { top: 9px; left: 5px; }
+  .student-guide__card { width: calc(100vw - 105px); margin: 0 0 10px -7px; border-radius: 18px; }
+  .student-guide__body { padding: 12px 13px 10px; }
+  .student-guide__message { min-height: 0; font-size: .78rem; line-height: 1.58; }
+  .student-guide__primary-actions .btn { font-size: .74rem; }
+  .student-guide__footer { padding: 8px 10px; }
+  .student-guide__later { font-size: .65rem; }
+}
+
+@media (max-width: 390px) {
+  .student-guide__mascot { width: 88px; height: 132px; flex-basis: 88px; }
+  .student-guide__card { width: calc(100vw - 88px); }
+  .student-guide__eyebrow { font-size: .7rem; }
+  .student-guide__message { font-size: .74rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-guide,
+  .student-guide__mascot { transition: none !important; animation: none !important; }
+}
+
+@media print {
+  .student-guide,
+  .student-guide-launcher { display: none !important; }
+}

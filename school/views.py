@@ -22,6 +22,7 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 from .arabic_sort import arabic_sort_key
+from .student_guide import build_student_guide_tasks
 
 
 def sort_students(students):
@@ -307,6 +308,7 @@ def dashboard(request):
             notes = student.notes.filter(is_private=False).order_by('-created_at')
             notes.update(is_read=True)
             messages_qs = Message.objects.filter(recipient=request.user, is_read=False)
+            unread_messages = messages_qs.count()
             absence_count = student.absences.count()
             leaves = student.leaves.all()[:10]
             schedule_entries = []
@@ -315,17 +317,32 @@ def dashboard(request):
                     student_class=student.student_class,
                 ).select_related('subject', 'teacher'))
             has_survey = hasattr(student, 'survey')
+            unread_notifications = Notification.objects.filter(
+                user=request.user,
+                is_read=False,
+            ).exclude(link__startswith='/messages/').count()
+            warnings = student.warnings.all()
+            summons = student.summons.all()
+            student_guide_tasks = build_student_guide_tasks(
+                student=student,
+                can_add_survey=has_perm(request.user, 'survey', 'add'),
+                has_survey=has_survey,
+                unread_notifications=unread_notifications,
+                unread_messages=unread_messages,
+                warnings_count=warnings.count(),
+                summons_count=summons.count(),
+            )
             whatsapp_groups = []
             if has_survey and student.student_class:
                 whatsapp_groups = list(student.student_class.whatsapp_groups.all())
             return render(request, 'school/student_dashboard.html', {
                 'student': student,
                 'notes': notes,
-                'unread_messages': messages_qs.count(),
+                'unread_messages': unread_messages,
                 'absence_count': absence_count,
                 'leaves': leaves,
-                'warnings': student.warnings.all(),
-                'summons': student.summons.all(),
+                'warnings': warnings,
+                'summons': summons,
                 'levels': student.levels.all(),
                 'schedule_entries': schedule_entries,
                 'schedule_days': SCHEDULE_DAYS,
@@ -333,6 +350,7 @@ def dashboard(request):
                 'survey_status': '✓ مكتمل' if has_survey else '(لم يملأ بعد)',
                 'has_survey': has_survey,
                 'whatsapp_groups': whatsapp_groups,
+                'student_guide_tasks': student_guide_tasks,
             })
         except Student.DoesNotExist:
             messages.error(request, 'لا يوجد ملف طالب مرتبط بهذا الحساب')
