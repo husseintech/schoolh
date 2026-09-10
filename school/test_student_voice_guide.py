@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 from django.contrib.staticfiles import finders
-from django.test import TestCase
+from django.http import HttpResponseNotFound
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from whitenoise.middleware import WhiteNoiseMiddleware
 
 from school.models import (
     Class,
@@ -98,3 +100,11 @@ class StudentVoiceGuideTests(TestCase):
         self.assertIsNotNone(finders.find('school/img/student-guide-mascot.webp'))
         self.assertIsNotNone(finders.find('school/css/student_voice_guide.css'))
         self.assertIsNotNone(finders.find('school/js/student_voice_guide.js'))
+
+    @override_settings(DEBUG=False, WHITENOISE_USE_FINDERS=True)
+    def test_whitenoise_can_serve_guide_assets_without_collectstatic(self):
+        middleware = WhiteNoiseMiddleware(lambda request: HttpResponseNotFound())
+        response = middleware(RequestFactory().get('/static/school/img/student-guide-mascot.webp'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'image/webp')

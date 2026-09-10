@@ -98,6 +98,15 @@ STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
 }
+
+# Vercel does not run Django's collectstatic command for the Python function.
+# Serve the versioned source assets through WhiteNoise's static-file finders so
+# the UI remains self-contained and new assets are available after each deploy.
+if os.getenv('VERCEL'):
+    WHITENOISE_USE_FINDERS = True
+    STORAGES['staticfiles'] = {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    }
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
