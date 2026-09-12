@@ -1,5 +1,7 @@
 from django.urls import reverse
 
+from .student_assistant import student_short_name
+
 
 def build_student_guide_tasks(
     *,
@@ -12,7 +14,7 @@ def build_student_guide_tasks(
     summons_count,
 ):
     """Build privacy-conscious guidance shown only on the student's dashboard."""
-    first_name = (student.full_name or '').strip().split(' ', 1)[0] or 'عزيزي الطالب'
+    first_name = student_short_name(student.full_name)
     tasks = []
 
     if can_add_survey and not has_survey:

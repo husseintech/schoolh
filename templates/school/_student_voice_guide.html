@@ -1,65 +1,83 @@
 {{ student_guide_tasks|json_script:"studentGuideTasks" }}
-<link rel="stylesheet" href="/static/school/css/student_voice_guide.css?v=20260910">
+{{ student_assistant_config|json_script:"studentAssistantConfig" }}
+<link rel="stylesheet" href="/static/school/css/student_voice_guide.css?v=20260912">
 
-<aside
-  class="student-guide no-print"
-  id="studentVoiceGuide"
-  data-student-key="{{ request.user.id }}"
-  aria-label="المرشد الطلابي الصوتي"
-  aria-hidden="true"
->
-  <div class="student-guide__card" role="dialog" aria-labelledby="studentGuideTitle" aria-describedby="studentGuideMessage">
-    <div class="student-guide__topbar">
-      <span class="student-guide__eyebrow"><i class="bi bi-stars"></i> مرشدك الطلابي</span>
+<aside class="student-guide no-print" id="studentVoiceGuide" data-student-key="{{ request.user.id }}" aria-label="مساعد الطلاب الصوتي" aria-hidden="true">
+  <div class="student-guide__card" role="dialog" aria-labelledby="studentGuideHeading">
+    <header class="student-guide__topbar">
+      <div class="student-guide__brand">
+        <span class="student-guide__brand-icon"><i class="bi bi-stars"></i></span>
+        <span><strong id="studentGuideHeading">مساعد المدرسة الذكي</strong><small><i></i> جاهز لمساعدتك</small></span>
+      </div>
       <div class="student-guide__top-actions">
-        <button type="button" class="student-guide__icon-btn" id="studentGuideMute" aria-label="كتم الصوت" title="كتم الصوت">
-          <i class="bi bi-volume-up-fill"></i>
-        </button>
-        <button type="button" class="student-guide__icon-btn" id="studentGuideClose" aria-label="إغلاق المرشد" title="إغلاق">
-          <i class="bi bi-x-lg"></i>
-        </button>
+        <button type="button" class="student-guide__icon-btn" id="studentGuideMute" aria-label="كتم الصوت" title="كتم الصوت"><i class="bi bi-volume-up-fill"></i></button>
+        <button type="button" class="student-guide__icon-btn" id="studentGuideClose" aria-label="إغلاق المساعد" title="إغلاق"><i class="bi bi-x-lg"></i></button>
       </div>
-    </div>
+    </header>
 
-    <div class="student-guide__body" aria-live="polite">
-      <span class="student-guide__status" id="studentGuideStatus"></span>
-      <h2 class="student-guide__title" id="studentGuideTitle"></h2>
-      <p class="student-guide__message" id="studentGuideMessage"></p>
-      <div class="student-guide__primary-actions">
-        <a class="btn btn-primary btn-sm" id="studentGuideAction" href="#">
-          <i class="bi bi-arrow-left-circle-fill"></i> <span></span>
-        </a>
-        <button type="button" class="btn btn-outline-primary btn-sm" id="studentGuideListen">
-          <i class="bi bi-volume-up-fill"></i> <span>استمع</span>
-        </button>
-      </div>
-    </div>
+    <section class="student-guide__welcome" id="studentAssistantWelcome" hidden>
+      <div class="student-guide__sparkles" aria-hidden="true"><i></i><i></i><i></i></div>
+      <span class="student-guide__welcome-badge"><i class="bi bi-balloon-heart-fill"></i> أهلًا بعودتك</span>
+      <h2>مرحبًا <span id="studentAssistantShortName"></span>!</h2>
+      <p>نرحب بك في <strong id="studentAssistantSchoolName"></strong></p>
+      <p class="student-guide__welcome-message" id="studentAssistantWelcomeMessage"></p>
+      <button type="button" class="student-guide__welcome-start" id="studentAssistantWelcomeStart"><i class="bi bi-compass-fill"></i> ابدأ جولتي</button>
+    </section>
 
-    <div class="student-guide__footer">
-      <div class="student-guide__pager" id="studentGuidePager">
-        <button type="button" class="student-guide__nav-btn" id="studentGuidePrevious" aria-label="المهمة السابقة">
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <span id="studentGuideCounter"></span>
-        <button type="button" class="student-guide__nav-btn" id="studentGuideNext" aria-label="المهمة التالية">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-      </div>
-      <button type="button" class="student-guide__later" id="studentGuideDismissToday">
-        <i class="bi bi-clock"></i> عدم الإظهار اليوم
-      </button>
+    <div class="student-guide__workspace" id="studentAssistantWorkspace">
+      <nav class="student-guide__tabs" aria-label="أقسام المساعد">
+        <button type="button" class="is-active" data-guide-tab="tasks" aria-selected="true"><i class="bi bi-list-check"></i> متابعتي</button>
+        <button type="button" data-guide-tab="chat" aria-selected="false"><i class="bi bi-chat-heart-fill"></i> اسألني</button>
+      </nav>
+
+      <section class="student-guide__panel is-active" data-guide-panel="tasks">
+        <div class="student-guide__body" aria-live="polite">
+          <span class="student-guide__status" id="studentGuideStatus"></span>
+          <h2 class="student-guide__title" id="studentGuideTitle"></h2>
+          <p class="student-guide__message" id="studentGuideMessage"></p>
+          <div class="student-guide__primary-actions">
+            <a class="btn btn-primary btn-sm" id="studentGuideAction" href="#"><i class="bi bi-arrow-left-circle-fill"></i> <span></span></a>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="studentGuideListen"><i class="bi bi-volume-up-fill"></i> <span>استمع</span></button>
+          </div>
+        </div>
+        <footer class="student-guide__footer">
+          <div class="student-guide__pager" id="studentGuidePager">
+            <button type="button" class="student-guide__nav-btn" id="studentGuidePrevious" aria-label="المهمة السابقة"><i class="bi bi-chevron-right"></i></button>
+            <span id="studentGuideCounter"></span>
+            <button type="button" class="student-guide__nav-btn" id="studentGuideNext" aria-label="المهمة التالية"><i class="bi bi-chevron-left"></i></button>
+          </div>
+          <button type="button" class="student-guide__later" id="studentGuideDismissToday"><i class="bi bi-clock"></i> عدم الإظهار اليوم</button>
+        </footer>
+      </section>
+
+      <section class="student-guide__panel" data-guide-panel="chat">
+        <div class="student-assistant__privacy"><i class="bi bi-shield-check"></i> المساعد يتعامل مع ملفك أنت فقط، ولا يقرأ بيانات أي طالب آخر.</div>
+        <div class="student-assistant__messages" id="studentAssistantMessages" aria-live="polite" aria-label="المحادثة">
+          <div class="student-assistant__bubble is-bot"><span class="student-assistant__avatar"><i class="bi bi-stars"></i></span><div><p>اسألني عن مهامك وجدولك ودروسك، أو اطلب شرحًا مبسطًا لمفهوم دراسي.</p><small>مساعد المدرسة</small></div></div>
+        </div>
+        <div class="student-assistant__suggestions" id="studentAssistantSuggestions"></div>
+        <div class="student-assistant__usage"><span id="studentAssistantUsage"></span><span>لا تكتب معلومات شخصية أو صحية.</span></div>
+        <form class="student-assistant__form" id="studentAssistantForm">
+          {% csrf_token %}
+          <label class="visually-hidden" for="studentAssistantInput">اكتب سؤالك</label>
+          <textarea id="studentAssistantInput" rows="1" maxlength="500" placeholder="اكتب سؤالك هنا…" required></textarea>
+          <button type="button" class="student-assistant__mic" id="studentAssistantMic" aria-label="إملاء السؤال صوتيًا" title="تحدث"><i class="bi bi-mic-fill"></i></button>
+          <button type="submit" class="student-assistant__send" id="studentAssistantSend" aria-label="إرسال السؤال"><i class="bi bi-send-fill"></i></button>
+        </form>
+        <div class="student-assistant__state" id="studentAssistantState" role="status"></div>
+      </section>
     </div>
   </div>
 
-  <button type="button" class="student-guide__mascot" id="studentGuideMascot" aria-label="استمع إلى المرشد الطلابي">
+  <button type="button" class="student-guide__mascot" id="studentGuideMascot" aria-label="استمع إلى مساعد المدرسة">
     <span class="student-guide__task-badge" id="studentGuideTaskBadge"></span>
     <img src="/static/school/img/student-guide-mascot.webp?v=20260910" alt="شخصية طالب كرتونية مرشدة" width="480" height="720">
   </button>
 </aside>
 
-<button type="button" class="student-guide-launcher no-print" id="studentGuideLauncher" aria-label="فتح المرشد الطلابي" hidden>
+<button type="button" class="student-guide-launcher no-print" id="studentGuideLauncher" aria-label="فتح مساعد المدرسة" hidden>
   <img src="/static/school/img/student-guide-mascot.webp?v=20260910" alt="" width="480" height="720">
-  <span><i class="bi bi-chat-heart-fill"></i> مرشدك</span>
+  <span><i class="bi bi-chat-heart-fill"></i> مساعدك</span>
 </button>
 
-<script src="/static/school/js/student_voice_guide.js?v=20260910" defer></script>
+<script src="/static/school/js/student_voice_guide.js?v=20260912" defer></script>

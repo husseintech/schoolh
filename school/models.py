@@ -991,3 +991,85 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f'{self.action} - {self.created_at}'
+
+
+class StudentAssistantSettings(models.Model):
+    enabled = models.BooleanField('تشغيل مساعد الطلاب', default=True)
+    educational_ai_enabled = models.BooleanField('تشغيل المساعدة التعليمية الذكية', default=True)
+    daily_ai_limit = models.PositiveSmallIntegerField('الحد اليومي للأسئلة الذكية لكل طالب', default=10)
+    welcome_message = models.CharField(
+        'رسالة الترحيب',
+        max_length=500,
+        default='سعداء بوجودك معنا، وأنا هنا لمساعدتك في الوصول إلى مهامك ودروسك وكل ما تحتاجه داخل المدرسة.',
+    )
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'إعدادات مساعد الطلاب'
+        verbose_name_plural = 'إعدادات مساعد الطلاب'
+
+    def __str__(self):
+        return 'إعدادات مساعد الطلاب'
+
+
+class StudentAssistantKnowledge(models.Model):
+    title = models.CharField('عنوان الإجابة', max_length=120)
+    keywords = models.CharField(
+        'الكلمات المفتاحية',
+        max_length=300,
+        help_text='افصل بين الكلمات أو العبارات بفاصلة، مثل: الدوام، الجرس، موعد الطابور',
+    )
+    answer = models.TextField('الإجابة المعتمدة', max_length=2000)
+    action_label = models.CharField('عنوان الرابط', max_length=80, blank=True)
+    action_url = models.CharField('الرابط الداخلي', max_length=300, blank=True, help_text='مثال: /open-learning/')
+    is_active = models.BooleanField('مفعّلة', default=True)
+    priority = models.PositiveSmallIntegerField('الأولوية', default=10)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'إجابة معتمدة لمساعد الطلاب'
+        verbose_name_plural = 'إجابات مساعد الطلاب المعتمدة'
+        ordering = ['-priority', 'title']
+
+    def __str__(self):
+        return self.title
+
+
+class StudentAssistantLog(models.Model):
+    MODE_CHOICES = [
+        ('guided', 'إجابة من النظام'),
+        ('knowledge', 'إجابة مدرسية معتمدة'),
+        ('ai', 'إجابة تعليمية ذكية'),
+        ('cache', 'إجابة ذكية محفوظة'),
+    ]
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assistant_logs',
+        verbose_name='الطالب',
+    )
+    question = models.CharField('السؤال', max_length=500)
+    answer = models.TextField('الإجابة', max_length=2500, blank=True)
+    mode = models.CharField('نوع الإجابة', max_length=20, choices=MODE_CHOICES, default='guided')
+    success = models.BooleanField('نجحت', default=True)
+    estimated_tokens = models.PositiveIntegerField('الرموز المقدّرة', null=True, blank=True)
+    duration_ms = models.PositiveIntegerField('المدة بالمللي ثانية', null=True, blank=True)
+    created_at = models.DateTimeField('التاريخ', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'سجل مساعد الطلاب'
+        verbose_name_plural = 'سجل مساعد الطلاب'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['student', '-created_at'], name='student_ai_student_created_idx'),
+            models.Index(fields=['mode', '-created_at'], name='student_ai_mode_created_idx'),
+        ]
+
+    def __str__(self):
+        student_name = self.student.full_name if self.student else 'طالب محذوف'
+        return f'{student_name} - {self.get_mode_display()}'

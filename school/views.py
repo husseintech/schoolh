@@ -14,7 +14,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -22,7 +22,6 @@ from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, Teacher
 from .services import send_push
 from .services import send_whatsapp_message
 from .arabic_sort import arabic_sort_key
-from .student_guide import build_student_guide_tasks
 from .attendance_register import (
     MAX_REGISTER_STUDENTS,
     MIN_REGISTER_STUDENTS,
@@ -231,14 +230,18 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            role = None
             try:
                 role = user.profile.role
                 if role in {'student', 'teacher'}:
                     LoginEvent.objects.create(user=user, role=role)
                 if role == 'student':
                     LoginCounter.increment()
+                    request.session['student_assistant_welcome_pending'] = True
             except (Profile.DoesNotExist, AttributeError):
                 pass
+            if role == 'student':
+                return redirect('dashboard')
             return redirect('home')
         messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
         return redirect('home')
@@ -343,15 +346,6 @@ def dashboard(request):
             ).exclude(link__startswith='/messages/').count()
             warnings = student.warnings.all()
             summons = student.summons.all()
-            student_guide_tasks = build_student_guide_tasks(
-                student=student,
-                can_add_survey=has_perm(request.user, 'survey', 'add'),
-                has_survey=has_survey,
-                unread_notifications=unread_notifications,
-                unread_messages=unread_messages,
-                warnings_count=warnings.count(),
-                summons_count=summons.count(),
-            )
             whatsapp_groups = []
             if has_survey and student.student_class:
                 whatsapp_groups = list(student.student_class.whatsapp_groups.all())
@@ -370,7 +364,6 @@ def dashboard(request):
                 'survey_status': '✓ مكتمل' if has_survey else '(لم يملأ بعد)',
                 'has_survey': has_survey,
                 'whatsapp_groups': whatsapp_groups,
-                'student_guide_tasks': student_guide_tasks,
             })
         except Student.DoesNotExist:
             messages.error(request, 'لا يوجد ملف طالب مرتبط بهذا الحساب')
@@ -4320,6 +4313,7 @@ CLEARABLE_TABLES = [
     ('no_objections', 'لا مانع', NoObjection, ['created_by']),
     ('warnings', 'إنذارات الطلاب', StudentWarning, ['student']),
     ('summons', 'استدعاءات أولياء الأمور', GuardianSummons, ['student']),
+    ('student_assistant_logs', 'سجل محادثات مساعد الطلاب', StudentAssistantLog, ['student']),
 ]
 
 
@@ -4336,7 +4330,7 @@ def get_clearable_tables():
     ]
 
 DEPENDENT_MODELS = {
-    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter, StudentWarning, GuardianSummons],
+    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter, StudentWarning, GuardianSummons, StudentAssistantLog],
     'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup, ReciprocalVisit],
     'classes': [Student, TeacherScheduleEntry, WhatsAppGroup],
     'subjects': [TeacherScheduleEntry],

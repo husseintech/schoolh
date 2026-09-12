@@ -1,0 +1,97 @@
+{% extends 'school/base.html' %}
+{% block title %}إدارة مساعد الطلاب{% endblock %}
+{% block page_heading %}مساعد الطلاب الذكي{% endblock %}
+{% block content %}
+<style>
+  .assistant-hero{border:0;border-radius:22px;color:#fff;background:linear-gradient(125deg,#123f8c,#2367d1 68%,#28a5bd);box-shadow:0 14px 35px rgba(27,77,151,.2);overflow:hidden;position:relative}.assistant-hero:after{content:"";position:absolute;width:210px;height:210px;left:-50px;top:-80px;border:35px solid rgba(255,255,255,.08);border-radius:50%}.assistant-stat{height:100%;padding:16px;border:1px solid #e1e9f4;border-radius:17px;background:#fff;box-shadow:0 5px 18px rgba(37,66,106,.06)}.assistant-stat i{display:grid;place-items:center;width:38px;height:38px;margin-bottom:10px;border-radius:12px;color:#1f62be;background:#edf4ff;font-size:1.1rem}.assistant-stat strong{display:block;color:#172943;font-size:1.35rem}.assistant-stat span{color:#7a879a;font-size:.76rem}.assistant-card{border:1px solid #e3eaf4;border-radius:18px;background:#fff;box-shadow:0 6px 22px rgba(32,61,104,.06);overflow:hidden}.assistant-card__head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 17px;border-bottom:1px solid #edf1f6}.assistant-card__head h2{margin:0;color:#203550;font-size:.95rem;font-weight:850}.assistant-card__body{padding:17px}.assistant-form-label{font-size:.76rem;font-weight:800;color:#42536c}.knowledge-item{padding:13px;border:1px solid #e6ecf4;border-radius:14px}.knowledge-item+.knowledge-item{margin-top:9px}.knowledge-item.is-off{opacity:.62;background:#f7f8fa}.mode-pill{display:inline-block;padding:3px 7px;border-radius:999px;color:#285c9e;background:#eaf2fc;font-size:.64rem;font-weight:800}.privacy-note{padding:10px 12px;border:1px solid #d7e8dc;border-radius:12px;color:#3d6d50;background:#f3faf5;font-size:.72rem}.assistant-table{font-size:.75rem}.assistant-table td{vertical-align:middle}.question-cell{max-width:220px;white-space:normal}.top-rank{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #edf1f6}.top-rank:last-child{border:0}.top-rank__number{display:grid;place-items:center;width:29px;height:29px;border-radius:10px;color:#215da9;background:#eaf2ff;font-weight:850}.top-rank__name{flex:1}.top-rank__name small{display:block;color:#8793a4}.form-check-input:checked{background-color:#2467c9;border-color:#2467c9}
+</style>
+
+<section class="assistant-hero p-4 mb-4">
+  <div class="row align-items-center g-3 position-relative" style="z-index:1">
+    <div class="col-lg-8"><span class="badge rounded-pill bg-white text-primary mb-2"><i class="bi bi-stars"></i> مرحلتان في مساعد واحد</span><h1 class="h4 fw-bold mb-2">إرشاد ذكي داخل الموقع ومساعدة تعليمية آمنة</h1><p class="mb-0 opacity-75 small">يجيب النظام أولًا من بيانات الطالب والإجابات المدرسية المعتمدة، ثم يستخدم Gemini للسؤال التعليمي فقط عند الحاجة.</p></div>
+    <div class="col-lg-4 text-lg-end"><span class="badge fs-6 {% if assistant_settings.enabled %}bg-success{% else %}bg-secondary{% endif %}">{% if assistant_settings.enabled %}<i class="bi bi-check-circle-fill"></i> المساعد يعمل{% else %}<i class="bi bi-pause-circle-fill"></i> المساعد متوقف{% endif %}</span></div>
+  </div>
+</section>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg"><div class="assistant-stat"><i class="bi bi-chat-dots-fill"></i><strong>{{ stats.total }}</strong><span>كل المحادثات</span></div></div>
+  <div class="col-6 col-lg"><div class="assistant-stat"><i class="bi bi-calendar-check-fill"></i><strong>{{ stats.today }}</strong><span>أسئلة اليوم</span></div></div>
+  <div class="col-6 col-lg"><div class="assistant-stat"><i class="bi bi-stars"></i><strong>{{ stats.ai_today }}</strong><span>أسئلة ذكية اليوم</span></div></div>
+  <div class="col-6 col-lg"><div class="assistant-stat"><i class="bi bi-people-fill"></i><strong>{{ stats.students }}</strong><span>طلاب استخدموه</span></div></div>
+  <div class="col-6 col-lg"><div class="assistant-stat"><i class="bi bi-exclamation-triangle-fill"></i><strong>{{ stats.failed }}</strong><span>محاولات لم تكتمل</span></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <section class="assistant-card h-100">
+      <header class="assistant-card__head"><h2><i class="bi bi-sliders text-primary"></i> إعدادات التشغيل</h2></header>
+      <div class="assistant-card__body">
+        <form method="post">
+          {% csrf_token %}<input type="hidden" name="action" value="save_settings">
+          <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="assistantEnabled" name="enabled" {% if assistant_settings.enabled %}checked{% endif %}><label class="form-check-label fw-bold" for="assistantEnabled">إظهار المساعد في حسابات الطلاب</label></div>
+          <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="assistantAiEnabled" name="educational_ai_enabled" {% if assistant_settings.educational_ai_enabled %}checked{% endif %}><label class="form-check-label fw-bold" for="assistantAiEnabled">تشغيل المساعدة التعليمية عبر Gemini</label></div>
+          <div class="mb-3"><label class="assistant-form-label mb-1" for="assistantDailyLimit">الحد اليومي للأسئلة الذكية لكل طالب</label><input class="form-control" id="assistantDailyLimit" type="number" name="daily_ai_limit" min="1" max="50" value="{{ assistant_settings.daily_ai_limit }}"><div class="form-text">الإرشاد إلى خدمات الموقع لا يستهلك هذا الحد.</div></div>
+          <div class="mb-3"><label class="assistant-form-label mb-1" for="assistantWelcome">رسالة الترحيب بعد دخول الطالب</label><textarea class="form-control" id="assistantWelcome" name="welcome_message" rows="4" maxlength="500">{{ assistant_settings.welcome_message }}</textarea><div class="form-text">يضيف النظام تلقائيًا الاسم الأول والثاني واسم المدرسة قبل هذه الرسالة.</div></div>
+          <button class="btn btn-primary w-100" type="submit"><i class="bi bi-check2-circle"></i> حفظ الإعدادات</button>
+        </form>
+      </div>
+    </section>
+  </div>
+  <div class="col-lg-7">
+    <section class="assistant-card h-100">
+      <header class="assistant-card__head"><h2><i class="bi bi-patch-check-fill text-success"></i> إضافة إجابة مدرسية معتمدة</h2></header>
+      <div class="assistant-card__body">
+        <form method="post" class="row g-3">
+          {% csrf_token %}<input type="hidden" name="action" value="add_knowledge">
+          <div class="col-md-7"><label class="assistant-form-label mb-1">العنوان</label><input class="form-control" name="title" maxlength="120" placeholder="مثل: موعد الطابور الصباحي" required></div>
+          <div class="col-md-5"><label class="assistant-form-label mb-1">الأولوية</label><input class="form-control" type="number" name="priority" min="0" max="100" value="10"></div>
+          <div class="col-12"><label class="assistant-form-label mb-1">الكلمات المفتاحية</label><input class="form-control" name="keywords" maxlength="300" placeholder="الطابور، موعد الطابور، الاصطفاف" required><div class="form-text">افصل بينها بفاصلة عربية أو إنجليزية.</div></div>
+          <div class="col-12"><label class="assistant-form-label mb-1">الإجابة</label><textarea class="form-control" name="answer" rows="4" maxlength="2000" required></textarea></div>
+          <div class="col-md-5"><label class="assistant-form-label mb-1">عنوان زر اختياري</label><input class="form-control" name="action_label" maxlength="80" placeholder="فتح الصفحة"></div>
+          <div class="col-md-7"><label class="assistant-form-label mb-1">رابط داخلي اختياري</label><input class="form-control" name="action_url" maxlength="300" dir="ltr" placeholder="/dashboard/"></div>
+          <div class="col-12"><button class="btn btn-success" type="submit"><i class="bi bi-plus-circle"></i> إضافة الإجابة</button></div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <section class="assistant-card h-100">
+      <header class="assistant-card__head"><h2><i class="bi bi-journal-check text-primary"></i> الإجابات المعتمدة</h2><span class="badge bg-light text-dark">{{ knowledge_items|length }}</span></header>
+      <div class="assistant-card__body">
+        {% for item in knowledge_items %}
+        <article class="knowledge-item {% if not item.is_active %}is-off{% endif %}">
+          <div class="d-flex justify-content-between align-items-start gap-2"><div><strong>{{ item.title }}</strong><div class="small text-muted mt-1">{{ item.keywords }}</div></div><span class="badge {% if item.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}">{% if item.is_active %}مفعّلة{% else %}متوقفة{% endif %}</span></div>
+          <p class="small mt-2 mb-2">{{ item.answer|truncatewords:28 }}</p>
+          <div class="d-flex gap-2">
+            <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_knowledge"><input type="hidden" name="knowledge_id" value="{{ item.pk }}"><button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-power"></i> {% if item.is_active %}إيقاف{% else %}تشغيل{% endif %}</button></form>
+            <form method="post" onsubmit="return confirm('حذف هذه الإجابة المعتمدة؟')">{% csrf_token %}<input type="hidden" name="action" value="delete_knowledge"><input type="hidden" name="knowledge_id" value="{{ item.pk }}"><button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i> حذف</button></form>
+          </div>
+        </article>
+        {% empty %}<div class="text-center text-muted py-4"><i class="bi bi-journal-x fs-3 d-block mb-2"></i>لم تُضف إجابات مدرسية بعد.</div>{% endfor %}
+      </div>
+    </section>
+  </div>
+  <div class="col-lg-5">
+    <section class="assistant-card h-100">
+      <header class="assistant-card__head"><h2><i class="bi bi-trophy-fill text-warning"></i> الأكثر استخدامًا</h2></header>
+      <div class="assistant-card__body">
+        {% for item in top_students %}<div class="top-rank"><span class="top-rank__number">{{ forloop.counter }}</span><span class="top-rank__name"><strong>{{ item.student__full_name }}</strong><small>{{ item.student__student_class__name|default:'دون صف' }}</small></span><span class="badge bg-primary-subtle text-primary">{{ item.total }} سؤال</span></div>{% empty %}<div class="text-center text-muted py-4">لا توجد استخدامات مسجلة بعد.</div>{% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="assistant-card">
+  <header class="assistant-card__head"><h2><i class="bi bi-clock-history text-primary"></i> أحدث المحادثات</h2><a href="{% url 'reset_data' %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-eraser"></i> تفريغ السجل من الصيانة</a></header>
+  <div class="assistant-card__body">
+    <div class="privacy-note mb-3"><i class="bi bi-shield-lock-fill"></i> هذه السجلات لمدير المدرسة فقط. لا يعرض المساعد للطالب إلا بيانات حسابه الحالي، ولا يرسل النظام اسمه أو هويته أو هاتفه أو بياناته الصحية المخزنة إلى Gemini.</div>
+    <div class="table-responsive"><table class="table table-hover assistant-table"><thead class="table-light"><tr><th>الوقت</th><th>الطالب</th><th>السؤال</th><th>المصدر</th><th>الحالة</th></tr></thead><tbody>
+      {% for log in logs_page %}<tr><td class="text-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td><td>{{ log.student.full_name|default:'طالب محذوف' }}<small class="d-block text-muted">{{ log.student.student_class.name|default:'' }}</small></td><td class="question-cell">{{ log.question|truncatechars:100 }}</td><td><span class="mode-pill">{{ log.get_mode_display }}</span></td><td>{% if log.success %}<i class="bi bi-check-circle-fill text-success" title="نجحت"></i>{% else %}<i class="bi bi-x-circle-fill text-danger" title="لم تكتمل"></i>{% endif %}</td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">لا توجد محادثات مسجلة.</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if logs_page.has_other_pages %}<nav aria-label="صفحات السجل"><ul class="pagination pagination-sm justify-content-center mb-0">{% if logs_page.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ logs_page.previous_page_number }}">السابق</a></li>{% endif %}<li class="page-item active"><span class="page-link">{{ logs_page.number }} / {{ logs_page.paginator.num_pages }}</span></li>{% if logs_page.has_next %}<li class="page-item"><a class="page-link" href="?page={{ logs_page.next_page_number }}">التالي</a></li>{% endif %}</ul></nav>{% endif %}
+  </div>
+</section>
+{% endblock %}

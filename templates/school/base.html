@@ -1094,6 +1094,11 @@
         </a>
         {% endif %}
         {% if user.profile.role == 'admin' %}
+        <a href="{% url 'student_assistant_admin' %}" class="nav-link {% if request.resolver_match.url_name == 'student_assistant_admin' %}active{% endif %}">
+            <i class="bi bi-robot"></i> مساعد الطلاب الذكي
+        </a>
+        {% endif %}
+        {% if user.profile.role == 'admin' %}
         <a href="{% url 'audit_log_list' %}" class="nav-link {% if request.resolver_match.url_name == 'audit_log_list' %}active{% endif %}">
             <i class="bi bi-clock-history"></i> سجل التعديلات
         </a>
@@ -1256,6 +1261,10 @@
             </p>
         </div>
     </div>
+
+    {% if user.profile.role == 'student' and student_assistant_config.enabled %}
+    {% include 'school/_student_voice_guide.html' %}
+    {% endif %}
 
     {% else %}
     <!-- Non-authenticated layout -->

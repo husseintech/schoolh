@@ -1,6 +1,9 @@
 from django.conf import settings
+from django.urls import reverse
 from .models import has_perm, Notification, Message, SchoolInfo
 from .services import send_visit_reminders
+from .student_assistant import assistant_settings, quick_prompts, student_short_name
+from .student_guide import build_student_guide_tasks
 
 
 def user_permissions(request):
@@ -13,6 +16,9 @@ def user_permissions(request):
     account_display_name = ''
     show_attendance_register = False
     show_grade_register = False
+    student_guide_tasks = []
+    student_assistant_config = {'enabled': False}
+    school_info = SchoolInfo.objects.first()
     if request.user.is_authenticated:
         user = request.user
         role = getattr(getattr(user, 'profile', None), 'role', None)
@@ -73,16 +79,48 @@ def user_permissions(request):
         recent_notifications = Notification.objects.filter(user=request.user).exclude(link__startswith='/messages/')[:5]
         unread_messages_count = Message.objects.filter(recipient=request.user, is_read=False).count()
         recent_messages = Message.objects.filter(recipient=request.user)[:5]
+        if role == 'student' and person:
+            assistant_config_obj = assistant_settings()
+            if assistant_config_obj.enabled:
+                student_unread_notifications = Notification.objects.filter(
+                    user=request.user,
+                    is_read=False,
+                ).exclude(link__startswith='/messages/').count()
+                has_survey = hasattr(person, 'survey')
+                student_guide_tasks = build_student_guide_tasks(
+                    student=person,
+                    can_add_survey=has_perm(request.user, 'survey', 'add'),
+                    has_survey=has_survey,
+                    unread_notifications=student_unread_notifications,
+                    unread_messages=unread_messages_count,
+                    warnings_count=person.warnings.count(),
+                    summons_count=person.summons.count(),
+                )
+                current_url_name = getattr(getattr(request, 'resolver_match', None), 'url_name', '')
+                student_assistant_config = {
+                    'enabled': True,
+                    'welcome_pending': bool(request.session.pop('student_assistant_welcome_pending', False)),
+                    'auto_open': current_url_name == 'dashboard',
+                    'short_name': student_short_name(person.full_name),
+                    'school_name': school_info.name_ar if school_info else 'مدرستك',
+                    'welcome_message': assistant_config_obj.welcome_message,
+                    'ask_url': reverse('student_assistant_ask'),
+                    'daily_ai_limit': assistant_config_obj.daily_ai_limit,
+                    'educational_ai_enabled': assistant_config_obj.educational_ai_enabled,
+                    'quick_prompts': quick_prompts(person),
+                }
     return {
         'account_display_name': account_display_name,
         'show_attendance_register': show_attendance_register,
         'show_grade_register': show_grade_register,
         'user_perms': perms,
-        'school_info': SchoolInfo.objects.first(),
+        'school_info': school_info,
         'unread_notifications_count': unread_count,
         'recent_notifications': recent_notifications,
         'unread_messages_count': unread_messages_count,
         'recent_messages': recent_messages,
         'vapid_public_key': settings.VAPID_PUBLIC_KEY,
         'word_export': request.GET.get('export') == 'word',
+        'student_guide_tasks': student_guide_tasks,
+        'student_assistant_config': student_assistant_config,
     }
