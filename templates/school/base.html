@@ -719,6 +719,15 @@
     </style>
 </head>
 <body{% if word_export %} class="word-export"{% endif %}>
+    {% if request.GET.csrf_refreshed == '1' %}
+    <div class="alert alert-warning shadow position-fixed start-50 translate-middle-x mt-3 no-print" role="alert" style="z-index:2200;width:min(92vw,680px);">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check fs-4 text-success"></i>
+            <div><strong class="d-block">تم تحديث جلسة الحماية بأمان</strong><span class="small">أعد إدخال البيانات واضغط حفظ أو تسجيل الدخول مرة أخرى. لم يُنفذ الطلب السابق.</span></div>
+            <button type="button" class="btn-close me-auto" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+        </div>
+    </div>
+    {% endif %}
     <!-- Splash Screen -->
     <div class="splash" id="splash" aria-hidden="true">
         <div class="splash__bg"></div>
@@ -1487,6 +1496,31 @@
                 });
                 printBtn.parentNode.insertBefore(a, printBtn.nextSibling);
             });
+        })();
+    </script>
+    <script>
+        (function () {
+            function resetLoginButtons() {
+                document.querySelectorAll('form[action$="/login/"]').forEach(function (form) {
+                    var button = form.querySelector('button[type="submit"]');
+                    if (!button) return;
+                    button.disabled = false;
+                    if (button.dataset.originalText) button.innerHTML = button.dataset.originalText;
+                });
+            }
+            document.addEventListener('submit', function (event) {
+                var form = event.target.closest && event.target.closest('form[action$="/login/"]');
+                if (!form) return;
+                var button = form.querySelector('button[type="submit"]');
+                if (!button || button.disabled) {
+                    if (button && button.disabled) event.preventDefault();
+                    return;
+                }
+                button.dataset.originalText = button.innerHTML;
+                button.disabled = true;
+                button.textContent = 'جاري تسجيل الدخول…';
+            });
+            window.addEventListener('pageshow', resetLoginButtons);
         })();
     </script>
     {% block extra_js %}{% endblock %}

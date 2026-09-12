@@ -3,6 +3,21 @@ import re
 from django.contrib import messages
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import redirect, render
+from django.utils.cache import add_never_cache_headers
+
+
+class DynamicHtmlNoCacheMiddleware:
+    """Never retain HTML pages that may contain private data or CSRF tokens."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        content_type = response.get('Content-Type', '').lower()
+        if content_type.startswith('text/html'):
+            add_never_cache_headers(response)
+        return response
 
 
 class StudentRecordAccessMiddleware:
