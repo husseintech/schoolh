@@ -8,11 +8,19 @@ from .models import GoogleDriveToken
 
 GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
-DEFAULT_REDIRECT_URI = 'https://schoolh-bay.vercel.app/open-learning/google-drive/callback/'
+DEFAULT_REDIRECT_URI = 'https://schoolhh.vercel.app/open-learning/google-drive/callback/'
 DRIVE_SCOPES = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file',
 ]
+
+
+class GoogleDriveError(RuntimeError):
+    """A safe, user-facing category for Google Drive request failures."""
+
+
+class GoogleDriveAuthError(GoogleDriveError):
+    """The saved Google authorization can no longer be used."""
 
 
 class GoogleDriveService:
@@ -66,8 +74,26 @@ class GoogleDriveService:
             },
             timeout=30,
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
+
+    @staticmethod
+    def _raise_for_status(resp):
+        if resp.ok:
+            return
+        error_code = ''
+        try:
+            payload = resp.json()
+            error = payload.get('error', {})
+            error_code = error.get('status', '') if isinstance(error, dict) else str(error)
+        except (ValueError, AttributeError):
+            pass
+        if resp.status_code in (401, 403) or error_code in ('invalid_grant', 'UNAUTHENTICATED'):
+            raise GoogleDriveAuthError('انتهى أو أُلغي تفويض Google Drive؛ أعد ربط الحساب')
+        try:
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            raise GoogleDriveError('تعذّر الاتصال بخدمة Google Drive') from exc
 
     def save_tokens(self, token_dict):
         token, _ = GoogleDriveToken.objects.get_or_create(pk=1)
@@ -86,20 +112,20 @@ class GoogleDriveService:
             try:
                 refreshed = self.refresh_access_token(data['refresh_token'])
             except Exception:
-                return data
+                return None
             data.update(refreshed)
             token.set_tokens(data)
             token.save()
         return data
 
     def is_connected(self):
-        token = GoogleDriveToken.objects.filter(pk=1).first()
-        return bool(token and token.get_tokens().get('refresh_token'))
+        credentials = self.get_credentials()
+        return bool(credentials and credentials.get('access_token') and credentials.get('refresh_token'))
 
     def _auth_headers(self):
         creds = self.get_credentials()
         if not creds or not creds.get('access_token'):
-            raise RuntimeError('Google Drive غير متصل. يجب على المدير ربط الحساب أولاً')
+            raise GoogleDriveAuthError('Google Drive غير متصل. يجب على المدير ربط الحساب أولاً')
         return {'Authorization': f'Bearer {creds["access_token"]}'}
 
     def _find_folder(self, name, parent_id):
@@ -214,6 +240,41 @@ class GoogleDriveService:
     def upload_to_folder_path(self, filename, data, mimetype, folder_names):
         parent = self.ensure_folder_path(folder_names)
         return self.upload_to_folder_id(filename, data, mimetype, parent)
+
+    def start_resumable_upload(self, filename, mimetype, size, folder_names):
+        """Start a Drive upload session so Vercel only receives small chunks."""
+        parent = self.ensure_folder_path(folder_names)
+        headers = self._auth_headers()
+        headers.update({
+            'Content-Type': 'application/json; charset=UTF-8',
+            'X-Upload-Content-Type': mimetype,
+            'X-Upload-Content-Length': str(size),
+        })
+        resp = requests.post(
+            'https://www.googleapis.com/upload/drive/v3/files',
+            params={'uploadType': 'resumable', 'fields': 'id,webViewLink,name,mimeType,size'},
+            headers=headers,
+            json={'name': filename, 'parents': [parent]},
+            timeout=30,
+        )
+        self._raise_for_status(resp)
+        session_uri = resp.headers.get('Location', '')
+        if not session_uri:
+            raise GoogleDriveError('لم تُنشئ Google Drive جلسة رفع صالحة')
+        return session_uri
+
+    def upload_resumable_chunk(self, session_uri, data, start, end, total, mimetype):
+        headers = self._auth_headers()
+        headers.update({
+            'Content-Type': mimetype or 'application/octet-stream',
+            'Content-Length': str(len(data)),
+            'Content-Range': f'bytes {start}-{end}/{total}',
+        })
+        resp = requests.put(session_uri, headers=headers, data=data, timeout=120)
+        if resp.status_code == 308:
+            return None
+        self._raise_for_status(resp)
+        return resp.json()
 
     def delete_file(self, file_id):
         resp = requests.delete(

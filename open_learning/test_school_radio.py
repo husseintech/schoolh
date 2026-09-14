@@ -1,15 +1,17 @@
-from datetime import date
+import json
+from datetime import date, timedelta
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from school.models import Class, Profile, Student, UserPermission
 
 from .google_drive import GoogleDriveService
-from .models import AIUsageLog, SchoolRadioEntry, SchoolRadioFile
+from .models import AIUsageLog, GoogleDriveToken, SchoolRadioEntry, SchoolRadioFile
 from .services.ai_service import AIServiceUnavailable, MockProvider, validate_radio_program
 
 
@@ -59,6 +61,28 @@ class SchoolRadioFlowTests(TestCase):
         self.assertEqual(entry.created_by, self.admin)
         self.assertEqual(list(entry.presenters.all()), [self.student])
         self.assertEqual(list(entry.participants.all()), [self.student])
+
+    def test_ajax_create_saves_entry_before_files_and_returns_chunk_routes(self):
+        response = self.client.post(reverse('ol_school_radio_add'), {
+            'event_date': '2026-09-08',
+            'title': 'إذاعة برفع مجزأ',
+            'topic': 'العلم',
+            'category': 'educational',
+            'presenters': [],
+            'participants': [],
+            'additional_presenters': '',
+            'additional_participants': '',
+            'notes': '',
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        entry = SchoolRadioEntry.objects.get(title='إذاعة برفع مجزأ')
+        self.assertTrue(payload['ok'])
+        self.assertEqual(payload['entry_id'], entry.pk)
+        self.assertEqual(payload['redirect_url'], reverse('ol_school_radio_detail', args=[entry.pk]))
+        self.assertEqual(payload['upload_start_url'], reverse('ol_school_radio_upload_start', args=[entry.pk]))
+        self.assertFalse(entry.files.exists())
 
     def test_account_without_radio_permission_cannot_view_or_create_records(self):
         self.client.force_login(self.student_user)
@@ -367,6 +391,89 @@ class SchoolRadioFlowTests(TestCase):
         saved = entry.files.get()
         self.assertEqual(saved.google_drive_file_id, 'drive-file-1')
         self.assertTrue(saved.is_image)
+
+    def test_resumable_upload_starts_in_radio_date_folder(self):
+        entry = self.create_entry()
+        with patch('open_learning.radio_views.GoogleDriveService.is_connected', return_value=True), \
+             patch(
+                 'open_learning.radio_views.GoogleDriveService.start_resumable_upload',
+                 return_value='https://upload.example/session-1',
+             ) as start:
+            response = self.client.post(
+                reverse('ol_school_radio_upload_start', args=[entry.pk]),
+                data=json.dumps({'name': 'camera.jpg', 'type': 'image/jpeg', 'size': 6 * 1024 * 1024}),
+                content_type='application/json',
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload['ok'])
+        self.assertEqual(payload['chunk_size'], 2 * 1024 * 1024)
+        self.assertTrue(payload['upload_token'])
+        start.assert_called_once_with(
+            'camera.jpg', 'image/jpeg', 6 * 1024 * 1024,
+            ['ملف الإذاعة المدرسية', '2026-09-08'],
+        )
+
+    def test_resumable_final_chunk_creates_drive_file_record(self):
+        entry = self.create_entry()
+        with patch('open_learning.radio_views.GoogleDriveService.is_connected', return_value=True), \
+             patch(
+                 'open_learning.radio_views.GoogleDriveService.start_resumable_upload',
+                 return_value='https://upload.example/session-2',
+             ):
+            started = self.client.post(
+                reverse('ol_school_radio_upload_start', args=[entry.pk]),
+                data=json.dumps({'name': 'word.pdf', 'type': 'application/pdf', 'size': 4}),
+                content_type='application/json',
+            ).json()
+        result = {
+            'id': 'drive-resumable-1',
+            'webViewLink': 'https://drive.google.com/file/d/drive-resumable-1/view',
+            'name': 'word.pdf',
+            'mimeType': 'application/pdf',
+            'size': '4',
+        }
+        with patch(
+            'open_learning.radio_views.GoogleDriveService.upload_resumable_chunk',
+            return_value=result,
+        ) as upload:
+            response = self.client.post(
+                started['chunk_url'],
+                data=b'test',
+                content_type='application/octet-stream',
+                HTTP_X_UPLOAD_TOKEN=started['upload_token'],
+                HTTP_CONTENT_RANGE='bytes 0-3/4',
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['complete'])
+        upload.assert_called_once_with(
+            'https://upload.example/session-2', b'test', 0, 3, 4, 'application/pdf',
+        )
+        saved = entry.files.get()
+        self.assertEqual(saved.google_drive_file_id, 'drive-resumable-1')
+        self.assertEqual(saved.file_size, 4)
+
+    def test_resumable_upload_rejects_files_over_ten_megabytes(self):
+        entry = self.create_entry()
+        response = self.client.post(
+            reverse('ol_school_radio_upload_start', args=[entry.pk]),
+            data=json.dumps({'name': 'large.pdf', 'type': 'application/pdf', 'size': 10 * 1024 * 1024 + 1}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['code'], 'file_too_large')
+
+    def test_expired_drive_refresh_is_reported_as_disconnected(self):
+        token = GoogleDriveToken.objects.create(pk=1)
+        token.set_tokens({'access_token': 'expired', 'refresh_token': 'revoked', 'expires_in': 3600})
+        token.token_expiry = timezone.now() - timedelta(minutes=1)
+        token.save()
+
+        with patch('open_learning.google_drive.GoogleDriveService.refresh_access_token', side_effect=RuntimeError('invalid_grant')):
+            self.assertFalse(GoogleDriveService().is_connected())
 
     def test_unsafe_file_type_is_not_uploaded(self):
         entry = self.create_entry()

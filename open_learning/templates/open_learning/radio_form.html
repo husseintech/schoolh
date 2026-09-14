@@ -11,7 +11,7 @@
         {% if form.non_field_errors %}
         <div class="alert alert-danger">{{ form.non_field_errors }}</div>
         {% endif %}
-        <form method="post" enctype="multipart/form-data" data-radio-upload>
+        <form method="post" enctype="multipart/form-data" data-radio-upload="staged">
             {% csrf_token %}
             <div class="row g-3">
                 <div class="col-md-4">
@@ -67,8 +67,8 @@
                     <input type="file" name="files" class="form-control" multiple
                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf">
                     <div class="form-text">
-                        يمكن اختيار عدة صور أو التصوير من كاميرا الهاتف. تُضغط صور الكاميرا الكبيرة تلقائيًا ثم تُرفع إلى
-                        «ملف الإذاعة المدرسية / تاريخ الإذاعة» في Google Drive. الحد الأقصى 10 ملفات في المرة و10 ميغابايت للملف.
+                        يمكن اختيار عدة صور أو التصوير من كاميرا الهاتف. تُضغط الصور الكبيرة تلقائيًا، ثم يُرفع كل ملف
+                        على أجزاء صغيرة إلى «ملف الإذاعة المدرسية / تاريخ الإذاعة» في Google Drive. الحد الأقصى 10 ملفات و10 ميغابايت للملف.
                     </div>
                     {% if not gdrive_connected %}
                     <div class="text-warning small mt-1"><i class="bi bi-exclamation-triangle"></i> Drive غير متصل؛ سيُحفظ السجل دون الملفات.</div>
@@ -87,5 +87,5 @@
 </div>
 {% endblock %}
 {% block extra_js %}
-<script src="/static/open_learning/radio_upload.js"></script>
+<script src="/static/open_learning/radio_upload.js?v=20260914-2"></script>
 {% endblock %}

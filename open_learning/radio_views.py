@@ -1,17 +1,21 @@
+import json
 import mimetypes
+import re
 from datetime import date
 from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core import signing
 from django.db.models import Max, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.encoding import escape_uri_path
+from django.urls import reverse
 from school.models import Class, has_perm
 
-from .google_drive import GoogleDriveService
+from .google_drive import GoogleDriveAuthError, GoogleDriveService
 from .models import SchoolRadioEntry, SchoolRadioFile
 from .radio_forms import SchoolRadioEntryForm
 from .radio_maintenance import RADIO_FOLDER_NAME
@@ -22,6 +26,9 @@ from .services.usage import log_usage
 
 MAX_FILES_PER_REQUEST = 10
 MAX_FILE_SIZE = 10 * 1024 * 1024
+UPLOAD_CHUNK_SIZE = 2 * 1024 * 1024
+UPLOAD_TOKEN_MAX_AGE = 60 * 60
+UPLOAD_TOKEN_SALT = 'school-radio-drive-resumable-v1'
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf'}
 ALLOWED_MIME_TYPES = {
     'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf',
@@ -50,6 +57,64 @@ def _file_mimetype(uploaded):
     supplied = (uploaded.content_type or '').lower().split(';', 1)[0]
     guessed = (mimetypes.guess_type(uploaded.name)[0] or '').lower()
     return supplied if supplied in ALLOWED_MIME_TYPES else guessed
+
+
+def _safe_filename(value):
+    return Path(str(value or '').replace('\\', '/')).name[:300]
+
+
+def _requested_mimetype(filename, supplied):
+    supplied = str(supplied or '').lower().split(';', 1)[0]
+    guessed = (mimetypes.guess_type(filename)[0] or '').lower()
+    return supplied if supplied in ALLOWED_MIME_TYPES else guessed
+
+
+def _is_ajax(request):
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+
+def _upload_json(entry):
+    return JsonResponse({
+        'ok': True,
+        'entry_id': entry.pk,
+        'upload_start_url': reverse('ol_school_radio_upload_start', args=[entry.pk]),
+        'redirect_url': reverse('ol_school_radio_detail', args=[entry.pk]),
+    })
+
+
+def _json_error(message, status=400, code='upload_error', **extra):
+    payload = {'ok': False, 'error': message, 'code': code}
+    payload.update(extra)
+    return JsonResponse(payload, status=status)
+
+
+def _can_upload_to_entry(user, entry):
+    if has_perm(user, 'school_radio', 'edit'):
+        return True
+    return entry.created_by_id == user.id and has_perm(user, 'school_radio', 'add')
+
+
+def _drive_error_response(exc):
+    response = getattr(exc, 'response', None)
+    status_code = getattr(response, 'status_code', None)
+    if isinstance(exc, GoogleDriveAuthError) or status_code in (401, 403):
+        return _json_error(
+            'انتهى اتصال Google Drive. أعد ربط الحساب من إعدادات التخزين ثم حاول مجددًا.',
+            status=409,
+            code='drive_reconnect',
+            reconnect_url=reverse('ol_storage_settings'),
+        )
+    if status_code in (404, 410):
+        return _json_error(
+            'انتهت جلسة رفع هذا الملف؛ أعد اختياره ليبدأ الرفع من جديد.',
+            status=409,
+            code='upload_session_expired',
+        )
+    return _json_error(
+        'تعذّر الوصول إلى Google Drive الآن. لم يُحذف أي ملف أو سجل؛ حاول مرة أخرى.',
+        status=502,
+        code='drive_unavailable',
+    )
 
 
 def _upload_files(request, entry):
@@ -169,12 +234,22 @@ def school_radio_add(request):
         entry.created_by = request.user
         entry.save()
         form.save_m2m()
+        if _is_ajax(request):
+            messages.success(request, 'تم إنشاء سجل الإذاعة؛ جارٍ رفع الملفات إلى Google Drive')
+            return _upload_json(entry)
         saved = _upload_files(request, entry)
         if saved:
             messages.success(request, f'تم إنشاء سجل الإذاعة ورفع {saved} ملفًا إلى Google Drive')
         else:
             messages.success(request, 'تم إنشاء سجل الإذاعة المدرسية')
         return redirect('ol_school_radio_detail', entry_id=entry.pk)
+    if request.method == 'POST' and _is_ajax(request):
+        return _json_error(
+            'تعذّر إنشاء سجل الإذاعة. راجع الحقول المطلوبة ثم حاول مجددًا.',
+            status=400,
+            code='invalid_form',
+            fields=form.errors.get_json_data(escape_html=True),
+        )
     return render(request, 'open_learning/radio_form.html', {
         'form': form, 'entry': None, 'gdrive_connected': GoogleDriveService().is_connected(),
     })
@@ -195,12 +270,22 @@ def school_radio_edit(request, entry_id):
             entry.ai_reviewed_by = None
         entry.save()
         form.save_m2m()
+        if _is_ajax(request):
+            messages.success(request, 'تم تحديث بيانات الإذاعة؛ جارٍ رفع الملفات الجديدة')
+            return _upload_json(entry)
         saved = _upload_files(request, entry)
         message = 'تم تحديث بيانات الإذاعة المدرسية'
         if saved:
             message += f' ورفع {saved} ملفًا جديدًا'
         messages.success(request, message)
         return redirect('ol_school_radio_detail', entry_id=entry.pk)
+    if request.method == 'POST' and _is_ajax(request):
+        return _json_error(
+            'تعذّر حفظ التعديلات. راجع الحقول المطلوبة ثم حاول مجددًا.',
+            status=400,
+            code='invalid_form',
+            fields=form.errors.get_json_data(escape_html=True),
+        )
     return render(request, 'open_learning/radio_form.html', {
         'form': form, 'entry': entry, 'gdrive_connected': GoogleDriveService().is_connected(),
     })
@@ -234,6 +319,133 @@ def school_radio_add_files(request, entry_id):
     elif not request.FILES:
         messages.error(request, 'اختر صورة أو ملفًا للرفع')
     return redirect('ol_school_radio_detail', entry_id=entry.pk)
+
+
+@login_required
+def school_radio_upload_start(request, entry_id):
+    if request.method != 'POST':
+        return _json_error('طريقة الطلب غير مسموحة', status=405, code='method_not_allowed')
+    entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
+    if not _can_upload_to_entry(request.user, entry):
+        return _json_error('ليس لديك صلاحية رفع ملفات لهذا السجل', status=403, code='permission_denied')
+    try:
+        payload = json.loads(request.body or b'{}')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return _json_error('بيانات الملف غير صالحة')
+
+    filename = _safe_filename(payload.get('name'))
+    extension = Path(filename).suffix.lower()
+    mimetype = _requested_mimetype(filename, payload.get('type'))
+    try:
+        size = int(payload.get('size') or 0)
+    except (TypeError, ValueError):
+        size = 0
+    if not filename or extension not in ALLOWED_EXTENSIONS or mimetype not in ALLOWED_MIME_TYPES:
+        return _json_error(
+            'نوع الملف غير مدعوم؛ المسموح صور JPG/PNG/WebP/HEIC أو PDF.',
+            code='unsupported_file',
+        )
+    if size <= 0:
+        return _json_error('الملف فارغ ولا يمكن رفعه', code='empty_file')
+    if size > MAX_FILE_SIZE:
+        return _json_error('حجم الملف أكبر من 10 ميغابايت', code='file_too_large')
+
+    service = GoogleDriveService()
+    if not service.is_connected():
+        return _json_error(
+            'Google Drive غير متصل أو انتهت صلاحيته. أعد ربط الحساب من إعدادات التخزين.',
+            status=409,
+            code='drive_reconnect',
+            reconnect_url=reverse('ol_storage_settings'),
+        )
+    try:
+        session_uri = service.start_resumable_upload(
+            filename,
+            mimetype,
+            size,
+            [RADIO_FOLDER_NAME, entry.event_date.isoformat()],
+        )
+    except Exception as exc:
+        return _drive_error_response(exc)
+
+    upload_token = signing.dumps({
+        'entry_id': entry.pk,
+        'user_id': request.user.pk,
+        'name': filename,
+        'type': mimetype,
+        'size': size,
+        'session_uri': session_uri,
+    }, salt=UPLOAD_TOKEN_SALT, compress=True)
+    return JsonResponse({
+        'ok': True,
+        'upload_token': upload_token,
+        'chunk_url': reverse('ol_school_radio_upload_chunk', args=[entry.pk]),
+        'chunk_size': UPLOAD_CHUNK_SIZE,
+    })
+
+
+@login_required
+def school_radio_upload_chunk(request, entry_id):
+    if request.method != 'POST':
+        return _json_error('طريقة الطلب غير مسموحة', status=405, code='method_not_allowed')
+    entry = get_object_or_404(SchoolRadioEntry, pk=entry_id)
+    if not _can_upload_to_entry(request.user, entry):
+        return _json_error('ليس لديك صلاحية رفع ملفات لهذا السجل', status=403, code='permission_denied')
+    try:
+        token_data = signing.loads(
+            request.headers.get('X-Upload-Token', ''),
+            salt=UPLOAD_TOKEN_SALT,
+            max_age=UPLOAD_TOKEN_MAX_AGE,
+        )
+    except signing.SignatureExpired:
+        return _json_error('انتهت مهلة الرفع؛ أعد اختيار الملف', status=409, code='upload_session_expired')
+    except signing.BadSignature:
+        return _json_error('جلسة الرفع غير صالحة', status=400, code='invalid_upload_session')
+
+    if token_data.get('entry_id') != entry.pk or token_data.get('user_id') != request.user.pk:
+        return _json_error('جلسة الرفع لا تخص هذا السجل', status=403, code='invalid_upload_session')
+    match = re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)', request.headers.get('Content-Range', ''))
+    if not match:
+        return _json_error('نطاق جزء الملف غير صالح', code='invalid_chunk')
+    start, end, total = (int(value) for value in match.groups())
+    data = request.body
+    expected_total = int(token_data.get('size') or 0)
+    if total != expected_total or start < 0 or end < start or end >= total:
+        return _json_error('بيانات حجم الملف غير متطابقة', code='invalid_chunk')
+    if len(data) != end - start + 1 or len(data) > UPLOAD_CHUNK_SIZE:
+        return _json_error('حجم جزء الملف غير صالح', code='invalid_chunk')
+
+    service = GoogleDriveService()
+    try:
+        result = service.upload_resumable_chunk(
+            token_data['session_uri'], data, start, end, total, token_data['type'],
+        )
+    except Exception as exc:
+        return _drive_error_response(exc)
+    if result is None:
+        return JsonResponse({'ok': True, 'complete': False, 'received': end + 1})
+
+    drive_file_id = result.get('id', '')
+    if not drive_file_id:
+        return _json_error('اكتمل النقل لكن Google Drive لم يُرجع معرّف الملف', status=502)
+    last_order = entry.files.aggregate(value=Max('order'))['value']
+    radio_file, created = SchoolRadioFile.objects.get_or_create(
+        entry=entry,
+        google_drive_file_id=drive_file_id,
+        defaults={
+            'file_name': result.get('name') or token_data['name'],
+            'file_type': result.get('mimeType') or token_data['type'],
+            'file_size': int(result.get('size') or total),
+            'google_drive_url': result.get('webViewLink', ''),
+            'order': 0 if last_order is None else last_order + 1,
+        },
+    )
+    return JsonResponse({
+        'ok': True,
+        'complete': True,
+        'file_id': radio_file.pk,
+        'created': created,
+    })
 
 
 @login_required
