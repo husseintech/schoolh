@@ -7,6 +7,7 @@ from pathlib import Path
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core import signing
+from django.core.paginator import Paginator
 from django.db.models import Max, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -185,9 +186,29 @@ def school_radio_list(request):
         entries = entries.filter(event_date__gte=parsed_from)
     if parsed_to:
         entries = entries.filter(event_date__lte=parsed_to)
+
+    raw_per_page = request.GET.get('per_page', '50')
+    per_page = int(raw_per_page) if raw_per_page in {'25', '50', '100'} else 50
+    paginator = Paginator(entries, per_page)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    query_params = request.GET.copy()
+    query_params['per_page'] = str(per_page)
+    if 'page' in query_params:
+        query_params.pop('page')
+
     return render(request, 'open_learning/radio_list.html', {
-        'entries': entries,
-        'filters': {'q': query, 'date_from': date_from, 'date_to': date_to},
+        'entries': page_obj,
+        'page_obj': page_obj,
+        'page_range': paginator.get_elided_page_range(
+            page_obj.number, on_each_side=2, on_ends=1,
+        ),
+        'pagination_query': query_params.urlencode(),
+        'filters': {
+            'q': query,
+            'date_from': date_from,
+            'date_to': date_to,
+            'per_page': str(per_page),
+        },
         'gdrive_connected': GoogleDriveService().is_connected(),
     })
 

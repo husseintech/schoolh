@@ -2,16 +2,100 @@
 {% block title %}ملف الإذاعة المدرسية{% endblock %}
 {% block page_heading %}ملف الإذاعة المدرسية{% endblock %}
 {% block content %}
+<style>
+    .radio-register-card {
+        overflow: hidden;
+    }
+    .radio-register-scroll {
+        max-height: 68vh;
+        overflow: auto;
+    }
+    .radio-register-table {
+        min-width: 980px;
+        margin-bottom: 0;
+    }
+    .radio-register-table > :not(caption) > * > * {
+        padding: .48rem .6rem;
+        vertical-align: middle;
+        font-size: .86rem;
+        border-color: #e5e7eb;
+    }
+    .radio-register-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #eef3f8;
+        color: #334155;
+        white-space: nowrap;
+        box-shadow: inset 0 -1px #d6dde6;
+    }
+    .radio-register-table tbody tr:hover {
+        background: #f8fbff;
+    }
+    .radio-date-cell,
+    .radio-files-cell,
+    .radio-status-cell,
+    .radio-actions-cell {
+        white-space: nowrap;
+    }
+    .radio-title-link {
+        display: block;
+        max-width: 250px;
+        overflow: hidden;
+        color: #174ea6;
+        font-weight: 700;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .radio-title-link:hover {
+        text-decoration: underline;
+    }
+    .radio-topic {
+        display: block;
+        max-width: 250px;
+        overflow: hidden;
+        color: #64748b;
+        font-size: .76rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .radio-name-list {
+        display: block;
+        max-width: 185px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .radio-register-summary {
+        color: #64748b;
+        font-size: .84rem;
+    }
+    @media (max-width: 767.98px) {
+        .radio-register-scroll {
+            max-height: 64vh;
+        }
+        .radio-register-table > :not(caption) > * > * {
+            padding: .42rem .5rem;
+            font-size: .8rem;
+        }
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div>
         <h4 class="mb-1"><i class="bi bi-mic-fill text-primary"></i> ملف الإذاعة المدرسية</h4>
-        <p class="text-muted mb-0">أرشيف الإذاعات اليومية وصور الكلمات والطلبة المشاركين</p>
+        <p class="text-muted mb-0">سجل مختصر وسريع للإذاعات اليومية وملفاتها والطلبة المشاركين</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{% url 'ol_school_radio_participation_report' %}" class="btn btn-outline-primary"><i class="bi bi-bar-chart-fill"></i> تقرير مشاركة الطلاب</a>
-        {% if 'school_radio_add' in user_perms %}<a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
+        <a href="{% url 'ol_school_radio_participation_report' %}" class="btn btn-outline-primary">
+            <i class="bi bi-bar-chart-fill"></i> تقرير مشاركة الطلاب
+        </a>
+        {% if 'school_radio_add' in user_perms %}
+        <a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">
             <i class="bi bi-plus-lg"></i> إضافة إذاعة
-        </a>{% endif %}
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -24,69 +108,176 @@
 
 <form method="get" class="card card-body mb-3">
     <div class="row g-2 align-items-end">
-        <div class="col-md-5">
+        <div class="col-lg-4 col-md-6">
             <label class="form-label">بحث بالعنوان أو الموضوع أو اسم الطالب</label>
             <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="اكتب كلمة للبحث">
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-3 col-6">
             <label class="form-label">من تاريخ</label>
             <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-3 col-6">
             <label class="form-label">إلى تاريخ</label>
             <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
         </div>
-        <div class="col-md-3 d-flex gap-2">
+        <div class="col-lg-2 col-md-4 col-6">
+            <label class="form-label">السجلات في الصفحة</label>
+            <select name="per_page" class="form-select" onchange="this.form.submit()">
+                <option value="25" {% if filters.per_page == '25' %}selected{% endif %}>25 سجلًا</option>
+                <option value="50" {% if filters.per_page == '50' %}selected{% endif %}>50 سجلًا</option>
+                <option value="100" {% if filters.per_page == '100' %}selected{% endif %}>100 سجل</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-8 col-6 d-flex gap-2">
             <button class="btn btn-outline-primary flex-grow-1"><i class="bi bi-search"></i> بحث</button>
             <a href="{% url 'ol_school_radio_list' %}" class="btn btn-outline-secondary">مسح</a>
         </div>
     </div>
 </form>
 
-{% for entry in entries %}
-<div class="card mb-3 shadow-sm">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-                <h5 class="mb-1">
-                    <a class="text-decoration-none" href="{% url 'ol_school_radio_detail' entry.id %}">
-                        {{ entry.title }}
-                    </a>
-                </h5>
-                <div class="text-muted">
-                    <i class="bi bi-calendar3"></i> {{ entry.event_date|date:"Y/m/d" }}
-                    <span class="badge bg-light text-dark border me-2">{{ entry.get_category_display }}</span>
-                </div>
-            </div>
-            <div class="d-flex gap-2">
-                <span class="badge {% if entry.ai_status == 'approved' %}bg-success{% elif entry.ai_status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                    {{ entry.get_ai_status_display }}
-                </span>
-                <span class="badge bg-primary"><i class="bi bi-paperclip"></i> {{ entry.files.count }}</span>
-            </div>
-        </div>
-        {% if entry.topic %}<p class="mt-2 mb-2"><strong>الموضوع:</strong> {{ entry.topic }}</p>{% endif %}
-        <div class="small text-muted mb-3">
-            <span><i class="bi bi-megaphone"></i> المقدّمون: {{ entry.presenters.count }}</span>
-            <span class="mx-2">|</span>
-            <span><i class="bi bi-people"></i> المشاركون: {{ entry.participants.count }}</span>
-        </div>
-        <a href="{% url 'ol_school_radio_detail' entry.id %}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-eye"></i> استعراض الملف
-        </a>
-        {% if 'school_radio_edit' in user_perms %}<a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-pencil"></i> تعديل
-        </a>{% endif %}
+<div class="card shadow-sm radio-register-card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
+        <span class="fw-semibold"><i class="bi bi-table"></i> سجل الإذاعات</span>
+        <span class="radio-register-summary">
+            {% if page_obj.paginator.count %}
+                عرض {{ page_obj.start_index }}–{{ page_obj.end_index }} من أصل {{ page_obj.paginator.count }} سجل
+            {% else %}
+                لا توجد سجلات
+            {% endif %}
+        </span>
     </div>
-</div>
-{% empty %}
-<div class="card">
-    <div class="empty-state">
-        <i class="bi bi-broadcast-pin"></i>
-        <h5>لا توجد إذاعات محفوظة بعد</h5>
-        <p>ابدأ بإضافة أول سجل للإذاعة المدرسية وصورها.</p>
-        {% if 'school_radio_add' in user_perms %}<a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">إضافة إذاعة</a>{% endif %}
+
+    <div class="table-responsive radio-register-scroll">
+        <table class="table table-bordered table-hover radio-register-table">
+            <thead>
+                <tr>
+                    <th style="width: 110px;"><i class="bi bi-calendar3"></i> التاريخ</th>
+                    <th>عنوان الإذاعة</th>
+                    <th><i class="bi bi-megaphone"></i> المقدّمون</th>
+                    <th><i class="bi bi-people"></i> المشاركون</th>
+                    <th style="width: 80px;" class="text-center"><i class="bi bi-paperclip"></i> الملفات</th>
+                    <th style="width: 125px;">حالة المحتوى</th>
+                    <th style="width: 150px;" class="text-center">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="radio-date-cell fw-semibold">{{ entry.event_date|date:"Y/m/d" }}</td>
+                    <td>
+                        <a class="radio-title-link" href="{% url 'ol_school_radio_detail' entry.id %}" title="{{ entry.title }}">
+                            {{ entry.title }}
+                        </a>
+                        <span class="radio-topic" title="{{ entry.topic|default:entry.get_category_display }}">
+                            {% if entry.topic %}{{ entry.topic }}{% else %}{{ entry.get_category_display }}{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% with presenter_count=entry.presenters.count %}
+                        <span class="radio-name-list" title="{% for student in entry.presenters.all %}{{ student.full_name }}{% if not forloop.last %}، {% endif %}{% endfor %}{% if entry.additional_presenters %}، {{ entry.additional_presenters }}{% endif %}">
+                            {% for student in entry.presenters.all|slice:":2" %}
+                                {{ student.full_name }}{% if not forloop.last %}، {% endif %}
+                            {% empty %}
+                                {% if entry.additional_presenters %}
+                                    {{ entry.additional_presenters|truncatechars:34 }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            {% endfor %}
+                            {% if presenter_count > 2 %}
+                                <span class="badge bg-light text-dark border">+{{ presenter_count|add:"-2" }}</span>
+                            {% endif %}
+                            {% if entry.additional_presenters and presenter_count %}
+                                <span class="badge bg-light text-dark border">+ أسماء أخرى</span>
+                            {% endif %}
+                        </span>
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with participant_count=entry.participants.count %}
+                        <span class="radio-name-list" title="{% for student in entry.participants.all %}{{ student.full_name }}{% if not forloop.last %}، {% endif %}{% endfor %}{% if entry.additional_participants %}، {{ entry.additional_participants }}{% endif %}">
+                            {% for student in entry.participants.all|slice:":2" %}
+                                {{ student.full_name }}{% if not forloop.last %}، {% endif %}
+                            {% empty %}
+                                {% if entry.additional_participants %}
+                                    {{ entry.additional_participants|truncatechars:34 }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            {% endfor %}
+                            {% if participant_count > 2 %}
+                                <span class="badge bg-light text-dark border">+{{ participant_count|add:"-2" }}</span>
+                            {% endif %}
+                            {% if entry.additional_participants and participant_count %}
+                                <span class="badge bg-light text-dark border">+ أسماء أخرى</span>
+                            {% endif %}
+                        </span>
+                        {% endwith %}
+                    </td>
+                    <td class="radio-files-cell text-center">
+                        <span class="badge bg-primary rounded-pill">{{ entry.files.count }}</span>
+                    </td>
+                    <td class="radio-status-cell">
+                        <span class="badge {% if entry.ai_status == 'approved' %}bg-success{% elif entry.ai_status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ entry.get_ai_status_display }}
+                        </span>
+                    </td>
+                    <td class="radio-actions-cell text-center">
+                        <a href="{% url 'ol_school_radio_detail' entry.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> استعراض
+                        </a>
+                        {% if 'school_radio_edit' in user_perms %}
+                        <a href="{% url 'ol_school_radio_edit' entry.id %}" class="btn btn-sm btn-outline-secondary" title="تعديل">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <i class="bi bi-broadcast-pin d-block fs-1 text-muted mb-2"></i>
+                        <h5>لا توجد إذاعات مطابقة</h5>
+                        <p class="text-muted mb-3">أضف أول سجل أو غيّر خيارات البحث.</p>
+                        {% if 'school_radio_add' in user_perms %}
+                        <a href="{% url 'ol_school_radio_add' %}" class="btn btn-primary">إضافة إذاعة</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
+        <small class="text-muted">الصفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</small>
+        <nav aria-label="صفحات سجل الإذاعة">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">السابق</a>
+                </li>
+                {% endif %}
+                {% for page_number in page_range %}
+                    {% if page_number == page_obj.paginator.ELLIPSIS %}
+                    <li class="page-item disabled"><span class="page-link">{{ page_number }}</span></li>
+                    {% elif page_number == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ page_number }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">التالي</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
-{% endfor %}
 {% endblock %}
