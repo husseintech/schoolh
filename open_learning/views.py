@@ -473,6 +473,7 @@ def storage_settings(request):
         'configured': svc.is_configured(),
         'root_folder_id': svc.root_folder_id,
         'configured_root': bool(svc.root_folder_id),
+        'drive_scope_limited': True,
         'role': _role(request),
         'is_admin': True,
     })
@@ -498,7 +499,14 @@ def google_drive_callback(request):
         messages.error(request, 'هذه الصفحة متاحة للمدير فقط')
         return redirect('open_learning_list')
     if request.GET.get('error'):
-        messages.error(request, f'تم رفض الربط: {request.GET.get("error")}')
+        if request.GET.get('error') == 'access_denied':
+            messages.error(
+                request,
+                'رفض Google منح الإذن. أعد المحاولة واختر «السماح»؛ الموقع يطلب الآن وصولًا محدودًا '
+                'إلى الملفات التي ينشئها فقط، ولا يستطيع قراءة بقية ملفاتك.',
+            )
+        else:
+            messages.error(request, 'تعذّر إكمال ربط Google Drive. أعد المحاولة من إعدادات التخزين.')
         return redirect('ol_storage_settings')
     state = request.GET.get('state', '')
     if not state or state != request.session.get('gdrive_oauth_state', ''):

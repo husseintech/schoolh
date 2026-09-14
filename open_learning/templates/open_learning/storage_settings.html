@@ -39,6 +39,14 @@
                         {% endif %}
                     </div>
 
+                    {% if drive_scope_limited %}
+                    <div class="alert alert-success small">
+                        <i class="bi bi-shield-check"></i>
+                        <strong>وصول محدود وآمن:</strong>
+                        تستطيع المنصة إنشاء وإدارة الملفات التي ترفعها هي فقط، ولا تستطيع تصفح بقية ملفات حسابك في Google Drive.
+                    </div>
+                    {% endif %}
+
                     <div class="mb-3">
                         <span class="text-muted">مجلد التخزين الرئيسي (SchoolH Learning Resources):</span>
                         {% if configured_root %}

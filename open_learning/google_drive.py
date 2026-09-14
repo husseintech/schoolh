@@ -11,10 +11,9 @@ GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 # This Vercel alias is the callback registered in Google Cloud. Vercel safely
 # redirects it to the canonical schoolhh domain while preserving OAuth state.
 DEFAULT_REDIRECT_URI = 'https://schoolh-bay.vercel.app/open-learning/google-drive/callback/'
-DRIVE_SCOPES = [
-    'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/drive.file',
-]
+DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+DRIVE_SCOPES = [DRIVE_FILE_SCOPE]
+APP_ROOT_FOLDER_NAME = 'SchoolH Learning Resources'
 
 
 class GoogleDriveError(RuntimeError):
@@ -31,6 +30,7 @@ class GoogleDriveService:
         self.client_secret = os.getenv('GOOGLE_CLIENT_SECRET', '')
         self.redirect_uri = os.getenv('GOOGLE_OAUTH_REDIRECT_URI', DEFAULT_REDIRECT_URI)
         self.root_folder_id = os.getenv('GOOGLE_DRIVE_ROOT_FOLDER_ID', '')
+        self._app_root_id = None
 
     def is_configured(self):
         return bool(self.client_id and self.client_secret)
@@ -163,16 +163,14 @@ class GoogleDriveService:
         return resp.json()['id']
 
     def ensure_lesson_folder(self, class_name, subject_name, lesson_title):
-        parent = self.root_folder_id
-        if not parent:
-            return None
-        parent = self._build_folder(class_name or 'بدون صف', parent)
-        parent = self._build_folder(subject_name or 'بدون مادة', parent)
-        parent = self._build_folder(lesson_title or 'بدون درس', parent)
-        return parent
+        return self.ensure_folder_path([
+            class_name or 'بدون صف',
+            subject_name or 'بدون مادة',
+            lesson_title or 'بدون درس',
+        ])
 
     def upload_file(self, filename, data, mimetype, class_name=None, subject_name=None, lesson_title=None):
-        parent = self.ensure_lesson_folder(class_name, subject_name, lesson_title) or self.root_folder_id
+        parent = self.ensure_lesson_folder(class_name, subject_name, lesson_title)
         metadata = {'name': filename}
         if parent:
             metadata['parents'] = [parent]
@@ -198,19 +196,47 @@ class GoogleDriveService:
         resp.raise_for_status()
         return resp.json()
 
+    @staticmethod
+    def _is_parent_access_error(exc):
+        response = getattr(exc, 'response', None)
+        return getattr(response, 'status_code', None) in (403, 404)
+
+    def _ensure_app_root(self):
+        if not self._app_root_id:
+            self._app_root_id = self._build_folder(APP_ROOT_FOLDER_NAME, 'root')
+        return self._app_root_id
+
     def ensure_folder(self, name, parent_id=None):
-        parent = parent_id or self.root_folder_id or 'root'
-        return self._build_folder(name, parent)
+        if parent_id:
+            return self._build_folder(name, parent_id)
+        if self.root_folder_id:
+            try:
+                return self._build_folder(name, self.root_folder_id)
+            except requests.HTTPError as exc:
+                if not self._is_parent_access_error(exc):
+                    raise
+        return self._build_folder(name, self._ensure_app_root())
 
     def ensure_folder_path(self, folder_names):
         """Create or reuse a nested folder path under the configured root."""
-        parent = self.root_folder_id or 'root'
-        for name in folder_names:
-            clean_name = ' '.join(str(name or '').split())[:200]
-            if not clean_name:
-                continue
-            parent = self._build_folder(clean_name, parent)
-        return parent
+        clean_names = [
+            ' '.join(str(name or '').split())[:200]
+            for name in folder_names
+            if ' '.join(str(name or '').split())[:200]
+        ]
+
+        def build_from(parent):
+            for clean_name in clean_names:
+                parent = self._build_folder(clean_name, parent)
+            return parent
+
+        if self.root_folder_id:
+            try:
+                return build_from(self.root_folder_id)
+            except requests.HTTPError as exc:
+                if not self._is_parent_access_error(exc):
+                    raise
+        return build_from(self._ensure_app_root())
 
     def upload_to_folder_id(self, filename, data, mimetype, parent):
         metadata = {'name': filename, 'parents': [parent]}
@@ -290,8 +316,15 @@ class GoogleDriveService:
 
     def delete_named_folder(self, name, parent_id=None):
         """Delete a dedicated feature folder and all its contents when it exists."""
-        parent = parent_id or self.root_folder_id or 'root'
-        folder_id = self._find_folder(name, parent)
+        parent = parent_id or self.root_folder_id
+        try:
+            folder_id = self._find_folder(name, parent) if parent else None
+        except requests.HTTPError as exc:
+            if parent_id or not self._is_parent_access_error(exc):
+                raise
+            folder_id = None
+        if not folder_id and not parent_id:
+            folder_id = self._find_folder(name, self._ensure_app_root())
         if not folder_id:
             return False
         self.delete_file(folder_id)

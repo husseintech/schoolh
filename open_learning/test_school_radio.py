@@ -2,6 +2,7 @@ import json
 from datetime import date, timedelta
 from unittest.mock import Mock, patch
 
+import requests
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
@@ -10,7 +11,7 @@ from django.utils import timezone
 
 from school.models import Class, Profile, Student, UserPermission
 
-from .google_drive import GoogleDriveService
+from .google_drive import APP_ROOT_FOLDER_NAME, DRIVE_FILE_SCOPE, DRIVE_SCOPES, GoogleDriveService
 from .models import AIUsageLog, GoogleDriveToken, SchoolRadioEntry, SchoolRadioFile
 from .services.ai_service import AIServiceUnavailable, MockProvider, validate_radio_program
 
@@ -538,6 +539,10 @@ class SchoolRadioFlowTests(TestCase):
 
 
 class SchoolRadioServiceTests(SimpleTestCase):
+    def test_drive_authorization_requests_only_limited_file_scope(self):
+        self.assertEqual(DRIVE_SCOPES, [DRIVE_FILE_SCOPE])
+        self.assertNotIn('https://www.googleapis.com/auth/drive', DRIVE_SCOPES)
+
     def test_default_drive_callback_keeps_google_authorized_vercel_alias(self):
         service = GoogleDriveService()
 
@@ -545,6 +550,22 @@ class SchoolRadioServiceTests(SimpleTestCase):
             service.redirect_uri,
             'https://schoolh-bay.vercel.app/open-learning/google-drive/callback/',
         )
+
+    def test_inaccessible_manual_root_falls_back_to_app_managed_root(self):
+        service = GoogleDriveService()
+        service.root_folder_id = 'manual-root-id'
+        denied = requests.HTTPError(response=Mock(status_code=403))
+        with patch.object(
+            service,
+            '_build_folder',
+            side_effect=[denied, 'app-root-id', 'radio-id', 'date-id'],
+        ) as build:
+            folder_id = service.ensure_folder_path(['ملف الإذاعة المدرسية', '2026-09-08'])
+
+        self.assertEqual(folder_id, 'date-id')
+        self.assertEqual(build.call_args_list[0].args, ('ملف الإذاعة المدرسية', 'manual-root-id'))
+        self.assertEqual(build.call_args_list[1].args, (APP_ROOT_FOLDER_NAME, 'root'))
+        self.assertEqual(build.call_args_list[2].args, ('ملف الإذاعة المدرسية', 'app-root-id'))
 
     def test_nested_drive_folder_uses_configured_order(self):
         service = GoogleDriveService()
