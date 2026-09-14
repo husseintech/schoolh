@@ -8,7 +8,9 @@ from .models import GoogleDriveToken
 
 GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
-DEFAULT_REDIRECT_URI = 'https://schoolhh.vercel.app/open-learning/google-drive/callback/'
+# This Vercel alias is the callback registered in Google Cloud. Vercel safely
+# redirects it to the canonical schoolhh domain while preserving OAuth state.
+DEFAULT_REDIRECT_URI = 'https://schoolh-bay.vercel.app/open-learning/google-drive/callback/'
 DRIVE_SCOPES = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file',

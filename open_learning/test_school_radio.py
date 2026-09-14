@@ -538,6 +538,14 @@ class SchoolRadioFlowTests(TestCase):
 
 
 class SchoolRadioServiceTests(SimpleTestCase):
+    def test_default_drive_callback_keeps_google_authorized_vercel_alias(self):
+        service = GoogleDriveService()
+
+        self.assertEqual(
+            service.redirect_uri,
+            'https://schoolh-bay.vercel.app/open-learning/google-drive/callback/',
+        )
+
     def test_nested_drive_folder_uses_configured_order(self):
         service = GoogleDriveService()
         service.root_folder_id = 'root-id'
