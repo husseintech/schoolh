@@ -96,7 +96,7 @@ class GeminiProvider:
         self.model = model
         self.name = 'gemini'
 
-    def _call(self, prompt, max_tokens=12000):
+    def _call(self, prompt, max_tokens=12000, timeout=(5, 45)):
         url = f'https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent'
         body = {
             'contents': [{'parts': [{'text': prompt}]}],
@@ -108,7 +108,7 @@ class GeminiProvider:
         }
         started = time.monotonic()
         try:
-            resp = requests.post(url, headers={'x-goog-api-key': self.key}, json=body, timeout=(5, 45))
+            resp = requests.post(url, headers={'x-goog-api-key': self.key}, json=body, timeout=timeout)
             if resp.status_code == 429:
                 raise AIServiceUnavailable('بلغ مزود الذكاء الاصطناعي حد الاستخدام. أعد المحاولة لاحقًا أو راجع الخطة مع مدير النظام.')
             if resp.status_code in (401, 403):
@@ -219,7 +219,9 @@ class GeminiProvider:
                 'approved_pages': page_contexts,
             }, ensure_ascii=False)
         )
-        data, tokens, duration = self._call(prompt, max_tokens=3000)
+        # Keep the student request inside short serverless execution windows. If
+        # Gemini is slow, the curriculum view returns a cited source-only answer.
+        data, tokens, duration = self._call(prompt, max_tokens=1400, timeout=(3, 8))
         answerable = data.get('answerable') is True
         answer = _text(data.get('answer'))
         citation_ids = data.get('citations', [])

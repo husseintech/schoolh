@@ -24,7 +24,7 @@ MAX_QUESTION_LENGTH = 500
 MAX_PACKAGE_BYTES = 15 * 1024 * 1024
 MAX_UNCOMPRESSED_PACKAGE_BYTES = 30 * 1024 * 1024
 DEFAULT_DAILY_LIMIT = 15
-MAX_CONTEXT_PAGES = 6
+MAX_CONTEXT_PAGES = 3
 
 STOP_WORDS = {
     'في', 'من', 'الى', 'علي', 'عن', 'ما', 'ماذا', 'كيف', 'هل', 'هو', 'هي', 'هذا', 'هذه',
@@ -155,9 +155,52 @@ def retrieve_curriculum_context(source, lesson, question, max_pages=MAX_CONTEXT_
             'printed_page': page.printed_page_number,
             'pdf_page': page.pdf_page_number,
             'lesson': page.lesson.title if page.lesson else '',
-            'text': body[:2200],
+            'text': body[:1400],
         })
     return contexts
+
+
+def build_source_fallback_answer(source, lesson, question, contexts):
+    """Build a useful, fully source-grounded answer when the AI provider is unavailable.
+
+    The fallback deliberately avoids inference: it presents short excerpts from the
+    already-ranked curriculum pages and keeps the same clickable citations used by
+    generated answers. It is not cached, so a later retry can still use the AI provider.
+    """
+    excerpts = []
+    page_ids = []
+    for context in contexts[:3]:
+        text = re.sub(r'\s+', ' ', str(context.get('text') or '')).strip()
+        page_id = context.get('page_id')
+        if not text or not page_id:
+            continue
+        if len(text) > 650:
+            text = text[:650].rsplit(' ', 1)[0].rstrip('،؛:.-') + '…'
+        shown_page = context.get('printed_page') or context.get('pdf_page')
+        excerpts.append(f'• صفحة {shown_page}: {text}')
+        page_ids.append(page_id)
+
+    if not excerpts:
+        return None
+
+    lesson_label = lesson.title if lesson else source.subject_name
+    normalized = normalized_question(question)
+    if 'اختبرني' in normalized:
+        closing = 'اقرأ النقاط السابقة، ثم حاول أن تشرح أهم فكرة منها بكلماتك قبل أن تطلب سؤالًا جديدًا.'
+    elif any(word in normalized for word in ('مثال', 'تدريب', 'حل')):
+        closing = 'استخدم المثال أو النشاط الوارد في هذه الصفحات، وابدأ من أول خطوة مكتوبة فيه بالتسلسل.'
+    else:
+        closing = 'اقرأ هذه الأفكار خطوة خطوة، ثم حدّد الجملة التي تريد أن أبسّطها أكثر.'
+
+    return {
+        'answer': (
+            f'سأجيبك الآن بالقراءة المباشرة من صفحات درس «{lesson_label}» دون إضافة معلومات من خارج الكتاب:\n\n'
+            + '\n\n'.join(excerpts)
+            + f'\n\n{closing}'
+        ),
+        'page_ids': list(dict.fromkeys(page_ids)),
+        'suggestions': ['بسّط لي الفكرة الأولى', 'اختبرني من هذه الصفحات'],
+    }
 
 
 def map_provider_citations(contexts, citation_ids):

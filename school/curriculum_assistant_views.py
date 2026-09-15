@@ -1,4 +1,5 @@
 import json
+import logging
 import mimetypes
 import re
 from pathlib import Path
@@ -19,6 +20,7 @@ from open_learning.services.ai_service import AIServiceUnavailable, get_provider
 from .curriculum_assistant import (
     MAX_QUESTION_LENGTH,
     CurriculumPackageError,
+    build_source_fallback_answer,
     cached_answer,
     curriculum_settings,
     hourly_limit_reached,
@@ -48,6 +50,7 @@ UPLOAD_CHUNK_SIZE = 2 * 1024 * 1024
 UPLOAD_TOKEN_MAX_AGE = 60 * 60
 UPLOAD_TOKEN_SALT = 'curriculum-source-drive-resumable-v1'
 CURRICULUM_FOLDER = 'مصادر مساعد المنهاج'
+logger = logging.getLogger(__name__)
 
 
 def _role(request):
@@ -274,9 +277,9 @@ def curriculum_assistant_ask(request):
         })
 
     provider = get_provider()
-    if not provider or not hasattr(provider, 'answer_curriculum_question'):
-        return _error('المساعد الذكي غير متاح مؤقتًا. لم تُنشأ إجابة من خارج الكتاب.', status=503)
     try:
+        if not provider or not hasattr(provider, 'answer_curriculum_question'):
+            raise AIServiceUnavailable('مزود الذكاء الاصطناعي غير متاح.')
         data, tokens, duration = provider.answer_curriculum_question(
             question=question,
             grade='الصف الرابع',
@@ -309,7 +312,35 @@ def curriculum_assistant_ask(request):
             'mode': 'ai' if data.get('answerable') else 'source_only',
         })
     except AIServiceUnavailable as exc:
-        return _error(str(exc), status=503, remaining=max(0, settings_obj.daily_question_limit - used - 1))
+        logger.warning('Curriculum AI unavailable: %s', exc)
+    except Exception:
+        logger.exception('Unexpected curriculum AI failure')
+
+    fallback = build_source_fallback_answer(source, lesson, question, contexts)
+    if not fallback:
+        return _error(
+            'تعذّر تشغيل الشرح الذكي ولا يوجد نص كافٍ في الصفحات المختارة. اختر درسًا أو صفحة أوضح.',
+            status=503,
+            remaining=max(0, settings_obj.daily_question_limit - used - 1),
+        )
+    stored_citations = [{'page_id': page_id} for page_id in fallback['page_ids']]
+    citations = hydrate_citations(stored_citations)
+    CurriculumMessage.objects.create(
+        conversation=conversation,
+        role='assistant',
+        content=fallback['answer'],
+        citations=stored_citations,
+    )
+    conversation.save(update_fields=['updated_at'])
+    return JsonResponse({
+        'ok': True,
+        'answer': fallback['answer'],
+        'citations': citations,
+        'suggestions': fallback['suggestions'],
+        'conversation_id': conversation.pk,
+        'remaining': max(0, settings_obj.daily_question_limit - used - 1),
+        'mode': 'source_fallback',
+    })
 
 
 @login_required

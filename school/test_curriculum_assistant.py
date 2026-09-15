@@ -167,7 +167,7 @@ class CurriculumAssistantTests(TestCase):
         self.assertEqual(assistant_message.estimated_tokens, 90)
         self.assertEqual(assistant_message.citations, [{'page_id': self.page.pk}])
 
-    def test_unapproved_citation_is_rejected(self):
+    def test_unapproved_citation_uses_source_fallback(self):
         provider = Mock()
         provider.answer_curriculum_question.return_value = ({
             'answerable': True,
@@ -182,8 +182,26 @@ class CurriculumAssistantTests(TestCase):
                 'source_id': self.source.pk,
                 'lesson_id': self.lesson.pk,
             })
-        self.assertEqual(response.status_code, 503)
-        self.assertFalse(CurriculumMessage.objects.filter(role='assistant').exists())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['mode'], 'source_fallback')
+        self.assertEqual(response.json()['citations'][0]['page_id'], self.page.pk)
+        self.assertTrue(CurriculumMessage.objects.filter(role='assistant').exists())
+
+    def test_provider_failure_uses_source_fallback(self):
+        provider = Mock()
+        provider.answer_curriculum_question.side_effect = RuntimeError('provider failed')
+        self.client.force_login(self.student_user)
+        with patch('school.curriculum_assistant_views.get_provider', return_value=provider):
+            response = self.ask({
+                'question': 'اشرح لي هذا الدرس خطوة خطوة',
+                'source_id': self.source.pk,
+                'lesson_id': self.lesson.pk,
+            })
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['mode'], 'source_fallback')
+        self.assertIn('القراءة المباشرة', payload['answer'])
+        self.assertEqual(payload['citations'][0]['page_id'], self.page.pk)
 
     def test_exact_answer_cache_avoids_second_ai_call(self):
         CurriculumAnswerCache.objects.create(
