@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
 from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog
+from .models import CurriculumConversation
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
@@ -4314,6 +4315,7 @@ CLEARABLE_TABLES = [
     ('warnings', 'إنذارات الطلاب', StudentWarning, ['student']),
     ('summons', 'استدعاءات أولياء الأمور', GuardianSummons, ['student']),
     ('student_assistant_logs', 'سجل محادثات مساعد الطلاب', StudentAssistantLog, ['student']),
+    ('curriculum_conversations', 'محادثات مساعد المنهاج', CurriculumConversation, ['student']),
 ]
 
 
@@ -4330,7 +4332,7 @@ def get_clearable_tables():
     ]
 
 DEPENDENT_MODELS = {
-    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter, StudentWarning, GuardianSummons, StudentAssistantLog],
+    'students': [Note, StudentLeave, StudentLateness, StudentAbsence, StudentLevel, StudentSurvey, LoginCounter, StudentWarning, GuardianSummons, StudentAssistantLog, CurriculumConversation],
     'teachers': [TeacherNote, Meeting, SupervisorVisit, InspectionVisit, VisitProgram, TeacherScheduleEntry, TeacherFollowup, ReciprocalVisit],
     'classes': [Student, TeacherScheduleEntry, WhatsAppGroup],
     'subjects': [TeacherScheduleEntry],

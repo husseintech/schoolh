@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Profile, Student, Note, Teacher, TeacherNote, Class, Subject, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, UserPermission, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, LoginEvent, StudentWarning, GuardianSummons, StudentAssistantSettings, StudentAssistantKnowledge, StudentAssistantLog
+from .models import CurriculumAssistantSettings, CurriculumSource, CurriculumLesson, CurriculumPage, CurriculumConversation, CurriculumMessage, CurriculumAnswerCache
 
 
 admin.site.register(Profile)
@@ -29,3 +30,10 @@ admin.site.register(GuardianSummons)
 admin.site.register(StudentAssistantSettings)
 admin.site.register(StudentAssistantKnowledge)
 admin.site.register(StudentAssistantLog)
+admin.site.register(CurriculumAssistantSettings)
+admin.site.register(CurriculumSource)
+admin.site.register(CurriculumLesson)
+admin.site.register(CurriculumPage)
+admin.site.register(CurriculumConversation)
+admin.site.register(CurriculumMessage)
+admin.site.register(CurriculumAnswerCache)

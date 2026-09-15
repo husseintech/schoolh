@@ -14,6 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.rtl.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {% block extra_head %}{% endblock %}
     <script>
         try {
             var __splashKey = 'schoolh_splash_v1';
@@ -1076,6 +1077,12 @@
         </a>
         {% endif %}
 
+        {% if user.profile.role == 'student' %}
+        <a href="{% url 'curriculum_assistant' %}" class="nav-link {% if request.resolver_match.url_name == 'curriculum_assistant' or request.resolver_match.url_name == 'curriculum_source_page' %}active{% endif %}">
+            <i class="bi bi-stars"></i> مساعد المنهاج
+        </a>
+        {% endif %}
+
         {% if 'settings_accounts' in user_perms or 'settings_whatsapp' in user_perms or 'settings_links' in user_perms or user.profile.role == 'admin' %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-settings" aria-expanded="false">
             <span class="nav-section-label"><span class="section-icon"><i class="bi bi-sliders"></i></span><span>الإعدادات</span></span><i class="bi bi-chevron-down"></i>
@@ -1105,6 +1112,11 @@
         {% if user.profile.role == 'admin' %}
         <a href="{% url 'student_assistant_admin' %}" class="nav-link {% if request.resolver_match.url_name == 'student_assistant_admin' %}active{% endif %}">
             <i class="bi bi-robot"></i> مساعد الطلاب الذكي
+        </a>
+        {% endif %}
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'curriculum_assistant_admin' %}" class="nav-link {% if 'curriculum_assistant_admin' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-journals"></i> مصادر مساعد المنهاج
         </a>
         {% endif %}
         {% if user.profile.role == 'admin' %}

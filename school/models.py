@@ -1073,3 +1073,178 @@ class StudentAssistantLog(models.Model):
     def __str__(self):
         student_name = self.student.full_name if self.student else 'طالب محذوف'
         return f'{student_name} - {self.get_mode_display()}'
+
+
+class CurriculumAssistantSettings(models.Model):
+    enabled = models.BooleanField('تشغيل مساعد المنهاج', default=True)
+    daily_question_limit = models.PositiveSmallIntegerField('الحد اليومي لكل طالب', default=15)
+    source_only = models.BooleanField('الإجابة من المصادر المعتمدة فقط', default=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'إعدادات مساعد المنهاج'
+        verbose_name_plural = 'إعدادات مساعد المنهاج'
+
+    def __str__(self):
+        return 'إعدادات مساعد المنهاج'
+
+
+class CurriculumSource(models.Model):
+    SUBJECT_CHOICES = [
+        ('arabic', 'اللغة العربية'),
+        ('math', 'الرياضيات'),
+        ('science', 'العلوم'),
+        ('english', 'اللغة الإنجليزية'),
+    ]
+    STATUS_CHOICES = [
+        ('draft', 'مسودة'),
+        ('published', 'منشور'),
+        ('archived', 'مؤرشف'),
+    ]
+
+    grade_level = models.PositiveSmallIntegerField('الصف')
+    term = models.PositiveSmallIntegerField('الفصل', default=1)
+    subject_code = models.CharField('رمز المادة', max_length=30, choices=SUBJECT_CHOICES)
+    subject_name = models.CharField('اسم المادة', max_length=120)
+    title = models.CharField('اسم المصدر', max_length=240)
+    edition = models.CharField('الطبعة أو الإصدار', max_length=120, blank=True)
+    original_filename = models.CharField('اسم الملف الأصلي', max_length=300)
+    source_sha256 = models.CharField('بصمة الملف SHA-256', max_length=64, unique=True)
+    page_count = models.PositiveSmallIntegerField('عدد صفحات PDF')
+    status = models.CharField('الحالة', max_length=20, choices=STATUS_CHOICES, default='draft')
+    google_drive_file_id = models.CharField('معرّف الملف في Google Drive', max_length=200, blank=True)
+    google_drive_url = models.URLField('رابط الملف في Google Drive', max_length=600, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
+    published_at = models.DateTimeField('تاريخ النشر', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'مصدر منهاج'
+        verbose_name_plural = 'مصادر المنهاج'
+        ordering = ['grade_level', 'term', 'subject_name', '-created_at']
+        indexes = [
+            models.Index(fields=['grade_level', 'term', 'status'], name='curr_src_grade_term_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.subject_name} - الصف {self.grade_level} - الفصل {self.term}'
+
+
+class CurriculumLesson(models.Model):
+    source = models.ForeignKey(CurriculumSource, on_delete=models.CASCADE, related_name='lessons')
+    unit_title = models.CharField('الوحدة', max_length=240, blank=True)
+    unit_order = models.PositiveSmallIntegerField('ترتيب الوحدة', default=1)
+    lesson_order = models.PositiveSmallIntegerField('ترتيب الدرس')
+    title = models.CharField('عنوان الدرس', max_length=240)
+    start_printed_page = models.PositiveSmallIntegerField('أول صفحة مطبوعة', null=True, blank=True)
+    end_printed_page = models.PositiveSmallIntegerField('آخر صفحة مطبوعة', null=True, blank=True)
+    start_pdf_page = models.PositiveSmallIntegerField('أول صفحة PDF')
+    end_pdf_page = models.PositiveSmallIntegerField('آخر صفحة PDF')
+
+    class Meta:
+        verbose_name = 'درس منهاج'
+        verbose_name_plural = 'دروس المنهاج'
+        ordering = ['source', 'unit_order', 'lesson_order']
+        constraints = [
+            models.UniqueConstraint(fields=['source', 'lesson_order'], name='unique_curriculum_lesson_order'),
+        ]
+
+    def __str__(self):
+        return f'{self.source.subject_name}: {self.title}'
+
+
+class CurriculumPage(models.Model):
+    source = models.ForeignKey(CurriculumSource, on_delete=models.CASCADE, related_name='pages')
+    lesson = models.ForeignKey(
+        CurriculumLesson, on_delete=models.SET_NULL, null=True, blank=True, related_name='pages',
+    )
+    pdf_page_number = models.PositiveSmallIntegerField('رقم صفحة PDF')
+    printed_page_number = models.PositiveSmallIntegerField('رقم الصفحة المطبوع', null=True, blank=True)
+    text = models.TextField('النص المستخرج', blank=True)
+    normalized_text = models.TextField('النص المفهرس', blank=True)
+    visual_summary = models.TextField('وصف المحتوى البصري', blank=True)
+    needs_visual_review = models.BooleanField('تحتاج مراجعة بصرية', default=False)
+
+    class Meta:
+        verbose_name = 'صفحة منهاج'
+        verbose_name_plural = 'صفحات المنهاج'
+        ordering = ['source', 'pdf_page_number']
+        constraints = [
+            models.UniqueConstraint(fields=['source', 'pdf_page_number'], name='unique_curriculum_pdf_page'),
+        ]
+        indexes = [
+            models.Index(fields=['source', 'lesson', 'pdf_page_number'], name='curr_page_lesson_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.source.subject_name} - PDF {self.pdf_page_number}'
+
+
+class CurriculumConversation(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='curriculum_conversations')
+    source = models.ForeignKey(CurriculumSource, on_delete=models.PROTECT, related_name='conversations')
+    lesson = models.ForeignKey(
+        CurriculumLesson, on_delete=models.SET_NULL, null=True, blank=True, related_name='conversations',
+    )
+    title = models.CharField('عنوان المحادثة', max_length=160)
+    created_at = models.DateTimeField('بدأت في', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر رسالة', auto_now=True)
+
+    class Meta:
+        verbose_name = 'محادثة منهاج'
+        verbose_name_plural = 'محادثات المنهاج'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return self.title
+
+
+class CurriculumMessage(models.Model):
+    ROLE_CHOICES = [('user', 'الطالب'), ('assistant', 'المساعد')]
+
+    conversation = models.ForeignKey(CurriculumConversation, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField('صاحب الرسالة', max_length=20, choices=ROLE_CHOICES)
+    content = models.TextField('المحتوى')
+    citations = models.JSONField('المراجع', default=list, blank=True)
+    estimated_tokens = models.PositiveIntegerField('الرموز المقدّرة', null=True, blank=True)
+    duration_ms = models.PositiveIntegerField('المدة بالمللي ثانية', null=True, blank=True)
+    created_at = models.DateTimeField('التاريخ', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'رسالة مساعد المنهاج'
+        verbose_name_plural = 'رسائل مساعد المنهاج'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['conversation', 'created_at'], name='curr_msg_convo_idx'),
+        ]
+
+
+class CurriculumAnswerCache(models.Model):
+    source = models.ForeignKey(CurriculumSource, on_delete=models.CASCADE, related_name='answer_cache')
+    lesson = models.ForeignKey(
+        CurriculumLesson, on_delete=models.CASCADE, null=True, blank=True, related_name='answer_cache',
+    )
+    normalized_question = models.CharField('السؤال الموحد', max_length=500)
+    answer = models.TextField('الإجابة')
+    citations = models.JSONField('المراجع', default=list, blank=True)
+    suggestions = models.JSONField('الأسئلة المقترحة', default=list, blank=True)
+    hits = models.PositiveIntegerField('مرات الاستخدام', default=0)
+    created_at = models.DateTimeField('تاريخ الإنشاء', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر استخدام', auto_now=True)
+
+    class Meta:
+        verbose_name = 'إجابة منهاج محفوظة'
+        verbose_name_plural = 'إجابات المنهاج المحفوظة'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['source', 'lesson', 'normalized_question'],
+                condition=models.Q(lesson__isnull=False),
+                name='uniq_curr_cache_lesson',
+            ),
+            models.UniqueConstraint(
+                fields=['source', 'normalized_question'],
+                condition=models.Q(lesson__isnull=True),
+                name='uniq_curr_cache_book',
+            ),
+        ]

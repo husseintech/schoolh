@@ -1,0 +1,67 @@
+{% extends 'school/base.html' %}
+{% block title %}مصادر مساعد المنهاج{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260915">{% endblock %}
+{% block content %}
+<div class="curriculum-admin">
+    <div class="admin-title-row">
+        <div><span class="curriculum-kicker"><i class="bi bi-journals"></i> قاعدة المعرفة التعليمية</span><h1>مصادر مساعد المنهاج</h1><p>استيراد فهرس الكتاب ونص صفحاته، ثم رفع PDF الأصلي ونشره للطلاب.</p></div>
+        <div class="source-only-badge"><i class="bi bi-shield-lock-fill"></i> الإجابة من المصدر فقط</div>
+    </div>
+
+    <div class="admin-grid">
+        <form method="post" class="admin-card">
+            {% csrf_token %}<input type="hidden" name="action" value="save_settings">
+            <h2><i class="bi bi-sliders"></i> التشغيل والاستخدام</h2>
+            <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="enabled" name="enabled" {% if settings_obj.enabled %}checked{% endif %}><label class="form-check-label" for="enabled">تشغيل مساعد المنهاج للطلاب</label></div>
+            <label class="form-label" for="dailyLimit">الحد اليومي لكل طالب</label>
+            <input class="form-control" id="dailyLimit" type="number" min="1" max="100" name="daily_question_limit" value="{{ settings_obj.daily_question_limit }}">
+            <p class="form-text"><i class="bi bi-info-circle"></i> وضع المصدر فقط ثابت لحماية دقة المحتوى.</p>
+            <button class="btn btn-primary"><i class="bi bi-check2"></i> حفظ الإعدادات</button>
+        </form>
+
+        <form method="post" enctype="multipart/form-data" class="admin-card">
+            {% csrf_token %}<input type="hidden" name="action" value="import_package">
+            <h2><i class="bi bi-database-add"></i> استيراد كتاب مفهرس</h2>
+            <label class="form-label" for="curriculumPackage">حزمة JSON.GZ</label>
+            <input class="form-control" id="curriculumPackage" type="file" name="package" accept=".json,.gz,application/json,application/gzip" required>
+            <p class="form-text">تتضمن تعريف المادة والدروس ونص كل صفحة وبصمة PDF. الاستيراد لا ينشر المصدر تلقائيًا.</p>
+            <button class="btn btn-primary"><i class="bi bi-box-arrow-in-down"></i> فحص واستيراد</button>
+        </form>
+
+        <div class="admin-card stats-card">
+            <h2><i class="bi bi-eye"></i> المراجعة البصرية</h2>
+            <strong>{{ visual_review_count }}</strong><span>صفحة تحتاج وصف صورة أو مخطط</span>
+            <p>هذه الصفحات ضعيفة النص المستخرج، وتبقى معلّمة للمراجعة حتى لا يتعامل المساعد معها كتخمين.</p>
+        </div>
+    </div>
+
+    <section class="source-section">
+        <div class="section-heading"><div><h2>الكتب المضافة</h2><p>الصف الرابع — المصادر الحالية</p></div><span class="drive-status {% if drive_connected %}is-connected{% endif %}"><i class="bi bi-google"></i> Google Drive {% if drive_connected %}متصل{% else %}غير متصل{% endif %}</span></div>
+        <div class="source-admin-grid">
+            {% for source in sources %}
+            <article class="source-admin-card source-admin-card--{{ source.subject_code }}">
+                <header><div class="source-icon"><i class="bi {% if source.subject_code == 'math' %}bi-calculator{% elif source.subject_code == 'science' %}bi-lightbulb{% elif source.subject_code == 'english' %}bi-translate{% else %}bi-book{% endif %}"></i></div><div><h3>{{ source.subject_name }}</h3><p>{{ source.title }}</p></div><span class="status status--{{ source.status }}">{{ source.get_status_display }}</span></header>
+                <dl><div><dt>الصفحات</dt><dd>{{ source.pages.count }} / {{ source.page_count }}</dd></div><div><dt>الدروس</dt><dd>{{ source.lessons.count }}</dd></div><div><dt>الفصل</dt><dd>{{ source.term }}</dd></div><div><dt>PDF</dt><dd>{% if source.google_drive_file_id %}محفوظ{% else %}غير مرفوع{% endif %}</dd></div></dl>
+                <div class="source-actions">
+                    {% if source.status != 'published' %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="publish"><input type="hidden" name="source_id" value="{{ source.pk }}"><button class="btn btn-success btn-sm"><i class="bi bi-broadcast"></i> نشر للطلاب</button></form>{% else %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="archive"><input type="hidden" name="source_id" value="{{ source.pk }}"><button class="btn btn-outline-secondary btn-sm"><i class="bi bi-archive"></i> أرشفة</button></form>{% endif %}
+                    {% if source.google_drive_url %}<a class="btn btn-outline-primary btn-sm" href="{{ source.google_drive_url }}" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf"></i> فتح PDF</a>{% endif %}
+                </div>
+                <form class="pdf-upload" data-pdf-upload data-start-url="{% url 'curriculum_pdf_upload_start' source.pk %}">
+                    {% csrf_token %}
+                    <label>رفع/استبدال PDF الأصلي (حتى 100MB)</label>
+                    <div><input class="form-control form-control-sm" type="file" accept="application/pdf,.pdf"><button class="btn btn-outline-dark btn-sm" type="submit"><i class="bi bi-cloud-arrow-up"></i> رفع</button></div>
+                    <small data-upload-status></small>
+                </form>
+            </article>
+            {% empty %}
+            <div class="curriculum-state curriculum-state--info"><i class="bi bi-inbox"></i><div>لم تُستورد أي حزمة منهاج بعد.</div></div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if review_pages %}
+    <section class="review-section"><div class="section-heading"><div><h2>صفحات تنتظر المراجعة</h2><p>افتح الصفحة وأضف وصفًا دقيقًا للصورة أو النشاط.</p></div></div><div class="review-links">{% for page in review_pages %}<a href="{% url 'curriculum_source_page' page.pk %}"><strong>{{ page.source.subject_name }}</strong><span>{% if page.printed_page_number %}صفحة {{ page.printed_page_number }}{% else %}PDF {{ page.pdf_page_number }}{% endif %}{% if page.lesson %} — {{ page.lesson.title }}{% endif %}</span><i class="bi bi-chevron-left"></i></a>{% endfor %}</div></section>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="/static/school/js/curriculum_source_admin.js?v=20260915"></script>{% endblock %}

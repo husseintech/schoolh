@@ -1,0 +1,117 @@
+{% extends 'school/base.html' %}
+{% block title %}مساعد المنهاج{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260915">{% endblock %}
+{% block content %}
+<div class="curriculum-shell" id="curriculumAssistant"
+     data-ask-url="{% url 'curriculum_assistant_ask' %}"
+     data-conversation-template="{% url 'curriculum_conversation' 999999 %}"
+     data-initial-conversation="{{ initial_conversation_id }}">
+    <section class="curriculum-hero">
+        <div>
+            <span class="curriculum-kicker"><i class="bi bi-stars"></i> من كتبك المدرسية المعتمدة</span>
+            <h1>أهلًا {{ student_name }}، ماذا سنتعلّم اليوم؟</h1>
+            <p>اختر المادة والدرس، واسأل بطريقتك. سأشرح من صفحات الكتاب فقط، وأعرض لك مرجع كل إجابة.</p>
+        </div>
+        <div class="curriculum-limit" aria-label="الأسئلة المتبقية اليوم">
+            <strong data-remaining>{{ questions_remaining }}</strong>
+            <span>سؤالًا متبقيًا اليوم</span>
+        </div>
+    </section>
+
+    {% if not supported %}
+    <div class="curriculum-state curriculum-state--info">
+        <i class="bi bi-hourglass-split"></i>
+        <div><strong>النسخة الأولى مخصصة للصف الرابع.</strong><br>سنضيف بقية الصفوف بعد اعتماد كتبها.</div>
+    </div>
+    {% elif not settings_obj.enabled %}
+    <div class="curriculum-state curriculum-state--warning">
+        <i class="bi bi-pause-circle"></i><div>مساعد المنهاج متوقف مؤقتًا من إدارة المدرسة.</div>
+    </div>
+    {% elif not sources %}
+    <div class="curriculum-state curriculum-state--info">
+        <i class="bi bi-journal-arrow-up"></i>
+        <div><strong>يجري تجهيز كتب الصف الرابع.</strong><br>ستظهر المواد هنا بعد نشرها من الإدارة.</div>
+    </div>
+    {% else %}
+    <div class="curriculum-layout">
+        <aside class="curriculum-sidebar">
+            <div class="curriculum-panel-heading">
+                <div><span>1</span><strong>اختر المادة</strong></div>
+                <small>الصف الرابع</small>
+            </div>
+            <div class="subject-grid">
+                {% for source in sources %}
+                <a href="?source={{ source.pk }}" class="subject-card subject-card--{{ source.subject_code }} {% if selected_source.pk == source.pk %}is-active{% endif %}">
+                    <i class="bi {% if source.subject_code == 'math' %}bi-calculator{% elif source.subject_code == 'science' %}bi-lightbulb{% elif source.subject_code == 'english' %}bi-translate{% else %}bi-book{% endif %}"></i>
+                    <span>{{ source.subject_name }}</span>
+                    <small>الفصل {{ source.term }}</small>
+                </a>
+                {% endfor %}
+            </div>
+
+            {% if selected_source %}
+            <label class="lesson-label" for="lessonSelect"><span>2</span> اختر الدرس</label>
+            <select id="lessonSelect" class="form-select" data-source="{{ selected_source.pk }}">
+                <option value="">كل الكتاب</option>
+                {% regroup selected_source.lessons.all by unit_title as lesson_units %}
+                {% for unit in lesson_units %}
+                <optgroup label="{{ unit.grouper|default:'دروس المادة' }}">
+                    {% for lesson in unit.list %}
+                    <option value="{{ lesson.pk }}" {% if selected_lesson.pk == lesson.pk %}selected{% endif %}>{{ lesson.title }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+            <p class="source-note"><i class="bi bi-shield-check"></i> المصدر: {{ selected_source.title }} — {{ selected_source.page_count }} صفحة.</p>
+            {% endif %}
+
+            {% if conversations %}
+            <div class="conversation-list">
+                <h2>محادثات سابقة</h2>
+                {% for conversation in conversations %}
+                <a href="?source={{ conversation.source_id }}{% if conversation.lesson_id %}&lesson={{ conversation.lesson_id }}{% endif %}&conversation={{ conversation.pk }}" title="{{ conversation.title }}">
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>{{ conversation.title|truncatechars:42 }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </aside>
+
+        <main class="curriculum-chat">
+            <div class="chat-toolbar">
+                <div>
+                    <strong>{{ selected_source.subject_name }}</strong>
+                    <span>{% if selected_lesson %}{{ selected_lesson.title }}{% else %}اختر درسًا لأدق إجابة{% endif %}</span>
+                </div>
+                <span class="source-only-badge"><i class="bi bi-patch-check-fill"></i> إجابات موثقة</span>
+            </div>
+            <div class="quick-actions" aria-label="أسئلة سريعة">
+                <button type="button" data-prompt="اشرح لي هذا الدرس خطوة خطوة"><i class="bi bi-easel2"></i> اشرح الدرس</button>
+                <button type="button" data-prompt="بسّط لي أهم فكرة في هذا الدرس"><i class="bi bi-magic"></i> بسّط الفكرة</button>
+                <button type="button" data-prompt="أعطني مثالًا من الدرس مع الشرح"><i class="bi bi-puzzle"></i> أعطني مثالًا</button>
+                <button type="button" data-prompt="اختبرني بسؤال قصير من هذا الدرس"><i class="bi bi-check2-square"></i> اختبرني</button>
+            </div>
+            <div class="chat-stream" id="curriculumMessages" aria-live="polite">
+                <div class="assistant-welcome">
+                    <div class="assistant-avatar"><i class="bi bi-stars"></i></div>
+                    <div>
+                        <strong>أنا معلمك المساعد</strong>
+                        <p>لن أخمّن إجابة من خارج الكتاب. بعد كل شرح ستجد الصفحة التي اعتمدت عليها ويمكنك فتح نصها.</p>
+                    </div>
+                </div>
+            </div>
+            <form id="curriculumQuestionForm" class="question-composer">
+                {% csrf_token %}
+                <input type="hidden" name="source_id" value="{{ selected_source.pk }}">
+                <input type="hidden" name="lesson_id" value="{{ selected_lesson.pk }}">
+                <textarea id="curriculumQuestion" rows="2" maxlength="500" placeholder="اكتب سؤالك هنا… مثال: كيف أقارن بين عددين كبيرين؟" required></textarea>
+                <button type="submit" aria-label="إرسال السؤال"><i class="bi bi-send-fill"></i><span>إرسال</span></button>
+            </form>
+            <p class="composer-note">لا تكتب رقم الهوية أو الهاتف أو أي معلومات شخصية.</p>
+        </main>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="/static/school/js/curriculum_assistant.js?v=20260915"></script>{% endblock %}

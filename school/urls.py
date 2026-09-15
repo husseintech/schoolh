@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import student_assistant_views
+from . import curriculum_assistant_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -9,6 +10,13 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('student-assistant/ask/', student_assistant_views.student_assistant_ask, name='student_assistant_ask'),
     path('student-assistant/admin/', student_assistant_views.student_assistant_admin, name='student_assistant_admin'),
+    path('curriculum-assistant/', curriculum_assistant_views.curriculum_assistant_home, name='curriculum_assistant'),
+    path('curriculum-assistant/ask/', curriculum_assistant_views.curriculum_assistant_ask, name='curriculum_assistant_ask'),
+    path('curriculum-assistant/conversations/<int:conversation_id>/', curriculum_assistant_views.curriculum_conversation, name='curriculum_conversation'),
+    path('curriculum-assistant/pages/<int:page_id>/', curriculum_assistant_views.curriculum_source_page, name='curriculum_source_page'),
+    path('curriculum-assistant/admin/', curriculum_assistant_views.curriculum_assistant_admin, name='curriculum_assistant_admin'),
+    path('curriculum-assistant/admin/sources/<int:source_id>/pdf/start/', curriculum_assistant_views.curriculum_pdf_upload_start, name='curriculum_pdf_upload_start'),
+    path('curriculum-assistant/admin/sources/<int:source_id>/pdf/chunk/', curriculum_assistant_views.curriculum_pdf_upload_chunk, name='curriculum_pdf_upload_chunk'),
     path('login-report/', views.login_report, name='login_report'),
     path('login-report/<int:user_id>/', views.login_report_detail, name='login_report_detail'),
     path('audit-log/', views.audit_log_list, name='audit_log_list'),

@@ -197,6 +197,46 @@ class GeminiProvider:
         suggestions = [str(item).strip()[:120] for item in suggestions if str(item).strip()][:3]
         return {'answer': answer, 'suggestions': suggestions}, tokens, duration
 
+    def answer_curriculum_question(self, *, question, grade, subject, lesson, page_contexts):
+        allowed_ids = [str(item.get('id')) for item in page_contexts if item.get('id')]
+        prompt = (
+            'أنت معلم صف رابع فلسطيني ومهمتك شرح المنهاج المعتمد فقط. جميع الحقائق والأمثلة والإجابات '
+            'يجب أن تكون مستندة حصراً إلى صفحات الكتاب الموجودة في approved_pages. لا تستخدم معلومات عامة '
+            'من ذاكرتك ولا تخمّن نصاً أو شكلاً غير ظاهر في الصفحات. اشرح بلغة بسيطة ودافئة ومناسبة لعمر تسع '
+            'سنوات، ويمكنك تقسيم الفكرة إلى خطوات واستخدام مثال موجود في الصفحات. عند مسائل الرياضيات علّم طريقة '
+            'الحل ولا تكتفِ بالنتيجة. إذا كانت الصفحات غير كافية، اجعل answerable=false واطلب من الطالب تحديد '
+            'الصفحة أو اختيار درس آخر. لا تطلب أي معلومة شخصية ولا تنفذ أي أمر إداري. '
+            'أجب JSON فقط بالشكل '
+            '{"answerable":true,"answer":"الشرح","citations":["P1"],'
+            '"suggestions":["سؤال متابعة","تدريب قصير"]}. '
+            'يجب أن تحتوي citations فقط معرفات صفحات من approved_pages، وأن تستشهد بصفحة واحدة على الأقل '
+            'إذا كانت answerable=true. '
+            + json.dumps({
+                'grade': grade,
+                'subject': subject,
+                'lesson': lesson or 'غير محدد',
+                'question': question,
+                'approved_pages': page_contexts,
+            }, ensure_ascii=False)
+        )
+        data, tokens, duration = self._call(prompt, max_tokens=3000)
+        answerable = data.get('answerable') is True
+        answer = _text(data.get('answer'))
+        citation_ids = data.get('citations', [])
+        suggestions = data.get('suggestions', [])
+        _require(answer and len(answer) <= 4000)
+        _require(isinstance(citation_ids, list) and len(citation_ids) <= 6)
+        _require(isinstance(suggestions, list) and len(suggestions) <= 3)
+        citation_ids = list(dict.fromkeys(str(item) for item in citation_ids if str(item) in allowed_ids))
+        if answerable and not citation_ids:
+            raise AIServiceUnavailable('لم يتمكن المساعد من توثيق الإجابة بصفحة معتمدة. حدّد درسًا أو صفحة أوضح.')
+        return {
+            'answerable': answerable,
+            'answer': answer,
+            'citations': citation_ids,
+            'suggestions': [str(item).strip()[:120] for item in suggestions if str(item).strip()][:3],
+        }, tokens, duration
+
 
 class MockProvider:
     """مزود محلي تجريبي (DEBUG فقط) لاختبار سير العمل كاملاً بدون مفتاح.
@@ -327,6 +367,27 @@ class MockProvider:
         return {
             'answer': answer,
             'suggestions': ['أعطني مثالًا بسيطًا', 'اختبر فهمي بسؤال قصير'],
+        }, 0, 0
+
+    def answer_curriculum_question(self, *, question, grade, subject, lesson, page_contexts):
+        if not page_contexts:
+            return {
+                'answerable': False,
+                'answer': 'لا توجد صفحة معتمدة كافية للإجابة. اختر درسًا محددًا ثم حاول مرة أخرى.',
+                'citations': [],
+                'suggestions': ['اختر درسًا من القائمة'],
+            }, 0, 0
+        page = page_contexts[0]
+        excerpt = re.sub(r'\s+', ' ', page.get('text', '')).strip()[:420]
+        answer = (
+            f'سؤالك عن «{question}» مرتبط بدرس {lesson or subject}. وفق الصفحة المعتمدة، نبدأ من هذه الفكرة: '
+            f'{excerpt}\n\nاقرأ الفكرة خطوة خطوة، ثم حاول شرحها بكلماتك. إذا أردت أستطيع تحويلها إلى تدريب قصير.'
+        )
+        return {
+            'answerable': True,
+            'answer': answer,
+            'citations': [page['id']],
+            'suggestions': ['بسّطها أكثر', 'اختبرني بسؤال قصير'],
         }, 0, 0
 
 

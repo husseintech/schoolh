@@ -48,6 +48,7 @@ def safe_internal_url(value):
 def quick_prompts(student):
     prompts = [
         {'label': 'ما المطلوب مني؟', 'question': 'ما المهام المطلوبة مني الآن؟', 'icon': 'bi-list-check'},
+        {'label': 'مساعد المنهاج', 'question': 'افتح مساعد المنهاج', 'icon': 'bi-stars'},
         {'label': 'جدولي الدراسي', 'question': 'أين أجد جدولي الدراسي؟', 'icon': 'bi-calendar-week'},
         {'label': 'دروسي', 'question': 'أين أجد دروسي في التعلم المفتوح؟', 'icon': 'bi-book'},
         {'label': 'ملفي الطلابي', 'question': 'كيف أفتح ملفي الطلابي؟', 'icon': 'bi-person-vcard'},
@@ -160,6 +161,13 @@ def answer_guided_question(student, question):
         return _result(
             'ستجد جدول حصص صفك في لوحتك الطلابية، مرتبًا حسب أيام الأسبوع والحصص.',
             action_label='عرض جدولي', action_url=reverse('dashboard') + '#studentSchedule',
+        )
+
+    if _contains(normalized, ('مساعد المنهاج', 'اسال عن المنهاج', 'اشرح من الكتاب', 'افتح مساعد المنهاج')):
+        return _result(
+            'في مساعد المنهاج تختار المادة والدرس، ثم تحصل على شرح موثق برقم صفحة الكتاب المعتمد.',
+            action_label='فتح مساعد المنهاج', action_url=reverse('curriculum_assistant'),
+            suggestions=['افتح دروسي في التعلم المفتوح', 'أين جدولي الدراسي؟'],
         )
 
     if _contains(normalized, ('اين اجد دروسي', 'افتح دروسي', 'التعلم المفتوح', 'مسار التعلم')):
