@@ -1,6 +1,6 @@
 {% extends 'school/base.html' %}
 {% block title %}مصادر مساعد المنهاج{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260915">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260916c">{% endblock %}
 {% block content %}
 <div class="curriculum-admin">
     <div class="admin-title-row">
@@ -35,6 +35,56 @@
         </div>
     </div>
 
+    <section class="video-admin-section">
+        <div class="section-heading">
+            <div><h2>فيديوهات الدروس المعتمدة</h2><p>أضف فيديو يوتيوب بعد مراجعته؛ سيظهر للطلاب داخل نافذة المنصة.</p></div>
+            <span class="approved-video-count"><i class="bi bi-play-btn-fill"></i> {{ approved_video_count }} فيديو</span>
+        </div>
+        <div class="video-admin-grid">
+            <form method="post" class="admin-card curriculum-video-form">
+                {% csrf_token %}<input type="hidden" name="action" value="add_video">
+                <h2><i class="bi bi-youtube"></i> إضافة فيديو لدرس</h2>
+                <label class="form-label" for="videoLesson">الدرس</label>
+                <select class="form-select mb-3" id="videoLesson" name="lesson_id" required>
+                    <option value="">اختر المادة والدرس</option>
+                    {% regroup lessons by source as source_lessons %}
+                    {% for group in source_lessons %}
+                    <optgroup label="{{ group.grouper.subject_name }} — الفصل {{ group.grouper.term }}">
+                        {% for lesson in group.list %}<option value="{{ lesson.pk }}">{{ lesson.title }}</option>{% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+                <label class="form-label" for="videoTitle">عنوان يظهر للطالب</label>
+                <input class="form-control mb-3" id="videoTitle" name="video_title" maxlength="240" placeholder="مثال: شرح مبسط للغذاء المتوازن" required>
+                <label class="form-label" for="videoUrl">رابط YouTube</label>
+                <input class="form-control" id="videoUrl" name="video_url" type="url" maxlength="800" placeholder="https://www.youtube.com/watch?v=..." required>
+                <p class="form-text"><i class="bi bi-shield-check"></i> لا يظهر الرابط للطالب قبل أن تضيفه الإدارة من هنا.</p>
+                <button class="btn btn-danger"><i class="bi bi-plus-circle"></i> اعتماد الفيديو</button>
+            </form>
+            <div class="admin-card approved-video-list">
+                <h2><i class="bi bi-collection-play"></i> المكتبة الحالية</h2>
+                {% if approved_videos %}
+                <div class="approved-video-table-wrap">
+                    <table class="approved-video-table">
+                        <thead><tr><th>المادة والدرس</th><th>الفيديو</th><th></th></tr></thead>
+                        <tbody>
+                        {% for video in approved_videos %}
+                        <tr>
+                            <td><strong>{{ video.lesson.source.subject_name }}</strong><small>{{ video.lesson.title }}</small></td>
+                            <td><a href="https://www.youtube.com/watch?v={{ video.youtube_video_id }}" target="_blank" rel="noopener"><i class="bi bi-play-circle-fill"></i> {{ video.title }}</a></td>
+                            <td><form method="post" data-video-delete>{% csrf_token %}<input type="hidden" name="action" value="delete_video"><input type="hidden" name="video_id" value="{{ video.pk }}"><button class="btn btn-sm btn-outline-danger" type="submit" aria-label="حذف {{ video.title }}"><i class="bi bi-trash3"></i></button></form></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-video-library"><i class="bi bi-camera-video-off"></i><span>لم تُضف فيديوهات بعد.</span></div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
     <section class="source-section">
         <div class="section-heading"><div><h2>الكتب المضافة</h2><p>الصف الرابع — المصادر الحالية</p></div><span class="drive-status {% if drive_connected %}is-connected{% endif %}"><i class="bi bi-google"></i> Google Drive {% if drive_connected %}متصل{% else %}غير متصل{% endif %}</span></div>
         <div class="source-admin-grid">
@@ -64,4 +114,4 @@
     {% endif %}
 </div>
 {% endblock %}
-{% block extra_js %}<script src="/static/school/js/curriculum_source_admin.js?v=20260915"></script>{% endblock %}
+{% block extra_js %}<script src="/static/school/js/curriculum_source_admin.js?v=20260916c"></script>{% endblock %}

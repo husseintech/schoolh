@@ -1,6 +1,6 @@
 {% extends 'school/base.html' %}
 {% block title %}مساعد المنهاج{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260916b">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260916c">{% endblock %}
 {% block content %}
 <div class="curriculum-shell" id="curriculumAssistant"
      data-ask-url="{% url 'curriculum_assistant_ask' %}"
@@ -84,7 +84,10 @@
                     <strong>{{ selected_source.subject_name }}</strong>
                     <span>{% if selected_lesson %}{{ selected_lesson.title }}{% else %}اختر درسًا لأدق إجابة{% endif %}</span>
                 </div>
-                <span class="source-only-badge"><i class="bi bi-patch-check-fill"></i> إجابات موثقة</span>
+                <div class="chat-toolbar-actions">
+                    {% if selected_lesson_videos %}<button class="lesson-videos-button" type="button" data-open-video-library><i class="bi bi-play-btn-fill"></i> فيديوهات الدرس <span>{{ selected_lesson_videos.count }}</span></button>{% endif %}
+                    <span class="source-only-badge"><i class="bi bi-patch-check-fill"></i> إجابات موثقة</span>
+                </div>
             </div>
             <div class="quick-actions" aria-label="أسئلة سريعة">
                 <button type="button" data-prompt="اشرح لي هذا الدرس خطوة خطوة"><i class="bi bi-easel2"></i> اشرح الدرس</button>
@@ -112,6 +115,25 @@
         </main>
     </div>
     {% endif %}
+
+    <div class="curriculum-video-modal" id="curriculumVideoModal" hidden role="dialog" aria-modal="true" aria-labelledby="curriculumVideoModalTitle">
+        <div class="curriculum-video-backdrop" data-video-close></div>
+        <section class="curriculum-video-dialog" tabindex="-1">
+            <header>
+                <div><span><i class="bi bi-youtube"></i> فيديوهات معتمدة</span><h2 id="curriculumVideoModalTitle">فيديوهات الدرس</h2></div>
+                <button type="button" data-video-close aria-label="إغلاق نافذة الفيديو"><i class="bi bi-x-lg"></i></button>
+            </header>
+            <div class="curriculum-video-layout">
+                <div class="curriculum-video-player">
+                    <div class="curriculum-video-frame"><iframe id="curriculumVideoFrame" title="مشغل فيديو الدرس" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
+                    <strong id="curriculumVideoNowPlaying"></strong>
+                    <small>الفيديو معتمد من إدارة المدرسة ويُعرض داخل المنصة.</small>
+                </div>
+                <div class="curriculum-video-list" id="curriculumVideoList" aria-label="اختر فيديو الدرس"></div>
+            </div>
+        </section>
+    </div>
+    {{ selected_lesson_videos|json_script:"curriculumVideoData" }}
 </div>
 {% endblock %}
-{% block extra_js %}<script src="/static/school/js/curriculum_assistant.js?v=20260916b"></script>{% endblock %}
+{% block extra_js %}<script src="/static/school/js/curriculum_assistant.js?v=20260916c"></script>{% endblock %}

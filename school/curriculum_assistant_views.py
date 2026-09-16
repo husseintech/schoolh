@@ -24,6 +24,7 @@ from .curriculum_assistant import (
     cached_answer,
     curriculum_settings,
     curriculum_video_resource,
+    extract_youtube_video_id,
     hourly_limit_reached,
     hydrate_citations,
     import_curriculum_package,
@@ -39,6 +40,7 @@ from .models import (
     CurriculumAssistantSettings,
     CurriculumConversation,
     CurriculumLesson,
+    CurriculumLessonVideo,
     CurriculumMessage,
     CurriculumPage,
     CurriculumSource,
@@ -137,7 +139,7 @@ def curriculum_assistant_home(request):
     if supported and settings_obj.enabled:
         sources = CurriculumSource.objects.filter(
             grade_level=4, status='published',
-        ).prefetch_related('lessons').order_by('term', 'subject_name')
+        ).prefetch_related('lessons__videos').order_by('term', 'subject_name')
     source_id = request.GET.get('source')
     selected_source = next((row for row in sources if str(row.pk) == str(source_id)), None)
     if not selected_source:
@@ -161,6 +163,8 @@ def curriculum_assistant_home(request):
         'sources': sources,
         'selected_source': selected_source,
         'selected_lesson': selected_lesson,
+        'selected_lesson_videos': curriculum_video_resource(selected_source, selected_lesson)
+        if selected_source and selected_lesson else None,
         'initial_conversation_id': request.GET.get('conversation', ''),
         'questions_remaining': max(0, settings_obj.daily_question_limit - used),
         'conversations': conversations,
@@ -421,6 +425,39 @@ def curriculum_assistant_admin(request):
                     )
                 except CurriculumPackageError as exc:
                     messages.error(request, str(exc))
+        elif action == 'add_video':
+            lesson = get_object_or_404(
+                CurriculumLesson.objects.select_related('source'),
+                pk=request.POST.get('lesson_id'),
+                source__grade_level=4,
+            )
+            title = str(request.POST.get('video_title') or '').strip()[:240]
+            video_id = extract_youtube_video_id(request.POST.get('video_url'))
+            if not title:
+                messages.error(request, 'اكتب عنوانًا واضحًا للفيديو.')
+            elif not video_id:
+                messages.error(request, 'رابط الفيديو غير صالح. استخدم رابط مشاهدة من YouTube فقط.')
+            elif lesson.videos.filter(youtube_video_id=video_id).exists():
+                messages.warning(request, 'هذا الفيديو مضاف بالفعل إلى الدرس.')
+            else:
+                video = CurriculumLessonVideo.objects.create(
+                    lesson=lesson,
+                    title=title,
+                    youtube_video_id=video_id,
+                    position=lesson.videos.count() + 1,
+                    added_by=request.user,
+                )
+                _audit(request.user, 'إضافة فيديو معتمد لدرس منهاج', f'{lesson.title} — {video.title}')
+                messages.success(request, f'تمت إضافة الفيديو إلى درس «{lesson.title}».')
+        elif action == 'delete_video':
+            video = get_object_or_404(
+                CurriculumLessonVideo.objects.select_related('lesson'),
+                pk=request.POST.get('video_id'),
+            )
+            details = f'{video.lesson.title} — {video.title}'
+            video.delete()
+            _audit(request.user, 'حذف فيديو معتمد من درس منهاج', details)
+            messages.success(request, 'تم حذف الفيديو من مكتبة الدرس.')
         elif action in {'publish', 'archive'}:
             source = get_object_or_404(CurriculumSource, pk=request.POST.get('source_id'))
             if action == 'publish':
@@ -446,7 +483,13 @@ def curriculum_assistant_admin(request):
                 messages.success(request, f'تمت أرشفة «{source.title}».')
         return redirect('curriculum_assistant_admin')
 
-    sources = CurriculumSource.objects.prefetch_related('lessons').all()
+    sources = CurriculumSource.objects.prefetch_related('lessons__videos').all()
+    lessons = CurriculumLesson.objects.select_related('source').filter(
+        source__grade_level=4,
+    ).order_by('source__subject_name', 'unit_order', 'lesson_order')
+    approved_videos = CurriculumLessonVideo.objects.select_related(
+        'lesson__source',
+    ).order_by('lesson__source__subject_name', 'lesson__lesson_order', 'position')
     visual_review_count = CurriculumPage.objects.filter(needs_visual_review=True).count()
     review_pages = CurriculumPage.objects.filter(needs_visual_review=True).select_related(
         'source', 'lesson',
@@ -454,6 +497,9 @@ def curriculum_assistant_admin(request):
     return render(request, 'school/curriculum_assistant_admin.html', {
         'settings_obj': settings_obj or curriculum_settings(),
         'sources': sources,
+        'lessons': lessons,
+        'approved_videos': approved_videos,
+        'approved_video_count': approved_videos.count(),
         'visual_review_count': visual_review_count,
         'review_pages': review_pages,
         'drive_connected': GoogleDriveService().is_connected(),

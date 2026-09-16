@@ -9,6 +9,12 @@
     var conversationId = null;
     var activeUtterance = null;
     var activeSpeechButton = null;
+    var videoModal = document.getElementById('curriculumVideoModal');
+    var videoFrame = document.getElementById('curriculumVideoFrame');
+    var videoList = document.getElementById('curriculumVideoList');
+    var videoTitle = document.getElementById('curriculumVideoModalTitle');
+    var videoNowPlaying = document.getElementById('curriculumVideoNowPlaying');
+    var lastVideoTrigger = null;
 
     function csrfToken() {
         var field = form && form.querySelector('input[name="csrfmiddlewaretoken"]');
@@ -41,9 +47,69 @@
         resetSpeechButton();
     }
 
+    function safeVideoItems(library) {
+        return library && Array.isArray(library.items) ? library.items.filter(function (item) {
+            return item && /^[A-Za-z0-9_-]{11}$/.test(String(item.youtube_id || ''));
+        }) : [];
+    }
+
+    function playVideo(item, selectedButton) {
+        if (!videoFrame || !item) return;
+        videoFrame.src = 'https://www.youtube-nocookie.com/embed/' + item.youtube_id + '?rel=0';
+        videoFrame.title = item.title || 'فيديو شرح الدرس';
+        if (videoNowPlaying) videoNowPlaying.textContent = item.title || 'فيديو شرح الدرس';
+        if (videoList) {
+            videoList.querySelectorAll('button').forEach(function (button) {
+                button.classList.toggle('is-active', button === selectedButton);
+                button.setAttribute('aria-pressed', button === selectedButton ? 'true' : 'false');
+            });
+        }
+    }
+
+    function closeVideoLibrary() {
+        if (!videoModal || videoModal.hidden) return;
+        videoModal.hidden = true;
+        document.body.classList.remove('curriculum-video-open');
+        if (videoFrame) videoFrame.removeAttribute('src');
+        if (lastVideoTrigger) lastVideoTrigger.focus();
+        lastVideoTrigger = null;
+    }
+
+    function openVideoLibrary(library, trigger) {
+        var items = safeVideoItems(library);
+        if (!videoModal || !videoList || !items.length) return;
+        lastVideoTrigger = trigger || document.activeElement;
+        videoTitle.textContent = (library.lesson || 'الدرس') + ' — ' + items.length + ' فيديو';
+        videoList.textContent = '';
+        var firstButton = null;
+        items.forEach(function (item, index) {
+            var button = make('button', 'curriculum-video-item');
+            button.type = 'button';
+            button.setAttribute('aria-pressed', 'false');
+            var image = make('img');
+            image.src = 'https://i.ytimg.com/vi/' + item.youtube_id + '/mqdefault.jpg';
+            image.alt = '';
+            image.loading = 'lazy';
+            button.appendChild(image);
+            var details = make('span');
+            details.appendChild(make('strong', '', item.title || 'فيديو شرح الدرس'));
+            details.appendChild(make('small', '', 'تشغيل داخل المنصة'));
+            button.appendChild(details);
+            button.addEventListener('click', function () { playVideo(item, button); });
+            videoList.appendChild(button);
+            if (index === 0) firstButton = button;
+        });
+        videoModal.hidden = false;
+        document.body.classList.add('curriculum-video-open');
+        playVideo(items[0], firstButton);
+        var dialog = videoModal.querySelector('.curriculum-video-dialog');
+        if (dialog) dialog.focus();
+    }
+
     function addResponseTools(bubble, content, video) {
         var supportsSpeech = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-        if (!supportsSpeech && !video) return;
+        var videoItems = safeVideoItems(video);
+        if (!supportsSpeech && !videoItems.length) return;
         var tools = make('div', 'chat-tools');
         if (supportsSpeech) {
             var listen = make('button', 'chat-listen');
@@ -81,15 +147,13 @@
             });
             tools.appendChild(listen);
         }
-        if (video && video.url) {
-            var videoLink = make('a', 'chat-video', video.label || 'ابحث عن فيديو شرح');
-            videoLink.href = video.url;
-            videoLink.target = '_blank';
-            videoLink.rel = 'noopener noreferrer';
-            if (video.note) videoLink.title = video.note;
-            var icon = make('i', 'bi bi-youtube');
-            videoLink.insertBefore(icon, videoLink.firstChild);
-            tools.appendChild(videoLink);
+        if (videoItems.length) {
+            var videoButton = make('button', 'chat-video');
+            videoButton.type = 'button';
+            videoButton.innerHTML = '<i class="bi bi-youtube"></i><span>' +
+                'فيديوهات الدرس (' + videoItems.length + ')</span>';
+            videoButton.addEventListener('click', function () { openVideoLibrary(video, videoButton); });
+            tools.appendChild(videoButton);
         }
         bubble.appendChild(tools);
     }
@@ -212,6 +276,23 @@
             params.set('source', lessonSelect.dataset.source);
             if (lessonSelect.value) params.set('lesson', lessonSelect.value);
             window.location.href = window.location.pathname + '?' + params.toString();
+        });
+    }
+
+    var initialVideoLibrary = null;
+    var videoData = document.getElementById('curriculumVideoData');
+    if (videoData) {
+        try { initialVideoLibrary = JSON.parse(videoData.textContent); } catch (ignore) { initialVideoLibrary = null; }
+    }
+    root.querySelectorAll('[data-open-video-library]').forEach(function (button) {
+        button.addEventListener('click', function () { openVideoLibrary(initialVideoLibrary, button); });
+    });
+    if (videoModal) {
+        videoModal.querySelectorAll('[data-video-close]').forEach(function (button) {
+            button.addEventListener('click', closeVideoLibrary);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !videoModal.hidden) closeVideoLibrary();
         });
     }
 

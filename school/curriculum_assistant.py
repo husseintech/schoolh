@@ -3,7 +3,7 @@ import io
 import json
 import re
 from datetime import timedelta
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlsplit
 
 from django.db import transaction
 from django.db.models import F
@@ -168,21 +168,56 @@ def retrieve_curriculum_context(source, lesson, question, max_pages=MAX_CONTEXT_
 
 
 def curriculum_video_resource(source, lesson):
-    """Return a safe lesson-specific YouTube search, never an unverified AI URL."""
+    """Serialize only administrator-approved videos using trusted embed URLs."""
     if not lesson:
         return None
-    query = ' '.join((
-        lesson.title,
-        source.subject_name,
-        'الصف الرابع',
-        'المنهاج الفلسطيني',
-        'شرح مبسط',
-    ))
+    videos = list(lesson.videos.filter(is_active=True).order_by('position', 'pk')[:12])
+    if not videos:
+        return None
     return {
-        'label': 'ابحث عن فيديو شرح لهذا الدرس',
-        'url': 'https://www.youtube.com/results?' + urlencode({'search_query': query}),
-        'note': 'نتائج بحث مقترحة؛ اختر الفيديو المناسب بإشراف الأسرة أو المعلم.',
+        'label': f'فيديوهات الدرس ({len(videos)})',
+        'count': len(videos),
+        'lesson': lesson.title,
+        'subject': source.subject_name,
+        'items': [
+            {
+                'id': video.pk,
+                'title': video.title,
+                'youtube_id': video.youtube_video_id,
+                'embed_url': f'https://www.youtube-nocookie.com/embed/{video.youtube_video_id}?rel=0',
+                'thumbnail_url': f'https://i.ytimg.com/vi/{video.youtube_video_id}/hqdefault.jpg',
+            }
+            for video in videos
+        ],
     }
+
+
+def extract_youtube_video_id(value):
+    """Accept common YouTube URLs while rejecting arbitrary hosts and embed HTML."""
+    raw = str(value or '').strip()
+    if re.fullmatch(r'[A-Za-z0-9_-]{11}', raw):
+        return raw
+    try:
+        parsed = urlsplit(raw)
+        host = (parsed.hostname or '').lower()
+        if parsed.scheme not in {'http', 'https'} or parsed.username or parsed.password:
+            return ''
+        host = re.sub(r'^(www\.|m\.)', '', host)
+        if host == 'youtu.be':
+            candidate = parsed.path.strip('/').split('/', 1)[0]
+        elif host in {'youtube.com', 'youtube-nocookie.com'}:
+            parts = [part for part in parsed.path.split('/') if part]
+            if parsed.path.rstrip('/') == '/watch':
+                candidate = (parse_qs(parsed.query).get('v') or [''])[0]
+            elif len(parts) >= 2 and parts[0] in {'embed', 'shorts', 'live'}:
+                candidate = parts[1]
+            else:
+                return ''
+        else:
+            return ''
+    except (TypeError, ValueError):
+        return ''
+    return candidate if re.fullmatch(r'[A-Za-z0-9_-]{11}', candidate or '') else ''
 
 
 def map_provider_citations(contexts, citation_ids):

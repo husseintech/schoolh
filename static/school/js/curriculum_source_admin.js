@@ -11,6 +11,12 @@
         return field ? field.value : '';
     }
 
+    document.querySelectorAll('[data-video-delete]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!window.confirm('هل تريد حذف هذا الفيديو من الدرس؟')) event.preventDefault();
+        });
+    });
+
     async function jsonResponse(response) {
         var payload;
         try { payload = await response.json(); } catch (ignore) { payload = {}; }

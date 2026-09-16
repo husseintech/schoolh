@@ -1154,6 +1154,33 @@ class CurriculumLesson(models.Model):
         return f'{self.source.subject_name}: {self.title}'
 
 
+class CurriculumLessonVideo(models.Model):
+    lesson = models.ForeignKey(CurriculumLesson, on_delete=models.CASCADE, related_name='videos')
+    title = models.CharField('عنوان الفيديو', max_length=240)
+    youtube_video_id = models.CharField('معرّف فيديو يوتيوب', max_length=20)
+    position = models.PositiveSmallIntegerField('الترتيب', default=1)
+    is_active = models.BooleanField('ظاهر للطلاب', default=True)
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'فيديو درس منهاج'
+        verbose_name_plural = 'فيديوهات دروس المنهاج'
+        ordering = ['lesson', 'position', 'pk']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['lesson', 'youtube_video_id'],
+                name='uniq_curr_lesson_youtube_video',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['lesson', 'is_active', 'position'], name='curr_video_lesson_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.lesson}: {self.title}'
+
+
 class CurriculumPage(models.Model):
     source = models.ForeignKey(CurriculumSource, on_delete=models.CASCADE, related_name='pages')
     lesson = models.ForeignKey(

@@ -12,6 +12,7 @@ from django.urls import reverse
 from school.curriculum_assistant import (
     answer_cache_key,
     curriculum_video_resource,
+    extract_youtube_video_id,
     import_curriculum_package,
     retrieve_curriculum_context,
 )
@@ -22,6 +23,7 @@ from school.models import (
     CurriculumAssistantSettings,
     CurriculumConversation,
     CurriculumLesson,
+    CurriculumLessonVideo,
     CurriculumMessage,
     CurriculumPage,
     CurriculumSource,
@@ -76,6 +78,12 @@ class CurriculumAssistantTests(TestCase):
             end_printed_page=11,
             start_pdf_page=1,
             end_pdf_page=3,
+        )
+        self.video = CurriculumLessonVideo.objects.create(
+            lesson=self.lesson,
+            title='شرح الغذاء المتوازن',
+            youtube_video_id='AbCdEfGhI12',
+            added_by=self.admin,
         )
         self.page = CurriculumPage.objects.create(
             source=self.source,
@@ -166,8 +174,9 @@ class CurriculumAssistantTests(TestCase):
         self.assertTrue(payload['ok'])
         self.assertEqual(payload['citations'][0]['printed_page'], 9)
         self.assertEqual(payload['citations'][0]['url'], reverse('curriculum_source_page', args=[self.page.pk]))
-        self.assertIn('youtube.com/results', payload['video']['url'])
-        self.assertIn('فيديو شرح', payload['video']['label'])
+        self.assertEqual(payload['video']['count'], 1)
+        self.assertEqual(payload['video']['items'][0]['title'], self.video.title)
+        self.assertIn('youtube-nocookie.com/embed/AbCdEfGhI12', payload['video']['items'][0]['embed_url'])
         kwargs = provider.answer_curriculum_question.call_args.kwargs
         self.assertNotIn('student', kwargs)
         self.assertNotIn('سلمى', json.dumps(kwargs, ensure_ascii=False))
@@ -232,11 +241,61 @@ class CurriculumAssistantTests(TestCase):
         self.assertEqual(response.json()['answer'], 'إجابة محفوظة من الكتاب.')
         provider.assert_not_called()
 
-    def test_lesson_video_is_a_safe_targeted_search(self):
+    def test_lesson_video_library_contains_only_approved_safe_embeds(self):
         video = curriculum_video_resource(self.source, self.lesson)
-        self.assertTrue(video['url'].startswith('https://www.youtube.com/results?'))
-        self.assertIn('%D8%A7%D9%84%D8%B5%D9%81+%D8%A7%D9%84%D8%B1%D8%A7%D8%A8%D8%B9', video['url'])
+        self.assertEqual(video['label'], 'فيديوهات الدرس (1)')
+        self.assertEqual(video['count'], 1)
+        self.assertTrue(video['items'][0]['embed_url'].startswith('https://www.youtube-nocookie.com/embed/'))
         self.assertIsNone(curriculum_video_resource(self.source, None))
+
+    def test_youtube_url_parser_accepts_known_formats_and_rejects_other_hosts(self):
+        self.assertEqual(extract_youtube_video_id('https://youtu.be/AbCdEfGhI12'), 'AbCdEfGhI12')
+        self.assertEqual(
+            extract_youtube_video_id('https://www.youtube.com/watch?v=AbCdEfGhI12&t=4'),
+            'AbCdEfGhI12',
+        )
+        self.assertEqual(extract_youtube_video_id('https://youtube.com/shorts/AbCdEfGhI12'), 'AbCdEfGhI12')
+        self.assertEqual(extract_youtube_video_id('https://example.com/watch?v=AbCdEfGhI12'), '')
+        self.assertEqual(extract_youtube_video_id('<iframe src="https://youtube.com"></iframe>'), '')
+
+    def test_selected_lesson_page_displays_approved_video_count(self):
+        self.client.force_login(self.student_user)
+        response = self.client.get(reverse('curriculum_assistant'), {
+            'source': self.source.pk,
+            'lesson': self.lesson.pk,
+        })
+        self.assertContains(response, 'فيديوهات الدرس')
+        self.assertContains(response, 'curriculumVideoModal')
+        self.assertContains(response, self.video.youtube_video_id)
+
+    def test_admin_adds_and_removes_approved_lesson_video(self):
+        self.client.force_login(self.admin)
+        added = self.client.post(reverse('curriculum_assistant_admin'), {
+            'action': 'add_video',
+            'lesson_id': self.lesson.pk,
+            'video_title': 'شرح الهرم الغذائي',
+            'video_url': 'https://www.youtube.com/watch?v=ZyXwVuTsRq0',
+        })
+        self.assertRedirects(added, reverse('curriculum_assistant_admin'))
+        created = CurriculumLessonVideo.objects.get(youtube_video_id='ZyXwVuTsRq0')
+        self.assertEqual(created.lesson, self.lesson)
+        removed = self.client.post(reverse('curriculum_assistant_admin'), {
+            'action': 'delete_video',
+            'video_id': created.pk,
+        })
+        self.assertRedirects(removed, reverse('curriculum_assistant_admin'))
+        self.assertFalse(CurriculumLessonVideo.objects.filter(pk=created.pk).exists())
+
+    def test_admin_rejects_non_youtube_video_url(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('curriculum_assistant_admin'), {
+            'action': 'add_video',
+            'lesson_id': self.lesson.pk,
+            'video_title': 'رابط غير موثوق',
+            'video_url': 'https://example.com/watch?v=ZyXwVuTsRq0',
+        }, follow=True)
+        self.assertContains(response, 'رابط الفيديو غير صالح')
+        self.assertFalse(CurriculumLessonVideo.objects.filter(title='رابط غير موثوق').exists())
 
     def test_daily_limit_counts_curriculum_answers(self):
         CurriculumAssistantSettings.objects.create(daily_question_limit=1)
@@ -349,6 +408,7 @@ class CurriculumAssistantTests(TestCase):
         javascript = Path(assistant_js).read_text(encoding='utf-8')
         self.assertIn('speechSynthesis', javascript)
         self.assertIn('chat-video', javascript)
+        self.assertIn('youtube-nocookie.com/embed/', javascript)
         self.assertTrue(finders.find('school/js/curriculum_source_admin.js'))
 
     def test_conversations_are_registered_for_year_start_maintenance(self):
