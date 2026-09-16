@@ -499,7 +499,9 @@ def student_notes(request, student_id):
 def student_detail(request, student_id):
     student = get_object_or_404(Student, id=student_id)
     notes = Note.objects.filter(student=student, is_private=False).select_related('created_by').order_by('-created_at')
-    levels = StudentLevel.objects.filter(student=student).select_related('subject', 'created_by').order_by('-created_at')
+    levels = StudentLevel.objects.filter(student=student).select_related(
+        'subject', 'created_by',
+    ).order_by('-assessment_month', '-created_at')
     return render(request, 'school/student_detail.html', {
         'student': student,
         'notes': notes,
@@ -1728,6 +1730,65 @@ def delete_leave(request, leave_id):
 
 # ─── Student Levels ───────────────────────────────────────────────────────────
 
+def _parse_assessment_month(value):
+    """Return the first day of a YYYY-MM value, or None when it is invalid."""
+    try:
+        return datetime.strptime(str(value or ''), '%Y-%m').date().replace(day=1)
+    except (TypeError, ValueError):
+        return None
+
+
+def _current_assessment_month():
+    return timezone.localdate().replace(day=1)
+
+
+def _save_monthly_student_levels(request, selected_class, subject, assessment_month):
+    """Save one effective level per student, subject and assessment month.
+
+    Old duplicate rows are preserved for audit safety. When such rows already
+    exist, the newest row for that month is updated and no new duplicate is
+    created.
+    """
+    student_ids = request.POST.getlist('student_id')
+    levels = request.POST.getlist('level')
+    notes_list = request.POST.getlist('notes')
+    allowed_students = {
+        str(student.id): student
+        for student in Student.objects.filter(
+            student_class=selected_class,
+            id__in=student_ids,
+        )
+    }
+    saved_count = 0
+    created_count = 0
+    for index, student_id in enumerate(student_ids):
+        level = levels[index] if index < len(levels) else ''
+        if not level or student_id not in allowed_students:
+            continue
+        notes = notes_list[index] if index < len(notes_list) else ''
+        existing = StudentLevel.objects.filter(
+            student=allowed_students[student_id],
+            subject=subject,
+            assessment_month=assessment_month,
+        ).order_by('-created_at').first()
+        if existing:
+            existing.level = level
+            existing.notes = notes
+            existing.created_by = request.user
+            existing.save(update_fields=['level', 'notes', 'created_by'])
+        else:
+            StudentLevel.objects.create(
+                student=allowed_students[student_id],
+                subject=subject,
+                assessment_month=assessment_month,
+                level=level,
+                notes=notes,
+                created_by=request.user,
+            )
+            created_count += 1
+        saved_count += 1
+    return saved_count, created_count
+
 @login_required
 def bulk_add_student_level(request):
     if request.user.profile.role not in ['admin', 'teacher']:
@@ -1747,25 +1808,29 @@ def bulk_add_student_level(request):
         classes = Class.objects.all().order_by('name')
         subjects_qs = Subject.objects.all()
     if request.method == 'POST':
-        students_ids = request.POST.getlist('student_id')
-        levels = request.POST.getlist('level')
-        notes_list = request.POST.getlist('notes')
         subject_id = request.POST.get('subject')
         class_id = request.POST.get('class_id')
-        subject = Subject.objects.get(id=subject_id) if subject_id else None
-        count = 0
-        for i, student_id in enumerate(students_ids):
-            if levels[i]:
-                StudentLevel.objects.create(
-                    student_id=student_id,
-                    subject=subject,
-                    level=levels[i],
-                    notes=notes_list[i] if i < len(notes_list) else '',
-                    created_by=request.user
-                )
-                count += 1
-        messages.success(request, f'تم تسجيل {count} مستوى بنجاح')
-        return redirect('student_level_list')
+        month_value = request.POST.get('assessment_month', '')
+        assessment_month = _parse_assessment_month(month_value)
+        selected_class = get_object_or_404(classes, id=class_id) if class_id else None
+        subject = get_object_or_404(subjects_qs, id=subject_id) if subject_id else None
+        if not selected_class or not subject or not assessment_month:
+            messages.error(request, 'اختر الصف والمادة وشهر التقييم بصورة صحيحة')
+            target = reverse('bulk_add_student_level')
+            return redirect(f'{target}?class_id={class_id}' if class_id else target)
+        count, created = _save_monthly_student_levels(
+            request, selected_class, subject, assessment_month,
+        )
+        updated = count - created
+        messages.success(
+            request,
+            f'تم حفظ {count} مستوى لشهر {assessment_month:%Y/%m} '
+            f'({created} جديد، {updated} محدّث)',
+        )
+        target = reverse('student_level_list')
+        return redirect(
+            f'{target}?class_id={selected_class.id}&subject_id={subject.id}&month={assessment_month:%Y-%m}'
+        )
     class_id = request.GET.get('class_id')
     selected_class = None
     students = []
@@ -1780,8 +1845,11 @@ def bulk_add_student_level(request):
         'subjects': subjects_qs,
         'classes': classes,
         'selected_class': selected_class,
+        'assessment_month': _current_assessment_month().strftime('%Y-%m'),
     })
 
+
+@login_required
 def add_student_level(request):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
@@ -1800,25 +1868,29 @@ def add_student_level(request):
         classes = Class.objects.all().order_by('name')
         subjects_qs = Subject.objects.all()
     if request.method == 'POST':
-        students_ids = request.POST.getlist('student_id')
-        levels = request.POST.getlist('level')
-        notes_list = request.POST.getlist('notes')
         subject_id = request.POST.get('subject')
         class_id = request.POST.get('class_id')
-        subject = Subject.objects.get(id=subject_id) if subject_id else None
-        count = 0
-        for i, student_id in enumerate(students_ids):
-            if levels[i]:
-                StudentLevel.objects.create(
-                    student_id=student_id,
-                    subject=subject,
-                    level=levels[i],
-                    notes=notes_list[i] if i < len(notes_list) else '',
-                    created_by=request.user
-                )
-                count += 1
-        messages.success(request, f'تم تسجيل {count} مستوى بنجاح')
-        return redirect('student_level_list')
+        month_value = request.POST.get('assessment_month', '')
+        assessment_month = _parse_assessment_month(month_value)
+        selected_class = get_object_or_404(classes, id=class_id) if class_id else None
+        subject = get_object_or_404(subjects_qs, id=subject_id) if subject_id else None
+        if not selected_class or not subject or not assessment_month:
+            messages.error(request, 'اختر الصف والمادة وشهر التقييم بصورة صحيحة')
+            target = reverse('add_student_level')
+            return redirect(f'{target}?class_id={class_id}' if class_id else target)
+        count, created = _save_monthly_student_levels(
+            request, selected_class, subject, assessment_month,
+        )
+        updated = count - created
+        messages.success(
+            request,
+            f'تم حفظ {count} مستوى لشهر {assessment_month:%Y/%m} '
+            f'({created} جديد، {updated} محدّث)',
+        )
+        target = reverse('student_level_list')
+        return redirect(
+            f'{target}?class_id={selected_class.id}&subject_id={subject.id}&month={assessment_month:%Y-%m}'
+        )
     class_id = request.GET.get('class_id')
     selected_class = None
     students = []
@@ -1833,6 +1905,7 @@ def add_student_level(request):
         'subjects': subjects_qs,
         'classes': classes,
         'selected_class': selected_class,
+        'assessment_month': _current_assessment_month().strftime('%Y-%m'),
     })
 
 
@@ -1861,10 +1934,15 @@ def student_level_list(request):
     class_id = request.GET.get('class_id')
     subject_id = request.GET.get('subject_id')
     level_filter = request.GET.get('level')
+    month_value = request.GET.get('month', '').strip()
+    selected_month = _parse_assessment_month(month_value)
 
     if is_teacher:
         classes = teacher.classes.all().order_by('name')
         subjects = teacher.subjects.all().order_by('name')
+        if not selected_month:
+            selected_month = _current_assessment_month()
+            month_value = selected_month.strftime('%Y-%m')
 
     if class_id and subject_id:
         selected_class = get_object_or_404(Class, id=class_id)
@@ -1875,18 +1953,50 @@ def student_level_list(request):
                 return redirect('student_level_list')
             students = sort_students(Student.objects.filter(student_class=selected_class))
             for s in students:
-                s.current_level = StudentLevel.objects.filter(student=s, subject=selected_subject).first()
+                s.current_level = StudentLevel.objects.filter(
+                    student=s,
+                    subject=selected_subject,
+                    assessment_month=selected_month,
+                ).order_by('-created_at').first()
             if request.method == 'POST':
+                post_month_value = request.POST.get('assessment_month', month_value)
+                post_month = _parse_assessment_month(post_month_value)
+                if not post_month:
+                    messages.error(request, 'اختر شهر التقييم بصورة صحيحة')
+                    return redirect('student_level_list')
+                saved_count = 0
                 for s in students:
                     lvl = request.POST.get(f'level_{s.id}')
                     notes = request.POST.get(f'notes_{s.id}', '') or ''
                     if lvl:
-                        StudentLevel.objects.update_or_create(
-                            student=s, subject=selected_subject,
-                            defaults={'level': lvl, 'notes': notes, 'created_by': request.user},
-                        )
-                messages.success(request, f'تم حفظ مستويات {len(students)} طالب')
-                return redirect(f"{request.path}?class_id={selected_class.id}&subject_id={selected_subject.id}")
+                        existing = StudentLevel.objects.filter(
+                            student=s,
+                            subject=selected_subject,
+                            assessment_month=post_month,
+                        ).order_by('-created_at').first()
+                        if existing:
+                            existing.level = lvl
+                            existing.notes = notes
+                            existing.created_by = request.user
+                            existing.save(update_fields=['level', 'notes', 'created_by'])
+                        else:
+                            StudentLevel.objects.create(
+                                student=s,
+                                subject=selected_subject,
+                                assessment_month=post_month,
+                                level=lvl,
+                                notes=notes,
+                                created_by=request.user,
+                            )
+                        saved_count += 1
+                messages.success(
+                    request,
+                    f'تم حفظ مستويات {saved_count} طالب لشهر {post_month:%Y/%m}',
+                )
+                return redirect(
+                    f"{request.path}?class_id={selected_class.id}"
+                    f"&subject_id={selected_subject.id}&month={post_month:%Y-%m}"
+                )
         else:
             levels_qs = levels_qs.filter(student__student_class=selected_class, subject=selected_subject)
     elif class_id:
@@ -1897,6 +2007,9 @@ def student_level_list(request):
                 return redirect('student_level_list')
         else:
             levels_qs = levels_qs.filter(student__student_class=selected_class)
+
+    if selected_month and not is_teacher:
+        levels_qs = levels_qs.filter(assessment_month=selected_month)
 
     selected_level = None
     selected_level_label = None
@@ -1916,6 +2029,8 @@ def student_level_list(request):
         'selected_level': selected_level,
         'selected_level_label': selected_level_label,
         'level_choices': StudentLevel.LEVEL_CHOICES,
+        'selected_month': selected_month,
+        'month_value': month_value,
     })
 
 
@@ -2199,12 +2314,20 @@ def student_levels_report(request):
     levels = []
     class_id = request.GET.get('class_id')
     subject_id = request.GET.get('subject_id')
-    if class_id and subject_id:
+    month_value = request.GET.get(
+        'month', _current_assessment_month().strftime('%Y-%m'),
+    ).strip()
+    selected_month = _parse_assessment_month(month_value)
+    if not selected_month:
+        selected_month = _current_assessment_month()
+        month_value = selected_month.strftime('%Y-%m')
+    if class_id and subject_id and selected_month:
         selected_class = get_object_or_404(Class, id=class_id)
         selected_subject = get_object_or_404(Subject, id=subject_id)
         levels = StudentLevel.objects.filter(
             student__student_class=selected_class,
-            subject=selected_subject
+            subject=selected_subject,
+            assessment_month=selected_month,
         ).select_related('student', 'created_by')
         levels = sort_by_student_name(levels)
     return render(request, 'school/student_levels_report.html', {
@@ -2212,6 +2335,8 @@ def student_levels_report(request):
         'subjects': subjects,
         'selected_class': selected_class,
         'selected_subject': selected_subject,
+        'selected_month': selected_month,
+        'month_value': month_value,
         'levels': levels,
     })
 

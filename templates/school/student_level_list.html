@@ -15,7 +15,7 @@
     </div>
     <div class="card-body">
         <form method="get" class="row g-3 mb-4 no-print">
-            <div class="col-md-{% if is_teacher %}4{% else %}3{% endif %}">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label">الصف</label>
                 <select name="class_id" class="form-select" onchange="this.form.submit()">
                     <option value="">اختر الصف</option>
@@ -24,7 +24,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-{% if is_teacher %}4{% else %}3{% endif %}">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label">المادة</label>
                 <select name="subject_id" class="form-select" onchange="this.form.submit()">
                     <option value="">اختر المادة</option>
@@ -33,8 +33,13 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-lg-{% if is_teacher %}3{% else %}2{% endif %} col-md-6">
+                <label class="form-label">شهر التقييم</label>
+                <input type="month" name="month" value="{{ month_value }}" class="form-control" {% if is_teacher %}required{% endif %} onchange="this.form.submit()">
+                {% if not is_teacher %}<div class="form-text">اتركه فارغًا لعرض جميع الأشهر</div>{% endif %}
+            </div>
             {% if not is_teacher %}
-            <div class="col-md-3">
+            <div class="col-lg-2 col-md-6">
                 <label class="form-label">المستوى</label>
                 <select name="level" class="form-select" onchange="this.form.submit()">
                     <option value="">كل المستويات</option>
@@ -44,7 +49,7 @@
                 </select>
             </div>
             {% endif %}
-            <div class="col-md-{% if is_teacher %}4{% else %}3{% endif %} d-flex align-items-end">
+            <div class="col-lg-{% if is_teacher %}3{% else %}2{% endif %} col-md-6 d-flex align-items-end">
                 <a href="{% url 'student_level_list' %}" class="btn btn-outline-secondary w-100">إعادة تعيين</a>
             </div>
         </form>
@@ -53,9 +58,10 @@
             {% if selected_class and selected_subject %}
             <form method="post">
                 {% csrf_token %}
+                <input type="hidden" name="assessment_month" value="{{ month_value }}">
                 <div class="mb-3 no-print">
                     <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> حفظ المستويات</button>
-                    <span class="text-muted small ms-2">الصف: <strong>{{ selected_class.name }}</strong> — المادة: <strong>{{ selected_subject.name }}</strong></span>
+                    <span class="text-muted small ms-2">الصف: <strong>{{ selected_class.name }}</strong> — المادة: <strong>{{ selected_subject.name }}</strong> — الشهر: <strong>{{ selected_month|date:"Y/m" }}</strong></span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -106,6 +112,7 @@
             <div class="d-none d-print-block text-center mb-3">
                 <h4>مستويات الطلاب</h4>
                 {% if selected_class %}<h5>{{ selected_class.name }}{% if selected_subject %} - {{ selected_subject.name }}{% endif %}</h5>{% endif %}
+                {% if selected_month %}<h6 class="text-secondary">شهر التقييم: {{ selected_month|date:"Y/m" }}</h6>{% endif %}
                 {% if selected_level_label %}<h6 class="text-secondary">المستوى: {{ selected_level_label }}</h6>{% endif %}
                 <hr>
             </div>
@@ -118,6 +125,7 @@
                             <th>الطالب</th>
                             <th>الصف</th>
                             <th>المادة</th>
+                            <th>شهر التقييم</th>
                             <th>المستوى</th>
                             <th>الملاحظات</th>
                             <th>أضيف بواسطة</th>
@@ -131,6 +139,7 @@
                             <td><a href="{% url 'student_detail' level.student.id %}">{{ level.student.full_name }}</a></td>
                             <td>{{ level.student.student_class.name|default:"-" }}</td>
                             <td>{{ level.subject.name|default:"-" }}</td>
+                            <td class="text-nowrap">{{ level.assessment_month|date:"Y/m" }}</td>
                             <td>
                                 <span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">
                                     {{ level.get_level_display }}
@@ -142,7 +151,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="9" class="text-center text-muted py-4">
                                 <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
                                 <p class="mt-2">لا توجد مستويات مسجلة</p>
                             </td>

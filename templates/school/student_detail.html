@@ -148,7 +148,7 @@
 
 <div id="education" class="card mb-4 section-anchor">
     <div class="card-header"><div class="section-title"><i class="bi bi-graph-up-arrow"></i> المستوى التعليمي</div></div>
-    <div class="card-body">{% if levels %}<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>المادة</th><th>المستوى</th><th>التاريخ</th></tr></thead><tbody>{% for level in levels|slice:":10" %}<tr><td>{{ level.subject.name|default:"-" }}</td><td><span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ level.get_level_display }}</span></td><td>{{ level.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-3 mb-0">لا توجد مستويات مسجلة</p>{% endif %}</div>
+    <div class="card-body">{% if levels %}<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>المادة</th><th>شهر التقييم</th><th>المستوى</th><th>تاريخ التسجيل</th></tr></thead><tbody>{% for level in levels|slice:":10" %}<tr><td>{{ level.subject.name|default:"-" }}</td><td>{{ level.assessment_month|date:"Y/m" }}</td><td><span class="badge bg-{% if level.level == 'excellent' %}success{% elif level.level == 'very_good' %}info{% elif level.level == 'good' %}primary{% elif level.level == 'acceptable' %}warning{% else %}danger{% endif %}">{{ level.get_level_display }}</span></td><td>{{ level.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted text-center py-3 mb-0">لا توجد مستويات مسجلة</p>{% endif %}</div>
 </div>
 
 <div id="followup" class="section-anchor mb-4">

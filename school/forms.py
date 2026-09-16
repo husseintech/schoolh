@@ -259,12 +259,19 @@ class StudentLeaveForm(forms.ModelForm):
 
 
 class StudentLevelForm(forms.ModelForm):
+    assessment_month = forms.DateField(
+        label='شهر التقييم',
+        input_formats=['%Y-%m'],
+        widget=forms.DateInput(format='%Y-%m', attrs={'type': 'month'}),
+    )
+
     class Meta:
         model = StudentLevel
-        fields = ['student', 'subject', 'level', 'notes']
+        fields = ['student', 'subject', 'assessment_month', 'level', 'notes']
         labels = {
             'student': 'الطالب',
             'subject': 'المادة',
+            'assessment_month': 'شهر التقييم',
             'level': 'المستوى',
             'notes': 'ملاحظات',
         }

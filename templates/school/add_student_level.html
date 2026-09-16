@@ -22,7 +22,7 @@
         <form method="post">
             {% csrf_token %}
             <input type="hidden" name="class_id" value="{{ selected_class.id }}">
-            <div class="row mb-3">
+            <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <label class="form-label">المادة</label>
                     <select name="subject" class="form-select" required>
@@ -31,6 +31,11 @@
                         <option value="{{ s.id }}">{{ s.name }}</option>
                         {% endfor %}
                     </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">شهر التقييم</label>
+                    <input type="month" name="assessment_month" value="{{ assessment_month }}" class="form-control" required>
+                    <div class="form-text">لكل شهر مستوى مستقل؛ تغيير الشهر لا يستبدل مستويات الأشهر الأخرى.</div>
                 </div>
             </div>
             <div class="table-responsive">

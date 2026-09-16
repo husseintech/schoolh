@@ -4,6 +4,11 @@ from datetime import date, datetime
 from django.utils import timezone
 
 
+def current_month_start():
+    """Default month for legacy imports and newly created level records."""
+    return timezone.localdate().replace(day=1)
+
+
 def has_perm(user, module, action):
     if user.profile.role == 'admin':
         return True
@@ -406,6 +411,7 @@ class StudentLevel(models.Model):
     ]
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='levels', verbose_name='الطالب')
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, verbose_name='المادة')
+    assessment_month = models.DateField('شهر التقييم', default=current_month_start)
     level = models.CharField('المستوى', max_length=20, choices=LEVEL_CHOICES)
     notes = models.TextField('ملاحظات', blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أضيف بواسطة')
@@ -414,10 +420,10 @@ class StudentLevel(models.Model):
     class Meta:
         verbose_name = 'مستوى طالب'
         verbose_name_plural = 'مستويات الطلاب'
-        ordering = ['-created_at']
+        ordering = ['-assessment_month', '-created_at']
 
     def __str__(self):
-        return f'{self.student.full_name} - {self.get_level_display()}'
+        return f'{self.student.full_name} - {self.get_level_display()} - {self.assessment_month:%Y-%m}'
 
 
 class ExamAnalysis(models.Model):
