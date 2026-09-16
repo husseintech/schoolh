@@ -104,6 +104,40 @@ class AIQualityServiceTests(SimpleTestCase):
                 'grade': 4, 'subject': 'عربي', 'lesson_title': 'الفاعل', 'brief': BRIEF})
         self.assertEqual(len(data['worksheet']), 4)
 
+    def test_curriculum_answer_requests_child_friendly_paraphrase_with_longer_timeout(self):
+        response = Mock(status_code=200)
+        response.json.return_value = {
+            'candidates': [{
+                'finishReason': 'STOP',
+                'content': {'parts': [{'text': json.dumps({
+                    'answerable': True,
+                    'answer': (
+                        'الفكرة ببساطة\nالغذاء المتوازن يعني التنويع باعتدال.\n\n'
+                        'خطوة خطوة\nنختار مجموعات مختلفة بكميات مناسبة.\n\n'
+                        'مثال توضيحي\nنرتب وجبة متنوعة.\n\n'
+                        'تأكد من فهمك\nلماذا ننوّع طعامنا؟'
+                    ),
+                    'citations': ['P7'],
+                    'suggestions': ['أعطني تدريبًا قصيرًا'],
+                }, ensure_ascii=False)}]},
+            }],
+        }
+        with patch('open_learning.services.ai_service.requests.post', return_value=response) as post:
+            result, _, _ = GeminiProvider('test').answer_curriculum_question(
+                question='اشرح الغذاء المتوازن',
+                grade='الصف الرابع',
+                subject='العلوم والحياة',
+                lesson='الغذاء المتوازن',
+                page_contexts=[{'id': 'P7', 'text': 'الغذاء المتوازن متنوع وبكميات مناسبة.'}],
+            )
+        request_kwargs = post.call_args.kwargs
+        prompt = request_kwargs['json']['contents'][0]['parts'][0]['text']
+        self.assertEqual(request_kwargs['timeout'], (4, 25))
+        self.assertIn('لا تنسخ نص الصفحة', prompt)
+        self.assertIn('مثال توضيحي جديد', prompt)
+        self.assertIn('اكتب بالعربية فقط', prompt)
+        self.assertTrue(result['answerable'])
+
     def test_distinct_video_and_content_ids_survive_normalization(self):
         self.assertNotEqual(normalize_url('https://youtube.com/watch?v=AbC'), normalize_url('https://youtube.com/watch?v=abc'))
         self.assertEqual(normalize_url('https://youtu.be/AbC'), normalize_url('https://www.youtube.com/watch?v=AbC&utm_source=x'))

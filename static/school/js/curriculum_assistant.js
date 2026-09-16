@@ -7,6 +7,8 @@
     var stream = document.getElementById('curriculumMessages');
     var question = document.getElementById('curriculumQuestion');
     var conversationId = null;
+    var activeUtterance = null;
+    var activeSpeechButton = null;
 
     function csrfToken() {
         var field = form && form.querySelector('input[name="csrfmiddlewaretoken"]');
@@ -24,7 +26,75 @@
         if (stream) stream.scrollTop = stream.scrollHeight;
     }
 
-    function addMessage(role, content, citations, suggestions) {
+    function resetSpeechButton() {
+        if (activeSpeechButton) {
+            activeSpeechButton.classList.remove('is-speaking');
+            activeSpeechButton.setAttribute('aria-pressed', 'false');
+            activeSpeechButton.innerHTML = '<i class="bi bi-volume-up-fill"></i><span>استمع للشرح</span>';
+        }
+        activeSpeechButton = null;
+        activeUtterance = null;
+    }
+
+    function stopSpeech() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        resetSpeechButton();
+    }
+
+    function addResponseTools(bubble, content, video) {
+        var supportsSpeech = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+        if (!supportsSpeech && !video) return;
+        var tools = make('div', 'chat-tools');
+        if (supportsSpeech) {
+            var listen = make('button', 'chat-listen');
+            listen.type = 'button';
+            listen.setAttribute('aria-pressed', 'false');
+            listen.innerHTML = '<i class="bi bi-volume-up-fill"></i><span>استمع للشرح</span>';
+            listen.addEventListener('click', function () {
+                if (activeSpeechButton === listen && window.speechSynthesis.speaking) {
+                    stopSpeech();
+                    return;
+                }
+                stopSpeech();
+                var utterance = new SpeechSynthesisUtterance(
+                    String(content || '').replace(/[🌟👣✏️✅]/g, '').trim()
+                );
+                utterance.lang = 'ar-SA';
+                utterance.rate = 0.9;
+                var voices = window.speechSynthesis.getVoices();
+                var arabicVoice = voices.find(function (voice) {
+                    return String(voice.lang || '').toLowerCase().indexOf('ar') === 0;
+                });
+                if (arabicVoice) utterance.voice = arabicVoice;
+                activeUtterance = utterance;
+                activeSpeechButton = listen;
+                listen.classList.add('is-speaking');
+                listen.setAttribute('aria-pressed', 'true');
+                listen.innerHTML = '<i class="bi bi-stop-circle-fill"></i><span>إيقاف الصوت</span>';
+                utterance.onend = function () {
+                    if (activeUtterance === utterance) resetSpeechButton();
+                };
+                utterance.onerror = function () {
+                    if (activeUtterance === utterance) resetSpeechButton();
+                };
+                window.speechSynthesis.speak(utterance);
+            });
+            tools.appendChild(listen);
+        }
+        if (video && video.url) {
+            var videoLink = make('a', 'chat-video', video.label || 'ابحث عن فيديو شرح');
+            videoLink.href = video.url;
+            videoLink.target = '_blank';
+            videoLink.rel = 'noopener noreferrer';
+            if (video.note) videoLink.title = video.note;
+            var icon = make('i', 'bi bi-youtube');
+            videoLink.insertBefore(icon, videoLink.firstChild);
+            tools.appendChild(videoLink);
+        }
+        bubble.appendChild(tools);
+    }
+
+    function addMessage(role, content, citations, suggestions, video) {
         var row = make('div', 'chat-message chat-message--' + role);
         var avatar = make('div', 'chat-avatar');
         avatar.innerHTML = role === 'assistant' ? '<i class="bi bi-stars"></i>' : '<i class="bi bi-person-fill"></i>';
@@ -55,6 +125,7 @@
             });
             bubble.appendChild(followups);
         }
+        if (role === 'assistant') addResponseTools(bubble, content, video);
         row.appendChild(avatar);
         row.appendChild(bubble);
         stream.appendChild(row);
@@ -76,7 +147,9 @@
         var payload;
         try { payload = await response.json(); } catch (ignore) { payload = {}; }
         if (!response.ok || payload.ok === false) {
-            throw new Error(payload.error || 'انقطع اتصال الخادم أثناء إعداد الإجابة. أعد المحاولة بعد تحديث الصفحة.');
+            var error = new Error(payload.error || 'انقطع اتصال الخادم أثناء إعداد الإجابة. أعد المحاولة بعد تحديث الصفحة.');
+            error.payload = payload;
+            throw error;
         }
         return payload;
     }
@@ -110,10 +183,13 @@
                 });
                 var payload = await parseResponse(response);
                 conversationId = payload.conversation_id || conversationId;
-                addMessage('assistant', payload.answer, payload.citations || [], payload.suggestions || []);
+                addMessage('assistant', payload.answer, payload.citations || [], payload.suggestions || [], payload.video || null);
                 var remaining = root.querySelector('[data-remaining]');
                 if (remaining && payload.remaining !== undefined) remaining.textContent = payload.remaining;
             } catch (error) {
+                if (error.payload && error.payload.conversation_id) {
+                    conversationId = error.payload.conversation_id;
+                }
                 addMessage('error', error.message, [], []);
             } finally {
                 setBusy(false);
@@ -147,7 +223,7 @@
             var payload = await parseResponse(response);
             stream.innerHTML = '';
             payload.conversation.messages.forEach(function (message) {
-                addMessage(message.role, message.content, message.citations || [], []);
+                addMessage(message.role, message.content, message.citations || [], [], message.video || null);
             });
             conversationId = payload.conversation.id;
         } catch (error) {

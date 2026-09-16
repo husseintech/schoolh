@@ -16,13 +16,14 @@ from django.views.decorators.http import require_POST
 
 from open_learning.google_drive import GoogleDriveAuthError, GoogleDriveService
 from open_learning.services.ai_service import AIServiceUnavailable, get_provider
+from open_learning.services.usage import log_usage
 
 from .curriculum_assistant import (
     MAX_QUESTION_LENGTH,
     CurriculumPackageError,
-    build_source_fallback_answer,
     cached_answer,
     curriculum_settings,
+    curriculum_video_resource,
     hourly_limit_reached,
     hydrate_citations,
     import_curriculum_package,
@@ -81,6 +82,24 @@ def _audit(user, action, details=''):
         )
     except Exception:
         pass
+
+
+def _log_curriculum_usage(user, provider, *, success, error='', tokens=None, duration_ms=None):
+    """Usage logging must never hide a valid teaching response from the student."""
+    try:
+        log_usage(
+            user,
+            None,
+            'curriculum_answer',
+            provider=getattr(provider, 'name', 'none') if provider else 'none',
+            model=getattr(provider, 'model', '') if provider else '',
+            success=success,
+            error=error,
+            tokens=tokens,
+            duration_ms=duration_ms,
+        )
+    except Exception:
+        logger.exception('Could not record curriculum AI usage')
 
 
 def _error(message, status=400, code='request_error', **extra):
@@ -160,6 +179,7 @@ def curriculum_conversation(request, conversation_id):
         source__status='published',
         source__grade_level=4,
     )
+    video = curriculum_video_resource(conversation.source, conversation.lesson)
     return JsonResponse({
         'ok': True,
         'conversation': {
@@ -172,6 +192,7 @@ def curriculum_conversation(request, conversation_id):
                     'role': row.role,
                     'content': row.content,
                     'citations': hydrate_citations(row.citations) if row.role == 'assistant' else [],
+                    'video': video if row.role == 'assistant' else None,
                 }
                 for row in conversation.messages.all()
             ],
@@ -225,6 +246,7 @@ def curriculum_assistant_ask(request):
     lesson = None
     if payload.get('lesson_id'):
         lesson = get_object_or_404(CurriculumLesson, pk=payload['lesson_id'], source=source)
+    video = curriculum_video_resource(source, lesson)
 
     conversation = None
     if payload.get('conversation_id'):
@@ -259,6 +281,7 @@ def curriculum_assistant_ask(request):
             'conversation_id': conversation.pk,
             'remaining': max(0, settings_obj.daily_question_limit - used - 1),
             'mode': 'cache',
+            'video': video,
         })
 
     contexts = retrieve_curriculum_context(source, lesson, question)
@@ -274,6 +297,7 @@ def curriculum_assistant_ask(request):
             'conversation_id': conversation.pk,
             'remaining': max(0, settings_obj.daily_question_limit - used - 1),
             'mode': 'source_only',
+            'video': video,
         })
 
     provider = get_provider()
@@ -302,6 +326,13 @@ def curriculum_assistant_ask(request):
         conversation.save(update_fields=['updated_at'])
         if data.get('answerable'):
             save_cached_answer(source, lesson, question, data['answer'], citations, data.get('suggestions', []))
+        _log_curriculum_usage(
+            request.user,
+            provider,
+            success=True,
+            tokens=tokens,
+            duration_ms=duration,
+        )
         return JsonResponse({
             'ok': True,
             'answer': data['answer'],
@@ -310,37 +341,23 @@ def curriculum_assistant_ask(request):
             'conversation_id': conversation.pk,
             'remaining': max(0, settings_obj.daily_question_limit - used - 1),
             'mode': 'ai' if data.get('answerable') else 'source_only',
+            'video': video,
         })
     except AIServiceUnavailable as exc:
         logger.warning('Curriculum AI unavailable: %s', exc)
-    except Exception:
+        error_message = str(exc)
+    except Exception as exc:
         logger.exception('Unexpected curriculum AI failure')
-
-    fallback = build_source_fallback_answer(source, lesson, question, contexts)
-    if not fallback:
-        return _error(
-            'تعذّر تشغيل الشرح الذكي ولا يوجد نص كافٍ في الصفحات المختارة. اختر درسًا أو صفحة أوضح.',
-            status=503,
-            remaining=max(0, settings_obj.daily_question_limit - used - 1),
-        )
-    stored_citations = [{'page_id': page_id} for page_id in fallback['page_ids']]
-    citations = hydrate_citations(stored_citations)
-    CurriculumMessage.objects.create(
-        conversation=conversation,
-        role='assistant',
-        content=fallback['answer'],
-        citations=stored_citations,
+        error_message = str(exc)
+    _log_curriculum_usage(request.user, provider, success=False, error=error_message)
+    return _error(
+        'تعذّر إعداد الشرح الذكي الآن. لم نعرض نصًا منسوخًا بدل الشرح؛ أعد المحاولة بعد قليل.',
+        status=503,
+        code='ai_temporarily_unavailable',
+        conversation_id=conversation.pk,
+        remaining=max(0, settings_obj.daily_question_limit - used),
+        retryable=True,
     )
-    conversation.save(update_fields=['updated_at'])
-    return JsonResponse({
-        'ok': True,
-        'answer': fallback['answer'],
-        'citations': citations,
-        'suggestions': fallback['suggestions'],
-        'conversation_id': conversation.pk,
-        'remaining': max(0, settings_obj.daily_question_limit - used - 1),
-        'mode': 'source_fallback',
-    })
 
 
 @login_required

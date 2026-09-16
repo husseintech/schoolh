@@ -220,6 +220,7 @@ class AIUsageLog(models.Model):
         'cache_hit': 'استخدام مخزّن',
         'radio_word': 'إنشاء كلمة للإذاعة المدرسية',
         'radio_program': 'إنشاء برنامج إذاعي مدرسي',
+        'curriculum_answer': 'شرح سؤال من المنهاج',
     }
 
     @property

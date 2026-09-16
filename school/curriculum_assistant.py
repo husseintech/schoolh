@@ -3,6 +3,7 @@ import io
 import json
 import re
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.db import transaction
 from django.db.models import F
@@ -25,6 +26,7 @@ MAX_PACKAGE_BYTES = 15 * 1024 * 1024
 MAX_UNCOMPRESSED_PACKAGE_BYTES = 30 * 1024 * 1024
 DEFAULT_DAILY_LIMIT = 15
 MAX_CONTEXT_PAGES = 3
+CURRICULUM_ANSWER_VERSION = 2
 
 STOP_WORDS = {
     'في', 'من', 'الى', 'علي', 'عن', 'ما', 'ماذا', 'كيف', 'هل', 'هو', 'هي', 'هذا', 'هذه',
@@ -54,6 +56,11 @@ def is_grade_four(class_name):
 
 def normalized_question(value):
     return normalize_arabic(value)[:MAX_QUESTION_LENGTH]
+
+
+def answer_cache_key(question):
+    """Version cached answers so an improved teaching style never serves old text."""
+    return f'v{CURRICULUM_ANSWER_VERSION}:{normalized_question(question)}'[:500]
 
 
 def question_tokens(value):
@@ -160,46 +167,21 @@ def retrieve_curriculum_context(source, lesson, question, max_pages=MAX_CONTEXT_
     return contexts
 
 
-def build_source_fallback_answer(source, lesson, question, contexts):
-    """Build a useful, fully source-grounded answer when the AI provider is unavailable.
-
-    The fallback deliberately avoids inference: it presents short excerpts from the
-    already-ranked curriculum pages and keeps the same clickable citations used by
-    generated answers. It is not cached, so a later retry can still use the AI provider.
-    """
-    excerpts = []
-    page_ids = []
-    for context in contexts[:3]:
-        text = re.sub(r'\s+', ' ', str(context.get('text') or '')).strip()
-        page_id = context.get('page_id')
-        if not text or not page_id:
-            continue
-        if len(text) > 650:
-            text = text[:650].rsplit(' ', 1)[0].rstrip('،؛:.-') + '…'
-        shown_page = context.get('printed_page') or context.get('pdf_page')
-        excerpts.append(f'• صفحة {shown_page}: {text}')
-        page_ids.append(page_id)
-
-    if not excerpts:
+def curriculum_video_resource(source, lesson):
+    """Return a safe lesson-specific YouTube search, never an unverified AI URL."""
+    if not lesson:
         return None
-
-    lesson_label = lesson.title if lesson else source.subject_name
-    normalized = normalized_question(question)
-    if 'اختبرني' in normalized:
-        closing = 'اقرأ النقاط السابقة، ثم حاول أن تشرح أهم فكرة منها بكلماتك قبل أن تطلب سؤالًا جديدًا.'
-    elif any(word in normalized for word in ('مثال', 'تدريب', 'حل')):
-        closing = 'استخدم المثال أو النشاط الوارد في هذه الصفحات، وابدأ من أول خطوة مكتوبة فيه بالتسلسل.'
-    else:
-        closing = 'اقرأ هذه الأفكار خطوة خطوة، ثم حدّد الجملة التي تريد أن أبسّطها أكثر.'
-
+    query = ' '.join((
+        lesson.title,
+        source.subject_name,
+        'الصف الرابع',
+        'المنهاج الفلسطيني',
+        'شرح مبسط',
+    ))
     return {
-        'answer': (
-            f'سأجيبك الآن بالقراءة المباشرة من صفحات درس «{lesson_label}» دون إضافة معلومات من خارج الكتاب:\n\n'
-            + '\n\n'.join(excerpts)
-            + f'\n\n{closing}'
-        ),
-        'page_ids': list(dict.fromkeys(page_ids)),
-        'suggestions': ['بسّط لي الفكرة الأولى', 'اختبرني من هذه الصفحات'],
+        'label': 'ابحث عن فيديو شرح لهذا الدرس',
+        'url': 'https://www.youtube.com/results?' + urlencode({'search_query': query}),
+        'note': 'نتائج بحث مقترحة؛ اختر الفيديو المناسب بإشراف الأسرة أو المعلم.',
     }
 
 
@@ -218,7 +200,7 @@ def cached_answer(source, lesson, question):
     return CurriculumAnswerCache.objects.filter(
         source=source,
         lesson=lesson,
-        normalized_question=normalized_question(question),
+        normalized_question=answer_cache_key(question),
     ).first()
 
 
@@ -226,7 +208,7 @@ def save_cached_answer(source, lesson, question, answer, citations, suggestions)
     cache, _ = CurriculumAnswerCache.objects.update_or_create(
         source=source,
         lesson=lesson,
-        normalized_question=normalized_question(question),
+        normalized_question=answer_cache_key(question),
         defaults={
             'answer': answer,
             'citations': [

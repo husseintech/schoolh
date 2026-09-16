@@ -1,6 +1,6 @@
 {% extends 'school/base.html' %}
 {% block title %}مساعد المنهاج{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260915">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260916b">{% endblock %}
 {% block content %}
 <div class="curriculum-shell" id="curriculumAssistant"
      data-ask-url="{% url 'curriculum_assistant_ask' %}"
@@ -10,7 +10,7 @@
         <div>
             <span class="curriculum-kicker"><i class="bi bi-stars"></i> من كتبك المدرسية المعتمدة</span>
             <h1>أهلًا {{ student_name }}، ماذا سنتعلّم اليوم؟</h1>
-            <p>اختر المادة والدرس، واسأل بطريقتك. سأشرح من صفحات الكتاب فقط، وأعرض لك مرجع كل إجابة.</p>
+            <p>اختر المادة والدرس، واسأل بطريقتك. سأفهم الفكرة من كتابك ثم أشرحها بأسلوب بسيط مع صوت وفيديو مقترح.</p>
         </div>
         <div class="curriculum-limit" aria-label="الأسئلة المتبقية اليوم">
             <strong data-remaining>{{ questions_remaining }}</strong>
@@ -97,7 +97,7 @@
                     <div class="assistant-avatar"><i class="bi bi-stars"></i></div>
                     <div>
                         <strong>أنا معلمك المساعد</strong>
-                        <p>لن أخمّن إجابة من خارج الكتاب. بعد كل شرح ستجد الصفحة التي اعتمدت عليها ويمكنك فتح نصها.</p>
+                        <p>سأستخدم صفحات الكتاب مرجعًا، ثم أشرح الفكرة بكلمات سهلة وخطوات ومثال جديد. ويمكنك الاستماع إلى الشرح.</p>
                     </div>
                 </div>
             </div>
@@ -114,4 +114,4 @@
     {% endif %}
 </div>
 {% endblock %}
-{% block extra_js %}<script src="/static/school/js/curriculum_assistant.js?v=20260916"></script>{% endblock %}
+{% block extra_js %}<script src="/static/school/js/curriculum_assistant.js?v=20260916b"></script>{% endblock %}

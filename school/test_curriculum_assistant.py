@@ -1,5 +1,6 @@
 import gzip
 import json
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
@@ -8,7 +9,12 @@ from django.contrib.staticfiles import finders
 from django.test import TestCase
 from django.urls import reverse
 
-from school.curriculum_assistant import import_curriculum_package, retrieve_curriculum_context
+from school.curriculum_assistant import (
+    answer_cache_key,
+    curriculum_video_resource,
+    import_curriculum_package,
+    retrieve_curriculum_context,
+)
 from school.views import get_clearable_tables
 from school.models import (
     Class,
@@ -160,6 +166,8 @@ class CurriculumAssistantTests(TestCase):
         self.assertTrue(payload['ok'])
         self.assertEqual(payload['citations'][0]['printed_page'], 9)
         self.assertEqual(payload['citations'][0]['url'], reverse('curriculum_source_page', args=[self.page.pk]))
+        self.assertIn('youtube.com/results', payload['video']['url'])
+        self.assertIn('فيديو شرح', payload['video']['label'])
         kwargs = provider.answer_curriculum_question.call_args.kwargs
         self.assertNotIn('student', kwargs)
         self.assertNotIn('سلمى', json.dumps(kwargs, ensure_ascii=False))
@@ -167,7 +175,7 @@ class CurriculumAssistantTests(TestCase):
         self.assertEqual(assistant_message.estimated_tokens, 90)
         self.assertEqual(assistant_message.citations, [{'page_id': self.page.pk}])
 
-    def test_unapproved_citation_uses_source_fallback(self):
+    def test_unapproved_citation_never_returns_copied_source_fallback(self):
         provider = Mock()
         provider.answer_curriculum_question.return_value = ({
             'answerable': True,
@@ -182,12 +190,12 @@ class CurriculumAssistantTests(TestCase):
                 'source_id': self.source.pk,
                 'lesson_id': self.lesson.pk,
             })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['mode'], 'source_fallback')
-        self.assertEqual(response.json()['citations'][0]['page_id'], self.page.pk)
-        self.assertTrue(CurriculumMessage.objects.filter(role='assistant').exists())
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()['code'], 'ai_temporarily_unavailable')
+        self.assertIn('لم نعرض نصًا منسوخًا', response.json()['error'])
+        self.assertFalse(CurriculumMessage.objects.filter(role='assistant').exists())
 
-    def test_provider_failure_uses_source_fallback(self):
+    def test_provider_failure_returns_retryable_error_without_copying_book(self):
         provider = Mock()
         provider.answer_curriculum_question.side_effect = RuntimeError('provider failed')
         self.client.force_login(self.student_user)
@@ -197,17 +205,17 @@ class CurriculumAssistantTests(TestCase):
                 'source_id': self.source.pk,
                 'lesson_id': self.lesson.pk,
             })
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 503)
         payload = response.json()
-        self.assertEqual(payload['mode'], 'source_fallback')
-        self.assertIn('القراءة المباشرة', payload['answer'])
-        self.assertEqual(payload['citations'][0]['page_id'], self.page.pk)
+        self.assertEqual(payload['code'], 'ai_temporarily_unavailable')
+        self.assertTrue(payload['retryable'])
+        self.assertFalse(CurriculumMessage.objects.filter(role='assistant').exists())
 
     def test_exact_answer_cache_avoids_second_ai_call(self):
         CurriculumAnswerCache.objects.create(
             source=self.source,
             lesson=self.lesson,
-            normalized_question='ما الغذاء المتوازن',
+            normalized_question=answer_cache_key('ما الغذاء المتوازن؟'),
             answer='إجابة محفوظة من الكتاب.',
             citations=[{'page_id': self.page.pk}],
             suggestions=['سؤال آخر'],
@@ -223,6 +231,12 @@ class CurriculumAssistantTests(TestCase):
         self.assertEqual(response.json()['mode'], 'cache')
         self.assertEqual(response.json()['answer'], 'إجابة محفوظة من الكتاب.')
         provider.assert_not_called()
+
+    def test_lesson_video_is_a_safe_targeted_search(self):
+        video = curriculum_video_resource(self.source, self.lesson)
+        self.assertTrue(video['url'].startswith('https://www.youtube.com/results?'))
+        self.assertIn('%D8%A7%D9%84%D8%B5%D9%81+%D8%A7%D9%84%D8%B1%D8%A7%D8%A8%D8%B9', video['url'])
+        self.assertIsNone(curriculum_video_resource(self.source, None))
 
     def test_daily_limit_counts_curriculum_answers(self):
         CurriculumAssistantSettings.objects.create(daily_question_limit=1)
@@ -330,7 +344,11 @@ class CurriculumAssistantTests(TestCase):
 
     def test_frontend_assets_exist(self):
         self.assertTrue(finders.find('school/css/curriculum_assistant.css'))
-        self.assertTrue(finders.find('school/js/curriculum_assistant.js'))
+        assistant_js = finders.find('school/js/curriculum_assistant.js')
+        self.assertTrue(assistant_js)
+        javascript = Path(assistant_js).read_text(encoding='utf-8')
+        self.assertIn('speechSynthesis', javascript)
+        self.assertIn('chat-video', javascript)
         self.assertTrue(finders.find('school/js/curriculum_source_admin.js'))
 
     def test_conversations_are_registered_for_year_start_maintenance(self):
