@@ -1,0 +1,109 @@
+{% extends 'school/base.html' %}
+{% block title %}إدارة مساعد المنهاج{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/school/css/curriculum_assistant.css?v=20260916d"><link rel="stylesheet" href="/static/school/css/curriculum_manager.css?v=20260916a">{% endblock %}
+{% block content %}
+<div class="curriculum-admin curriculum-manager">
+    <div class="admin-title-row">
+        <div>
+            <span class="curriculum-kicker"><i class="bi bi-stars"></i> الإشراف التعليمي</span>
+            <h1>إدارة مساعد المنهاج</h1>
+            <p>إدارة فيديوهات الدروس ومتابعة عدد الأسئلة المجابة ضمن الصفوف والمواد المسندة إليك فقط.</p>
+        </div>
+        {% if is_admin %}
+        <a class="btn btn-outline-primary" href="{% url 'curriculum_assistant_admin' %}"><i class="bi bi-journals"></i> مصادر المنهاج</a>
+        {% else %}
+        <div class="manager-scope" aria-label="نطاق صلاحية المعلم">
+            <span><i class="bi bi-people-fill"></i>{% for class in scope_classes %}{{ class.name }}{% if not forloop.last %}، {% endif %}{% empty %}لا توجد صفوف مسندة{% endfor %}</span>
+            <span><i class="bi bi-book-fill"></i>{% for subject in scope_subjects %}{{ subject.name }}{% if not forloop.last %}، {% endif %}{% empty %}لا توجد مواد مسندة{% endfor %}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if has_stats_permission %}
+    <div class="manager-stat-cards">
+        <article><i class="bi bi-person-check-fill"></i><div><strong>{{ students_with_answers }}</strong><span>طلاب حصلوا على إجابات</span></div></article>
+        <article><i class="bi bi-chat-square-text-fill"></i><div><strong>{{ answered_questions }}</strong><span>أسئلة تمت الإجابة عنها</span></div></article>
+    </div>
+    {% endif %}
+
+    <section class="video-admin-section">
+        <div class="section-heading">
+            <div><h2>فيديوهات الدروس المعتمدة</h2><p>لا يمكنك الإضافة أو الحذف إلا في مواد الصفوف المسندة إلى حسابك.</p></div>
+            <span class="approved-video-count"><i class="bi bi-play-btn-fill"></i> {{ approved_video_count }} فيديو</span>
+        </div>
+        <div class="video-admin-grid {% if not can_add_videos %}video-admin-grid--single{% endif %}">
+            {% if can_add_videos %}
+            <form method="post" class="admin-card curriculum-video-form">
+                {% csrf_token %}<input type="hidden" name="action" value="add_video">
+                <h2><i class="bi bi-youtube"></i> إضافة فيديو لدرس</h2>
+                <label class="form-label" for="videoLesson">الدرس</label>
+                <select class="form-select mb-3" id="videoLesson" name="lesson_id" required {% if not lessons %}disabled{% endif %}>
+                    <option value="">اختر المادة والدرس</option>
+                    {% regroup lessons by source as source_lessons %}
+                    {% for group in source_lessons %}
+                    <optgroup label="{{ group.grouper.subject_name }} — الفصل {{ group.grouper.term }}">
+                        {% for lesson in group.list %}<option value="{{ lesson.pk }}">{{ lesson.title }}</option>{% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+                <label class="form-label" for="videoTitle">عنوان يظهر للطالب</label>
+                <input class="form-control mb-3" id="videoTitle" name="video_title" maxlength="240" placeholder="مثال: شرح مبسط للغذاء المتوازن" required {% if not lessons %}disabled{% endif %}>
+                <label class="form-label" for="videoUrl">رابط YouTube</label>
+                <input class="form-control" id="videoUrl" name="video_url" type="url" maxlength="800" placeholder="https://www.youtube.com/watch?v=..." required {% if not lessons %}disabled{% endif %}>
+                <p class="form-text"><i class="bi bi-shield-check"></i> راجع الفيديو قبل اعتماده؛ سيظهر للطلاب داخل نافذة المنصة.</p>
+                <button class="btn btn-danger" {% if not lessons %}disabled{% endif %}><i class="bi bi-plus-circle"></i> اعتماد الفيديو</button>
+                {% if not lessons %}<div class="manager-empty-scope"><i class="bi bi-exclamation-circle"></i> لا توجد دروس منشورة تطابق صفوفك وموادك الحالية.</div>{% endif %}
+            </form>
+            {% endif %}
+            <div class="admin-card approved-video-list">
+                <h2><i class="bi bi-collection-play"></i> المكتبة الحالية</h2>
+                {% if approved_videos %}
+                <div class="approved-video-table-wrap">
+                    <table class="approved-video-table">
+                        <thead><tr><th>المادة والدرس</th><th>الفيديو</th>{% if can_delete_videos %}<th><span class="visually-hidden">حذف</span></th>{% endif %}</tr></thead>
+                        <tbody>
+                        {% for video in approved_videos %}
+                        <tr>
+                            <td><strong>{{ video.lesson.source.subject_name }}</strong><small>{{ video.lesson.title }}</small></td>
+                            <td><a href="https://www.youtube.com/watch?v={{ video.youtube_video_id }}" target="_blank" rel="noopener"><i class="bi bi-play-circle-fill"></i> {{ video.title }}</a></td>
+                            {% if can_delete_videos %}<td><form method="post" data-video-delete>{% csrf_token %}<input type="hidden" name="action" value="delete_video"><input type="hidden" name="video_id" value="{{ video.pk }}"><button class="btn btn-sm btn-outline-danger" type="submit" aria-label="حذف {{ video.title }}"><i class="bi bi-trash3"></i></button></form></td>{% endif %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-video-library"><i class="bi bi-camera-video-off"></i><span>لا توجد فيديوهات في نطاقك حتى الآن.</span></div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="manager-stats-section">
+        <div class="section-heading">
+            <div><h2>متابعة استخدام الطلاب</h2><p>تُحتسب الإجابات الناجحة فقط، ولا يظهر نص السؤال أو أي بيانات إضافية.</p></div>
+        </div>
+        {% if has_stats_permission %}
+        <div class="admin-card manager-stats-card">
+            {% if student_stats %}
+            <div class="manager-stats-table-wrap">
+                <table class="manager-stats-table">
+                    <thead><tr><th>الطالب</th><th>عدد الأسئلة التي حصلت على إجابة</th></tr></thead>
+                    <tbody>
+                    {% for row in student_stats %}
+                    <tr><td><i class="bi bi-person-circle"></i> {{ row.conversation__student__full_name }}</td><td><strong>{{ row.question_count }}</strong></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-video-library"><i class="bi bi-chat-square-dots"></i><span>لم يحصل أي طالب في نطاقك على إجابة بعد.</span></div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="curriculum-state curriculum-state--info"><i class="bi bi-shield-lock"></i><div>صلاحية متابعة الإحصاءات غير مفعلة لهذا الحساب.</div></div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="/static/school/js/curriculum_source_admin.js?v=20260916d"></script>{% endblock %}

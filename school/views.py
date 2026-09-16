@@ -97,10 +97,10 @@ def sort_students_class_first(students):
 def sort_by_student_name(items):
     return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning', 'school_radio']
+MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning', 'school_radio', 'curriculum_assistant']
 ACTION_KEYS = [
     'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
-    'complete', 'send', 'review', 'generate', 'manage_constraints',
+    'complete', 'send', 'review', 'monitor', 'generate', 'manage_constraints',
     'manage_settings', 'whatsapp', 'accounts', 'links',
 ]
 MODULE_LABELS = {
@@ -136,6 +136,7 @@ MODULE_LABELS = {
     'no_objection': 'لا مانع',
     'open_learning': 'التعلم المفتوح',
     'school_radio': 'ملف الإذاعة المدرسية',
+    'curriculum_assistant': 'إدارة مساعد المنهاج',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -149,6 +150,7 @@ ACTION_LABELS = {
     'complete': 'إكمال',
     'send': 'إرسال',
     'review': 'مراجعة',
+    'monitor': 'متابعة',
     'generate': 'توليد',
     'manage_constraints': 'إدارة القيود',
     'manage_settings': 'إدارة الإعدادات',

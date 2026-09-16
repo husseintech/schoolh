@@ -71,6 +71,8 @@ def user_permissions(request):
             ('open_learning', 'view'), ('open_learning', 'add'), ('open_learning', 'review'),
             ('school_radio', 'view'), ('school_radio', 'add'), ('school_radio', 'edit'),
             ('school_radio', 'delete'), ('school_radio', 'generate'), ('school_radio', 'review'),
+            ('curriculum_assistant', 'view'), ('curriculum_assistant', 'add'),
+            ('curriculum_assistant', 'delete'), ('curriculum_assistant', 'monitor'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):

@@ -14,6 +14,7 @@ urlpatterns = [
     path('curriculum-assistant/ask/', curriculum_assistant_views.curriculum_assistant_ask, name='curriculum_assistant_ask'),
     path('curriculum-assistant/conversations/<int:conversation_id>/', curriculum_assistant_views.curriculum_conversation, name='curriculum_conversation'),
     path('curriculum-assistant/pages/<int:page_id>/', curriculum_assistant_views.curriculum_source_page, name='curriculum_source_page'),
+    path('curriculum-assistant/manage/', curriculum_assistant_views.curriculum_assistant_manage, name='curriculum_assistant_manage'),
     path('curriculum-assistant/admin/', curriculum_assistant_views.curriculum_assistant_admin, name='curriculum_assistant_admin'),
     path('curriculum-assistant/admin/sources/<int:source_id>/pdf/start/', curriculum_assistant_views.curriculum_pdf_upload_start, name='curriculum_pdf_upload_start'),
     path('curriculum-assistant/admin/sources/<int:source_id>/pdf/chunk/', curriculum_assistant_views.curriculum_pdf_upload_chunk, name='curriculum_pdf_upload_chunk'),

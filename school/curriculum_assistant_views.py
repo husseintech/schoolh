@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core import signing
 from django.db import transaction
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -44,8 +45,9 @@ from .models import (
     CurriculumMessage,
     CurriculumPage,
     CurriculumSource,
+    has_perm,
 )
-from .student_assistant import privacy_guard_answer, student_short_name
+from .student_assistant import normalize_arabic, privacy_guard_answer, student_short_name
 
 
 MAX_SOURCE_PDF_SIZE = 100 * 1024 * 1024
@@ -62,6 +64,47 @@ def _role(request):
 
 def _admin_only(request):
     return _role(request) == 'admin'
+
+
+def _curriculum_permission(request, action):
+    role = _role(request)
+    return role == 'admin' or bool(
+        role == 'teacher' and has_perm(request.user, 'curriculum_assistant', action)
+    )
+
+
+def _teacher_curriculum_scope(request):
+    """Return the linked teacher and the subject codes represented by assignments."""
+    if _role(request) != 'teacher':
+        return None, set()
+    teacher = getattr(request.user, 'teacher_profile', None)
+    if not teacher or not any(is_grade_four(row.name) for row in teacher.classes.all()):
+        return teacher, set()
+
+    codes = set()
+    for subject in teacher.subjects.all():
+        name = normalize_arabic(subject.name)
+        if 'عربي' in name or 'arabic' in name:
+            codes.add('arabic')
+        if 'رياض' in name or 'math' in name:
+            codes.add('math')
+        if 'علوم' in name or 'science' in name:
+            codes.add('science')
+        if 'انجليز' in name or 'english' in name:
+            codes.add('english')
+    return teacher, codes
+
+
+def _managed_curriculum_sources(request, *, published_only=True):
+    sources = CurriculumSource.objects.filter(grade_level=4)
+    if published_only:
+        sources = sources.filter(status='published')
+    if _admin_only(request):
+        return sources
+    teacher, subject_codes = _teacher_curriculum_scope(request)
+    if not teacher or not subject_codes:
+        return CurriculumSource.objects.none()
+    return sources.filter(subject_code__in=subject_codes)
 
 
 def _student(request):
@@ -88,18 +131,27 @@ def _audit(user, action, details=''):
 
 def _log_curriculum_usage(user, provider, *, success, error='', tokens=None, duration_ms=None):
     """Usage logging must never hide a valid teaching response from the student."""
+    provider_name = getattr(provider, 'name', 'none') if provider else 'none'
+    provider_model = getattr(provider, 'model', '') if provider else ''
+    if not isinstance(provider_name, str):
+        provider_name = provider.__class__.__name__.lower() if provider else 'none'
+    if not isinstance(provider_model, str):
+        provider_model = ''
     try:
-        log_usage(
-            user,
-            None,
-            'curriculum_answer',
-            provider=getattr(provider, 'name', 'none') if provider else 'none',
-            model=getattr(provider, 'model', '') if provider else '',
-            success=success,
-            error=error,
-            tokens=tokens,
-            duration_ms=duration_ms,
-        )
+        # The savepoint prevents a logging failure from poisoning the outer
+        # request/test transaction after the student answer has been prepared.
+        with transaction.atomic():
+            log_usage(
+                user,
+                None,
+                'curriculum_answer',
+                provider=provider_name,
+                model=provider_model,
+                success=success,
+                error=error,
+                tokens=tokens,
+                duration_ms=duration_ms,
+            )
     except Exception:
         logger.exception('Could not record curriculum AI usage')
 
@@ -384,6 +436,101 @@ def curriculum_source_page(request, page_id):
         return redirect('curriculum_source_page', page_id=page.pk)
     return render(request, 'school/curriculum_source_page.html', {
         'page': page,
+        'is_admin': _admin_only(request),
+    })
+
+
+@login_required
+def curriculum_assistant_manage(request):
+    if not _curriculum_permission(request, 'view'):
+        messages.error(request, 'ليس لديك صلاحية إدارة مساعد المنهاج.')
+        return redirect('dashboard')
+
+    managed_sources = _managed_curriculum_sources(request)
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'add_video':
+            if not _curriculum_permission(request, 'add'):
+                messages.error(request, 'ليس لديك صلاحية إضافة فيديوهات الدروس.')
+                return redirect('curriculum_assistant_manage')
+            lesson = get_object_or_404(
+                CurriculumLesson.objects.select_related('source'),
+                pk=request.POST.get('lesson_id'),
+                source__in=managed_sources,
+            )
+            title = str(request.POST.get('video_title') or '').strip()[:240]
+            video_id = extract_youtube_video_id(request.POST.get('video_url'))
+            if not title:
+                messages.error(request, 'اكتب عنوانًا واضحًا للفيديو.')
+            elif not video_id:
+                messages.error(request, 'رابط الفيديو غير صالح. استخدم رابط مشاهدة من YouTube فقط.')
+            elif lesson.videos.filter(youtube_video_id=video_id).exists():
+                messages.warning(request, 'هذا الفيديو مضاف بالفعل إلى الدرس.')
+            else:
+                video = CurriculumLessonVideo.objects.create(
+                    lesson=lesson,
+                    title=title,
+                    youtube_video_id=video_id,
+                    position=lesson.videos.count() + 1,
+                    added_by=request.user,
+                )
+                _audit(request.user, 'إضافة فيديو معتمد لدرس منهاج', f'{lesson.title} — {video.title}')
+                messages.success(request, f'تمت إضافة الفيديو إلى درس «{lesson.title}».')
+        elif action == 'delete_video':
+            if not _curriculum_permission(request, 'delete'):
+                messages.error(request, 'ليس لديك صلاحية حذف فيديوهات الدروس.')
+                return redirect('curriculum_assistant_manage')
+            video = get_object_or_404(
+                CurriculumLessonVideo.objects.select_related('lesson__source'),
+                pk=request.POST.get('video_id'),
+                lesson__source__in=managed_sources,
+            )
+            details = f'{video.lesson.title} — {video.title}'
+            video.delete()
+            _audit(request.user, 'حذف فيديو معتمد من درس منهاج', details)
+            messages.success(request, 'تم حذف الفيديو من مكتبة الدرس.')
+        return redirect('curriculum_assistant_manage')
+
+    lessons = CurriculumLesson.objects.select_related('source').filter(
+        source__in=managed_sources,
+    ).order_by('source__subject_name', 'source__term', 'unit_order', 'lesson_order')
+    approved_videos = CurriculumLessonVideo.objects.select_related(
+        'lesson__source', 'added_by',
+    ).filter(lesson__source__in=managed_sources).order_by(
+        'lesson__source__subject_name', 'lesson__lesson_order', 'position', 'pk',
+    )
+
+    has_stats_permission = _curriculum_permission(request, 'monitor')
+    student_stats = []
+    if has_stats_permission:
+        answers = CurriculumMessage.objects.filter(
+            role='assistant',
+            conversation__source__in=_managed_curriculum_sources(request, published_only=False),
+        )
+        teacher, _ = _teacher_curriculum_scope(request)
+        if teacher:
+            answers = answers.filter(
+                conversation__student__student_class__in=teacher.classes.all(),
+            )
+        student_stats = list(answers.values(
+            'conversation__student_id', 'conversation__student__full_name',
+        ).annotate(
+            question_count=Count('pk'),
+        ).order_by('-question_count', 'conversation__student__full_name'))
+
+    teacher, _ = _teacher_curriculum_scope(request)
+    return render(request, 'school/curriculum_assistant_manage.html', {
+        'lessons': lessons,
+        'approved_videos': approved_videos,
+        'approved_video_count': approved_videos.count(),
+        'can_add_videos': _curriculum_permission(request, 'add'),
+        'can_delete_videos': _curriculum_permission(request, 'delete'),
+        'has_stats_permission': has_stats_permission,
+        'student_stats': student_stats,
+        'students_with_answers': len(student_stats),
+        'answered_questions': sum(row['question_count'] for row in student_stats),
+        'scope_classes': teacher.classes.all().order_by('name') if teacher else [],
+        'scope_subjects': teacher.subjects.all().order_by('name') if teacher else [],
         'is_admin': _admin_only(request),
     })
 

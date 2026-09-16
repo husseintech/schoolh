@@ -29,6 +29,9 @@ from school.models import (
     CurriculumSource,
     Profile,
     Student,
+    Subject,
+    Teacher,
+    UserPermission,
 )
 
 
@@ -56,6 +59,10 @@ class CurriculumAssistantTests(TestCase):
         Profile.objects.create(user=self.admin, role='admin')
         self.teacher = User.objects.create_user(username='curr-teacher', password='pass')
         Profile.objects.create(user=self.teacher, role='teacher')
+        self.science_subject = Subject.objects.create(name='العلوم')
+        self.teacher_record = Teacher.objects.create(user=self.teacher, full_name='معلمة العلوم')
+        self.teacher_record.classes.add(self.grade_four)
+        self.teacher_record.subjects.add(self.science_subject)
         self.source = CurriculumSource.objects.create(
             grade_level=4,
             term=1,
@@ -297,6 +304,100 @@ class CurriculumAssistantTests(TestCase):
         self.assertContains(response, 'رابط الفيديو غير صالح')
         self.assertFalse(CurriculumLessonVideo.objects.filter(title='رابط غير موثوق').exists())
 
+    def test_teacher_manager_is_limited_to_assigned_grade_and_subject(self):
+        math_source = CurriculumSource.objects.create(
+            grade_level=4, term=1, subject_code='math', subject_name='الرياضيات',
+            title='رياضيات الصف الرابع', original_filename='math.pdf', source_sha256='4' * 64,
+            page_count=1, status='published', created_by=self.admin,
+        )
+        math_lesson = CurriculumLesson.objects.create(
+            source=math_source, unit_title='الأعداد', unit_order=1, lesson_order=1,
+            title='الأعداد الكبيرة', start_pdf_page=1, end_pdf_page=1,
+        )
+        self.client.force_login(self.teacher)
+        page = self.client.get(reverse('curriculum_assistant_manage'))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'إدارة مساعد المنهاج')
+        self.assertContains(page, self.lesson.title)
+        self.assertNotContains(page, math_lesson.title)
+        self.assertContains(page, reverse('curriculum_assistant_manage'))
+
+        added = self.client.post(reverse('curriculum_assistant_manage'), {
+            'action': 'add_video',
+            'lesson_id': self.lesson.pk,
+            'video_title': 'شرح أضافته المعلمة',
+            'video_url': 'https://youtu.be/ZyXwVuTsRq0',
+        })
+        self.assertRedirects(added, reverse('curriculum_assistant_manage'))
+        created = CurriculumLessonVideo.objects.get(youtube_video_id='ZyXwVuTsRq0')
+        self.assertEqual(created.added_by, self.teacher)
+
+        denied = self.client.post(reverse('curriculum_assistant_manage'), {
+            'action': 'add_video',
+            'lesson_id': math_lesson.pk,
+            'video_title': 'فيديو خارج النطاق',
+            'video_url': 'https://youtu.be/QwErTyUiOp1',
+        })
+        self.assertEqual(denied.status_code, 404)
+        self.assertFalse(CurriculumLessonVideo.objects.filter(youtube_video_id='QwErTyUiOp1').exists())
+
+        removed = self.client.post(reverse('curriculum_assistant_manage'), {
+            'action': 'delete_video', 'video_id': created.pk,
+        })
+        self.assertRedirects(removed, reverse('curriculum_assistant_manage'))
+        self.assertFalse(CurriculumLessonVideo.objects.filter(pk=created.pk).exists())
+
+    def test_teacher_stats_show_only_students_and_successful_answer_counts_in_scope(self):
+        conversation = CurriculumConversation.objects.create(
+            student=self.student, source=self.source, lesson=self.lesson, title='سؤال خاص',
+        )
+        CurriculumMessage.objects.create(conversation=conversation, role='user', content='نص سؤال خاص')
+        CurriculumMessage.objects.create(conversation=conversation, role='assistant', content='الإجابة الأولى')
+        CurriculumMessage.objects.create(conversation=conversation, role='assistant', content='الإجابة الثانية')
+        other_student = Student.objects.get(user=self.other_user)
+        other_conversation = CurriculumConversation.objects.create(
+            student=other_student, source=self.source, lesson=self.lesson, title='خارج الصف',
+        )
+        CurriculumMessage.objects.create(
+            conversation=other_conversation, role='assistant', content='إجابة خارج نطاق المعلم',
+        )
+
+        self.client.force_login(self.teacher)
+        response = self.client.get(reverse('curriculum_assistant_manage'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['students_with_answers'], 1)
+        self.assertEqual(response.context['answered_questions'], 2)
+        self.assertEqual(response.context['student_stats'][0]['conversation__student__full_name'], self.student.full_name)
+        self.assertEqual(response.context['student_stats'][0]['question_count'], 2)
+        self.assertContains(response, self.student.full_name)
+        self.assertNotContains(response, other_student.full_name)
+        self.assertNotContains(response, 'نص سؤال خاص')
+        self.assertNotContains(response, 'الإجابة الأولى')
+
+    def test_teacher_curriculum_manager_permission_can_be_removed(self):
+        UserPermission.objects.create(
+            user=self.teacher,
+            permissions={'curriculum_assistant': []},
+        )
+        self.client.force_login(self.teacher)
+        denied = self.client.get(reverse('curriculum_assistant_manage'))
+        self.assertRedirects(denied, reverse('dashboard'))
+
+    def test_teacher_without_add_permission_cannot_add_video(self):
+        UserPermission.objects.create(
+            user=self.teacher,
+            permissions={'curriculum_assistant': ['view', 'monitor']},
+        )
+        self.client.force_login(self.teacher)
+        response = self.client.post(reverse('curriculum_assistant_manage'), {
+            'action': 'add_video',
+            'lesson_id': self.lesson.pk,
+            'video_title': 'غير مسموح',
+            'video_url': 'https://youtu.be/ZyXwVuTsRq0',
+        }, follow=True)
+        self.assertContains(response, 'ليس لديك صلاحية إضافة فيديوهات الدروس')
+        self.assertFalse(CurriculumLessonVideo.objects.filter(youtube_video_id='ZyXwVuTsRq0').exists())
+
     def test_daily_limit_counts_curriculum_answers(self):
         CurriculumAssistantSettings.objects.create(daily_question_limit=1)
         conversation = CurriculumConversation.objects.create(
@@ -403,6 +504,7 @@ class CurriculumAssistantTests(TestCase):
 
     def test_frontend_assets_exist(self):
         self.assertTrue(finders.find('school/css/curriculum_assistant.css'))
+        self.assertTrue(finders.find('school/css/curriculum_manager.css'))
         assistant_js = finders.find('school/js/curriculum_assistant.js')
         self.assertTrue(assistant_js)
         javascript = Path(assistant_js).read_text(encoding='utf-8')

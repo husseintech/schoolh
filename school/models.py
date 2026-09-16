@@ -75,6 +75,7 @@ DEFAULT_PERMISSIONS = {
         'no_objection': ['view', 'add', 'edit', 'delete'],
         'open_learning': ['view', 'add', 'edit', 'delete', 'review'],
         'school_radio': ['view', 'add', 'edit', 'delete', 'generate', 'review'],
+        'curriculum_assistant': ['view', 'add', 'delete', 'monitor'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -135,6 +136,7 @@ DEFAULT_PERMISSIONS = {
         'survey': ['add'],
         'reciprocal_visits': ['view'],
         'open_learning': ['view', 'add', 'edit', 'delete'],
+        'curriculum_assistant': ['view', 'add', 'delete', 'monitor'],
     },
     'student': {
         'students': [],
