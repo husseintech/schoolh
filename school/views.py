@@ -3089,7 +3089,12 @@ def absence_report(request):
     if not has_perm(request.user, 'absence', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    absence_date = request.GET.get('date') or date.today().isoformat()
+    try:
+        report_date = date.fromisoformat(request.GET.get('date', ''))
+    except ValueError:
+        report_date = timezone.localdate()
+    absence_date = report_date.isoformat()
+    day_name = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'][report_date.weekday()]
     classes = Class.objects.all().order_by('name')
     rows = []
     for i, cls in enumerate(classes, start=1):
@@ -3105,7 +3110,7 @@ def absence_report(request):
             'present': class_students - len(absent),
             'count': len(absent),
             'absence_pct': round((len(absent) / class_students) * 100, 1) if class_students else 0,
-            'names': ', '.join(a.student.full_name for a in absent) if absent else 'لا يوجد غياب',
+            'names': [' '.join(a.student.full_name.split()[:3]) for a in absent],
         })
     total_students = Student.objects.count()
     total_absent = sum(r['count'] for r in rows)
@@ -3121,6 +3126,7 @@ def absence_report(request):
         'attendance_pct': attendance_pct,
         'absence_pct': absence_pct,
         'absence_date': absence_date,
+        'day_name': day_name,
         'info': info,
         'today': date.today(),
     })
