@@ -3914,6 +3914,19 @@ def grade_register_print(request):
 
 
 @login_required
+def grade_register_detailed_print(request):
+    if not _grade_register_role_allowed(request):
+        messages.error(request, 'ليس لديك صلاحية لطباعة دفتر العلامات')
+        return redirect('dashboard')
+    context = _grade_register_context(request)
+    if context.get('book_type') != 'upper' or not context.get('assignments'):
+        messages.error(request, 'هذا التصميم متاح لصفوف المرحلة الأساسية العليا فقط')
+        return redirect('grade_register')
+    context['semesters'] = ((1, 'الأول'), (2, 'الثاني'))
+    return render(request, 'school/grade_register_detailed_print.html', context)
+
+
+@login_required
 def guardian_students(request):
     is_admin = request.user.profile.role == 'admin'
     if not is_admin and request.user.profile.role not in ('teacher', 'vice_principal', 'secretary'):

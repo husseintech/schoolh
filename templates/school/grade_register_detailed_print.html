@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>دفتر العلامات بالتقسيم التفصيلي — {{ selected_teacher.full_name }}</title>
+  <link rel="stylesheet" href="/static/school/css/grade_register.css?v=20260910-2">
+  <style>
+    .detailed-table .number-col { width: 4%; }
+    .detailed-table .student-col { width: 26%; }
+    .detailed-table .part-col { width: 4%; }
+    .detailed-table .quality-col { width: 4.5%; }
+    .detailed-table .total-col { width: 5.83%; }
+    .detailed-table thead tr:first-child { height: 15mm; }
+    .detailed-table thead tr:last-child { height: 7mm; }
+    .detailed-table th { font-size: 6.7pt; line-height: 1.25; overflow-wrap: anywhere; }
+    .detailed-table .weights th { font-size: 7pt; }
+    .detailed-table .subtotal { background: #e3d3f1; }
+    .detailed-table tbody tr { height: var(--upper-row-height, 5.95mm); }
+    .detailed-table .student-name { font-size: 7pt; padding-right: .8mm; }
+    .detailed-table tbody td:nth-child(5),
+    .detailed-table tbody td:nth-child(8),
+    .detailed-table tbody td:nth-child(11),
+    .detailed-table tbody td:nth-child(15) { background: #f7f2fa; }
+  </style>
+</head>
+<body class="grade-print-document" style="--upper-row-height:{{ upper_row_height }}mm">
+  <div class="grade-toolbar">
+    <span>{{ page_count }} صفحة — التقسيم التفصيلي — {{ row_count }} سطرًا — {{ selected_teacher.full_name }}</span>
+    <button type="button" onclick="window.print()">طباعة دفتر العلامات</button>
+    <a href="{% url 'grade_register' %}?teacher={{ selected_teacher.id }}&amp;book_type=upper&amp;year={{ start_year }}&amp;rows={{ row_count }}">العودة</a>
+  </div>
+
+  <main>
+    {% for assignment in assignments %}
+      {% for semester, semester_name in semesters %}
+        <section class="grade-page marks-page upper-marks-page" data-page-kind="grade-marks-detailed" data-semester="{{ semester }}" data-class="{{ assignment.class_id }}" data-subject="{{ assignment.subject_id }}">
+          <div class="grade-school-line"><span>{{ info.name_ar|default:'اسم المدرسة' }}</span><span>المعلم: {{ selected_teacher.full_name }}</span><span>العام الدراسي: {{ academic_year }}</span></div>
+          <h1>الفصل الدراسي {{ semester_name }}</h1>
+          <div class="grade-page-meta"><strong>{{ assignment.grade_label }}</strong><strong>المبحث: {{ assignment.subject_name }}</strong></div>
+          <table class="marks-table detailed-table" aria-label="علامات الفصل {{ semester_name }} {{ assignment.class_name }} {{ assignment.subject_name }}">
+            <colgroup>
+              <col class="number-col"><col class="student-col">
+              <col class="part-col"><col class="part-col"><col class="part-col">
+              <col class="part-col"><col class="part-col"><col class="part-col">
+              <col class="part-col"><col class="part-col"><col class="part-col">
+              <col class="quality-col">
+              <col class="part-col"><col class="part-col"><col class="part-col">
+              <col class="total-col"><col class="total-col"><col class="total-col">
+            </colgroup>
+            <thead>
+              <tr>
+                <th rowspan="2">الرقم</th><th rowspan="2">اسم الطالب</th>
+                <th colspan="3">اختبارات قصيرة 1</th>
+                <th colspan="3">اختبار نصف الفصل {{ semester_name }}</th>
+                <th colspan="3">اختبارات قصيرة 2</th>
+                <th>التقويم النوعي</th>
+                <th colspan="3">اختبار نهاية الفصل {{ semester_name }}</th>
+                <th>معدل الفصل {{ semester_name }}</th>
+                <th>معدل الفصل {% if semester == 1 %}الثاني{% else %}الأول{% endif %}</th>
+                <th>معدل العام</th>
+              </tr>
+              <tr class="weights">
+                <th>6%</th><th>4%</th><th class="subtotal">10%</th>
+                <th>12%</th><th>8%</th><th class="subtotal">20%</th>
+                <th>6%</th><th>4%</th><th class="subtotal">10%</th>
+                <th>20%</th>
+                <th>24%</th><th>16%</th><th class="subtotal">40%</th>
+                <th>100%</th><th>100%</th><th>100%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in assignment.student_rows %}
+                <tr{% if row.number|divisibleby:'5' %} class="group-end"{% endif %}>
+                  <td>{{ row.number }}</td><td class="student-name">{{ row.name }}</td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td><td></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+      {% endfor %}
+    {% endfor %}
+  </main>
+</body>
+</html>

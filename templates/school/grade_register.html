@@ -90,6 +90,7 @@
       <div class="register-print-options h-100">
         {% if classes_taught %}<a class="register-print-card" target="_blank" rel="noopener" href="{% url 'grade_register_cover' %}?teacher={{ selected_teacher.id }}&amp;book_type={{ book_type }}&amp;year={{ start_year }}&amp;rows={{ row_count }}"><span class="print-card-icon cover"><i class="bi bi-file-earmark-person"></i></span><span><strong>طباعة الغلاف</strong><small>غلاف مستقل باسم المعلم وجميع صفوفه</small></span><i class="bi bi-box-arrow-up-left"></i></a>{% endif %}
         {% if assignments %}<a class="register-print-card" target="_blank" rel="noopener" href="{% url 'grade_register_print' %}?teacher={{ selected_teacher.id }}&amp;book_type={{ book_type }}&amp;year={{ start_year }}&amp;rows={{ row_count }}"><span class="print-card-icon book"><i class="bi bi-printer-fill"></i></span><span><strong>طباعة صفحات العلامات</strong><small>{{ page_count }} صفحة، دون صفحة التعليمات</small></span><i class="bi bi-box-arrow-up-left"></i></a>{% endif %}
+        {% if assignments and book_type == 'upper' %}<a class="register-print-card" target="_blank" rel="noopener" href="{% url 'grade_register_detailed_print' %}?teacher={{ selected_teacher.id }}&amp;book_type={{ book_type }}&amp;year={{ start_year }}&amp;rows={{ row_count }}"><span class="print-card-icon book"><i class="bi bi-table"></i></span><span><strong>طباعة دفتر العلامات بالتقسيم التفصيلي</strong><small>{{ page_count }} صفحة، بنسب العلامات المرفقة</small></span><i class="bi bi-box-arrow-up-left"></i></a>{% endif %}
       </div>
     </div>
   </div>

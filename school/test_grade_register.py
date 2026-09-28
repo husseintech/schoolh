@@ -150,7 +150,7 @@ class GradeRegisterAccessTests(TestCase):
     def test_student_cannot_open_grade_register_pages(self):
         self.client.force_login(self.student_user)
 
-        for name in ('grade_register', 'grade_register_cover', 'grade_register_print'):
+        for name in ('grade_register', 'grade_register_cover', 'grade_register_print', 'grade_register_detailed_print'):
             response = self.client.get(reverse(name), {'teacher': self.teacher.id})
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse('dashboard'))
@@ -195,6 +195,42 @@ class GradeRegisterAccessTests(TestCase):
         self.assertContains(response, '20%', count=4)
         self.assertContains(response, '40%', count=2)
         self.assertContains(response, 'علامة<br>الإكمال', count=1)
+
+    def test_detailed_upper_print_uses_excel_weights_and_existing_student_rows(self):
+        upper_student_user = User.objects.create_user(username='upper-student', password='safe-password')
+        Profile.objects.create(user=upper_student_user, role='student')
+        Student.objects.create(user=upper_student_user, student_id='66001',
+                               full_name='ليلى أحمد محمود', student_class=self.upper_class)
+        self.client.force_login(self.admin_user)
+
+        page = self.client.get(reverse('grade_register'), {
+            'teacher': self.teacher.id, 'book_type': 'upper', 'rows': 35,
+        })
+        response = self.client.get(reverse('grade_register_detailed_print'), {
+            'teacher': self.teacher.id, 'book_type': 'upper', 'year': 2026, 'rows': 35,
+        })
+
+        self.assertContains(page, reverse('grade_register_detailed_print'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.count(b'data-page-kind="grade-marks-detailed"'), 2)
+        self.assertEqual(len(response.context['assignments'][0]['student_rows']), 35)
+        self.assertContains(response, 'ليلى أحمد محمود', count=2)
+        self.assertContains(response, '>6%</th>', count=4)
+        self.assertContains(response, '>4%</th>', count=4)
+        self.assertContains(response, '>12%</th>', count=2)
+        self.assertContains(response, '>8%</th>', count=2)
+        self.assertContains(response, '>24%</th>', count=2)
+        self.assertContains(response, '>16%</th>', count=2)
+        self.assertContains(response, 'التقويم النوعي', count=2)
+
+        stage_page = self.client.get(reverse('grade_register'), {
+            'teacher': self.teacher.id, 'book_type': 'stage',
+        })
+        stage_print = self.client.get(reverse('grade_register_detailed_print'), {
+            'teacher': self.teacher.id, 'book_type': 'stage',
+        })
+        self.assertNotContains(stage_page, reverse('grade_register_detailed_print'))
+        self.assertRedirects(stage_print, reverse('grade_register'))
 
     def test_cover_lists_all_distinct_recognized_classes_without_instructions(self):
         self.client.force_login(self.admin_user)

@@ -71,6 +71,7 @@ urlpatterns = [
     path('teachers/grade-register/', views.grade_register, name='grade_register'),
     path('teachers/grade-register/cover/', views.grade_register_cover, name='grade_register_cover'),
     path('teachers/grade-register/print/', views.grade_register_print, name='grade_register_print'),
+    path('teachers/grade-register/print/detailed/', views.grade_register_detailed_print, name='grade_register_detailed_print'),
     path('notes/report/', views.notes_report, name='notes_report'),
 
     # Classes
