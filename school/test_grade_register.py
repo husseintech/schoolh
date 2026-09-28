@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -222,6 +224,19 @@ class GradeRegisterAccessTests(TestCase):
         self.assertContains(response, '>24%</th>', count=2)
         self.assertContains(response, '>16%</th>', count=2)
         self.assertContains(response, 'التقويم النوعي', count=2)
+        first_page, second_page = re.findall(r'<section class="grade-page.*?</section>', response.content.decode(), re.S)
+        self.assertIn('معدل الفصل الأول', first_page)
+        self.assertNotIn('معدل الفصل الثاني', first_page)
+        self.assertNotIn('معدل العام', first_page)
+        self.assertIn('معدل الفصل الثاني', second_page)
+        self.assertIn('معدل الفصل الأول', second_page)
+        self.assertIn('معدل العام', second_page)
+        self.assertEqual(first_page.count('<col class='), 16)
+        self.assertEqual(second_page.count('<col class='), 18)
+        self.assertEqual(first_page.count('<th>100%</th>'), 1)
+        self.assertEqual(second_page.count('<th>100%</th>'), 3)
+        self.assertEqual(re.search(r'<tbody>.*?<tr.*?</tr>', first_page, re.S).group().count('<td'), 16)
+        self.assertEqual(re.search(r'<tbody>.*?<tr.*?</tr>', second_page, re.S).group().count('<td'), 18)
 
         stage_page = self.client.get(reverse('grade_register'), {
             'teacher': self.teacher.id, 'book_type': 'stage',
