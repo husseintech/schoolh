@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from school.forms import StudentSurveyForm
-from school.models import Class, Profile, Student, StudentSurvey, UserPermission, has_perm
+from school.models import Class, Profile, Student, StudentSurvey, UserPermission, WhatsAppGroup, has_perm
 from school.views import build_survey_stats_data
 
 
@@ -42,6 +42,33 @@ class SurveyDigitalHealthTests(TestCase):
         self.assertContains(response, 'الصحة الرقمية والعادات المرتبطة بالجوال')
         self.assertContains(response, 'الأسرة والبيئة التعليمية')
         self.assertContains(response, 'ملاحظات الأسرة')
+
+    def test_student_dashboard_shows_class_whatsapp_join_only_after_survey(self):
+        own_link = 'https://chat.whatsapp.com/student-class-invite'
+        other_link = 'https://chat.whatsapp.com/other-class-invite'
+        WhatsAppGroup.objects.create(student_class=self.student_class, link=own_link)
+        WhatsAppGroup.objects.create(student_class=Class.objects.create(name='2أ'), link=other_link)
+        self.client.force_login(self.user)
+
+        before = self.client.get(reverse('dashboard'))
+        self.assertNotContains(before, own_link)
+        self.assertNotContains(before, 'الانضمام للواتس')
+
+        StudentSurvey.objects.create(student=self.student)
+        after = self.client.get(reverse('dashboard'))
+        self.assertContains(after, 'تعبئة / مراجعة')
+        self.assertContains(after, 'الانضمام للواتس')
+        self.assertContains(after, own_link)
+        self.assertNotContains(after, other_link)
+
+    def test_student_with_completed_survey_sees_explanation_when_class_has_no_link(self):
+        StudentSurvey.objects.create(student=self.student)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertContains(response, 'لم تضف المدرسة رابط مجموعة واتساب لصفك بعد')
+        self.assertNotContains(response, 'الانضمام للواتس')
 
     def test_digital_health_answers_are_saved(self):
         form = StudentSurveyForm(data={

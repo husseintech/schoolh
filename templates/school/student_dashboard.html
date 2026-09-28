@@ -79,8 +79,14 @@
 
   {% if 'survey_add' in user_perms %}
   <div class="alert alert-info survey-banner d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <div><strong><i class="bi bi-clipboard2-heart-fill me-1"></i> المسح الصحي والاجتماعي</strong> <span class="ms-1">{{ survey_status|default:'' }}</span><div class="small mt-1">إكمال بيانات المسح يساعد المدرسة على تقديم رعاية أفضل.</div></div>
-    <a href="{% url 'survey_form' %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i> تعبئة / مراجعة</a>
+    <div><strong><i class="bi bi-clipboard2-heart-fill me-1"></i> المسح الصحي والاجتماعي</strong> <span class="ms-1">{{ survey_status|default:'' }}</span><div class="small mt-1">{% if has_survey %}{% if whatsapp_groups %}يمكنك الآن الانضمام إلى مجموعة واتساب الخاصة بصفك.{% else %}لم تضف المدرسة رابط مجموعة واتساب لصفك بعد.{% endif %}{% else %}إكمال بيانات المسح يساعد المدرسة على تقديم رعاية أفضل.{% endif %}</div></div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <a href="{% url 'survey_form' %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i> تعبئة / مراجعة</a>
+      {% if has_survey and whatsapp_groups %}
+        {% if whatsapp_groups|length == 1 %}<a href="{{ whatsapp_groups.0.link }}" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm"><i class="bi bi-whatsapp"></i> الانضمام للواتس</a>
+        {% else %}<button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#whatsappModal"><i class="bi bi-whatsapp"></i> الانضمام للواتس</button>{% endif %}
+      {% endif %}
+    </div>
   </div>
   {% endif %}
 
@@ -150,12 +156,9 @@
     <div class="row g-2 identity-row"><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">رقم الهوية</small><strong>{{ student.student_id }}</strong></div></div><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">الصف</small><strong>{{ student.student_class.name|default:'غير محدد' }}</strong></div></div><div class="col-md-4"><div class="details-box"><small class="text-muted d-block">ولي الأمر</small><strong>{{ student.parent_name|default:'غير مسجل' }}</strong></div></div></div>
   </div>
 
-  {% if has_survey and whatsapp_groups %}
-  <div class="panel mb-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><div class="section-title mb-1"><i class="bi bi-whatsapp text-success"></i> مجموعات واتساب للصف</div><div class="small text-muted">روابط التواصل الخاصة بالصف {{ student.student_class.name|default:'' }}</div></div><button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#whatsappModal"><i class="bi bi-whatsapp"></i> عرض الروابط</button></div></div>
-  {% endif %}
 </div>
 
-{% if whatsapp_groups %}
+{% if whatsapp_groups|length > 1 %}
 <div class="modal fade" id="whatsappModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-whatsapp text-success"></i> روابط واتساب — الصف {{ student.student_class.name|default:'' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">{% for group in whatsapp_groups %}<div class="d-flex justify-content-between align-items-center border rounded-3 p-3 mb-2"><strong>مجموعة الصف</strong>{% if group.link %}<a href="{{ group.link }}" target="_blank" rel="noopener" class="btn btn-success btn-sm">انضمام</a>{% endif %}</div>{% endfor %}</div></div></div></div>
 {% endif %}
 {% endblock %}

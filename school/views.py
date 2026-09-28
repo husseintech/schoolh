@@ -351,7 +351,10 @@ def dashboard(request):
             summons = student.summons.all()
             whatsapp_groups = []
             if has_survey and student.student_class:
-                whatsapp_groups = list(student.student_class.whatsapp_groups.all())
+                whatsapp_groups = [
+                    group for group in student.student_class.whatsapp_groups.all()
+                    if group.link and group.link.strip().startswith(('https://', 'http://'))
+                ]
             return render(request, 'school/student_dashboard.html', {
                 'student': student,
                 'notes': notes,
