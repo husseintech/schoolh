@@ -1,0 +1,54 @@
+{% extends 'school/base.html' %}
+{% block title %}اللجنة الاجتماعية{% endblock %}
+{% block page_heading %}اللجنة الاجتماعية{% endblock %}
+{% block content %}
+<style>
+.committee-page{max-width:1320px;margin:auto}.committee-hero{border-radius:20px;background:linear-gradient(125deg,#173b54,#176b76);color:#fff;padding:25px}.committee-hero h2{font-size:1.45rem;font-weight:800}.committee-card{border:1px solid #e4ebee;border-radius:16px;box-shadow:0 6px 18px rgba(27,65,77,.06)}.committee-stat{height:100%;border:1px solid #e3eaed;border-radius:15px;padding:17px;background:#fff}.committee-stat small{color:#64748b}.committee-stat strong{display:block;font-size:1.35rem;margin-top:6px}.committee-row input{min-width:90px}.committee-row td{vertical-align:middle}.committee-expense{border:1px solid #e3eaed;border-radius:13px;padding:14px}.committee-actions{display:flex;flex-wrap:wrap;gap:8px}@media(max-width:768px){.committee-hero{padding:18px}.committee-stat strong{font-size:1.12rem}}
+</style>
+<div class="committee-page">
+  <div class="committee-hero mb-3"><h2 class="mb-1"><i class="bi bi-people-fill"></i> اللجنة الاجتماعية</h2><div class="opacity-75">مدفوعات المعلمين ومشتريات اللجنة، مع ملخص الرصيد والتقارير الشهرية والسنوية.</div></div>
+  <form method="get" class="card committee-card mb-3"><div class="card-body row g-3 align-items-end">
+    <div class="col-sm-4 col-md-3"><label class="form-label fw-bold" for="committeeYear">السنة</label><input id="committeeYear" class="form-control" name="year" type="number" min="2000" max="2100" value="{{ year }}" required></div>
+    <div class="col-sm-4 col-md-3"><label class="form-label fw-bold" for="committeeMonth">الشهر</label><select id="committeeMonth" class="form-select" name="month">{% for number in months %}<option value="{{ number }}" {% if number == month %}selected{% endif %}>{{ number }}</option>{% endfor %}</select></div>
+    <div class="col-sm-4 col-md-3"><button class="btn btn-primary w-100" type="submit">عرض سجلات الشهر</button></div>
+    <div class="col-md-3 text-md-start small text-muted">الفترة المحددة: {{ month }}/{{ year }}</div>
+  </div></form>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="committee-stat"><small>المدفوعات للشهر (شيكل)</small><strong class="text-success">{{ income|floatformat:2 }}</strong></div></div>
+    <div class="col-6 col-lg-3"><div class="committee-stat"><small>المشتريات للشهر (شيكل)</small><strong class="text-danger">{{ spending|floatformat:2 }}</strong></div></div>
+    <div class="col-6 col-lg-3"><div class="committee-stat"><small>{% if deficit %}العجز للشهر{% else %}الفائض للشهر{% endif %} (شيكل)</small><strong class="{% if deficit %}text-danger{% else %}text-success{% endif %}">{% if deficit %}{{ deficit|floatformat:2 }}{% else %}{{ surplus|floatformat:2 }}{% endif %}</strong></div></div>
+    <div class="col-6 col-lg-3"><div class="committee-stat"><small>المعلمون غير الدافعين</small><strong>{{ unpaid|length }}</strong></div></div>
+  </div>
+
+  {% if can_print %}<div class="card committee-card mb-3"><div class="card-body"><h5 class="mb-3">تقارير قابلة للطباعة</h5><div class="committee-actions">
+    <a target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm" href="{% url 'social_committee_report' %}?kind=monthly&amp;year={{ year }}&amp;month={{ month }}">تقرير شهري للإدارة</a>
+    <a target="_blank" rel="noopener" class="btn btn-outline-success btn-sm" href="{% url 'social_committee_report' %}?kind=paid&amp;year={{ year }}&amp;month={{ month }}">المعلمون الدافعون</a>
+    <a target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm" href="{% url 'social_committee_report' %}?kind=unpaid&amp;year={{ year }}&amp;month={{ month }}">المعلمون غير الدافعين</a>
+    <a target="_blank" rel="noopener" class="btn btn-outline-danger btn-sm" href="{% url 'social_committee_report' %}?kind=expenses&amp;year={{ year }}&amp;month={{ month }}">مشتريات الشهر</a>
+    <a target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm" href="{% url 'social_committee_report' %}?kind=annual&amp;year={{ year }}">تقرير جميع الأشهر للسنة {{ year }}</a>
+  </div></div></div>{% endif %}
+
+  <div class="card committee-card mb-3"><div class="card-header bg-white py-3"><h5 class="mb-0">مدفوعات المعلمين — شهر {{ month }}/{{ year }}</h5></div><div class="card-body">
+    {% if can_add or can_edit %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_payments"><input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">{% endif %}
+    <div class="table-responsive"><table class="table table-bordered table-hover align-middle committee-row"><thead class="table-light"><tr><th class="text-nowrap">#</th><th>اسم المعلم</th><th style="min-width:145px">المبلغ المدفوع (شيكل)</th><th style="min-width:220px">ملاحظات</th><th>الحالة</th></tr></thead><tbody>
+      {% for row in rows %}<tr><td>{{ forloop.counter }}</td><td class="fw-bold text-nowrap">{{ row.teacher.full_name }}</td><td>{% if row.payment and can_edit or not row.payment and can_add %}<input type="number" min="0" max="99999999.99" step="0.01" class="form-control form-control-sm" name="amount_{{ row.teacher.id }}" value="{% if row.payment %}{{ row.amount }}{% endif %}" aria-label="المبلغ المدفوع من {{ row.teacher.full_name }}">{% else %}{{ row.amount|floatformat:2 }}{% endif %}</td><td>{% if row.payment and can_edit or not row.payment and can_add %}<input class="form-control form-control-sm" name="notes_{{ row.teacher.id }}" maxlength="500" value="{% if row.payment %}{{ row.payment.notes }}{% endif %}" aria-label="ملاحظات {{ row.teacher.full_name }}">{% else %}{{ row.payment.notes|default:'—' }}{% endif %}</td><td>{% if row.amount > 0 %}<span class="badge text-bg-success">دافع</span>{% else %}<span class="badge text-bg-secondary">لم يدفع</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-3">لا يوجد معلمون مسجلون.</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if can_add or can_edit %}<div class="small text-muted mb-2">اترك المبلغ فارغًا للمعلم غير الدافع. لحذف مبلغ مسجل امسح المبلغ والملاحظات ثم احفظ.</div><button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ مدفوعات الشهر</button></form>{% endif %}
+    {% if archived_payments %}<div class="alert alert-light border mt-3 mb-0"><strong>مدفوعات محفوظة لمعلميـن حُذفت حساباتهم:</strong> {% for payment in archived_payments %}{{ payment.teacher_name }} ({{ payment.amount|floatformat:2 }}){% if not forloop.last %}، {% endif %}{% endfor %}</div>{% endif %}
+  </div></div>
+
+  <div class="card committee-card mb-3"><div class="card-header bg-white py-3"><h5 class="mb-0">مشتريات اللجنة — شهر {{ month }}/{{ year }}</h5></div><div class="card-body">
+    {% if can_add %}<form method="post" class="row g-2 align-items-end border rounded-3 p-3 mb-3">{% csrf_token %}<input type="hidden" name="action" value="add_expense"><input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">
+      <div class="col-md-4"><label class="form-label">البند</label><input class="form-control" name="item" maxlength="200" required></div><div class="col-md-2"><label class="form-label">القيمة (شيكل)</label><input class="form-control" type="number" name="amount" min="0.01" max="99999999.99" step="0.01" required></div><div class="col-md-4"><label class="form-label">ملاحظات</label><input class="form-control" name="notes" maxlength="500"></div><div class="col-md-2"><button class="btn btn-success w-100" type="submit">إضافة بند</button></div>
+    </form>{% endif %}
+    {% for expense in expenses %}<div class="committee-expense mb-2"><div class="row g-2 align-items-end">
+      {% if can_edit %}<form method="post" action="{% url 'social_committee_expense' expense.id %}" class="col-12 row g-2 align-items-end m-0">{% csrf_token %}<input type="hidden" name="action" value="edit"><div class="col-md-4"><label class="form-label small">البند</label><input name="item" class="form-control form-control-sm" maxlength="200" value="{{ expense.item }}" required></div><div class="col-md-2"><label class="form-label small">القيمة</label><input type="number" name="amount" class="form-control form-control-sm" min="0.01" max="99999999.99" step="0.01" value="{{ expense.amount }}" required></div><div class="col-md-4"><label class="form-label small">ملاحظات</label><input name="notes" class="form-control form-control-sm" maxlength="500" value="{{ expense.notes }}"></div><div class="col-md-2"><button class="btn btn-outline-primary btn-sm w-100">حفظ التعديل</button></div></form>
+      {% else %}<div class="col-md-4 fw-bold">{{ expense.item }}</div><div class="col-md-2">{{ expense.amount|floatformat:2 }} شيكل</div><div class="col-md-6 text-muted">{{ expense.notes|default:'—' }}</div>{% endif %}
+      {% if can_delete %}<div class="col-12 text-start"><form method="post" action="{% url 'social_committee_expense' expense.id %}" onsubmit="return confirm('حذف بند المشتريات نهائيًا؟')">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-outline-danger btn-sm" type="submit">حذف البند</button></form></div>{% endif %}
+    </div></div>{% empty %}<div class="text-muted text-center py-3">لا توجد مشتريات مسجلة لهذا الشهر.</div>{% endfor %}
+  </div></div>
+
+  <div class="card committee-card mb-3"><div class="card-body d-flex flex-wrap justify-content-between gap-3"><div><h5>ملخص السنة {{ year }}</h5><div class="small text-muted">جميع الأشهر من 1 إلى 12</div></div><div><div>إجمالي المدفوعات: <strong>{{ annual_income|floatformat:2 }}</strong> شيكل</div><div>إجمالي المشتريات: <strong>{{ annual_spending|floatformat:2 }}</strong> شيكل</div><div>{% if annual_deficit %}العجز{% else %}الفائض{% endif %}: <strong class="{% if annual_deficit %}text-danger{% else %}text-success{% endif %}">{% if annual_deficit %}{{ annual_deficit|floatformat:2 }}{% else %}{{ annual_surplus|floatformat:2 }}{% endif %}</strong> شيكل</div></div></div></div>
+</div>
+{% endblock %}

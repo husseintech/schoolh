@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import student_assistant_views
 from . import curriculum_assistant_views
+from . import social_committee_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -72,6 +73,9 @@ urlpatterns = [
     path('teachers/grade-register/cover/', views.grade_register_cover, name='grade_register_cover'),
     path('teachers/grade-register/print/', views.grade_register_print, name='grade_register_print'),
     path('teachers/grade-register/print/detailed/', views.grade_register_detailed_print, name='grade_register_detailed_print'),
+    path('teachers/social-committee/', social_committee_views.social_committee, name='social_committee'),
+    path('teachers/social-committee/report/', social_committee_views.social_committee_report, name='social_committee_report'),
+    path('teachers/social-committee/expenses/<int:expense_id>/', social_committee_views.social_committee_expense, name='social_committee_expense'),
     path('notes/report/', views.notes_report, name='notes_report'),
 
     # Classes

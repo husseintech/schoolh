@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import date, datetime
 from django.utils import timezone
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 
 def current_month_start():
@@ -81,6 +83,7 @@ DEFAULT_PERMISSIONS = {
         'open_learning': ['view', 'add', 'edit', 'delete', 'review'],
         'school_radio': ['view', 'add', 'edit', 'delete', 'generate', 'review'],
         'curriculum_assistant': ['view', 'add', 'delete', 'monitor'],
+        'social_committee': ['view', 'add', 'edit', 'delete', 'print'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
@@ -229,6 +232,49 @@ class Teacher(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+class SocialCommitteePayment(models.Model):
+    teacher = models.ForeignKey(Teacher, null=True, blank=True, on_delete=models.SET_NULL,
+                                related_name='social_committee_payments', verbose_name='المعلم')
+    teacher_name = models.CharField('اسم المعلم وقت الدفع', max_length=200)
+    year = models.PositiveSmallIntegerField('السنة')
+    month = models.PositiveSmallIntegerField('الشهر')
+    amount = models.DecimalField('المبلغ المدفوع', max_digits=10, decimal_places=2,
+                                 default=Decimal('0.00'), validators=[MinValueValidator(Decimal('0.00'))])
+    notes = models.CharField('ملاحظات', max_length=500, blank=True)
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'مدفوعات اللجنة الاجتماعية'
+        verbose_name_plural = 'مدفوعات اللجنة الاجتماعية'
+        ordering = ['year', 'month', 'teacher_name']
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'year', 'month'], name='unique_social_teacher_month'),
+            models.CheckConstraint(condition=models.Q(month__gte=1, month__lte=12), name='social_payment_valid_month'),
+            models.CheckConstraint(condition=models.Q(amount__gte=0), name='social_payment_nonnegative'),
+        ]
+
+
+class SocialCommitteeExpense(models.Model):
+    year = models.PositiveSmallIntegerField('السنة')
+    month = models.PositiveSmallIntegerField('الشهر')
+    item = models.CharField('بند المشتريات', max_length=200)
+    amount = models.DecimalField('القيمة', max_digits=10, decimal_places=2,
+                                 validators=[MinValueValidator(Decimal('0.01'))])
+    notes = models.CharField('ملاحظات', max_length=500, blank=True)
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                   verbose_name='أدخل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'مشتريات اللجنة الاجتماعية'
+        verbose_name_plural = 'مشتريات اللجنة الاجتماعية'
+        ordering = ['year', 'month', 'id']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(month__gte=1, month__lte=12), name='social_expense_valid_month'),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='social_expense_positive'),
+        ]
 
 
 class TeacherNote(models.Model):

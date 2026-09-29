@@ -14,7 +14,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense
 from .models import CurriculumConversation
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
@@ -97,7 +97,7 @@ def sort_students_class_first(students):
 def sort_by_student_name(items):
     return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
 
-MODULE_KEYS = ['students', 'teachers', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning', 'school_radio', 'curriculum_assistant']
+MODULE_KEYS = ['students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning', 'school_radio', 'curriculum_assistant']
 ACTION_KEYS = [
     'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
     'complete', 'send', 'review', 'monitor', 'generate', 'manage_constraints',
@@ -106,6 +106,7 @@ ACTION_KEYS = [
 MODULE_LABELS = {
     'students': 'الطلاب',
     'teachers': 'المعلمون',
+    'social_committee': 'اللجنة الاجتماعية',
     'classes': 'الصفوف',
     'subjects': 'المواد',
     'announcements': 'الإعلانات',
@@ -4454,6 +4455,7 @@ CLEARABLE_TABLES = [
     ('certificates', 'شهادات التقدير', Certificate, []),
     ('nominations', 'ترشيحات المتفوقين', Nomination, []),
     ('teacher_notes', 'ملاحظات المعلمين', TeacherNote, []),
+    ('social_committee', 'اللجنة الاجتماعية (المدفوعات والمشتريات)', SocialCommitteePayment, []),
     ('lesson_links', 'روابط الدروس', LessonLink, []),
     ('whatsapp_groups', 'روابط واتساب الصفوف', WhatsAppGroup, []),
     ('incoming', 'سجل الوارد', IncomingLetter, ['created_by']),
@@ -4504,6 +4506,15 @@ def reset_data(request):
             key = request.POST.get('key', '')
             for k, label, model, deps in clearable_tables:
                 if k == key:
+                    if key == 'social_committee':
+                        with transaction.atomic():
+                            payment_count = SocialCommitteePayment.objects.count()
+                            expense_count = SocialCommitteeExpense.objects.count()
+                            SocialCommitteePayment.objects.all().delete()
+                            SocialCommitteeExpense.objects.all().delete()
+                            log_action(request.user, 'تفريغ بيانات', f'اللجنة الاجتماعية: {payment_count} مدفوعات، {expense_count} مشتريات')
+                        messages.success(request, 'تم تفريغ مدفوعات ومشتريات اللجنة الاجتماعية')
+                        return redirect('reset_data')
                     if key == 'school_radio':
                         from open_learning.radio_maintenance import (
                             SchoolRadioMaintenanceError,
@@ -4568,6 +4579,12 @@ def reset_data(request):
     for item in counts:
         if item['key'] == 'school_radio':
             item['detail'] = f"{SchoolRadioFile.objects.count()} صورة/ملف محفوظ في Google Drive"
+            break
+    for item in counts:
+        if item['key'] == 'social_committee':
+            expense_count = SocialCommitteeExpense.objects.count()
+            item['count'] += expense_count
+            item['detail'] = f"{SocialCommitteePayment.objects.count()} مدفوعات، {expense_count} مشتريات"
             break
     return render(request, 'school/reset_data.html', {
         'counts': counts,
