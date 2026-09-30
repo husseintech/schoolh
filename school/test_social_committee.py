@@ -85,6 +85,43 @@ class SocialCommitteeTests(TestCase):
         self.assertEqual(SocialCommitteePayment.objects.get().amount, Decimal('10.00'))
         self.assertEqual(SocialCommitteePayment.objects.count(), 1)
 
+    def test_repeated_month_entry_preserves_previous_payments_and_updates_total(self):
+        self.client.force_login(self.admin)
+        first, second = self.teachers
+        payment = self._pay(9, '25.50', 'دفعة أولى')
+        other_month = self._pay(8, '7.00')
+        base = {'year': 2026, 'month': 9, 'action': 'save_payments'}
+        self.client.post(self.url, {**base, f'amount_{first.pk}': '', f'amount_{second.pk}': '15.00'})
+        payment.refresh_from_db()
+        self.assertEqual(payment.amount, Decimal('25.50'))
+        self.assertEqual(payment.notes, 'دفعة أولى')
+        page = self.client.get(self.url, {'year': 2026, 'month': 9})
+        self.assertEqual(page.context['income'], Decimal('40.50'))
+        self.assertContains(page, 'value="25.50"')
+        self.client.post(self.url, {**base, f'amount_{first.pk}': '30.00'})
+        payment.refresh_from_db()
+        self.assertEqual(payment.amount, Decimal('30.00'))
+        self.assertEqual(SocialCommitteePayment.objects.get(teacher=second, month=9).amount, Decimal('15.00'))
+        other_month.refresh_from_db()
+        self.assertEqual(other_month.amount, Decimal('7.00'))
+        self.client.post(self.url, {**base, f'notes_{first.pk}': 'تحديث الملاحظة'})
+        payment.refresh_from_db()
+        self.assertEqual(payment.amount, Decimal('30.00'))
+        self.client.post(self.url, {**base, f'amount_{first.pk}': '0', f'notes_{first.pk}': ''})
+        payment.refresh_from_db()
+        self.assertEqual(payment.amount, Decimal('0.00'))
+
+    def test_number_inputs_use_unlocalized_decimal_values(self):
+        from django.utils import translation
+        self.client.force_login(self.admin)
+        self._pay(9, '25.50')
+        SocialCommitteeExpense.objects.create(year=2026, month=9, item='ضيافة', amount=Decimal('4.75'))
+        with translation.override('de'):
+            page = self.client.get(self.url, {'year': 2026, 'month': 9})
+        self.assertContains(page, 'value="25.50"')
+        self.assertContains(page, 'value="4.75"')
+        self.assertNotContains(page, 'value="25,50"')
+
     def test_expense_edit_delete_and_historical_payment_after_teacher_delete(self):
         self.client.force_login(self.admin)
         payment = self._pay(9, '15.00')

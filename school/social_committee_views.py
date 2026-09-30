@@ -98,11 +98,11 @@ def social_committee(request):
                     if f'amount_{teacher.id}' not in request.POST and f'notes_{teacher.id}' not in request.POST:
                         continue
                     raw = request.POST.get(f'amount_{teacher.id}', '').strip()
-                    notes = request.POST.get(f'notes_{teacher.id}', '').strip()
+                    old = existing.get(teacher.id)
+                    notes = request.POST.get(f'notes_{teacher.id}', old.notes if old else '').strip()
                     if len(notes) > 500:
                         raise ValueError('الملاحظات طويلة جدًا')
-                    amount = _amount(raw) if raw else ZERO
-                    old = existing.get(teacher.id)
+                    amount = _amount(raw) if raw else (old.amount if old else ZERO)
                     if old and old.amount == amount and old.notes == notes:
                         continue
                     if not old and amount == ZERO and not notes:
@@ -116,10 +116,7 @@ def social_committee(request):
                 return redirect(_period_url(year, month))
             with transaction.atomic():
                 for teacher, old, amount, notes in changes:
-                    if amount == ZERO and not notes:
-                        if old:
-                            old.delete()
-                    elif old:
+                    if old:
                         old.amount, old.notes, old.teacher_name = amount, notes, teacher.full_name
                         old.save(update_fields=['amount', 'notes', 'teacher_name', 'updated_at'])
                     else:
