@@ -234,14 +234,14 @@ body.print-document {
 .summary-table { margin-bottom: 6mm; font-size: 7pt; }
 .summary-table th { padding: 1.3mm .6mm; }
 .summary-table td { height: 8mm; padding: 1mm; }
-.summary-table .semester-cell { width: 11%; font-weight: 800; writing-mode: vertical-rl; }
-.summary-table .month-cell { width: 21%; text-align: right; padding-right: 2mm; font-weight: 700; }
-.summary-table .principal-cell { width: 16%; font-weight: 700; }
+.summary-table .semester-cell { font-weight: 800; writing-mode: vertical-rl; }
+.summary-table .month-cell { text-align: right; padding-right: 2mm; font-weight: 700; }
+.summary-table .principal-cell { font-weight: 700; }
 .summary-total-row td { height: 9mm; font-weight: 800; background: #f2f2f2; }
 .year-summary-title { margin: 4mm 0 2mm; padding: 2.5mm; border: .5mm solid #111; text-align: center; font-size: 13pt; font-weight: 800; background: #f2f2f2; }
-.year-summary-grid { width: 100%; border-collapse: collapse; font-size: 8pt; }
-.year-summary-grid th,.year-summary-grid td { height: 11mm; border: .4mm solid #111; text-align: center; }
-.year-summary-grid th { width: 29%; background: #f1f1f1; }
+.year-summary-grid { margin-bottom: 0; }
+.year-summary-grid th,.year-summary-grid td { height: 8mm; text-align: center; }
+.year-summary-grid th { background: #f1f1f1; }
 .summary-signatures { display: flex; justify-content: space-between; gap: 15mm; margin-top: 10mm; font-size: 8pt; }
 .summary-signatures div { width: 42%; padding-top: 8mm; border-top: .35mm solid #333; text-align: center; }
 

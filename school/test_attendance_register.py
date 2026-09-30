@@ -182,6 +182,8 @@ class AttendanceRegisterAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['months']), 11)
+        self.assertEqual([m['number'] for m in response.context['first_semester_months']], [8, 9, 10, 11, 12, 1])
+        self.assertEqual([m['number'] for m in response.context['second_semester_months']], [1, 2, 3, 4, 5, 6])
         self.assertEqual(len(response.context['student_rows']), 47)
         self.assertEqual(response.context['student_rows'][0]['name'], 'أحمد الطالب')
         self.assertEqual(response.context['student_rows'][1]['name'], 'ياسر الطالب')

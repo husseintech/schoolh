@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>دفتر الحضور والغياب — {{ guardian_class.name }} — {{ academic_year }}</title>
-  <link rel="stylesheet" href="/static/school/css/attendance_register.css?v=20260910-3">
+  <link rel="stylesheet" href="/static/school/css/attendance_register.css?v=20260930-1">
 </head>
 <body class="print-document" style="--status-row-height:{{ status_row_height }}mm;--attendance-row-height:{{ attendance_row_height }}mm;--annual-row-height:{{ annual_row_height }}mm">
   <div class="register-toolbar">
@@ -143,13 +143,14 @@
       <p class="summary-basmala">بسم الله الرحمن الرحيم</p>
       <h1 class="register-page__heading">جدول الخلاصة</h1>
       <table class="register-table summary-table" aria-label="جدول خلاصة الفصل الأول">
+        {% include 'school/_attendance_summary_columns.html' %}
         <thead>
           <tr><th>الفصل</th><th>الشهر</th><th>عدد الاجتماعات</th><th>عدد الطلاب</th><th>مجموع الحضور لو لم يكن غياب</th><th>مجموع الحضور</th><th>متوسط الحضور</th><th>النسبة المئوية للحضور</th><th>متابعة مدير المدرسة</th></tr>
         </thead>
         <tbody>
           {% for month in first_semester_months %}
           <tr>
-            {% if forloop.first %}<td class="semester-cell" rowspan="6">الفصل الدراسي الأول<br>{{ academic_year }}</td>{% endif %}
+            {% if forloop.first %}<td class="semester-cell" rowspan="{{ first_semester_months|length }}">الفصل الدراسي الأول<br>{{ academic_year }}</td>{% endif %}
             <td class="month-cell">{{ month.name }} ({{ month.number }}) — {{ month.year }}</td>
             <td></td><td></td><td></td><td></td><td></td><td></td><td class="principal-cell">{{ info.principal_name|default:'................' }}</td>
           </tr>
@@ -159,13 +160,14 @@
       </table>
 
       <table class="register-table summary-table" aria-label="جدول خلاصة الفصل الثاني">
+        {% include 'school/_attendance_summary_columns.html' %}
         <thead>
           <tr><th>الفصل</th><th>الشهر</th><th>عدد الاجتماعات</th><th>عدد الطلاب</th><th>مجموع الحضور لو لم يكن غياب</th><th>مجموع الحضور</th><th>متوسط الحضور</th><th>النسبة المئوية للحضور</th><th>متابعة مدير المدرسة</th></tr>
         </thead>
         <tbody>
           {% for month in second_semester_months %}
           <tr>
-            {% if forloop.first %}<td class="semester-cell" rowspan="5">الفصل الدراسي الثاني<br>{{ academic_year }}</td>{% endif %}
+            {% if forloop.first %}<td class="semester-cell" rowspan="{{ second_semester_months|length }}">الفصل الدراسي الثاني<br>{{ academic_year }}</td>{% endif %}
             <td class="month-cell">{{ month.name }} ({{ month.number }}) — {{ month.year }}</td>
             <td></td><td></td><td></td><td></td><td></td><td></td><td class="principal-cell">{{ info.principal_name|default:'................' }}</td>
           </tr>
@@ -175,10 +177,11 @@
       </table>
 
       <div class="year-summary-title">الخلاصة السنوية للفصلين</div>
-      <table class="year-summary-grid" aria-label="الخلاصة السنوية للفصلين">
-        <tr><th>الفصل الدراسي الأول</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
-        <tr><th>الفصل الدراسي الثاني</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
-        <tr><th>مجموع الفصلين</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+      <table class="register-table summary-table year-summary-grid" aria-label="الخلاصة السنوية للفصلين">
+        {% include 'school/_attendance_summary_columns.html' %}
+        <tr><th colspan="2">الفصل الدراسي الأول</th><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+        <tr><th colspan="2">الفصل الدراسي الثاني</th><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
+        <tr><th colspan="2">مجموع الفصلين</th><td></td><td></td><td></td><td></td><td></td><td></td><td>{{ info.principal_name|default:'................' }}</td></tr>
       </table>
       <div class="summary-signatures"><div>مربي الصف: {{ selected_teacher.full_name }}</div><div>مدير المدرسة: {{ info.principal_name|default:'................' }}</div></div>
     </section>

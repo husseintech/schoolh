@@ -3713,7 +3713,7 @@ def _attendance_register_context(request):
         'months': months,
         'shade_august': months[0]['shade_all'],
         'first_semester_months': [month for month in months if month['semester'] == 'الأول'],
-        'second_semester_months': [month for month in months if month['semester'] == 'الثاني'],
+        'second_semester_months': [month for month in months if month['number'] == 1 or month['semester'] == 'الثاني'],
         'info': SchoolInfo.objects.first(),
     }
 
