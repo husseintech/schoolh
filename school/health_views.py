@@ -1,3 +1,5 @@
+import os
+
 from django.db import DatabaseError, connection
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
@@ -23,5 +25,25 @@ def database_health(request):
             {"status": "error", "database": "unexpected_response"},
             status=503,
         )
+
+    return JsonResponse({"status": "ok", "database": "reachable"})
+
+
+@require_GET
+def database_heartbeat(request):
+    """Lightweight, read-only database heartbeat used by the scheduled job."""
+    expected_secret = os.getenv("CRON_SECRET")
+    if not expected_secret or request.headers.get("Authorization") != f"Bearer {expected_secret}":
+        return JsonResponse({"status": "forbidden"}, status=403)
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            database_value = cursor.fetchone()
+    except DatabaseError:
+        return JsonResponse({"status": "error", "database": "unreachable"}, status=503)
+
+    if database_value != (1,):
+        return JsonResponse({"status": "error", "database": "unexpected_response"}, status=503)
 
     return JsonResponse({"status": "ok", "database": "reachable"})
