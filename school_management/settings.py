@@ -65,7 +65,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'school_management.wsgi.application'
 
-database_url = os.getenv('DATABASE_URL')
+# Prefer the new Supabase database connection when provided.
+# Keep the existing DATABASE_URL as a safe fallback during migration/rollback.
+database_url = os.getenv('SUPABASE_DATABASE_URL') or os.getenv('DATABASE_URL')
 if database_url:
     DATABASES = {
         'default': dj_database_url.config(default=database_url, conn_max_age=600, ssl_require=True)
