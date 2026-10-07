@@ -14,11 +14,15 @@
 {% csrf_token %}<input type="hidden" name="warden_id" value="{{ selected.id }}"><input type="hidden" name="followup_date" value="{{ selected_date }}">
 <div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body"><h5 class="fw-bold">متابعة {{ selected.full_name }} — {{ selected_date }}</h5>
 {% with f=selected_followup %}
-<div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th style="min-width:280px">البند</th><th style="min-width:180px">الحالة</th><th>الملاحظات</th></tr></thead><tbody>
-{% for key,label in followup_fields %}
-<tr><td class="fw-bold">{{ label }}</td><td><select name="{{ key }}_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f|getattr:key|add:'_status' == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="{{ key }}_notes" class="form-control" rows="2">{% if f %}{{ f|getattr:key|add:'_notes' }}{% endif %}</textarea></td></tr>
-{% endfor %}
-</tbody></table></div>
+<div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>البند</th><th>الحالة</th><th>الملاحظات</th></tr></thead><tbody>
+{% with f=selected_followup %}
+<tr><td class="fw-bold">نظافة الغرف الصفية وإفراغ السلات</td><td><select name="classrooms_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.classrooms_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="classrooms_notes" class="form-control" rows="2">{% if f %}{{ f.classrooms_notes }}{% endif %}</textarea></td></tr>
+<tr><td class="fw-bold">الساحات والملاعب والحديقة والمظلات</td><td><select name="yards_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.yards_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="yards_notes" class="form-control" rows="2">{% if f %}{{ f.yards_notes }}{% endif %}</textarea></td></tr>
+<tr><td class="fw-bold">غرفة المعلمين والإدارة وغرفة المعلمات</td><td><select name="staff_rooms_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.staff_rooms_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="staff_rooms_notes" class="form-control" rows="2">{% if f %}{{ f.staff_rooms_notes }}{% endif %}</textarea></td></tr>
+<tr><td class="fw-bold">الممرات والطوابق وبيت الدرج وسطح البناء</td><td><select name="corridors_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.corridors_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="corridors_notes" class="form-control" rows="2">{% if f %}{{ f.corridors_notes }}{% endif %}</textarea></td></tr>
+<tr><td class="fw-bold">الروضة وباقي مرافق المدرسة</td><td><select name="kindergarten_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.kindergarten_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="kindergarten_notes" class="form-control" rows="2">{% if f %}{{ f.kindergarten_notes }}{% endif %}</textarea></td></tr>
+<tr><td class="fw-bold">الوحدات الصحية والمشارب ومدخل المدرسة والساحات</td><td><select name="sanitary_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.sanitary_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="sanitary_notes" class="form-control" rows="2">{% if f %}{{ f.sanitary_notes }}{% endif %}</textarea></td></tr>
+{% endwith %}</tbody></table></div>
 {% endwith %}
 <label class="form-label fw-bold">ملاحظات عامة</label><textarea name="general_notes" class="form-control" rows="3">{% if selected_followup %}{{ selected_followup.general_notes }}{% endif %}</textarea>
 <button class="btn btn-success mt-3"><i class="bi bi-save"></i> حفظ المتابعة</button>
