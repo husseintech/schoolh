@@ -22,25 +22,18 @@
 {% csrf_token %}<input type="hidden" name="warden_id" value="{{ selected.id }}"><input type="hidden" name="followup_date" value="{{ selected_date }}">
 <div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body">
 <div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:35%">البند</th><th style="width:18%">التقييم</th><th>الملاحظات</th></tr></thead><tbody>
-{% for criterion in selected.criteria %}
-{% with idx=forloop.counter0 %}
-{% with result=selected_followup.evaluation_data %}
+{% for row in criteria_rows %}
 <tr>
-<td class="fw-bold">{{ forloop.counter }}. {{ criterion }}</td>
-<td><select name="criterion_{{ idx }}_status" class="form-select">
+<td class="fw-bold">{{ row.index|add:1 }}. {{ row.criterion }}</td>
+<td><select name="criterion_{{ row.index }}_status" class="form-select">
 <option value="">اختر التقييم...</option>
-{% for value,text in status_choices %}
-<option value="{{ value }}" {% if selected_followup and result|length > idx and result|slice:idx|last.status == value %}selected{% endif %}>{{ text }}</option>
-{% endfor %}
+{% for value,text in status_choices %}<option value="{{ value }}" {% if row.status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}
 </select></td>
-<td><textarea name="criterion_{{ idx }}_notes" class="form-control" rows="2" placeholder="ملاحظات على هذا البند">{% if selected_followup and result|length > idx %}{{ result|slice:idx|last.notes }}{% endif %}</textarea></td>
+<td><textarea name="criterion_{{ row.index }}_notes" class="form-control" rows="2" placeholder="ملاحظات على هذا البند">{{ row.notes }}</textarea></td>
 </tr>
-{% endwith %}
-{% endwith %}
 {% empty %}
 <tr><td colspan="3" class="text-center text-muted py-4">لم يتم تعريف بنود لهذا الآذن. افتح تعديل الآذن وأضف البنود.</td></tr>
-{% endfor %}
-</tbody></table></div>
+{% endfor %}</tbody></table></div>
 <label class="form-label fw-bold">ملاحظات عامة</label><textarea name="general_notes" class="form-control" rows="3">{% if selected_followup %}{{ selected_followup.general_notes }}{% endif %}</textarea>
 <div class="mt-3 d-flex gap-2 flex-wrap">
 <button class="btn btn-success"><i class="bi bi-save"></i> حفظ المتابعة</button>
