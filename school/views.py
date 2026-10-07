@@ -384,9 +384,35 @@ def warden_followup_report(request):
         qs = qs.filter(warden=selected)
     if month:
         qs = qs.filter(followup_date__month=int(month))
+    status_labels = dict(WardenFollowup.STATUS_CHOICES)
+    report_rows = []
+    for followup in qs:
+        if followup.evaluation_data:
+            for item in followup.evaluation_data:
+                report_rows.append({
+                    'date': followup.followup_date,
+                    'warden': followup.warden.full_name,
+                    'criterion': item.get('criterion', ''),
+                    'status': status_labels.get(item.get('status', ''), item.get('status', '')),
+                    'notes': item.get('notes', ''),
+                    'general_notes': followup.general_notes,
+                })
+        else:
+            legacy = [
+                ('الغرف الصفية', followup.get_classrooms_status_display(), followup.classrooms_notes),
+                ('الساحات والملاعب', followup.get_yards_status_display(), followup.yards_notes),
+                ('غرفة المعلمين والإدارة', followup.get_staff_rooms_status_display(), followup.staff_rooms_notes),
+                ('الممرات والطوابق', followup.get_corridors_status_display(), followup.corridors_notes),
+                ('الروضة والمرافق', followup.get_kindergarten_status_display(), followup.kindergarten_notes),
+                ('الوحدات الصحية والمدخل', followup.get_sanitary_status_display(), followup.sanitary_notes),
+            ]
+            for criterion, status, notes in legacy:
+                report_rows.append({'date': followup.followup_date, 'warden': followup.warden.full_name,
+                                    'criterion': criterion, 'status': status, 'notes': notes,
+                                    'general_notes': followup.general_notes})
     return render(request, 'school/warden_report.html', {
-        'wardens': wardens, 'selected': selected, 'followups': qs, 'year': year,
-        'month': int(month) if month else None, 'print_mode': request.GET.get('print') == '1'
+        'wardens': wardens, 'selected': selected, 'followups': qs, 'report_rows': report_rows,
+        'year': year, 'month': int(month) if month else None, 'print_mode': request.GET.get('print') == '1'
     })
 
 
