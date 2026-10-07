@@ -1,0 +1,3 @@
+{% extends 'school/base.html' %}
+{% block title %}حذف آذن{% endblock %}
+{% block content %}<div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:600px"><div class="card-body p-4 text-center"><i class="bi bi-exclamation-triangle text-danger fs-1"></i><h4 class="fw-bold mt-3">حذف الآذن {{ warden.full_name }}؟</h4><p class="text-muted">سيتم حذف حساب الدخول وجميع بيانات المتابعة المرتبطة به.</p><form method="post">{% csrf_token %}<button class="btn btn-danger">تأكيد الحذف</button> <a href="{% url 'warden_list' %}" class="btn btn-secondary">إلغاء</a></form></div></div>{% endblock %}
