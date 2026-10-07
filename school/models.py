@@ -1329,3 +1329,63 @@ class CurriculumAnswerCache(models.Model):
                 name='uniq_curr_cache_book',
             ),
         ]
+
+
+class Warden(models.Model):
+    QUALIFICATION_CHOICES = [
+        ('university', 'جامعي'),
+        ('non_university', 'غير جامعي'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='warden_profile')
+    full_name = models.CharField('اسم الآذن', max_length=200)
+    id_number = models.CharField('رقم الهوية', max_length=50, unique=True)
+    specialization = models.CharField('التخصص', max_length=200, blank=True)
+    qualification_type = models.CharField('نوع التخصص', max_length=20, choices=QUALIFICATION_CHOICES)
+    phone = models.CharField('رقم الهاتف', max_length=20, blank=True)
+    created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'آذن'
+        verbose_name_plural = 'الآذنة'
+        ordering = ['full_name']
+
+    def __str__(self):
+        return self.full_name
+
+
+class WardenFollowup(models.Model):
+    STATUS_CHOICES = [
+        ('excellent', 'ممتاز'),
+        ('good', 'جيد'),
+        ('needs_followup', 'بحاجة إلى متابعة'),
+        ('not_done', 'لم ينفذ'),
+    ]
+    warden = models.ForeignKey(Warden, on_delete=models.CASCADE, related_name='followups', verbose_name='الآذن')
+    followup_date = models.DateField('تاريخ المتابعة')
+    classrooms_status = models.CharField('نظافة الغرف الصفية وإفراغ سلات المهملات', max_length=30, choices=STATUS_CHOICES, blank=True)
+    classrooms_notes = models.TextField('ملاحظات الغرف الصفية', blank=True)
+    yards_status = models.CharField('تنظيف الساحات والملاعب والحديقة والمظلات', max_length=30, choices=STATUS_CHOICES, blank=True)
+    yards_notes = models.TextField('ملاحظات الساحات والملاعب', blank=True)
+    staff_rooms_status = models.CharField('تنظيف غرفة المعلمين والإدارة وغرفة المعلمات', max_length=30, choices=STATUS_CHOICES, blank=True)
+    staff_rooms_notes = models.TextField('ملاحظات الغرف الإدارية والمعلمين', blank=True)
+    corridors_status = models.CharField('تنظيف الممرات والطوابق وبيت الدرج ومتابعة سطح البناء', max_length=30, choices=STATUS_CHOICES, blank=True)
+    corridors_notes = models.TextField('ملاحظات الممرات والطوابق', blank=True)
+    kindergarten_status = models.CharField('نظافة الروضة وباقي مرافق المدرسة', max_length=30, choices=STATUS_CHOICES, blank=True)
+    kindergarten_notes = models.TextField('ملاحظات الروضة والمرافق', blank=True)
+    sanitary_status = models.CharField('نظافة الوحدات الصحية والمشارب ومدخل المدرسة والساحات', max_length=30, choices=STATUS_CHOICES, blank=True)
+    sanitary_notes = models.TextField('ملاحظات الوحدات الصحية والمدخل', blank=True)
+    general_notes = models.TextField('ملاحظات عامة', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='سجل بواسطة')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'متابعة آذن'
+        verbose_name_plural = 'متابعات الآذنة'
+        ordering = ['-followup_date', 'warden__full_name']
+        constraints = [
+            models.UniqueConstraint(fields=['warden', 'followup_date'], name='unique_warden_followup_date')
+        ]
+
+    def __str__(self):
+        return f'{self.warden.full_name} - {self.followup_date}'
