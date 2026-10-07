@@ -7,7 +7,7 @@
   <div class="d-flex gap-2">
     <a href="{% url 'warden_followup_list' %}" class="btn btn-outline-primary"><i class="bi bi-clipboard-check"></i> المتابعة اليومية</a>
     <a href="{% url 'warden_followup_report' %}" class="btn btn-outline-dark"><i class="bi bi-printer"></i> التقارير</a>
-    {% if 'wardens_add' in user_perms %}<a href="{% url 'warden_add' %}" class="btn btn-primary"><i class="bi bi-person-plus"></i> إضافة آذن</a>{% endif %}
+    {% if user.profile.role == 'admin' or user.profile.role == 'secretary' or user.profile.role == 'vice_principal' or 'wardens_add' in user_perms %}<a href="{% url 'warden_add' %}" class="btn btn-primary"><i class="bi bi-person-plus"></i> إضافة آذن جديد</a>{% endif %}
   </div>
 </div>
 <div class="card shadow-sm border-0 rounded-4"><div class="table-responsive">
