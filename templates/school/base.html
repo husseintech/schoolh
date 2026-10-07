@@ -1015,7 +1015,7 @@
         </div>
         {% endif %}
 
-        {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms or 'no_objection_view' in user_perms or 'wardens_view' in user_perms %}
+        {% if 'incoming_view' in user_perms or 'outgoing_view' in user_perms or 'no_objection_view' in user_perms or user.profile.role == 'admin' or 'wardens_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-secretary" aria-expanded="false">
             <span class="nav-section-label"><span class="section-icon"><i class="bi bi-folder2-open"></i></span><span>السكرتير</span></span><i class="bi bi-chevron-down"></i>
         </button>
@@ -1036,7 +1036,7 @@
             <i class="bi bi-file-earmark-check"></i> لا مانع
         </a>
         {% endif %}
-        {% if 'wardens_view' in user_perms %}
+        {% if user.profile.role == 'admin' or 'wardens_view' in user_perms %}
         <a href="{% url 'warden_list' %}" class="nav-link {% if 'warden_' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-person-workspace"></i> الآذنة والمتابعة
         </a>
