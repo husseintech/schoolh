@@ -2351,11 +2351,12 @@ def send_message(request, user_id=None):
             return redirect('send_message_to', user_id=recipient_id or 0)
         recipient = get_object_or_404(allowed_recipients, id=recipient_id)
         Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
+        notification_link = '/wardens/messages/' if recipient.profile.role == 'warden' else '/messages/'
         send_push(
             recipient,
             f'رسالة جديدة من {request.user.first_name or request.user.username}',
             subject[:150],
-            '/messages/',
+            notification_link,
         )
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
