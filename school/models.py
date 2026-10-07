@@ -85,6 +85,7 @@ DEFAULT_PERMISSIONS = {
         'school_radio': ['view', 'add', 'edit', 'delete', 'generate', 'review'],
         'curriculum_assistant': ['view', 'add', 'delete', 'monitor'],
         'social_committee': ['view', 'add', 'edit', 'delete', 'print'],
+        'wardens': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
     },
     'vice_principal': {
         'students': ['view', 'add', 'edit', 'import', 'export'],
