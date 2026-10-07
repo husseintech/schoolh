@@ -795,7 +795,16 @@
             <input type="search" id="sidebarSearch" placeholder="ابحث في القائمة..." autocomplete="off" aria-label="البحث في القائمة">
         </div>
 
-        <nav class="sidebar-nav" id="sidebarNav">
+        <nav class="sidebar-nav" id="sidebarNav">{% if user.profile.role == 'warden' %}
+<button class="nav-section nav-toggle" type="button" data-target="collapse-warden" aria-expanded="true">
+<span class="nav-section-label"><span class="section-icon"><i class="bi bi-clipboard-check-fill"></i></span><span>متابعة الآذن</span></span><i class="bi bi-chevron-down"></i>
+</button>
+<div class="nav-collapse" id="collapse-warden" style="display:block">
+<a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i> متابعتي</a>
+<a href="{% url 'warden_messages' %}" class="nav-link {% if request.resolver_match.url_name == 'warden_messages' %}active{% endif %}"><i class="bi bi-envelope-fill"></i> رسائلي</a>
+</div>
+{% else %}
+
 
         {% if user.is_authenticated %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-main" aria-expanded="false">
@@ -1164,7 +1173,8 @@
             <i class="bi bi-search"></i>
             لا توجد نتيجة مطابقة في القائمة
         </div>
-        </nav>
+        {% endif %}
+</nav>
         {% endif %}
 
     </aside>
