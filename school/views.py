@@ -205,7 +205,7 @@ def warden_add(request):
             return render(request, 'school/warden_form.html', {'warden': None, 'default_criteria': WARDEN_DEFAULT_CRITERIA})
         if User.objects.filter(username=username).exists():
             messages.error(request, 'اسم المستخدم موجود مسبقاً')
-            return render(request, 'school/warden_form.html', {'warden': None})
+            return render(request, 'school/warden_form.html', {'warden': None, 'default_criteria': WARDEN_DEFAULT_CRITERIA})
         if Warden.objects.filter(id_number=id_number).exists():
             messages.error(request, 'رقم الهوية مستخدم مسبقاً')
             return render(request, 'school/warden_form.html', {'warden': None})
@@ -243,7 +243,7 @@ def warden_edit(request, warden_id):
             return render(request, 'school/warden_form.html', {'warden': warden, 'default_criteria': WARDEN_DEFAULT_CRITERIA})
         if Warden.objects.exclude(id=warden.id).filter(id_number=id_number).exists():
             messages.error(request, 'رقم الهوية مستخدم مسبقاً')
-            return render(request, 'school/warden_form.html', {'warden': warden})
+            return render(request, 'school/warden_form.html', {'warden': warden, 'default_criteria': WARDEN_DEFAULT_CRITERIA})
         warden.full_name = full_name
         warden.id_number = id_number
         warden.specialization = specialization
