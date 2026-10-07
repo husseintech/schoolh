@@ -266,6 +266,10 @@ def warden_followup_list(request):
     wardens = Warden.objects.all()
     selected_id = request.GET.get('warden')
     selected = get_object_or_404(Warden, id=selected_id) if selected_id else None
+    selected_date = request.GET.get('date') or str(date.today())
+    selected_followup = WardenFollowup.objects.filter(
+        warden=selected, followup_date=selected_date
+    ).first() if selected else None
     qs = WardenFollowup.objects.select_related('warden').all()
     if selected:
         qs = qs.filter(warden=selected)
@@ -276,7 +280,7 @@ def warden_followup_list(request):
     if month:
         qs = qs.filter(followup_date__month=month)
     return render(request, 'school/warden_followup.html', {
-        'wardens': wardens, 'selected': selected, 'followups': qs, 'year': year or date.today().year,
+        'wardens': wardens, 'selected': selected, 'selected_followup': selected_followup, 'selected_date': selected_date, 'followups': qs, 'year': year or date.today().year,
         'month': month or date.today().month, 'status_choices': WardenFollowup.STATUS_CHOICES,
     })
 
