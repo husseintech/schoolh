@@ -1,0 +1,28 @@
+{% extends 'school/base.html' %}
+{% block title %}متابعة الآذنة{% endblock %}
+{% block page_heading %}متابعة الآذنة اليومية{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body">
+<form method="get" class="row g-2 align-items-end">
+<div class="col-md-4"><label class="form-label fw-bold">الآذن</label><select name="warden" class="form-select" required><option value="">اختر الآذن...</option>{% for w in wardens %}<option value="{{ w.id }}" {% if selected and selected.id == w.id %}selected{% endif %}>{{ w.full_name }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><label class="form-label fw-bold">تاريخ المتابعة</label><input type="date" name="date" class="form-control" value="{{ selected_date }}"></div>
+<div class="col-md-2"><button class="btn btn-primary w-100">فتح المتابعة</button></div>
+<div class="col-md-3 text-md-end"><a href="{% url 'warden_followup_report' %}" class="btn btn-outline-dark"><i class="bi bi-printer"></i> تقارير شهرية / سنوية</a></div>
+</form></div></div>
+{% if selected %}
+<form method="post" action="{% url 'warden_followup_save' %}">
+{% csrf_token %}<input type="hidden" name="warden_id" value="{{ selected.id }}"><input type="hidden" name="followup_date" value="{{ selected_date }}">
+<div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body"><h5 class="fw-bold">متابعة {{ selected.full_name }} — {{ selected_date }}</h5>
+{% with f=selected_followup %}
+<div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th style="min-width:280px">البند</th><th style="min-width:180px">الحالة</th><th>الملاحظات</th></tr></thead><tbody>
+{% for key,label in followup_fields %}
+<tr><td class="fw-bold">{{ label }}</td><td><select name="{{ key }}_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f|getattr:key|add:'_status' == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="{{ key }}_notes" class="form-control" rows="2">{% if f %}{{ f|getattr:key|add:'_notes' }}{% endif %}</textarea></td></tr>
+{% endfor %}
+</tbody></table></div>
+{% endwith %}
+<label class="form-label fw-bold">ملاحظات عامة</label><textarea name="general_notes" class="form-control" rows="3">{% if selected_followup %}{{ selected_followup.general_notes }}{% endif %}</textarea>
+<button class="btn btn-success mt-3"><i class="bi bi-save"></i> حفظ المتابعة</button>
+</div></div></form>
+{% endif %}
+<div class="card border-0 shadow-sm rounded-4"><div class="card-header fw-bold">السجل السابق</div><div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>التاريخ</th><th>الآذن</th><th>ملخص الحالات</th><th>ملاحظات عامة</th></tr></thead><tbody>{% for f in followups %}<tr><td>{{ f.followup_date }}</td><td>{{ f.warden.full_name }}</td><td>{{ f.classrooms_status }} / {{ f.yards_status }} / {{ f.staff_rooms_status }} / {{ f.corridors_status }} / {{ f.kindergarten_status }} / {{ f.sanitary_status }}</td><td>{{ f.general_notes|default:'-' }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-4">لا توجد متابعات.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}
