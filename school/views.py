@@ -164,6 +164,15 @@ ACTION_LABELS = {
 
 
 
+WARDEN_DEFAULT_CRITERIA = [
+    'نظافة الغرف الصفية وإفراغ سلات المهملات',
+    'تنظيف الساحات والملاعب والحديقة المدرسية والمظلات',
+    'تنظيف غرفة المعلمين والإدارة وغرفة المعلمات',
+    'تنظيف الممرات والطوابق وبيت الدرج ومتابعة سطح البناء المدرسي',
+    'نظافة الروضة وباقي مرافق المدرسة الأخرى',
+    'نظافة الوحدات الصحية والمشارب ومدخل المدرسة والساحات',
+]
+
 @login_required
 def warden_list(request):
     if request.user.profile.role == 'warden':
@@ -188,9 +197,12 @@ def warden_add(request):
         specialization = request.POST.get('specialization', '').strip()
         qualification_type = request.POST.get('qualification_type', 'non_university')
         phone = request.POST.get('phone', '').strip()
+        criteria = [c.strip() for c in request.POST.getlist('criteria') if c.strip()]
+        if not criteria:
+            criteria = list(WARDEN_DEFAULT_CRITERIA)
         if not all([username, password, full_name, id_number, specialization]):
             messages.error(request, 'الاسم ورقم الهوية والتخصص وبيانات الدخول مطلوبة')
-            return render(request, 'school/warden_form.html', {'warden': None})
+            return render(request, 'school/warden_form.html', {'warden': None, 'default_criteria': WARDEN_DEFAULT_CRITERIA})
         if User.objects.filter(username=username).exists():
             messages.error(request, 'اسم المستخدم موجود مسبقاً')
             return render(request, 'school/warden_form.html', {'warden': None})
@@ -201,7 +213,8 @@ def warden_add(request):
         Profile.objects.create(user=user, role='warden', phone=phone)
         UserPermission.objects.create(user=user, permissions=complete_permissions('warden'))
         Warden.objects.create(user=user, full_name=full_name, id_number=id_number,
-                              specialization=specialization, qualification_type=qualification_type, phone=phone)
+                              specialization=specialization, qualification_type=qualification_type,
+                              phone=phone, criteria=criteria)
         log_action(request.user, 'إضافة آذن', full_name)
         messages.success(request, f'تمت إضافة الآذن: {full_name}')
         return redirect('warden_list')
@@ -222,9 +235,12 @@ def warden_edit(request, warden_id):
         specialization = request.POST.get('specialization', '').strip()
         qualification_type = request.POST.get('qualification_type', warden.qualification_type)
         phone = request.POST.get('phone', '').strip()
+        criteria = [c.strip() for c in request.POST.getlist('criteria') if c.strip()]
+        if not criteria:
+            criteria = list(warden.criteria or WARDEN_DEFAULT_CRITERIA)
         if not full_name or not id_number or not specialization:
             messages.error(request, 'الاسم ورقم الهوية والتخصص مطلوبة')
-            return render(request, 'school/warden_form.html', {'warden': warden})
+            return render(request, 'school/warden_form.html', {'warden': warden, 'default_criteria': WARDEN_DEFAULT_CRITERIA})
         if Warden.objects.exclude(id=warden.id).filter(id_number=id_number).exists():
             messages.error(request, 'رقم الهوية مستخدم مسبقاً')
             return render(request, 'school/warden_form.html', {'warden': warden})
@@ -233,6 +249,7 @@ def warden_edit(request, warden_id):
         warden.specialization = specialization
         warden.qualification_type = qualification_type
         warden.phone = phone
+        warden.criteria = criteria
         warden.save()
         warden.user.first_name = full_name
         warden.user.save(update_fields=['first_name'])
@@ -303,12 +320,15 @@ def warden_followup_save(request):
     warden_id = request.POST.get('warden_id')
     followup_date = request.POST.get('followup_date') or str(date.today())
     warden = get_object_or_404(Warden, id=warden_id)
-    defaults = {}
-    fields = ['classrooms','yards','staff_rooms','corridors','kindergarten','sanitary']
-    for field in fields:
-        defaults[field + '_status'] = request.POST.get(field + '_status', '')
-        defaults[field + '_notes'] = request.POST.get(field + '_notes', '').strip()
-    defaults['general_notes'] = request.POST.get('general_notes', '').strip()
+    criteria = warden.criteria or WARDEN_DEFAULT_CRITERIA
+    evaluation_data = []
+    for index, criterion in enumerate(criteria):
+        evaluation_data.append({
+            'criterion': criterion,
+            'status': request.POST.get(f'criterion_{index}_status', ''),
+            'notes': request.POST.get(f'criterion_{index}_notes', '').strip(),
+        })
+    defaults = {'general_notes': request.POST.get('general_notes', '').strip(), 'evaluation_data': evaluation_data}
     obj, created = WardenFollowup.objects.update_or_create(
         warden=warden, followup_date=followup_date,
         defaults={**defaults, 'created_by': request.user}
@@ -316,6 +336,23 @@ def warden_followup_save(request):
     messages.success(request, 'تم حفظ المتابعة اليومية' if created else 'تم تحديث المتابعة اليومية')
     return redirect(f"{reverse('warden_followup_list')}?warden={warden.id}&year={obj.followup_date.year}&month={obj.followup_date.month}")
 
+
+@login_required
+def warden_followup_delete(request):
+    if request.user.profile.role == 'warden':
+        return redirect('dashboard')
+    if not has_perm(request.user, 'wardens', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية لحذف المتابعة')
+        return redirect('warden_followup_list')
+    warden_id = request.POST.get('warden_id') or request.GET.get('warden_id')
+    followup_date = request.POST.get('followup_date') or request.GET.get('followup_date')
+    if request.method != 'POST':
+        return redirect('warden_followup_list')
+    followup = get_object_or_404(WardenFollowup, warden_id=warden_id, followup_date=followup_date)
+    name, day = followup.warden.full_name, followup.followup_date
+    followup.delete()
+    messages.success(request, f'تم حذف متابعة {name} بتاريخ {day}')
+    return redirect(f"{reverse('warden_followup_list')}?warden={warden_id}&date={date.today()}")
 
 @login_required
 def warden_followup_report(request):
