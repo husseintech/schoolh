@@ -9,24 +9,54 @@
 <div class="col-md-2"><button class="btn btn-primary w-100">فتح المتابعة</button></div>
 <div class="col-md-3 text-md-end"><a href="{% url 'warden_followup_report' %}" class="btn btn-outline-dark"><i class="bi bi-printer"></i> تقارير شهرية / سنوية</a></div>
 </form></div></div>
+
 {% if selected %}
+<div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+<div><h5 class="fw-bold mb-1">متابعة {{ selected.full_name }} — {{ selected_date }}</h5>
+<div class="text-muted small">{{ selected.specialization }} — {{ selected.get_qualification_type_display }} — {{ selected.id_number }}</div></div>
+<a href="{% url 'warden_edit' selected.id %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> تعديل بيانات وبنود الآذن</a>
+</div></div></div>
+
 <form method="post" action="{% url 'warden_followup_save' %}">
 {% csrf_token %}<input type="hidden" name="warden_id" value="{{ selected.id }}"><input type="hidden" name="followup_date" value="{{ selected_date }}">
-<div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body"><h5 class="fw-bold">متابعة {{ selected.full_name }} — {{ selected_date }}</h5>
-{% with f=selected_followup %}
-<div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>البند</th><th>الحالة</th><th>الملاحظات</th></tr></thead><tbody>
-{% with f=selected_followup %}
-<tr><td class="fw-bold">نظافة الغرف الصفية وإفراغ السلات</td><td><select name="classrooms_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.classrooms_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="classrooms_notes" class="form-control" rows="2">{% if f %}{{ f.classrooms_notes }}{% endif %}</textarea></td></tr>
-<tr><td class="fw-bold">الساحات والملاعب والحديقة والمظلات</td><td><select name="yards_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.yards_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="yards_notes" class="form-control" rows="2">{% if f %}{{ f.yards_notes }}{% endif %}</textarea></td></tr>
-<tr><td class="fw-bold">غرفة المعلمين والإدارة وغرفة المعلمات</td><td><select name="staff_rooms_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.staff_rooms_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="staff_rooms_notes" class="form-control" rows="2">{% if f %}{{ f.staff_rooms_notes }}{% endif %}</textarea></td></tr>
-<tr><td class="fw-bold">الممرات والطوابق وبيت الدرج وسطح البناء</td><td><select name="corridors_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.corridors_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="corridors_notes" class="form-control" rows="2">{% if f %}{{ f.corridors_notes }}{% endif %}</textarea></td></tr>
-<tr><td class="fw-bold">الروضة وباقي مرافق المدرسة</td><td><select name="kindergarten_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.kindergarten_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="kindergarten_notes" class="form-control" rows="2">{% if f %}{{ f.kindergarten_notes }}{% endif %}</textarea></td></tr>
-<tr><td class="fw-bold">الوحدات الصحية والمشارب ومدخل المدرسة والساحات</td><td><select name="sanitary_status" class="form-select">{% for value,text in status_choices %}<option value="{{ value }}" {% if f and f.sanitary_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}</select></td><td><textarea name="sanitary_notes" class="form-control" rows="2">{% if f %}{{ f.sanitary_notes }}{% endif %}</textarea></td></tr>
-{% endwith %}</tbody></table></div>
+<div class="card border-0 shadow-sm rounded-4 mb-3"><div class="card-body">
+<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:35%">البند</th><th style="width:18%">التقييم</th><th>الملاحظات</th></tr></thead><tbody>
+{% for criterion in selected.criteria %}
+{% with idx=forloop.counter0 %}
+{% with result=selected_followup.evaluation_data %}
+<tr>
+<td class="fw-bold">{{ forloop.counter }}. {{ criterion }}</td>
+<td><select name="criterion_{{ idx }}_status" class="form-select">
+<option value="">اختر التقييم...</option>
+{% for value,text in status_choices %}
+<option value="{{ value }}" {% if selected_followup and result|length > idx and result|slice:idx|last.status == value %}selected{% endif %}>{{ text }}</option>
+{% endfor %}
+</select></td>
+<td><textarea name="criterion_{{ idx }}_notes" class="form-control" rows="2" placeholder="ملاحظات على هذا البند">{% if selected_followup and result|length > idx %}{{ result|slice:idx|last.notes }}{% endif %}</textarea></td>
+</tr>
 {% endwith %}
+{% endwith %}
+{% empty %}
+<tr><td colspan="3" class="text-center text-muted py-4">لم يتم تعريف بنود لهذا الآذن. افتح تعديل الآذن وأضف البنود.</td></tr>
+{% endfor %}
+</tbody></table></div>
 <label class="form-label fw-bold">ملاحظات عامة</label><textarea name="general_notes" class="form-control" rows="3">{% if selected_followup %}{{ selected_followup.general_notes }}{% endif %}</textarea>
-<button class="btn btn-success mt-3"><i class="bi bi-save"></i> حفظ المتابعة</button>
-</div></div></form>
+<div class="mt-3 d-flex gap-2 flex-wrap">
+<button class="btn btn-success"><i class="bi bi-save"></i> حفظ المتابعة</button>
+{% if selected_followup %}
+<button type="submit" form="delete-followup-form" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد من حذف متابعة هذا اليوم؟');"><i class="bi bi-trash"></i> حذف متابعة {{ selected_date }}</button>
 {% endif %}
-<div class="card border-0 shadow-sm rounded-4"><div class="card-header fw-bold">السجل السابق</div><div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>التاريخ</th><th>الآذن</th><th>ملخص الحالات</th><th>ملاحظات عامة</th></tr></thead><tbody>{% for f in followups %}<tr><td>{{ f.followup_date }}</td><td>{{ f.warden.full_name }}</td><td>{{ f.classrooms_status }} / {{ f.yards_status }} / {{ f.staff_rooms_status }} / {{ f.corridors_status }} / {{ f.kindergarten_status }} / {{ f.sanitary_status }}</td><td>{{ f.general_notes|default:'-' }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-4">لا توجد متابعات.</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+</div></div></form>
+{% if selected_followup %}
+<form id="delete-followup-form" method="post" action="{% url 'warden_followup_delete' %}">{% csrf_token %}<input type="hidden" name="warden_id" value="{{ selected.id }}"><input type="hidden" name="followup_date" value="{{ selected_date }}"></form>
+{% endif %}
+{% endif %}
+
+<div class="card border-0 shadow-sm rounded-4"><div class="card-header fw-bold">السجل السابق</div><div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>التاريخ</th><th>الآذن</th><th>عدد البنود</th><th>ملاحظات عامة</th><th>إجراء</th></tr></thead><tbody>
+{% for f in followups %}
+<tr><td>{{ f.followup_date }}</td><td>{{ f.warden.full_name }}</td><td>{% if f.evaluation_data %}{{ f.evaluation_data|length }}{% else %}6{% endif %}</td><td>{{ f.general_notes|default:'-' }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'warden_followup_list' %}?warden={{ f.warden.id }}&date={{ f.followup_date|date:'Y-m-d' }}">فتح</a></td></tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">لا توجد متابعات.</td></tr>{% endfor %}
+</tbody></table></div></div>
 {% endblock %}
