@@ -116,6 +116,16 @@ urlpatterns = [
     path('exam-analysis/add/', views.add_exam_analysis, name='add_exam_analysis'),
     path('exam-analysis/<int:analysis_id>/report/', views.exam_analysis_report, name='exam_analysis_report'),
 
+    # Wardens / Janitors
+    path('wardens/', views.warden_list, name='warden_list'),
+    path('wardens/add/', views.warden_add, name='warden_add'),
+    path('wardens/<int:warden_id>/edit/', views.warden_edit, name='warden_edit'),
+    path('wardens/<int:warden_id>/delete/', views.warden_delete, name='warden_delete'),
+    path('wardens/followup/', views.warden_followup_list, name='warden_followup_list'),
+    path('wardens/followup/save/', views.warden_followup_save, name='warden_followup_save'),
+    path('wardens/reports/', views.warden_followup_report, name='warden_followup_report'),
+    path('wardens/messages/', views.warden_messages, name='warden_messages'),
+
     # Messages
     path('messages/', views.message_list, name='message_list'),
     path('messages/send/', views.send_message, name='send_message'),
