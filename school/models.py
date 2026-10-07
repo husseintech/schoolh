@@ -152,7 +152,6 @@ DEFAULT_PERMISSIONS = {
     },
     'warden': {
         'messages': ['view'],
-        'wardens': ['view'],
     },
     'student': {
         'students': [],
