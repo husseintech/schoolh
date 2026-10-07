@@ -1349,6 +1349,8 @@ class Warden(models.Model):
     specialization = models.CharField('التخصص', max_length=200, blank=True)
     qualification_type = models.CharField('نوع التخصص', max_length=20, choices=QUALIFICATION_CHOICES)
     phone = models.CharField('رقم الهاتف', max_length=20, blank=True)
+    # البنود التي تعتمد عليها المدرسة في تقييم ومتابعة هذا الآذن
+    criteria = models.JSONField('بنود المتابعة', default=list, blank=True)
     created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
 
     class Meta:
@@ -1382,6 +1384,8 @@ class WardenFollowup(models.Model):
     sanitary_status = models.CharField('نظافة الوحدات الصحية والمشارب ومدخل المدرسة والساحات', max_length=30, choices=STATUS_CHOICES, blank=True)
     sanitary_notes = models.TextField('ملاحظات الوحدات الصحية والمدخل', blank=True)
     general_notes = models.TextField('ملاحظات عامة', blank=True)
+    # نسخة البنود ونتائج تقييمها في يوم المتابعة، حتى تبقى السجلات التاريخية ثابتة
+    evaluation_data = models.JSONField('نتائج البنود', default=list, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='سجل بواسطة')
     created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
     updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
