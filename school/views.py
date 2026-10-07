@@ -385,33 +385,69 @@ def warden_followup_report(request):
     if month:
         qs = qs.filter(followup_date__month=int(month))
     status_labels = dict(WardenFollowup.STATUS_CHOICES)
-    report_rows = []
-    for followup in qs:
-        if followup.evaluation_data:
-            for item in followup.evaluation_data:
-                report_rows.append({
-                    'date': followup.followup_date,
-                    'warden': followup.warden.full_name,
-                    'criterion': item.get('criterion', ''),
+    # Build one row per follow-up and make the criteria the table headers.
+    # When "all wardens" is selected, use the union of their criteria so that
+    # each warden can still have a different set of follow-up items.
+    legacy_items = [
+        ('الغرف الصفية', 'classrooms_status', 'classrooms_notes'),
+        ('الساحات والملاعب', 'yards_status', 'yards_notes'),
+        ('غرفة المعلمين والإدارة', 'staff_rooms_status', 'staff_rooms_notes'),
+        ('الممرات والطوابق', 'corridors_status', 'corridors_notes'),
+        ('الروضة والمرافق', 'kindergarten_status', 'kindergarten_notes'),
+        ('الوحدات الصحية والمدخل', 'sanitary_status', 'sanitary_notes'),
+    ]
+    report_records = []
+    criterion_order = []
+
+    for followup in qs.order_by('followup_date', 'warden__full_name'):
+        items = followup.evaluation_data or []
+        if items:
+            evaluations = {
+                item.get('criterion', ''): {
                     'status': status_labels.get(item.get('status', ''), item.get('status', '')),
                     'notes': item.get('notes', ''),
-                    'general_notes': followup.general_notes,
-                })
+                }
+                for item in items if item.get('criterion', '')
+            }
         else:
-            legacy = [
-                ('الغرف الصفية', followup.get_classrooms_status_display(), followup.classrooms_notes),
-                ('الساحات والملاعب', followup.get_yards_status_display(), followup.yards_notes),
-                ('غرفة المعلمين والإدارة', followup.get_staff_rooms_status_display(), followup.staff_rooms_notes),
-                ('الممرات والطوابق', followup.get_corridors_status_display(), followup.corridors_notes),
-                ('الروضة والمرافق', followup.get_kindergarten_status_display(), followup.kindergarten_notes),
-                ('الوحدات الصحية والمدخل', followup.get_sanitary_status_display(), followup.sanitary_notes),
-            ]
-            for criterion, status, notes in legacy:
-                report_rows.append({'date': followup.followup_date, 'warden': followup.warden.full_name,
-                                    'criterion': criterion, 'status': status, 'notes': notes,
-                                    'general_notes': followup.general_notes})
+            evaluations = {}
+            for criterion, status_field, notes_field in legacy_items:
+                evaluations[criterion] = {
+                    'status': getattr(followup, status_field).replace('_', ' ') if getattr(followup, status_field) else '-',
+                    'notes': getattr(followup, notes_field) or '',
+                }
+            legacy_display = {
+                'classrooms_status': followup.get_classrooms_status_display(),
+                'yards_status': followup.get_yards_status_display(),
+                'staff_rooms_status': followup.get_staff_rooms_status_display(),
+                'corridors_status': followup.get_corridors_status_display(),
+                'kindergarten_status': followup.get_kindergarten_status_display(),
+                'sanitary_status': followup.get_sanitary_status_display(),
+            }
+            for criterion, status_field, notes_field in legacy_items:
+                evaluations[criterion]['status'] = legacy_display[status_field]
+
+        for criterion in evaluations:
+            if criterion not in criterion_order:
+                criterion_order.append(criterion)
+
+        report_records.append({
+            'date': followup.followup_date,
+            'warden': followup.warden.full_name,
+            'evaluations': evaluations,
+            'general_notes': followup.general_notes or '',
+        })
+
+    report_columns = [{'key': f'c{i}', 'name': criterion} for i, criterion in enumerate(criterion_order)]
+    for record in report_records:
+        record['cells'] = [
+            record['evaluations'].get(column['name'], {'status': '-', 'notes': ''})
+            for column in report_columns
+        ]
+
     return render(request, 'school/warden_report.html', {
-        'wardens': wardens, 'selected': selected, 'followups': qs, 'report_rows': report_rows,
+        'wardens': wardens, 'selected': selected, 'followups': qs,
+        'report_records': report_records, 'report_columns': report_columns,
         'year': year, 'month': int(month) if month else None, 'print_mode': request.GET.get('print') == '1'
     })
 
