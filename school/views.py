@@ -166,6 +166,8 @@ ACTION_LABELS = {
 
 @login_required
 def warden_list(request):
+    if request.user.profile.role == 'warden':
+        return redirect('dashboard')
     if not has_perm(request.user, 'wardens', 'view'):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا القسم')
         return redirect('dashboard')
@@ -208,6 +210,8 @@ def warden_add(request):
 
 @login_required
 def warden_edit(request, warden_id):
+    if request.user.profile.role == 'warden':
+        return redirect('dashboard')
     warden = get_object_or_404(Warden.objects.select_related('user'), id=warden_id)
     if not has_perm(request.user, 'wardens', 'edit'):
         messages.error(request, 'ليس لديك صلاحية لتعديل الآذن')
@@ -246,6 +250,8 @@ def warden_edit(request, warden_id):
 
 @login_required
 def warden_delete(request, warden_id):
+    if request.user.profile.role == 'warden':
+        return redirect('dashboard')
     warden = get_object_or_404(Warden, id=warden_id)
     if not has_perm(request.user, 'wardens', 'delete'):
         messages.error(request, 'ليس لديك صلاحية لحذف الآذن')
@@ -260,6 +266,8 @@ def warden_delete(request, warden_id):
 
 @login_required
 def warden_followup_list(request):
+    if request.user.profile.role == 'warden':
+        return redirect('dashboard')
     if not has_perm(request.user, 'wardens', 'view'):
         messages.error(request, 'ليس لديك صلاحية لعرض المتابعة')
         return redirect('dashboard')
@@ -311,6 +319,8 @@ def warden_followup_save(request):
 
 @login_required
 def warden_followup_report(request):
+    if request.user.profile.role == 'warden':
+        return redirect('dashboard')
     if not has_perm(request.user, 'wardens', 'print'):
         messages.error(request, 'ليس لديك صلاحية لطباعة تقارير الآذنة')
         return redirect('warden_list')
