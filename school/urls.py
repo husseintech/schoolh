@@ -123,6 +123,7 @@ urlpatterns = [
     path('wardens/<int:warden_id>/delete/', views.warden_delete, name='warden_delete'),
     path('wardens/followup/', views.warden_followup_list, name='warden_followup_list'),
     path('wardens/followup/save/', views.warden_followup_save, name='warden_followup_save'),
+    path('wardens/followup/delete/', views.warden_followup_delete, name='warden_followup_delete'),
     path('wardens/reports/', views.warden_followup_report, name='warden_followup_report'),
     path('wardens/messages/', views.warden_messages, name='warden_messages'),
 
