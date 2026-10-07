@@ -1,0 +1,21 @@
+{% extends 'school/base.html' %}
+{% block title %}الآذنة{% endblock %}
+{% block page_heading %}الآذنة{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div><h4 class="fw-bold mb-1">بيانات الآذنة</h4><div class="text-muted">إدارة حسابات الآذنة وبياناتهم.</div></div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'warden_followup_list' %}" class="btn btn-outline-primary"><i class="bi bi-clipboard-check"></i> المتابعة اليومية</a>
+    <a href="{% url 'warden_followup_report' %}" class="btn btn-outline-dark"><i class="bi bi-printer"></i> التقارير</a>
+    {% if 'wardens_add' in user_perms %}<a href="{% url 'warden_add' %}" class="btn btn-primary"><i class="bi bi-person-plus"></i> إضافة آذن</a>{% endif %}
+  </div>
+</div>
+<div class="card shadow-sm border-0 rounded-4"><div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead class="table-light"><tr><th>#</th><th>الاسم</th><th>رقم الهوية</th><th>التخصص</th><th>النوع</th><th>الهاتف</th><th>اسم المستخدم</th><th>إجراء</th></tr></thead>
+<tbody>{% for w in wardens %}
+<tr><td>{{ forloop.counter }}</td><td class="fw-bold">{{ w.full_name }}</td><td>{{ w.id_number }}</td><td>{{ w.specialization }}</td><td>{{ w.get_qualification_type_display }}</td><td>{{ w.phone|default:'-' }}</td><td>{{ w.user.username }}</td>
+<td class="text-nowrap"><a href="{% url 'warden_followup_list' %}?warden={{ w.id }}" class="btn btn-sm btn-outline-primary">المتابعة</a> {% if 'wardens_edit' in user_perms %}<a href="{% url 'warden_edit' w.id %}" class="btn btn-sm btn-outline-secondary">تعديل</a>{% endif %} {% if 'wardens_delete' in user_perms %}<a href="{% url 'warden_delete' w.id %}" class="btn btn-sm btn-outline-danger">حذف</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-center text-muted py-5">لا توجد بيانات آذنة حتى الآن.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}
