@@ -2,8 +2,9 @@
 {% block title %}{% if warden %}تعديل آذن{% else %}إضافة آذن{% endif %}{% endblock %}
 {% block page_heading %}{% if warden %}تعديل آذن{% else %}إضافة آذن{% endif %}{% endblock %}
 {% block content %}
-<div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:900px"><div class="card-body p-4">
-<h4 class="fw-bold mb-4">{% if warden %}تعديل بيانات {{ warden.full_name }}{% else %}إضافة آذن جديد{% endif %}</h4>
+<div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:1000px">
+<div class="card-body p-4">
+<h4 class="fw-bold mb-4">{% if warden %}تعديل بيانات {{ warden.full_name }} وبنود متابعته{% else %}إضافة آذن جديد وبنود متابعته{% endif %}</h4>
 <form method="post">{% csrf_token %}
 <div class="row g-3">
 <div class="col-md-6"><label class="form-label fw-bold">الاسم الكامل</label><input name="full_name" class="form-control" required value="{{ warden.full_name|default:'' }}"></div>
@@ -14,6 +15,50 @@
 <div class="col-md-6"><label class="form-label fw-bold">اسم المستخدم</label><input name="username" class="form-control" {% if not warden %}required{% endif %} value="{{ warden.user.username|default:'' }}" {% if warden %}readonly{% endif %}></div>
 <div class="col-md-6"><label class="form-label fw-bold">{% if warden %}كلمة مرور جديدة (اختياري){% else %}كلمة المرور{% endif %}</label><input type="password" name="password" class="form-control" {% if not warden %}required{% endif %}></div>
 </div>
-<div class="mt-4 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button><a href="{% url 'warden_list' %}" class="btn btn-secondary">إلغاء</a></div>
+
+<hr class="my-4">
+<div class="d-flex justify-content-between align-items-center mb-2">
+<div><h5 class="fw-bold mb-1">بنود التقييم والمتابعة</h5><div class="text-muted small">هذه البنود ستظهر تلقائيًا عند فتح المتابعة اليومية لهذا الآذن.</div></div>
+<button type="button" class="btn btn-outline-primary btn-sm" onclick="addCriterion()"><i class="bi bi-plus-lg"></i> إضافة بند</button>
+</div>
+<div id="criteria-list">
+{% if warden and warden.criteria %}
+{% for criterion in warden.criteria %}
+<div class="criterion-row input-group mb-2">
+<span class="input-group-text bg-light fw-bold criterion-number">{{ forloop.counter }}</span>
+<input name="criteria" class="form-control" required value="{{ criterion }}">
+<button type="button" class="btn btn-outline-danger" onclick="removeCriterion(this)" title="حذف البند"><i class="bi bi-trash"></i></button>
+</div>
+{% endfor %}
+{% else %}
+{% for criterion in default_criteria %}
+<div class="criterion-row input-group mb-2">
+<span class="input-group-text bg-light fw-bold criterion-number">{{ forloop.counter }}</span>
+<input name="criteria" class="form-control" required value="{{ criterion }}">
+<button type="button" class="btn btn-outline-danger" onclick="removeCriterion(this)" title="حذف البند"><i class="bi bi-trash"></i></button>
+</div>
+{% endfor %}
+{% endif %}
+</div>
+<div class="alert alert-info mt-3 mb-0"><i class="bi bi-info-circle"></i> يمكنك تعديل البنود أو حذفها أو إضافة بنود جديدة. التعديلات الجديدة ستظهر في المتابعات القادمة، بينما تبقى المتابعات القديمة محفوظة كما سُجلت.</div>
+
+<div class="mt-4 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ البيانات والبنود</button><a href="{% url 'warden_list' %}" class="btn btn-secondary">إلغاء</a></div>
 </form></div></div>
+<script>
+function renumber(){
+ document.querySelectorAll('#criteria-list .criterion-row').forEach((row,i)=>row.querySelector('.criterion-number').textContent=i+1);
+}
+function addCriterion(){
+ const row=document.createElement('div');
+ row.className='criterion-row input-group mb-2';
+ row.innerHTML='<span class="input-group-text bg-light fw-bold criterion-number"></span><input name="criteria" class="form-control" required placeholder="اكتب بند المتابعة"><button type="button" class="btn btn-outline-danger" onclick="removeCriterion(this)" title="حذف البند"><i class="bi bi-trash"></i></button>';
+ document.getElementById('criteria-list').appendChild(row); renumber();
+}
+function removeCriterion(btn){
+ const rows=document.querySelectorAll('#criteria-list .criterion-row');
+ if(rows.length<=1){ alert('يجب أن يبقى بند واحد على الأقل.'); return; }
+ btn.closest('.criterion-row').remove(); renumber();
+}
+renumber();
+</script>
 {% endblock %}
