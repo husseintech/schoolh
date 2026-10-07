@@ -38,6 +38,7 @@ class Profile(models.Model):
         ('secretary', 'سكرتير'),
         ('teacher', 'معلم'),
         ('student', 'طالب'),
+        ('warden', 'آذن'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField('الدور', max_length=20, choices=ROLE_CHOICES, default='student')
@@ -125,6 +126,8 @@ DEFAULT_PERMISSIONS = {
         'outgoing': ['view', 'add', 'edit', 'delete'],
         'reciprocal_visits': ['view'],
         'no_objection': ['view', 'add', 'edit', 'delete'],
+        'wardens': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
+        'messages': ['view', 'send'],
     },
     'teacher': {        'students': ['view'],
         'teachers': [],
@@ -145,6 +148,10 @@ DEFAULT_PERMISSIONS = {
         'reciprocal_visits': ['view'],
         'open_learning': ['view', 'add', 'edit', 'delete'],
         'curriculum_assistant': ['view', 'add', 'delete', 'monitor'],
+    },
+    'warden': {
+        'messages': ['view'],
+        'wardens': ['view'],
     },
     'student': {
         'students': [],
