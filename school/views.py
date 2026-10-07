@@ -428,7 +428,7 @@ def login_view(request):
                     request.session['student_assistant_welcome_pending'] = True
             except (Profile.DoesNotExist, AttributeError):
                 pass
-            if role == 'student':
+            if role in {'student', 'warden'}:
                 return redirect('dashboard')
             return redirect('home')
         messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
@@ -488,6 +488,18 @@ def dashboard(request):
             'show_quick_actions': profile.role in ('admin', 'vice_principal'),
             'radio_summary': radio_summary,
         })
+    elif profile.role == 'warden':
+        try:
+            warden = request.user.warden_profile
+            unread_messages = Message.objects.filter(recipient=request.user, is_read=False).count()
+            return render(request, 'school/warden_dashboard.html', {
+                'warden': warden,
+                'followups': warden.followups.all()[:60],
+                'unread_messages': unread_messages,
+            })
+        except Warden.DoesNotExist:
+            messages.error(request, 'لا يوجد ملف آذن مرتبط بهذا الحساب')
+            return redirect('logout')
     elif profile.role == 'teacher':
         try:
             teacher = request.user.teacher_profile
@@ -2335,6 +2347,7 @@ def send_message(request, user_id=None):
         return redirect('send_message')
     students = [] if is_student else sort_students(Student.objects.all().select_related('student_class'))
     teachers = Teacher.objects.none() if is_student else Teacher.objects.all().order_by('full_name')
+    wardens = Warden.objects.none() if is_student else Warden.objects.all().order_by('full_name')
     admin_roles = ['admin'] if is_student else ['admin', 'vice_principal', 'secretary']
     admins = allowed_recipients.filter(profile__role__in=admin_roles).select_related('profile').order_by('first_name')
     if user_id:
@@ -2343,6 +2356,7 @@ def send_message(request, user_id=None):
     return render(request, 'school/send_message.html', {
         'students': students,
         'teachers': teachers,
+        'wardens': wardens,
         'admins': admins,
         'student_admin_only': is_student,
     })
