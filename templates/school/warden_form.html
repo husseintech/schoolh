@@ -1,0 +1,19 @@
+{% extends 'school/base.html' %}
+{% block title %}{% if warden %}تعديل آذن{% else %}إضافة آذن{% endif %}{% endblock %}
+{% block page_heading %}{% if warden %}تعديل آذن{% else %}إضافة آذن{% endif %}{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:900px"><div class="card-body p-4">
+<h4 class="fw-bold mb-4">{% if warden %}تعديل بيانات {{ warden.full_name }}{% else %}إضافة آذن جديد{% endif %}</h4>
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label fw-bold">الاسم الكامل</label><input name="full_name" class="form-control" required value="{{ warden.full_name|default:'' }}"></div>
+<div class="col-md-6"><label class="form-label fw-bold">رقم الهوية</label><input name="id_number" class="form-control" required value="{{ warden.id_number|default:'' }}"></div>
+<div class="col-md-6"><label class="form-label fw-bold">التخصص</label><input name="specialization" class="form-control" required value="{{ warden.specialization|default:'' }}" placeholder="مثال: خدمات عامة / صيانة"></div>
+<div class="col-md-6"><label class="form-label fw-bold">نوع التخصص</label><select name="qualification_type" class="form-select"><option value="university" {% if warden and warden.qualification_type == 'university' %}selected{% endif %}>جامعي</option><option value="non_university" {% if not warden or warden.qualification_type == 'non_university' %}selected{% endif %}>غير جامعي</option></select></div>
+<div class="col-md-6"><label class="form-label">رقم الهاتف</label><input name="phone" class="form-control" value="{{ warden.phone|default:'' }}"></div>
+<div class="col-md-6"><label class="form-label fw-bold">اسم المستخدم</label><input name="username" class="form-control" {% if not warden %}required{% endif %} value="{{ warden.user.username|default:'' }}" {% if warden %}readonly{% endif %}></div>
+<div class="col-md-6"><label class="form-label fw-bold">{% if warden %}كلمة مرور جديدة (اختياري){% else %}كلمة المرور{% endif %}</label><input type="password" name="password" class="form-control" {% if not warden %}required{% endif %}></div>
+</div>
+<div class="mt-4 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button><a href="{% url 'warden_list' %}" class="btn btn-secondary">إلغاء</a></div>
+</form></div></div>
+{% endblock %}
