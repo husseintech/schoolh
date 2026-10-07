@@ -2861,6 +2861,13 @@ def my_account(request):
                     s.save()
             except Exception:
                 pass
+            try:
+                if hasattr(user, 'warden_profile'):
+                    w = user.warden_profile
+                    w.full_name = full_name
+                    w.save(update_fields=['full_name'])
+            except Exception:
+                pass
         if phone:
             profile.phone = phone
         if new_password:
