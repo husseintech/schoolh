@@ -18,8 +18,58 @@
 </div>
 
 <div class="table-responsive"><table class="table table-bordered table-sm align-middle report-table">
-<thead><tr><th>التاريخ</th><th>الآذن</th><th>بند المتابعة</th><th>التقييم</th><th>ملاحظات البند</th><th>ملاحظات عامة</th></tr></thead>
-<tbody>{% for row in report_rows %}<tr><td>{{ row.date }}</td><td>{{ row.warden }}</td><td class="fw-bold">{{ row.criterion }}</td><td>{{ row.status|default:'-' }}</td><td>{{ row.notes|default:'-' }}</td><td>{{ row.general_notes|default:'-' }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center">لا توجد بيانات للفترة المحددة.</td></tr>{% endfor %}</tbody>
+<thead>
+<tr>
+<th class="date-col">التاريخ</th>
+<th class="warden-col">الآذن</th>
+{% for column in report_columns %}<th class="criterion-head">{{ column.name }}</th>{% endfor %}
+<th class="general-col">ملاحظات عامة</th>
+</tr>
+</thead>
+<tbody>
+{% for row in report_records %}
+<tr>
+<td class="date-col fw-bold">{{ row.date|date:"Y-m-d" }}</td>
+<td class="warden-col fw-bold">{{ row.warden }}</td>
+{% for cell in row.cells %}
+<td class="criterion-cell">
+<div class="status-line">{{ cell.status|default:"-" }}</div>
+{% if cell.notes %}
+<div class="criterion-note"><span class="note-marker" title="ملاحظة">📝</span><span>{{ cell.notes }}</span></div>
+{% endif %}
+</td>
+{% endfor %}
+<td class="general-cell">{{ row.general_notes|default:"-" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="{{ report_columns|length|add:3 }}" class="text-center py-4">لا توجد بيانات للفترة المحددة.</td></tr>
+{% endfor %}
+</tbody>
 </table></div>
-<style>@media print{.no-print{display:none!important}.report-table{font-size:9px}.report-table th,.report-table td{padding:4px}.report-table{width:100%}@page{size:A4 landscape;margin:8mm}.report-head{margin-top:0}}</style>
+
+<style>
+.report-table{direction:rtl;text-align:center;vertical-align:middle}
+.report-table th{background:#f1f3f5;font-weight:800;vertical-align:middle}
+.report-table .criterion-head{min-width:115px;white-space:normal;line-height:1.35}
+.report-table .criterion-cell{min-width:115px;vertical-align:top;text-align:right}
+.status-line{font-weight:700;text-align:center;margin-bottom:3px}
+.criterion-note{margin-top:5px;padding:4px 6px;border-radius:6px;border:1px dashed #999;background:#fffdf0;font-size:11px;line-height:1.45;display:flex;gap:4px;align-items:flex-start;text-align:right}
+.note-marker{font-size:13px;line-height:1}
+.date-col{min-width:78px;white-space:nowrap}
+.warden-col{min-width:95px;white-space:normal}
+.general-cell{min-width:100px;text-align:right;vertical-align:top}
+@media print{
+ .no-print{display:none!important}
+ body{background:#fff!important}
+ .report-head{margin-top:0}
+ .table-responsive{overflow:visible!important}
+ .report-table{width:100%;font-size:7.5px;table-layout:auto}
+ .report-table th,.report-table td{padding:3px}
+ .report-table .criterion-head{min-width:0;font-size:7.5px}
+ .report-table .criterion-cell{min-width:0}
+ .criterion-note{font-size:7px;padding:2px 3px}
+ .note-marker{font-size:9px}
+ @page{size:A4 landscape;margin:7mm}
+}
+</style>
 {% endblock %}
