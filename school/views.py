@@ -14,7 +14,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup
 from .models import CurriculumConversation
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
@@ -97,7 +97,7 @@ def sort_students_class_first(students):
 def sort_by_student_name(items):
     return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
 
-MODULE_KEYS = ['students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'open_learning', 'school_radio', 'curriculum_assistant']
+MODULE_KEYS = ['students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant']
 ACTION_KEYS = [
     'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
     'complete', 'send', 'review', 'monitor', 'generate', 'manage_constraints',
@@ -135,6 +135,7 @@ MODULE_LABELS = {
     'teacher_followup': 'متابعة المعلمين',
     'reciprocal_visits': 'الزيارات التبادلية',
     'no_objection': 'لا مانع',
+    'wardens': 'الآذنة',
     'open_learning': 'التعلم المفتوح',
     'school_radio': 'ملف الإذاعة المدرسية',
     'curriculum_assistant': 'إدارة مساعد المنهاج',
@@ -160,6 +161,189 @@ ACTION_LABELS = {
     'links': 'الروابط',
 }
 
+
+
+
+@login_required
+def warden_list(request):
+    if not has_perm(request.user, 'wardens', 'view'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا القسم')
+        return redirect('dashboard')
+    wardens = Warden.objects.select_related('user').all()
+    return render(request, 'school/warden_list.html', {'wardens': wardens})
+
+
+@login_required
+def warden_add(request):
+    if not has_perm(request.user, 'wardens', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة آذن')
+        return redirect('warden_list')
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        full_name = request.POST.get('full_name', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        specialization = request.POST.get('specialization', '').strip()
+        qualification_type = request.POST.get('qualification_type', 'non_university')
+        phone = request.POST.get('phone', '').strip()
+        if not all([username, password, full_name, id_number, specialization]):
+            messages.error(request, 'الاسم ورقم الهوية والتخصص وبيانات الدخول مطلوبة')
+            return render(request, 'school/warden_form.html', {'warden': None})
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'اسم المستخدم موجود مسبقاً')
+            return render(request, 'school/warden_form.html', {'warden': None})
+        if Warden.objects.filter(id_number=id_number).exists():
+            messages.error(request, 'رقم الهوية مستخدم مسبقاً')
+            return render(request, 'school/warden_form.html', {'warden': None})
+        user = User.objects.create_user(username=username, password=password, first_name=full_name)
+        Profile.objects.create(user=user, role='warden', phone=phone)
+        UserPermission.objects.create(user=user, permissions=complete_permissions('warden'))
+        Warden.objects.create(user=user, full_name=full_name, id_number=id_number,
+                              specialization=specialization, qualification_type=qualification_type, phone=phone)
+        log_action(request.user, 'إضافة آذن', full_name)
+        messages.success(request, f'تمت إضافة الآذن: {full_name}')
+        return redirect('warden_list')
+    return render(request, 'school/warden_form.html', {'warden': None})
+
+
+@login_required
+def warden_edit(request, warden_id):
+    warden = get_object_or_404(Warden.objects.select_related('user'), id=warden_id)
+    if not has_perm(request.user, 'wardens', 'edit'):
+        messages.error(request, 'ليس لديك صلاحية لتعديل الآذن')
+        return redirect('warden_list')
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        specialization = request.POST.get('specialization', '').strip()
+        qualification_type = request.POST.get('qualification_type', warden.qualification_type)
+        phone = request.POST.get('phone', '').strip()
+        if not full_name or not id_number or not specialization:
+            messages.error(request, 'الاسم ورقم الهوية والتخصص مطلوبة')
+            return render(request, 'school/warden_form.html', {'warden': warden})
+        if Warden.objects.exclude(id=warden.id).filter(id_number=id_number).exists():
+            messages.error(request, 'رقم الهوية مستخدم مسبقاً')
+            return render(request, 'school/warden_form.html', {'warden': warden})
+        warden.full_name = full_name
+        warden.id_number = id_number
+        warden.specialization = specialization
+        warden.qualification_type = qualification_type
+        warden.phone = phone
+        warden.save()
+        warden.user.first_name = full_name
+        warden.user.save(update_fields=['first_name'])
+        if phone:
+            warden.user.profile.phone = phone
+            warden.user.profile.save(update_fields=['phone'])
+        new_password = request.POST.get('password', '').strip()
+        if new_password:
+            warden.user.set_password(new_password)
+            warden.user.save()
+        messages.success(request, 'تم تحديث بيانات الآذن')
+        return redirect('warden_list')
+    return render(request, 'school/warden_form.html', {'warden': warden})
+
+
+@login_required
+def warden_delete(request, warden_id):
+    warden = get_object_or_404(Warden, id=warden_id)
+    if not has_perm(request.user, 'wardens', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية لحذف الآذن')
+        return redirect('warden_list')
+    if request.method == 'POST':
+        name = warden.full_name
+        warden.user.delete()
+        messages.success(request, f'تم حذف الآذن: {name}')
+        return redirect('warden_list')
+    return render(request, 'school/delete_warden.html', {'warden': warden})
+
+
+@login_required
+def warden_followup_list(request):
+    if not has_perm(request.user, 'wardens', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لعرض المتابعة')
+        return redirect('dashboard')
+    wardens = Warden.objects.all()
+    selected_id = request.GET.get('warden')
+    selected = get_object_or_404(Warden, id=selected_id) if selected_id else None
+    qs = WardenFollowup.objects.select_related('warden').all()
+    if selected:
+        qs = qs.filter(warden=selected)
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    if year:
+        qs = qs.filter(followup_date__year=year)
+    if month:
+        qs = qs.filter(followup_date__month=month)
+    return render(request, 'school/warden_followup.html', {
+        'wardens': wardens, 'selected': selected, 'followups': qs, 'year': year or date.today().year,
+        'month': month or date.today().month, 'status_choices': WardenFollowup.STATUS_CHOICES,
+    })
+
+
+@login_required
+def warden_followup_save(request):
+    if not has_perm(request.user, 'wardens', 'monitor'):
+        messages.error(request, 'ليس لديك صلاحية لتسجيل المتابعة')
+        return redirect('warden_followup_list')
+    if request.method != 'POST':
+        return redirect('warden_followup_list')
+    warden_id = request.POST.get('warden_id')
+    followup_date = request.POST.get('followup_date') or str(date.today())
+    warden = get_object_or_404(Warden, id=warden_id)
+    defaults = {}
+    fields = ['classrooms','yards','staff_rooms','corridors','kindergarten','sanitary']
+    for field in fields:
+        defaults[field + '_status'] = request.POST.get(field + '_status', '')
+        defaults[field + '_notes'] = request.POST.get(field + '_notes', '').strip()
+    defaults['general_notes'] = request.POST.get('general_notes', '').strip()
+    obj, created = WardenFollowup.objects.update_or_create(
+        warden=warden, followup_date=followup_date,
+        defaults={**defaults, 'created_by': request.user}
+    )
+    messages.success(request, 'تم حفظ المتابعة اليومية' if created else 'تم تحديث المتابعة اليومية')
+    return redirect(f"{reverse('warden_followup_list')}?warden={warden.id}&year={obj.followup_date.year}&month={obj.followup_date.month}")
+
+
+@login_required
+def warden_followup_report(request):
+    if not has_perm(request.user, 'wardens', 'print'):
+        messages.error(request, 'ليس لديك صلاحية لطباعة تقارير الآذنة')
+        return redirect('warden_list')
+    wardens = Warden.objects.all()
+    selected_id = request.GET.get('warden')
+    selected = get_object_or_404(Warden, id=selected_id) if selected_id else None
+    year = int(request.GET.get('year', date.today().year))
+    month = request.GET.get('month')
+    qs = WardenFollowup.objects.select_related('warden').filter(followup_date__year=year)
+    if selected:
+        qs = qs.filter(warden=selected)
+    if month:
+        qs = qs.filter(followup_date__month=int(month))
+    return render(request, 'school/warden_report.html', {
+        'wardens': wardens, 'selected': selected, 'followups': qs, 'year': year,
+        'month': int(month) if month else None, 'print_mode': request.GET.get('print') == '1'
+    })
+
+
+@login_required
+def warden_dashboard(request):
+    if request.user.profile.role != 'warden':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    warden = get_object_or_404(Warden, user=request.user)
+    followups = warden.followups.all()[:60]
+    return render(request, 'school/warden_dashboard.html', {'warden': warden, 'followups': followups})
+
+
+@login_required
+def warden_messages(request):
+    if request.user.profile.role != 'warden':
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    msgs = Message.objects.filter(recipient=request.user).order_by('-created_at')
+    msgs.update(is_read=True)
+    return render(request, 'school/warden_messages.html', {'messages_qs': msgs})
 
 def permission_schema():
     """Return only meaningful actions for each module, in a stable UI order."""
