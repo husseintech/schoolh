@@ -295,6 +295,17 @@ def warden_followup_list(request):
     selected_followup = WardenFollowup.objects.filter(
         warden=selected, followup_date=selected_date
     ).first() if selected else None
+    criteria_rows = []
+    if selected:
+        saved = selected_followup.evaluation_data if selected_followup else []
+        for index, criterion in enumerate(selected.criteria or WARDEN_DEFAULT_CRITERIA):
+            item = saved[index] if index < len(saved) else {}
+            criteria_rows.append({
+                'index': index,
+                'criterion': criterion,
+                'status': item.get('status', ''),
+                'notes': item.get('notes', ''),
+            })
     qs = WardenFollowup.objects.select_related('warden').all()
     if selected:
         qs = qs.filter(warden=selected)
@@ -305,8 +316,10 @@ def warden_followup_list(request):
     if month:
         qs = qs.filter(followup_date__month=month)
     return render(request, 'school/warden_followup.html', {
-        'wardens': wardens, 'selected': selected, 'selected_followup': selected_followup, 'selected_date': selected_date, 'followups': qs, 'year': year or date.today().year,
-        'month': month or date.today().month, 'status_choices': WardenFollowup.STATUS_CHOICES,
+        'wardens': wardens, 'selected': selected, 'selected_followup': selected_followup,
+        'selected_date': selected_date, 'followups': qs, 'criteria_rows': criteria_rows,
+        'year': year or date.today().year, 'month': month or date.today().month,
+        'status_choices': WardenFollowup.STATUS_CHOICES,
     })
 
 
