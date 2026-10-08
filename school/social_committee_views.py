@@ -215,11 +215,38 @@ def social_committee_report(request):
         return redirect('dashboard')
     period = _period(request)
     kind = request.GET.get('kind', 'monthly')
-    if not period or kind not in ('monthly', 'paid', 'unpaid', 'expenses', 'annual', 'annual_unpaid'):
+    if not period or kind not in ('monthly', 'paid', 'unpaid', 'expenses', 'annual', 'annual_unpaid', 'multi'):
         messages.error(request, 'اختر تقريرًا وفترة صالحين')
         return redirect('social_committee')
     year, month = period
     teachers = list(Teacher.objects.order_by('full_name'))
+
+    selected_months = []
+    for raw_month in request.GET.getlist('months'):
+        try:
+            number = int(raw_month)
+        except (TypeError, ValueError):
+            continue
+        if 1 <= number <= 12 and number not in selected_months:
+            selected_months.append(number)
+    selected_months.sort()
+
+    multi_data = [_monthly_data(year, number, teachers) for number in selected_months] if kind == 'multi' else []
+    multi_paid = []
+    multi_unpaid = []
+    multi_expenses = []
+    for month_data in multi_data:
+        for row in month_data['paid']:
+            multi_paid.append({**row, 'month': month_data['month']})
+        for row in month_data['unpaid']:
+            multi_unpaid.append({**row, 'month': month_data['month']})
+        for expense in month_data['expenses']:
+            multi_expenses.append({'expense': expense, 'month': month_data['month']})
+
+    if kind == 'multi' and not selected_months:
+        messages.error(request, 'اختر شهرًا واحدًا على الأقل للتقرير')
+        return redirect(_period_url(year, month))
+
     data = _monthly_data(year, month, teachers)
     annual = [_monthly_data(year, number, teachers) for number in range(1, 13)] if kind == 'annual' else []
     annual_unpaid_rows = []
@@ -237,11 +264,19 @@ def social_committee_report(request):
     annual_income = sum((row['income'] for row in annual), ZERO)
     annual_spending = sum((row['spending'] for row in annual), ZERO)
     annual_balance = annual_income - annual_spending
+    multi_income = sum((row['income'] for row in multi_data), ZERO)
+    multi_spending = sum((row['spending'] for row in multi_data), ZERO)
+    multi_balance = multi_income - multi_spending
     return render(request, 'school/social_committee_report.html', {
         **data, 'kind': kind, 'annual': annual,
         'annual_income': annual_income, 'annual_spending': annual_spending,
         'annual_balance': annual_balance,
         'annual_surplus': max(annual_balance, ZERO), 'annual_deficit': max(-annual_balance, ZERO),
+        'selected_months': selected_months, 'multi_data': multi_data,
+        'multi_paid': multi_paid, 'multi_unpaid': multi_unpaid, 'multi_expenses': multi_expenses,
+        'multi_income': multi_income, 'multi_spending': multi_spending,
+        'multi_balance': multi_balance, 'multi_surplus': max(multi_balance, ZERO),
+        'multi_deficit': max(-multi_balance, ZERO),
         'info': SchoolInfo.objects.first(),
         'printed_at': timezone.localtime(),
     })
