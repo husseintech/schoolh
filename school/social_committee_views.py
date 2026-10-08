@@ -215,6 +215,11 @@ def social_committee_report(request):
         return redirect('dashboard')
     period = _period(request)
     kind = request.GET.get('kind', 'monthly')
+    report_type = request.GET.get('report_type', 'paid')
+    if report_type not in ('monthly', 'paid', 'unpaid', 'expenses'):
+        report_type = 'paid'
+    if kind == 'multi':
+        kind = 'multi'
     if not period or kind not in ('monthly', 'paid', 'unpaid', 'expenses', 'annual', 'annual_unpaid', 'multi'):
         messages.error(request, 'اختر تقريرًا وفترة صالحين')
         return redirect('social_committee')
@@ -232,6 +237,7 @@ def social_committee_report(request):
     selected_months.sort()
 
     multi_data = [_monthly_data(year, number, teachers) for number in selected_months] if kind == 'multi' else []
+    multi_report_type = report_type if kind == 'multi' else ''
     multi_paid = []
     multi_unpaid = []
     multi_expenses = []
@@ -272,7 +278,7 @@ def social_committee_report(request):
         'annual_income': annual_income, 'annual_spending': annual_spending,
         'annual_balance': annual_balance,
         'annual_surplus': max(annual_balance, ZERO), 'annual_deficit': max(-annual_balance, ZERO),
-        'selected_months': selected_months, 'multi_data': multi_data,
+        'selected_months': selected_months, 'multi_data': multi_data, 'multi_report_type': multi_report_type,
         'multi_paid': multi_paid, 'multi_unpaid': multi_unpaid, 'multi_expenses': multi_expenses,
         'multi_income': multi_income, 'multi_spending': multi_spending,
         'multi_balance': multi_balance, 'multi_surplus': max(multi_balance, ZERO),
