@@ -29,7 +29,39 @@
     <a target="_blank" rel="noopener" class="btn btn-outline-danger btn-sm" href="{% url 'social_committee_report' %}?kind=expenses&amp;year={{ year }}&amp;month={{ month }}">مشتريات الشهر</a>
     <a target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm" href="{% url 'social_committee_report' %}?kind=annual&amp;year={{ year }}">تقرير جميع الأشهر للسنة {{ year }}</a>
     <a target="_blank" rel="noopener" class="btn btn-outline-danger btn-sm" href="{% url 'social_committee_report' %}?kind=annual_unpaid&amp;year={{ year }}">غير الدافعين لجميع الأشهر</a>
-  </div></div></div>{% endif %}
+  </div>
+  <hr class="my-3">
+  <form method="get" action="{% url 'social_committee_report' %}" target="_blank" rel="noopener" class="border rounded-3 p-3 bg-light">
+    <input type="hidden" name="kind" value="multi">
+    <input type="hidden" name="year" value="{{ year }}">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-4">
+        <label class="form-label fw-bold">نوع التقرير</label>
+        <select name="report_type" class="form-select">
+          <option value="paid">المعلمون الدافعون</option>
+          <option value="unpaid">المعلمون غير الدافعين</option>
+          <option value="expenses">المشتريات</option>
+          <option value="monthly">تقرير شهري للإدارة</option>
+        </select>
+      </div>
+      <div class="col-lg-6">
+        <label class="form-label fw-bold d-block">اختر شهرًا أو أكثر</label>
+        <div class="d-flex flex-wrap gap-2">
+          {% for number in months %}
+          <label class="btn btn-outline-primary btn-sm mb-1">
+            <input type="checkbox" name="months" value="{{ number }}" class="me-1" {% if number == month %}checked{% endif %}>
+            {{ number }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-2">
+        <button type="submit" class="btn btn-primary w-100">إنشاء التقرير</button>
+      </div>
+    </div>
+    <div class="small text-muted mt-2">يمكنك تحديد 9 و10 معًا، ثم اختيار نوع التقرير، وسيتم فتح تقرير واحد للطباعة للأشهر المحددة فقط.</div>
+  </form>
+  </div></div>{% endif %}
 
   <div class="card committee-card mb-3"><div class="card-header bg-white py-3"><h5 class="mb-0">مدفوعات المعلمين — شهر {{ month }}/{{ year }}</h5></div><div class="card-body">
     {% if can_add or can_edit %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_payments"><input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">{% endif %}
