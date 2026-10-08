@@ -28,6 +28,7 @@
     <a target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm" href="{% url 'social_committee_report' %}?kind=unpaid&amp;year={{ year }}&amp;month={{ month }}">المعلمون غير الدافعين</a>
     <a target="_blank" rel="noopener" class="btn btn-outline-danger btn-sm" href="{% url 'social_committee_report' %}?kind=expenses&amp;year={{ year }}&amp;month={{ month }}">مشتريات الشهر</a>
     <a target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm" href="{% url 'social_committee_report' %}?kind=annual&amp;year={{ year }}">تقرير جميع الأشهر للسنة {{ year }}</a>
+    <a target="_blank" rel="noopener" class="btn btn-outline-danger btn-sm" href="{% url 'social_committee_report' %}?kind=annual_unpaid&amp;year={{ year }}">غير الدافعين لجميع الأشهر</a>
   </div></div></div>{% endif %}
 
   <div class="card committee-card mb-3"><div class="card-header bg-white py-3"><h5 class="mb-0">مدفوعات المعلمين — شهر {{ month }}/{{ year }}</h5></div><div class="card-body">
