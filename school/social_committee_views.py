@@ -215,13 +215,25 @@ def social_committee_report(request):
         return redirect('dashboard')
     period = _period(request)
     kind = request.GET.get('kind', 'monthly')
-    if not period or kind not in ('monthly', 'paid', 'unpaid', 'expenses', 'annual'):
+    if not period or kind not in ('monthly', 'paid', 'unpaid', 'expenses', 'annual', 'annual_unpaid'):
         messages.error(request, 'اختر تقريرًا وفترة صالحين')
         return redirect('social_committee')
     year, month = period
     teachers = list(Teacher.objects.order_by('full_name'))
     data = _monthly_data(year, month, teachers)
     annual = [_monthly_data(year, number, teachers) for number in range(1, 13)] if kind == 'annual' else []
+    annual_unpaid_rows = []
+    if kind == 'annual_unpaid':
+        paid_pairs = set(
+            SocialCommitteePayment.objects.filter(
+                year=year, month__range=(1, 12), teacher__in=teachers, amount__gt=ZERO
+            ).values_list('teacher_id', 'month')
+        )
+        for teacher in teachers:
+            for month_number in range(1, 13):
+                if (teacher.id, month_number) not in paid_pairs:
+                    annual_unpaid_rows.append({'teacher': teacher, 'month': month_number})
+
     annual_income = sum((row['income'] for row in annual), ZERO)
     annual_spending = sum((row['spending'] for row in annual), ZERO)
     annual_balance = annual_income - annual_spending
