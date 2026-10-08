@@ -1,0 +1,78 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير إدخال مستويات المعلمين{% endblock %}
+{% block page_heading %}تقرير إدخال مستويات المعلمين{% endblock %}
+{% block content %}
+{% include 'school/includes/report_premium_styles.html' %}
+<div class="report-page">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center gap-2">
+            <span><i class="bi bi-people"></i> تقرير إدخال مستويات المعلمين</span>
+            <button onclick="window.print()" class="btn btn-success btn-sm no-print">
+                <i class="bi bi-printer"></i> طباعة التقرير
+            </button>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 mb-4 no-print">
+                <div class="col-md-4">
+                    <label class="form-label">شهر التقييم</label>
+                    <input type="month" name="month" value="{{ month_value }}" class="form-control">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> عرض التقرير
+                    </button>
+                </div>
+            </form>
+            <div id="print-area">
+                <div class="report-title-box text-center mb-4">
+                    <h4 class="mb-1">تقرير إدخال مستويات المعلمين</h4>
+                    <div>شهر التقييم: <strong>{{ selected_month|date:"Y/m" }}</strong></div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4"><div class="report-summary text-center"><strong>إجمالي المعلمين</strong><div class="fs-4">{{ teacher_count }}</div></div></div>
+                    <div class="col-md-4"><div class="report-summary text-center"><strong>أدخلوا المستويات</strong><div class="fs-4">{{ entered_teacher_count }}</div></div></div>
+                    <div class="col-md-4"><div class="report-summary text-center"><strong>لم يدخلوا المستويات</strong><div class="fs-4">{{ missing_teacher_count }}</div></div></div>
+                </div>
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="bi bi-check-circle"></i> المعلمون الذين أدخلوا المستويات</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead><tr><th style="width:70px">#</th><th>اسم المعلم</th><th>الصف</th><th>المادة</th></tr></thead>
+                            <tbody>
+                                {% for row in entered_rows %}
+                                <tr><td>{{ forloop.counter }}</td><td><strong>{{ row.teacher.full_name }}</strong></td><td>{{ row.class.name|default:"-" }}</td><td>{{ row.subject.name|default:"-" }}</td></tr>
+                                {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">لا توجد مستويات مدخلة لهذا الشهر.</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h5 class="mb-3"><i class="bi bi-exclamation-circle"></i> المعلمون الذين لم يدخلوا المستويات</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead><tr><th style="width:70px">#</th><th>اسم المعلم</th></tr></thead>
+                            <tbody>
+                                {% for teacher in missing_teachers %}
+                                <tr><td>{{ forloop.counter }}</td><td><strong>{{ teacher.full_name }}</strong></td></tr>
+                                {% empty %}<tr><td colspan="2" class="text-center text-muted py-4">جميع المعلمين أدخلوا المستويات لهذا الشهر.</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+@media print {
+    @page { size: A4 portrait; margin: 12mm; }
+    .sidebar, .top-bar, .no-print { display: none !important; }
+    .main-content { margin-right: 0 !important; }
+    .report-page .card { border: none !important; box-shadow: none !important; }
+    .report-page .card-header { display: none !important; }
+    body { font-size: 12pt; }
+    .table th, .table td { border: 1px solid #000 !important; padding: 6px; }
+    .report-summary { border: 1px solid #000; padding: 8px; }
+}
+</style>
+{% endblock %}
