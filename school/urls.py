@@ -110,6 +110,7 @@ urlpatterns = [
     path('levels/', views.student_level_list, name='student_level_list'),
     path('levels/add/', views.add_student_level, name='add_student_level'),
     path('levels/bulk-add/', views.bulk_add_student_level, name='bulk_add_student_level'),
+    path('levels/teacher-report/', views.teacher_levels_report, name='teacher_levels_report'),
 
     # Exam Analysis
     path('exam-analysis/', views.exam_analysis_list, name='exam_analysis_list'),
