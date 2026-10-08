@@ -9,6 +9,7 @@
         <div>
             {% if not is_teacher %}
             <button onclick="window.print()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+            <a href="{% url 'teacher_levels_report' %}" class="btn btn-info btn-sm no-print"><i class="bi bi-people"></i> تقرير المعلمين</a>
             <a href="{% url 'add_student_level' %}" class="btn btn-primary btn-sm no-print"><i class="bi bi-plus-lg"></i> إضافة مستوى</a>
             {% endif %}
         </div>
