@@ -2632,6 +2632,79 @@ def class_report(request, class_id):
 
 
 @login_required
+def teacher_levels_report(request):
+    """Admin report showing which teachers entered student levels for a month."""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذا التقرير')
+        return redirect('dashboard')
+
+    month_value = request.GET.get(
+        'month', _current_assessment_month().strftime('%Y-%m'),
+    ).strip()
+    selected_month = _parse_assessment_month(month_value)
+    if not selected_month:
+        selected_month = _current_assessment_month()
+        month_value = selected_month.strftime('%Y-%m')
+
+    teachers = list(
+        Teacher.objects.all().order_by('full_name')
+    )
+
+    levels = StudentLevel.objects.filter(
+        assessment_month=selected_month,
+        created_by__teacher_profile__isnull=False,
+    ).select_related(
+        'created_by__teacher_profile',
+        'student__student_class',
+        'subject',
+    )
+
+    # A teacher is considered "entered" when they saved at least one
+    # student level during the selected month. Group by teacher/class/subject
+    # so the report remains simple even when many students were entered.
+    entered_map = {}
+    for level in levels:
+        teacher = getattr(level.created_by, 'teacher_profile', None)
+        if not teacher:
+            continue
+        class_obj = level.student.student_class
+        subject_obj = level.subject
+        key = (
+            teacher.id,
+            class_obj.id if class_obj else None,
+            subject_obj.id if subject_obj else None,
+        )
+        entered_map[key] = {
+            'teacher': teacher,
+            'class': class_obj,
+            'subject': subject_obj,
+        }
+
+    entered_rows = sorted(
+        entered_map.values(),
+        key=lambda row: (
+            arabic_sort_key(row['teacher'].full_name),
+            arabic_sort_key(row['class'].name) if row['class'] else (0,),
+            arabic_sort_key(row['subject'].name) if row['subject'] else (0,),
+        ),
+    )
+    entered_teacher_ids = {row['teacher'].id for row in entered_rows}
+    missing_teachers = [
+        teacher for teacher in teachers
+        if teacher.id not in entered_teacher_ids
+    ]
+
+    return render(request, 'school/teacher_levels_report.html', {
+        'selected_month': selected_month,
+        'month_value': month_value,
+        'entered_rows': entered_rows,
+        'missing_teachers': missing_teachers,
+        'entered_teacher_count': len(entered_teacher_ids),
+        'missing_teacher_count': len(missing_teachers),
+        'teacher_count': len(teachers),
+    })
+
+@login_required
 def student_levels_report(request):
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
