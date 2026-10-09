@@ -73,6 +73,7 @@ def schedule_available_report(request):
     return render(request, 'school/schedule_available_report.html', {
         'availability': availability,
         'teacher_count': len(teachers),
+        'teachers': teachers,
         'periods': SCHEDULE_PERIODS,
         'days': SCHEDULE_DAYS,
     })
