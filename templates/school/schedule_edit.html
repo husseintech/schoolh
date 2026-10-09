@@ -19,6 +19,8 @@
                 <a href="{% url 'schedule_print_all' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> جدول جميع المعلمين</a>
                 <a href="{% url 'schedule_print_classes' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> برامج الصفوف</a>
                 <a href="{% url 'schedule_print_admin' %}" class="btn btn-outline-success btn-sm" target="_blank"><i class="bi bi-printer"></i> الجدول العام</a>
+                <a href="{% url 'schedule_available_report' %}" class="btn btn-outline-primary btn-sm" target="_blank"><i class="bi bi-people"></i> تقرير المتاحين</a>
+                <a href="{% url 'schedule_absence_coverage' %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-person-x"></i> تغطية غياب معلم</a>
             </div>
             {% else %}
             <div class="col-12">
