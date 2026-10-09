@@ -5,39 +5,49 @@
 <div class="card">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 no-print">
-      <p class="mb-0 text-muted">يعرض التقرير المعلمين الذين لا توجد لهم حصة مسجلة في كل يوم وحصة، اعتمادًا على البرامج المدخلة في الجدول اليومي.</p>
-      <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+      <p class="mb-0 text-muted">يظهر اسم المعلم في خانته عندما يكون متاحًا في تلك الحصة، وتبقى الخانة فارغة عندما تكون لديه حصة مسجلة.</p>
+      <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير الأفقي</button>
     </div>
     <div class="table-responsive">
       <table class="table table-bordered text-center align-middle availability-table">
-        <thead><tr><th style="width:12%">اليوم</th>{% for p in periods %}<th>الحصة {{ p }}</th>{% endfor %}</tr></thead>
+        <thead>
+          <tr><th class="day-col">اليوم</th><th class="period-col">الحصة</th>{% for teacher in teachers %}<th class="teacher-col">{{ teacher.full_name }}</th>{% endfor %}</tr>
+        </thead>
         <tbody>
         {% for day in availability %}
+          {% for slot in day.periods %}
           <tr>
-            <th>{{ day.day }}</th>
-            {% for slot in day.periods %}
-              <td>{% if slot.teachers %}<div class="teacher-names">{% for name in slot.teachers %}<span>{{ name }}</span>{% if not forloop.last %}، {% endif %}{% endfor %}</div>{% else %}<span class="text-muted">لا يوجد</span>{% endif %}</td>
-            {% endfor %}
+            {% if forloop.first %}<th class="day-name" rowspan="7">{{ day.day }}</th>{% endif %}
+            <th class="period-number">{{ slot.period }}</th>
+            {% for name in slot.teachers %}<td>{% if name %}{{ name }}{% endif %}</td>{% endfor %}
           </tr>
+          {% endfor %}
         {% endfor %}
         </tbody>
       </table>
     </div>
-    <div class="small text-muted mt-2">عدد المعلمين في التقرير: {{ teacher_count }}. الحصة التي لا يوجد لها سجل في برنامج المعلم تعتبر فراغًا.</div>
+    <div class="small text-muted mt-2 no-print">عدد المعلمين: {{ teacher_count }} — عدد الأيام: 5 — عدد الحصص اليومية: 7.</div>
   </div>
 </div>
 <style>
-@page { size: A4 landscape; margin: 8mm; }
+.availability-table { width:100%; font-size:11px; border-collapse:collapse!important; }
+.availability-table th,.availability-table td { border:1px solid #333!important; padding:4px 3px!important; min-width:32px; }
+.availability-table .day-col { min-width:55px; }
+.availability-table .period-col { min-width:38px; }
+.availability-table .teacher-col { min-width:52px; font-weight:600; }
+.availability-table .day-name { vertical-align:middle!important; font-weight:700; }
+.availability-table .period-number { width:35px; }
+@page { size: A3 landscape; margin: 6mm; }
 @media print {
-  body { background:#fff!important; font-size:10px!important; }
-  .no-print, nav, .sidebar, header .navbar { display:none!important; }
-  .container, .container-fluid, main, .card, .card-body { width:100%!important; max-width:none!important; margin:0!important; padding:0!important; border:0!important; box-shadow:none!important; }
-  .availability-table { width:100%; table-layout:fixed; border-collapse:collapse!important; }
-  .availability-table th,.availability-table td { border:1px solid #333!important; padding:5px 3px!important; color:#000!important; vertical-align:top!important; }
-  .availability-table thead th { background:#e9ecef!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .teacher-names { line-height:1.8; overflow-wrap:anywhere; }
+  body { background:#fff!important; font-size:8px!important; }
+  .no-print,nav,.sidebar,header .navbar { display:none!important; }
+  .container,.container-fluid,main,.card,.card-body { width:100%!important; max-width:none!important; margin:0!important; padding:0!important; border:0!important; box-shadow:none!important; }
+  .table-responsive { overflow:visible!important; }
+  .availability-table { width:100%!important; table-layout:fixed!important; font-size:7px!important; }
+  .availability-table th,.availability-table td { padding:2px 1px!important; overflow-wrap:anywhere; }
+  .availability-table .teacher-col { font-size:6px!important; }
+  .availability-table .day-name { font-size:8px!important; }
+  tr { break-inside:avoid; }
 }
-.availability-table { font-size:13px; }
-.teacher-names { line-height:1.9; }
 </style>
 {% endblock %}
