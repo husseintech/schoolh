@@ -1,0 +1,57 @@
+{% extends 'school/base.html' %}
+{% block title %}خطة تغطية غياب المعلمين{% endblock %}
+{% block page_heading %}خطة تغطية غياب المعلمين{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body">
+    <p class="text-muted">اختر المعلم الغائب واليوم. تُبنى الخطة من الجدول اليومي المدخل، وتُعرض كتوصيات للمراجعة فقط؛ لا يتم تعديل البرامج الأصلية أو حفظ أي تبديل تلقائيًا.</p>
+    {% if can_plan %}
+    <form method="post" class="row g-3 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-5">
+        <label class="form-label fw-bold" for="teacher_id">المعلم الغائب</label>
+        <select class="form-select" name="teacher_id" id="teacher_id" required>
+          <option value="">-- اختر المعلم --</option>
+          {% for t in teachers %}<option value="{{ t.id }}" {% if selected_teacher_id == t.id|stringformat:"s" %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-bold" for="day">اليوم</label>
+        <select class="form-select" name="day" id="day">
+          {% for d in days %}<option value="{{ d }}" {% if selected_day == d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-magic"></i> إنشاء خطة التغطية</button></div>
+    </form>
+    {% else %}<div class="alert alert-warning mb-0">ليس لديك صلاحية إعداد خطة تغطية الغياب.</div>{% endif %}
+  </div>
+</div>
+{% if has_results %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h5 class="mb-0">مقترحات التغطية — {{ selected_day }}</h5>
+      <button class="btn btn-outline-primary no-print" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الخطة</button>
+    </div>
+    {% if plan %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle text-center">
+        <thead class="table-light"><tr><th>الحصة الأصلية</th><th>الصف</th><th>المادة</th><th>الإجراء المقترح</th><th>المعلم المقترح</th><th>التوضيح</th></tr></thead>
+        <tbody>
+        {% for item in plan %}
+        <tr>
+          <td>{{ item.period }}</td><td>{{ item.class_name }}</td><td>{{ item.subject }}</td>
+          <td>{% if item.action == 'cover' %}<span class="badge bg-success">تغطية مباشرة</span>{% elif item.action == 'move' %}<span class="badge bg-info text-dark">تقديم الحصة</span>{% elif item.action == 'dismiss' %}<span class="badge bg-warning text-dark">إنهاء مبكر</span>{% else %}<span class="badge bg-danger">غير مغطاة</span>{% endif %}<div class="small mt-1">{{ item.priority_label }}</div></td>
+          <td>{% if item.teacher %}{{ item.teacher }}{% elif item.action == 'dismiss' %}لا يلزم — إنهاء الدوام{% else %}يحتاج قرار الإدارة{% endif %}{% if item.new_period %}<div class="small">في الحصة {{ item.new_period }}</div>{% endif %}</td>
+          <td class="text-start">{{ item.note }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-info mb-0"><strong>ترتيب الأولويات:</strong> معلم يدرّس المادة نفسها للصف نفسه، ثم معلم يدرّس المادة نفسها، ثم أي معلم متاح دون تعارض. وإذا تعذرت التغطية، تبحث الخطة عن وقت فراغ سابق لتقديم الحصة؛ ويمكن اقتراح إنهاء الدوام بعد الحصة السادسة إذا كانت الحصة السابعة غير قابلة للتغطية.</div>
+    {% else %}<div class="alert alert-success mb-0">لا توجد حصص مسجلة لهذا المعلم في اليوم المحدد.</div>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

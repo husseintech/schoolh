@@ -3,6 +3,7 @@ from . import views
 from . import student_assistant_views
 from . import curriculum_assistant_views
 from . import social_committee_views
+from . import schedule_coverage_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -218,6 +219,8 @@ urlpatterns = [
     path('schedule/print/all/', views.schedule_print_all, name='schedule_print_all'),
     path('schedule/print/classes/', views.schedule_print_classes, name='schedule_print_classes'),
     path('schedule/print/admin/', views.schedule_print_admin, name='schedule_print_admin'),
+    path('schedule/available/', schedule_coverage_views.schedule_available_report, name='schedule_available_report'),
+    path('schedule/absence-coverage/', schedule_coverage_views.schedule_absence_coverage, name='schedule_absence_coverage'),
 
     # Absence
     path('absence/', views.absence_list, name='absence_list'),
