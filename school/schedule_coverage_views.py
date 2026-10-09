@@ -29,7 +29,7 @@ def _is_free(teacher_id, day, period, by_teacher_cell):
     return (teacher_id, day, period) not in by_teacher_cell
 
 
-def _rank_candidates(subject, student_class, day, period, teachers, by_teacher_cell, class_cells, excluded_ids=None):
+def _rank_candidates(subject, student_class, day, period, teachers, by_teacher_cell, class_cells, excluded_ids=None, ignore_entry_id=None):
     excluded_ids = set(excluded_ids or ())
     # A class must never have two teachers assigned to the same period.
     if student_class and class_cells.get((day, period, student_class.id)):
