@@ -3,7 +3,6 @@ from collections import defaultdict
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import HttpResponseForbidden
-from django.utils.html import format_html
 
 from .models import Teacher, TeacherScheduleEntry, has_perm
 
@@ -32,9 +31,13 @@ def _is_free(teacher_id, day, period, by_teacher_cell):
 
 def _rank_candidates(subject, student_class, day, period, teachers, by_teacher_cell, class_cells, excluded_ids=None, ignore_entry_id=None):
     excluded_ids = set(excluded_ids or ())
-    # A class must never have two teachers assigned to the same period.
-    if student_class and class_cells.get((day, period, student_class.id)):
-        return []
+    # The absent teacher's original lesson occupies this class slot in the
+    # source timetable, but it is precisely the lesson being replaced.
+    # Any other existing lesson for the same class still blocks the slot.
+    if student_class:
+        occupied = class_cells.get((day, period, student_class.id), [])
+        if any(item.id != ignore_entry_id for item in occupied):
+            return []
     candidates = []
     for teacher in teachers:
         if teacher.id in excluded_ids or not _is_free(teacher.id, day, period, by_teacher_cell):
@@ -93,7 +96,8 @@ def schedule_absence_coverage(request):
             for entry in absent_entries:
                 candidates = _rank_candidates(
                     entry.subject, entry.student_class, selected_day, entry.period,
-                    teachers, by_teacher_cell, class_cells, excluded_ids={absent.id},
+                    teachers, by_teacher_cell, class_cells,
+                    excluded_ids={absent.id}, ignore_entry_id=entry.id,
                 )
                 if candidates:
                     chosen = candidates[0]
