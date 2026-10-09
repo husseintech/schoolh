@@ -119,7 +119,11 @@ def schedule_absence_coverage(request):
                 # If direct coverage is impossible, try moving the final-period lesson
                 # into an earlier empty slot for the class, then end the class day early.
                 moved = None
-                if entry.student_class and entry.subject and entry.period > 1:
+                is_last_class_period = bool(entry.student_class) and not any(
+                    class_cells.get((selected_day, later_period, entry.student_class_id))
+                    for later_period in range(entry.period + 1, 8)
+                )
+                if is_last_class_period and entry.student_class and entry.subject and entry.period > 1:
                     for earlier_period in range(entry.period - 1, 0, -1):
                         if class_cells.get((selected_day, earlier_period, entry.student_class_id)):
                             continue
@@ -143,7 +147,7 @@ def schedule_absence_coverage(request):
                         'priority_label': 'تقديم الحصة إلى وقت فراغ سابق',
                         'note': f'اقتراح نقل الحصة إلى الحصة {new_period} وإنهاء دوام الصف بدل إبقائه حتى الحصة {entry.period}. لم يُعدّل أي جدول.',
                     })
-                elif entry.period == 7 and entry.student_class:
+                elif is_last_class_period and entry.student_class:
                     plan.append({
                         'period': entry.period,
                         'subject': entry.subject.name if entry.subject else 'غير محددة',
@@ -151,7 +155,7 @@ def schedule_absence_coverage(request):
                         'action': 'dismiss',
                         'teacher': '',
                         'priority_label': 'تعذر إيجاد بديل أو وقت تقديم مناسب',
-                        'note': 'يمكن اعتماد إنهاء دوام الصف بعد الحصة السادسة إذا وافقت الإدارة؛ الحصة غير مغطاة.',
+                        'note': f'يمكن اعتماد إنهاء دوام الصف بعد الحصة {entry.period - 1} إذا وافقت الإدارة؛ الحصة غير مغطاة.',
                     })
                 else:
                     plan.append({
