@@ -1,0 +1,43 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير المعلمين المتاحين{% endblock %}
+{% block page_heading %}تقرير المعلمين المتاحين{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 no-print">
+      <p class="mb-0 text-muted">يعرض التقرير المعلمين الذين لا توجد لهم حصة مسجلة في كل يوم وحصة، اعتمادًا على البرامج المدخلة في الجدول اليومي.</p>
+      <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered text-center align-middle availability-table">
+        <thead><tr><th style="width:12%">اليوم</th>{% for p in periods %}<th>الحصة {{ p }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for day in availability %}
+          <tr>
+            <th>{{ day.day }}</th>
+            {% for slot in day.periods %}
+              <td>{% if slot.teachers %}<div class="teacher-names">{% for name in slot.teachers %}<span>{{ name }}</span>{% if not forloop.last %}، {% endif %}{% endfor %}</div>{% else %}<span class="text-muted">لا يوجد</span>{% endif %}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="small text-muted mt-2">عدد المعلمين في التقرير: {{ teacher_count }}. الحصة التي لا يوجد لها سجل في برنامج المعلم تعتبر فراغًا.</div>
+  </div>
+</div>
+<style>
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  body { background:#fff!important; font-size:10px!important; }
+  .no-print, nav, .sidebar, header .navbar { display:none!important; }
+  .container, .container-fluid, main, .card, .card-body { width:100%!important; max-width:none!important; margin:0!important; padding:0!important; border:0!important; box-shadow:none!important; }
+  .availability-table { width:100%; table-layout:fixed; border-collapse:collapse!important; }
+  .availability-table th,.availability-table td { border:1px solid #333!important; padding:5px 3px!important; color:#000!important; vertical-align:top!important; }
+  .availability-table thead th { background:#e9ecef!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .teacher-names { line-height:1.8; overflow-wrap:anywhere; }
+}
+.availability-table { font-size:13px; }
+.teacher-names { line-height:1.9; }
+</style>
+{% endblock %}
