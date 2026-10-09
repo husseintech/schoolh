@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.http import HttpResponseForbidden
 from django.utils.html import format_html
 
 from .models import Teacher, TeacherScheduleEntry, has_perm
@@ -54,7 +55,7 @@ def _rank_candidates(subject, student_class, day, period, teachers, by_teacher_c
 @login_required
 def schedule_available_report(request):
     if not has_perm(request.user, 'schedule', 'view'):
-        return render(request, 'school/permission_denied.html', status=403)
+        return HttpResponseForbidden('ليس لديك صلاحية عرض الجدول أو خطة التغطية.')
     teachers, entries, by_teacher_cell, _ = _schedule_data()
     availability = []
     for day in SCHEDULE_DAYS:
