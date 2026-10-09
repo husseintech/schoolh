@@ -44,12 +44,10 @@ def _rank_candidates(subject, student_class, day, period, teachers, by_teacher_c
             continue
         teaches_subject = bool(subject and teacher.subjects.filter(pk=subject.pk).exists())
         teaches_class = bool(student_class and teacher.classes.filter(pk=student_class.pk).exists())
-        if teaches_subject and teaches_class:
-            priority = 0
-        elif teaches_subject:
-            priority = 1
-        else:
-            priority = 2
+        # Never assign a teacher to students/classes they do not teach.
+        if not teaches_class:
+            continue
+        priority = 0 if teaches_subject else 1
         candidates.append((priority, teacher.full_name.casefold(), teacher))
     candidates.sort(key=lambda item: (item[0], item[1]))
     return [item[2] for item in candidates]
@@ -64,11 +62,13 @@ def schedule_available_report(request):
     for day in SCHEDULE_DAYS:
         day_rows = []
         for period in SCHEDULE_PERIODS:
-            free_names = [
-                teacher.full_name for teacher in teachers
-                if _is_free(teacher.id, day, period, by_teacher_cell)
-            ]
-            day_rows.append({'period': period, 'teachers': free_names})
+            day_rows.append({
+                'period': period,
+                'teachers': [
+                    teacher.full_name if _is_free(teacher.id, day, period, by_teacher_cell) else ''
+                    for teacher in teachers
+                ],
+            })
         availability.append({'day': day, 'periods': day_rows})
     return render(request, 'school/schedule_available_report.html', {
         'availability': availability,
