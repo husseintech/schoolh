@@ -147,7 +147,7 @@ def schedule_absence_coverage(request):
                         'priority_label': 'تقديم الحصة إلى وقت فراغ سابق',
                         'note': f'اقتراح نقل الحصة إلى الحصة {new_period} وإنهاء دوام الصف بدل إبقائه حتى الحصة {entry.period}. لم يُعدّل أي جدول.',
                     })
-                elif is_last_class_period and entry.student_class:
+                elif is_last_class_period and entry.student_class and entry.period > 1:
                     plan.append({
                         'period': entry.period,
                         'subject': entry.subject.name if entry.subject else 'غير محددة',
