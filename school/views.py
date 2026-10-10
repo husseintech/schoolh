@@ -3337,10 +3337,22 @@ def visit_program_list(request):
         return redirect('visit_program_list')
     scoped_teacher = current_teacher_scope(request.user)
     teachers = Teacher.objects.all().order_by('full_name')
-    entries = VisitProgram.objects.select_related('teacher')
+    entries = VisitProgram.objects.select_related('teacher').order_by('visit_date', 'teacher__full_name')
     if scoped_teacher:
         teachers = teachers.filter(id=scoped_teacher.id)
         entries = entries.filter(teacher=scoped_teacher)
+
+    # Show each teacher's scheduled visit date(s) beside their name in the selector.
+    visit_dates_by_teacher = defaultdict(list)
+    scheduled_dates = VisitProgram.objects.filter(
+        teacher_id__in=teachers.values_list('id', flat=True)
+    ).order_by('visit_date').values_list('teacher_id', 'visit_date')
+    for scheduled_teacher_id, scheduled_date in scheduled_dates:
+        visit_dates_by_teacher[scheduled_teacher_id].append(scheduled_date.strftime('%Y-%m-%d'))
+    for teacher_option in teachers:
+        teacher_option.visit_dates_display = '، '.join(
+            visit_dates_by_teacher.get(teacher_option.id, [])
+        )
     if request.method == 'POST':
         teacher_id = str(scoped_teacher.id) if scoped_teacher else request.POST.get('teacher_id')
         teacher = get_object_or_404(Teacher, id=teacher_id) if teacher_id else None
