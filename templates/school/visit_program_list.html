@@ -24,7 +24,7 @@
                     <select name="teacher_id" class="form-select" required>
                         <option value="">-- اختر معلماً --</option>
                         {% for t in teachers %}
-                        <option value="{{ t.id }}">{{ t.full_name }}</option>
+                        <option value="{{ t.id }}">{{ t.full_name }}{% if t.visit_dates_display %} — مواعيد الزيارة: {{ t.visit_dates_display }}{% else %} — غير محدد للزيارة{% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>
