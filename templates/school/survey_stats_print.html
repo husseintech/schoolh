@@ -1,20 +1,6 @@
 {% extends 'school/base.html' %}
 {% block title %}تقارير المسح الصحي والاجتماعي{% endblock %}
-{% block page_heading %}{% if mode == 'official' %}
-<table class="table table-bordered table-sm official-table">
-<thead><tr><th style="width:8%">#</th><th style="width:28%">اسم المرض</th><th style="width:28%">اسم الطالب</th><th style="width:18%">الصف</th><th style="width:18%">رقم الهاتف</th></tr></thead>
-<tbody>
-{% for g in groups %}
-    {% for s in g.students %}
-    <tr><td>{{ forloop.parentloop.counter }}-{{ forloop.counter }}</td><td>{{ g.title }}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.phone }}</td></tr>
-    {% empty %}
-    <tr><td>—</td><td>{{ g.title }}</td><td></td><td></td><td></td></tr>
-    {% endfor %}
-{% endfor %}
-</tbody>
-</table>
-<div class="row mt-4"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
-{% elif mode == 'chronic' %}كشف الأمراض المزمنة{% elif mode == 'disease' %}تقرير مرض محدد{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
+{% block page_heading %}تقارير المسح الصحي والاجتماعي{% endblock %}
 {% block content %}
 <div class="d-print-none d-flex flex-wrap justify-content-center gap-2 mb-3">
     <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
@@ -30,20 +16,19 @@
     <div class="small text-muted mt-1">تاريخ استخراج التقرير: {{ today|date:'Y/m/d' }} — المسوح المسجلة: {{ submitted_count }}</div>
 </div>
 {% if mode == 'official' %}
-    {% for g in groups %}
-    <h6 class="disease-heading">{{ g.title }} <span class="float-start">العدد: {{ g.count }}</span></h6>
-    <table class="table table-bordered table-sm official-table">
-        <thead><tr><th style="width:8%">#</th><th style="width:32%">اسم المرض</th><th style="width:28%">اسم الطالب</th><th style="width:16%">الصف</th><th style="width:16%">رقم الهاتف</th></tr></thead>
-        <tbody>
-        {% for s in g.students %}
-        <tr><td>{{ forloop.counter }}</td><td>{{ g.title }}{% if s.notes != '-' %}<div class="small">{{ s.notes }}</div>{% endif %}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.phone }}</td></tr>
-        {% empty %}
-        <tr><td>—</td><td>{{ g.title }}</td><td></td><td></td><td></td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<table class="table table-bordered table-sm official-table">
+<thead><tr><th style="width:8%">#</th><th style="width:28%">اسم المرض</th><th style="width:28%">اسم الطالب</th><th style="width:18%">الصف</th><th style="width:18%">رقم الهاتف</th></tr></thead>
+<tbody>
+{% for g in groups %}
+    {% for s in g.students %}
+    <tr><td>{{ forloop.parentloop.counter }}-{{ forloop.counter }}</td><td>{{ g.title }}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.phone }}</td></tr>
+    {% empty %}
+    <tr><td>—</td><td>{{ g.title }}</td><td></td><td></td><td></td></tr>
     {% endfor %}
-    <div class="row mt-4"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
+{% endfor %}
+</tbody>
+</table>
+<div class="row mt-4"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
 {% elif mode == 'chronic' %}
 <table class="table table-bordered table-sm">
 <thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>المرض المزمن كما سجله ولي الأمر</th><th>ملاحظات ولي الأمر والتعليمات</th></tr></thead>
