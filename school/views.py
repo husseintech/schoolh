@@ -1207,7 +1207,7 @@ def import_students(request):
 
 @login_required
 def check_missing_student_ids(request):
-    """Compare uploaded national IDs with students without changing data."""
+    """Compare Excel IDs in both directions and preview safe deletion candidates."""
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
@@ -1245,17 +1245,30 @@ def check_missing_student_ids(request):
         unique_ids.append(student_id)
 
     wb.close()
-    if not unique_ids and not invalid_rows:
-        messages.warning(request, 'لم يتم العثور على أرقام هوية في الملف')
+    if not unique_ids:
+        messages.warning(request, 'لم يتم العثور على أرقام هوية صالحة في الملف؛ لم يتم إجراء مقارنة أو إتاحة الحذف')
         return redirect('student_list')
 
     existing_ids = set()
-    for start in range(0, len(unique_ids), 500):
+    for start_index in range(0, len(unique_ids), 500):
         existing_ids.update(
-            Student.objects.filter(student_id__in=unique_ids[start:start + 500])
+            Student.objects.filter(student_id__in=unique_ids[start_index:start_index + 500])
             .values_list('student_id', flat=True)
         )
     missing_ids = [student_id for student_id in unique_ids if student_id not in existing_ids]
+
+    # Invalid non-empty IDs disable deletion to prevent false-positive candidates.
+    deletion_candidates = []
+    if not invalid_rows:
+        deletion_candidates = list(
+            Student.objects.exclude(student_id__in=unique_ids)
+            .select_related('user', 'student_class')
+            .order_by('full_name', 'id')
+        )
+        request.session['student_compare_delete_ids'] = [student.id for student in deletion_candidates]
+    else:
+        request.session.pop('student_compare_delete_ids', None)
+
     return render(request, 'school/student_id_check_result.html', {
         'file_name': request.FILES['excel_file'].name,
         'total_unique': len(unique_ids),
@@ -1265,8 +1278,51 @@ def check_missing_student_ids(request):
         'duplicate_count': duplicate_count,
         'invalid_rows': invalid_rows,
         'invalid_count': len(invalid_rows),
+        'deletion_candidates': deletion_candidates,
+        'deletion_candidate_count': len(deletion_candidates),
+        'deletion_allowed': not invalid_rows,
     })
 
+
+@login_required
+def delete_students_missing_from_excel(request):
+    """Delete only admin-selected students from the most recent valid comparison."""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية لحذف الطلاب')
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('student_list')
+
+    allowed_ids = set(request.session.get('student_compare_delete_ids', []))
+    selected_raw = request.POST.getlist('student_ids')
+    selected_ids = set()
+    for value in selected_raw:
+        try:
+            selected_ids.add(int(value))
+        except (TypeError, ValueError):
+            continue
+    selected_ids &= allowed_ids
+
+    if not selected_ids:
+        messages.warning(request, 'لم يتم تحديد أي طالب صالح للحذف من نتيجة المقارنة الأخيرة')
+        return redirect('student_list')
+
+    deleted_count = 0
+    deleted_names = []
+    with transaction.atomic():
+        students = list(Student.objects.select_related('user').filter(id__in=selected_ids))
+        for student in students:
+            deleted_names.append(f'{student.full_name} ({student.student_id})')
+            user = student.user
+            student.delete()
+            user.delete()
+            deleted_count += 1
+
+    log_action(request.user, 'حذف طلاب غير موجودين في ملف Excel',
+               f'عدد الطلاب المحذوفين: {deleted_count}؛ ' + '، '.join(deleted_names[:30]))
+    request.session.pop('student_compare_delete_ids', None)
+    messages.success(request, f'تم حذف {deleted_count} طالب/طلاب من النظام بناءً على اختيارك')
+    return redirect('student_list')
 
 @login_required
 def export_students(request):

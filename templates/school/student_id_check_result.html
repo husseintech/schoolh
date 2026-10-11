@@ -10,7 +10,7 @@
 
 <div class="check-head mb-4"><div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center"><div><h2><i class="bi bi-person-check-fill ms-2"></i>اكتمل فحص الهويات</h2><p>الملف: {{ file_name }}</p></div><a href="{% url 'student_list' %}" class="btn btn-light"><i class="bi bi-arrow-right ms-1"></i>العودة إلى الطلاب</a></div></div>
 
-<div class="read-only-note mb-4"><i class="bi bi-shield-check ms-1"></i><strong>لم يتم تعديل قاعدة البيانات.</strong> هذه النتيجة ناتجة عن المقارنة فقط.</div>
+<div class="read-only-note mb-4"><i class="bi bi-shield-check ms-1"></i><strong>لم يتم تعديل قاعدة البيانات.</strong> هذه النتيجة ناتجة عن المقارنة فقط. لن يحدث حذف إلا بعد تحديد الطلاب والضغط على زر الحذف وتأكيد العملية.</div>
 
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-blue"><i class="bi bi-list-ol"></i></div><div><strong>{{ total_unique }}</strong><small>هوية فريدة</small></div></div></div>
@@ -19,13 +19,75 @@
   <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-red"><i class="bi bi-exclamation-triangle"></i></div><div><strong>{{ invalid_count }}</strong><small>غير صالحة</small></div></div></div>
 </div>
 
-<div class="card missing-card">
-  <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2"><span><i class="bi bi-person-x-fill text-warning ms-2"></i>أرقام الهويات غير الموجودة ({{ missing_count }})</span>{% if missing_ids %}<button type="button" class="btn btn-sm btn-outline-primary" id="copyMissingIds"><i class="bi bi-clipboard ms-1"></i>نسخ الأرقام</button>{% endif %}</div>
+<div class="card missing-card mb-4">
+  <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2"><span><i class="bi bi-person-x-fill text-warning ms-2"></i>أرقام الهويات الموجودة في Excel وغير الموجودة في النظام ({{ missing_count }})</span>{% if missing_ids %}<button type="button" class="btn btn-sm btn-outline-primary" id="copyMissingIds"><i class="bi bi-clipboard ms-1"></i>نسخ الأرقام</button>{% endif %}</div>
   <div class="card-body p-0">
   {% if missing_ids %}<div class="table-responsive"><table class="table table-hover missing-table mb-0"><thead><tr><th style="width:90px">#</th><th>رقم الهوية</th><th>الحالة</th></tr></thead><tbody>{% for student_id in missing_ids %}<tr><td>{{ forloop.counter }}</td><td class="missing-id fw-bold" dir="ltr">{{ student_id }}</td><td><span class="badge text-bg-warning">يحتاج إضافة</span></td></tr>{% endfor %}</tbody></table></div>
   {% else %}<div class="text-center py-5 px-3"><i class="bi bi-check-circle-fill text-success d-block mb-2" style="font-size:2.8rem"></i><h5 class="fw-bold">جميع الهويات موجودة</h5><p class="text-muted mb-0">لا يوجد طلاب ناقصون وفق الملف المرفوع.</p></div>{% endif %}
   </div>
 </div>
+
+{% if invalid_rows %}<div class="alert alert-danger mt-3"><i class="bi bi-shield-exclamation ms-1"></i>توجد قيم هوية غير صالحة؛ تم تعطيل قائمة الحذف لتجنب حذف طلاب بالخطأ. صحح الملف وأعد الفحص.</div>{% endif %}
+
+<div class="card missing-card mt-4">
+  <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <span><i class="bi bi-person-dash-fill text-danger ms-2"></i><strong>طلاب موجودون في النظام وغير موجودين في ملف Excel ({{ deletion_candidate_count }})</strong></span>
+    {% if deletion_candidates and deletion_allowed %}
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllDeleteCandidates">تحديد الكل</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="clearDeleteCandidates">إلغاء التحديد</button>
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if not deletion_allowed %}
+      <p class="text-danger mb-0">لم نعرض مرشحين للحذف لأن الملف يحتوي على هويات غير صالحة.</p>
+    {% elif deletion_candidates %}
+      <div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill ms-1"></i>راجع الأسماء وأرقام الهوية بعناية. الحذف سيزيل سجل الطالب وحساب الدخول المرتبط به وقد يزيل السجلات المرتبطة وفق علاقات قاعدة البيانات.</div>
+      <form method="post" action="{% url 'delete_students_missing_from_excel' %}" id="deleteComparedStudentsForm">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-hover missing-table align-middle mb-3">
+            <thead><tr><th>تحديد</th><th>#</th><th>اسم الطالب</th><th>رقم الهوية</th><th>الصف</th></tr></thead>
+            <tbody>
+            {% for student in deletion_candidates %}
+              <tr>
+                <td><input class="form-check-input delete-candidate-checkbox" type="checkbox" name="student_ids" value="{{ student.id }}" aria-label="تحديد {{ student.full_name }}"></td>
+                <td>{{ forloop.counter }}</td>
+                <td class="text-start fw-bold">{{ student.full_name }}</td>
+                <td dir="ltr">{{ student.student_id }}</td>
+                <td>{{ student.student_class.name|default:"غير محدد" }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+          <span class="text-muted small">المحدد للحذف: <strong id="selectedDeleteCount">0</strong></span>
+          <button type="submit" class="btn btn-danger" id="deleteSelectedComparedStudents" disabled><i class="bi bi-trash3 ms-1"></i>حذف الطلاب المحددين</button>
+        </div>
+      </form>
+    {% else %}
+      <div class="text-center py-4"><i class="bi bi-check-circle-fill text-success d-block mb-2" style="font-size:2.3rem"></i><strong>لا يوجد طلاب إضافيون في النظام خارج الملف</strong></div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function(){
+  var checks=Array.from(document.querySelectorAll('.delete-candidate-checkbox'));
+  var count=document.getElementById('selectedDeleteCount');
+  var submit=document.getElementById('deleteSelectedComparedStudents');
+  function update(){var n=checks.filter(function(c){return c.checked;}).length;if(count)count.textContent=n;if(submit)submit.disabled=n===0;}
+  document.getElementById('selectAllDeleteCandidates')?.addEventListener('click',function(){checks.forEach(function(c){c.checked=true;});update();});
+  document.getElementById('clearDeleteCandidates')?.addEventListener('click',function(){checks.forEach(function(c){c.checked=false;});update();});
+  checks.forEach(function(c){c.addEventListener('change',update);});
+  document.getElementById('deleteComparedStudentsForm')?.addEventListener('submit',function(e){
+    var n=checks.filter(function(c){return c.checked;}).length;
+    if(!n||!window.confirm('تنبيه: سيتم حذف '+n+' طالب/طلاب وحسابات الدخول المرتبطة بهم. قد تُحذف السجلات المرتبطة بهم أيضًا. هل أنت متأكد؟'))e.preventDefault();
+  });
+})();
+</script>
 
 {% if duplicate_count %}<div class="alert alert-info"><i class="bi bi-files ms-1"></i>تم تجاهل {{ duplicate_count }} رقم مكرر داخل الملف.</div>{% endif %}
 {% if invalid_rows %}<div class="card"><div class="card-header"><i class="bi bi-exclamation-triangle text-danger ms-1"></i>قيم تحتاج مراجعة</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>صف Excel</th><th>القيمة</th><th>السبب</th></tr></thead><tbody>{% for item in invalid_rows %}<tr><td>{{ item.row }}</td><td dir="ltr">{{ item.value }}</td><td>ليست رقم هوية رقميًا صحيحًا</td></tr>{% endfor %}</tbody></table></div></div>{% endif %}

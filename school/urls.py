@@ -52,6 +52,7 @@ urlpatterns = [
     path('students/download-template/', views.download_student_template, name='download_student_template'),
     path('students/import/', views.import_students, name='import_students'),
     path('students/check-missing-ids/', views.check_missing_student_ids, name='check_missing_student_ids'),
+    path('students/delete-missing-from-excel/', views.delete_students_missing_from_excel, name='delete_students_missing_from_excel'),
     path('students/export/', views.export_students, name='export_students'),
 
     # Notes
