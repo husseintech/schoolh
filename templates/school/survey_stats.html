@@ -8,6 +8,12 @@
     <a href="{% url 'survey_stats_print' 'groups' %}" class="btn btn-outline-danger ms-1" target="_blank"><i class="bi bi-diagram-3"></i> طباعة التقسيمات</a>
     <a href="{% url 'survey_stats_print' 'chronic' %}" class="btn btn-outline-danger ms-1" target="_blank"><i class="bi bi-heart-pulse"></i> كشف الأمراض المزمنة</a>
     <a href="{% url 'survey_stats_print' 'official' %}" class="btn btn-outline-dark ms-1" target="_blank"><i class="bi bi-file-earmark-medical"></i> نموذج مديرية التربية</a>
+    <form method="get" action="{% url 'survey_stats_print' 'disease' %}" class="d-inline-flex flex-wrap align-items-center gap-2 ms-1 no-print">
+      <select name="disease" class="form-select form-select-sm" aria-label="اختيار المرض" required style="max-width:240px">
+        <option value="">اختر المرض لطباعة كشف مستقل</option>
+        <option>السكري</option><option>السرطان</option><option>الصرع</option><option>الربو</option><option>التلاسيميا</option><option>الهيموفيليا</option><option>الكلى</option><option>الجلدية(نوعها)</option><option>التهاب الكبد B</option><option>إعاقة طرفية</option><option>إعاقة سمعية ونطق</option><option>إعاقة بصرية</option><option>إعاقة عقلية</option><option>حمى البحر الأبيض المتوسط</option><option>تشوه العمود الفقري</option><option>تشوه خلقي في الرئتين</option><option>شفة أرنبية</option><option>حروق بحاجة إلى عمليات</option><option>أورام</option><option>مشاكل في الغدد اللمفاوية</option><option>تشوهات خلقية أخرى</option><option>أمراض أخرى</option>
+      </select><button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i> طباعة كشف المرض</button>
+    </form>
     <a href="{% url 'survey_report' %}" class="btn btn-outline-primary ms-1"><i class="bi bi-table"></i> تقرير الإنجاز (من لم يملأ)</a>
     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-1">العودة</a>
 </div>
