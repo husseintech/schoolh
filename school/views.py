@@ -3968,7 +3968,9 @@ SURVEY_EXTRA_HEALTH_CATEGORIES = [
 ]
 
 def _health_text(s):
-    return ' '.join([s.chronic_disease_details or '', s.special_care_details or '', s.emergency_instructions or '', s.allergy_other or '']).strip().casefold()
+    # Only the explicit chronic-disease field is used for diagnosis classification.
+    # Care notes and emergency instructions are shown in reports but never treated as diagnoses.
+    return (s.chronic_disease_details or '').strip().casefold()
 
 def official_diseases_for_survey(s):
     text = _health_text(s)
