@@ -51,6 +51,7 @@ class Profile(models.Model):
 # Default permissions by role
 DEFAULT_PERMISSIONS = {
     'admin': {
+        'health_committee': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
         'students': ['view', 'add', 'edit', 'delete', 'import', 'export'],
         'teachers': ['view', 'add', 'edit', 'delete', 'notes'],
         'classes': ['view', 'add', 'delete'],
@@ -1400,3 +1401,42 @@ class WardenFollowup(models.Model):
 
     def __str__(self):
         return f'{self.warden.full_name} - {self.followup_date}'
+
+
+class HealthCommitteeRecord(models.Model):
+    """Administrative log for school health committee work."""
+    RECORD_TYPES = [
+        ('meeting', 'اجتماعات اللجنة'),
+        ('safety', 'فحص السلامة والبيئة المدرسية'),
+        ('activity', 'الأنشطة الصحية والتثقيفية'),
+        ('canteen', 'متابعة المقصف والتغذية'),
+        ('reference', 'سجل مرجعي / ملاحظات عامة'),
+    ]
+    STATUS_CHOICES = [
+        ('planned', 'مخطط له'),
+        ('in_progress', 'قيد المتابعة'),
+        ('completed', 'مكتمل'),
+        ('deferred', 'مؤجل'),
+    ]
+    title = models.CharField('عنوان السجل', max_length=200)
+    record_type = models.CharField('نوع السجل', max_length=30, choices=RECORD_TYPES, default='meeting')
+    record_date = models.DateField('التاريخ')
+    status = models.CharField('حالة المتابعة', max_length=20, choices=STATUS_CHOICES, default='planned')
+    location = models.CharField('المكان', max_length=200, blank=True)
+    participants = models.TextField('الأعضاء / المشاركون', blank=True)
+    details = models.TextField('التفاصيل', blank=True)
+    recommendations = models.TextField('التوصيات والإجراءات المطلوبة', blank=True)
+    responsible_person = models.CharField('المسؤول عن المتابعة', max_length=200, blank=True)
+    due_date = models.DateField('موعد المتابعة', null=True, blank=True)
+    outcome = models.TextField('نتيجة المتابعة', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='health_committee_records_created', verbose_name='أُضيف بواسطة')
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'سجل اللجنة الصحية'
+        verbose_name_plural = 'سجلات اللجنة الصحية'
+        ordering = ['-record_date', '-created_at']
+
+    def __str__(self):
+        return f'{self.get_record_type_display()} - {self.title}'

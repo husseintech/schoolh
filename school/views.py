@@ -97,7 +97,7 @@ def sort_students_class_first(students):
 def sort_by_student_name(items):
     return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
 
-MODULE_KEYS = ['students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant']
+MODULE_KEYS = ['students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant', 'health_committee']
 ACTION_KEYS = [
     'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
     'complete', 'send', 'review', 'monitor', 'generate', 'manage_constraints',
@@ -139,6 +139,7 @@ MODULE_LABELS = {
     'open_learning': 'التعلم المفتوح',
     'school_radio': 'ملف الإذاعة المدرسية',
     'curriculum_assistant': 'إدارة مساعد المنهاج',
+    'health_committee': 'اللجنة الصحية المدرسية',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -5557,3 +5558,118 @@ def no_objection_delete(request, obj_id):
     obj.delete()
     messages.success(request, 'تم حذف لا مانع')
     return redirect('no_objection_list')
+
+
+@login_required
+def health_committee_dashboard(request):
+    from .models import HealthCommitteeRecord
+    if not has_perm(request.user, 'health_committee', 'view'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى قسم اللجنة الصحية')
+        return redirect('dashboard')
+    records = HealthCommitteeRecord.objects.all()
+    record_type = request.GET.get('type', '').strip()
+    status = request.GET.get('status', '').strip()
+    query = request.GET.get('q', '').strip()
+    if record_type in dict(HealthCommitteeRecord.RECORD_TYPES):
+        records = records.filter(record_type=record_type)
+    if status in dict(HealthCommitteeRecord.STATUS_CHOICES):
+        records = records.filter(status=status)
+    if query:
+        records = records.filter(Q(title__icontains=query) | Q(details__icontains=query) | Q(recommendations__icontains=query))
+    return render(request, 'school/health_committee_dashboard.html', {
+        'records': records[:200],
+        'total_records': HealthCommitteeRecord.objects.count(),
+        'planned_count': HealthCommitteeRecord.objects.filter(status='planned').count(),
+        'in_progress_count': HealthCommitteeRecord.objects.filter(status='in_progress').count(),
+        'completed_count': HealthCommitteeRecord.objects.filter(status='completed').count(),
+        'record_types': HealthCommitteeRecord.RECORD_TYPES,
+        'status_choices': HealthCommitteeRecord.STATUS_CHOICES,
+        'selected_type': record_type, 'selected_status': status, 'query': query,
+        'can_add': has_perm(request.user, 'health_committee', 'add'),
+        'can_edit': has_perm(request.user, 'health_committee', 'edit'),
+        'can_delete': has_perm(request.user, 'health_committee', 'delete'),
+    })
+
+
+@login_required
+def health_committee_record_add(request):
+    from .models import HealthCommitteeRecord
+    from django.utils.dateparse import parse_date
+    if not has_perm(request.user, 'health_committee', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة سجلات اللجنة الصحية')
+        return redirect('health_committee_dashboard')
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        record_type = request.POST.get('record_type', 'meeting')
+        record_date = parse_date(request.POST.get('record_date', ''))
+        due_date = parse_date(request.POST.get('due_date', ''))
+        if not title or not record_date or record_type not in dict(HealthCommitteeRecord.RECORD_TYPES):
+            messages.error(request, 'يرجى إدخال عنوان السجل والتاريخ واختيار نوع صحيح.')
+        else:
+            record = HealthCommitteeRecord(
+                title=title, record_type=record_type, record_date=record_date,
+                status=request.POST.get('status', 'planned') if request.POST.get('status') in dict(HealthCommitteeRecord.STATUS_CHOICES) else 'planned',
+                location=request.POST.get('location', '').strip(),
+                participants=request.POST.get('participants', '').strip(),
+                details=request.POST.get('details', '').strip(),
+                recommendations=request.POST.get('recommendations', '').strip(),
+                responsible_person=request.POST.get('responsible_person', '').strip(),
+                due_date=due_date, outcome=request.POST.get('outcome', '').strip(),
+                created_by=request.user,
+            )
+            record.save()
+            log_action(request.user, 'إضافة سجل اللجنة الصحية', record.title)
+            messages.success(request, 'تم حفظ سجل اللجنة الصحية بنجاح.')
+            return redirect('health_committee_dashboard')
+        return render(request, 'school/health_committee_record_form.html', {'record_types': HealthCommitteeRecord.RECORD_TYPES, 'status_choices': HealthCommitteeRecord.STATUS_CHOICES})
+    return render(request, 'school/health_committee_record_form.html', {'record_types': HealthCommitteeRecord.RECORD_TYPES, 'status_choices': HealthCommitteeRecord.STATUS_CHOICES})
+
+
+@login_required
+def health_committee_record_edit(request, record_id):
+    from .models import HealthCommitteeRecord
+    from django.utils.dateparse import parse_date
+    record = get_object_or_404(HealthCommitteeRecord, pk=record_id)
+    if not has_perm(request.user, 'health_committee', 'edit'):
+        messages.error(request, 'ليس لديك صلاحية لتعديل سجلات اللجنة الصحية')
+        return redirect('health_committee_dashboard')
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        record_type = request.POST.get('record_type', record.record_type)
+        record_date = parse_date(request.POST.get('record_date', ''))
+        due_date = parse_date(request.POST.get('due_date', ''))
+        if not title or not record_date or record_type not in dict(HealthCommitteeRecord.RECORD_TYPES):
+            messages.error(request, 'يرجى إدخال عنوان السجل والتاريخ واختيار نوع صحيح.')
+            return render(request, 'school/health_committee_record_form.html', {'record_types': HealthCommitteeRecord.RECORD_TYPES, 'status_choices': HealthCommitteeRecord.STATUS_CHOICES, 'record': record})
+        record.title = title
+        record.record_type = record_type
+        record.record_date = record_date
+        record.status = request.POST.get('status', record.status) if request.POST.get('status') in dict(HealthCommitteeRecord.STATUS_CHOICES) else record.status
+        record.location = request.POST.get('location', '').strip()
+        record.participants = request.POST.get('participants', '').strip()
+        record.details = request.POST.get('details', '').strip()
+        record.recommendations = request.POST.get('recommendations', '').strip()
+        record.responsible_person = request.POST.get('responsible_person', '').strip()
+        record.due_date = due_date
+        record.outcome = request.POST.get('outcome', '').strip()
+        record.save()
+        log_action(request.user, 'تعديل سجل اللجنة الصحية', record.title)
+        messages.success(request, 'تم تحديث السجل بنجاح.')
+        return redirect('health_committee_dashboard')
+    return render(request, 'school/health_committee_record_form.html', {'record_types': HealthCommitteeRecord.RECORD_TYPES, 'status_choices': HealthCommitteeRecord.STATUS_CHOICES, 'record': record})
+
+
+@login_required
+def health_committee_record_delete(request, record_id):
+    from .models import HealthCommitteeRecord
+    record = get_object_or_404(HealthCommitteeRecord, pk=record_id)
+    if request.method != 'POST':
+        return redirect('health_committee_dashboard')
+    if not has_perm(request.user, 'health_committee', 'delete'):
+        messages.error(request, 'ليس لديك صلاحية لحذف السجل')
+        return redirect('health_committee_dashboard')
+    title = record.title
+    record.delete()
+    log_action(request.user, 'حذف سجل اللجنة الصحية', title)
+    messages.success(request, 'تم حذف السجل.')
+    return redirect('health_committee_dashboard')
