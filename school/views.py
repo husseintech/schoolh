@@ -5603,6 +5603,17 @@ def health_committee_record_add(request):
         record_type = request.POST.get('record_type', 'meeting')
         record_date = parse_date(request.POST.get('record_date', ''))
         due_date = parse_date(request.POST.get('due_date', ''))
+        try:
+            participant_count = int(request.POST.get('activity_participants_count') or 0)
+            if participant_count < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            participant_count = None
+            messages.error(request, 'يرجى إدخال عدد مشاركين صحيح (صفر أو أكثر).')
+            return render(request, 'school/health_committee_record_form.html', {
+                'record_types': HealthCommitteeRecord.RECORD_TYPES,
+                'status_choices': HealthCommitteeRecord.STATUS_CHOICES,
+            })
         if not title or not record_date or record_type not in dict(HealthCommitteeRecord.RECORD_TYPES):
             messages.error(request, 'يرجى إدخال عنوان السجل والتاريخ واختيار نوع صحيح.')
         else:
@@ -5621,7 +5632,7 @@ def health_committee_record_add(request):
             inspection_findings=request.POST.get('inspection_findings', '').strip(),
             corrective_actions=request.POST.get('corrective_actions', '').strip(),
             activity_target=request.POST.get('activity_target', '').strip(),
-            activity_participants_count=request.POST.get('activity_participants_count') or None,
+            activity_participants_count=participant_count or None,
                 created_by=request.user,
             )
             record.save()
@@ -5645,6 +5656,17 @@ def health_committee_record_edit(request, record_id):
         record_type = request.POST.get('record_type', record.record_type)
         record_date = parse_date(request.POST.get('record_date', ''))
         due_date = parse_date(request.POST.get('due_date', ''))
+        try:
+            participant_count = int(request.POST.get('activity_participants_count') or 0)
+            if participant_count < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, 'يرجى إدخال عدد مشاركين صحيح (صفر أو أكثر).')
+            return render(request, 'school/health_committee_record_form.html', {
+                'record_types': HealthCommitteeRecord.RECORD_TYPES,
+                'status_choices': HealthCommitteeRecord.STATUS_CHOICES,
+                'record': record,
+            })
         if not title or not record_date or record_type not in dict(HealthCommitteeRecord.RECORD_TYPES):
             messages.error(request, 'يرجى إدخال عنوان السجل والتاريخ واختيار نوع صحيح.')
             return render(request, 'school/health_committee_record_form.html', {'record_types': HealthCommitteeRecord.RECORD_TYPES, 'status_choices': HealthCommitteeRecord.STATUS_CHOICES, 'record': record})
@@ -5665,7 +5687,7 @@ def health_committee_record_edit(request, record_id):
         record.inspection_findings = request.POST.get('inspection_findings', '').strip()
         record.corrective_actions = request.POST.get('corrective_actions', '').strip()
         record.activity_target = request.POST.get('activity_target', '').strip()
-        record.activity_participants_count = int(request.POST.get('activity_participants_count') or 0) or None
+        record.activity_participants_count = participant_count or None
         record.save()
         log_action(request.user, 'تعديل سجل اللجنة الصحية', record.title)
         messages.success(request, 'تم تحديث السجل بنجاح.')
