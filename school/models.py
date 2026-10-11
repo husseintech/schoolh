@@ -1440,3 +1440,24 @@ class HealthCommitteeRecord(models.Model):
 
     def __str__(self):
         return f'{self.get_record_type_display()} - {self.title}'
+
+
+class HealthCommitteeOfficialForm(models.Model):
+    """Structured entries transcribed from the school's official health committee file."""
+    form_key = models.CharField('رمز النموذج', max_length=60, db_index=True)
+    form_title = models.CharField('اسم النموذج', max_length=240)
+    source_page = models.PositiveSmallIntegerField('صفحة المصدر', default=1)
+    entry_date = models.DateField('التاريخ', null=True, blank=True)
+    data = models.JSONField('بيانات النموذج', default=dict, blank=True)
+    notes = models.TextField('ملاحظات', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='health_committee_official_forms')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'نموذج اللجنة الصحية الرسمي'
+        verbose_name_plural = 'نماذج اللجنة الصحية الرسمية'
+        ordering = ['source_page', '-created_at']
+
+    def __str__(self):
+        return f'{self.form_title} - {self.entry_date or self.created_at.date()}'
