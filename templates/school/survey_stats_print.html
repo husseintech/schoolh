@@ -1,6 +1,20 @@
 {% extends 'school/base.html' %}
 {% block title %}تقارير المسح الصحي والاجتماعي{% endblock %}
-{% block page_heading %}{% if mode == 'official' %}نموذج الأمراض لمديرية التربية{% elif mode == 'chronic' %}كشف الأمراض المزمنة{% elif mode == 'disease' %}تقرير مرض محدد{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
+{% block page_heading %}{% if mode == 'official' %}
+<table class="table table-bordered table-sm official-table">
+<thead><tr><th style="width:8%">#</th><th style="width:28%">اسم المرض</th><th style="width:28%">اسم الطالب</th><th style="width:18%">الصف</th><th style="width:18%">رقم الهاتف</th></tr></thead>
+<tbody>
+{% for g in groups %}
+    {% for s in g.students %}
+    <tr><td>{{ forloop.parentloop.counter }}-{{ forloop.counter }}</td><td>{{ g.title }}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.phone }}</td></tr>
+    {% empty %}
+    <tr><td>—</td><td>{{ g.title }}</td><td></td><td></td><td></td></tr>
+    {% endfor %}
+{% endfor %}
+</tbody>
+</table>
+<div class="row mt-4"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
+{% elif mode == 'chronic' %}كشف الأمراض المزمنة{% elif mode == 'disease' %}تقرير مرض محدد{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
 {% block content %}
 <div class="d-print-none d-flex flex-wrap justify-content-center gap-2 mb-3">
     <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
