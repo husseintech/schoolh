@@ -5709,3 +5709,74 @@ def health_committee_record_delete(request, record_id):
     log_action(request.user, 'حذف سجل اللجنة الصحية', title)
     messages.success(request, 'تم حذف السجل.')
     return redirect('health_committee_dashboard')
+
+
+# Official health committee forms transcribed as a catalog from the supplied 25-page source file.
+HEALTH_COMMITTEE_FORM_CATALOG = [
+    {'key':'committee-formation','title':'نموذج تشكيل اللجنة الصحية المدرسية','page':2,'fields':['السنة الدراسية','اسم المدرسة','مدير المدرسة','منسق اللجنة الصحية','أعضاء اللجنة','الملاحظات']},
+    {'key':'meeting-minutes','title':'محضر اجتماع اللجنة الصحية المدرسية','page':3,'fields':['التاريخ','الزمان','المكان','أهداف الاجتماع','محاور النقاش','التوصيات','رئيس الجلسة','المقرر']},
+    {'key':'health-plan','title':'خطة عمل اللجنة الصحية المدرسية','page':4,'fields':['الهدف','النشاط','الفئة المستهدفة','موعد التنفيذ','المسؤول عن التنفيذ','مؤشرات الإنجاز','ملاحظات']},
+    {'key':'school-health-needs','title':'حصر الاحتياجات الصحية المدرسية','page':5,'fields':['الاحتياج','العدد','الأولوية','الجهة المسؤولة','الإجراء المطلوب','ملاحظات']},
+    {'key':'health-activities','title':'سجل تنفيذ الأنشطة الصحية','page':6,'fields':['النشاط','التاريخ','الفئة المستهدفة','عدد المشاركين','المنفذون','النتائج','ملاحظات']},
+    {'key':'student-health-followup','title':'متابعة الحالات الصحية للطلبة','page':7,'fields':['اسم الطالب','الصف','الحالة الصحية','الإجراء المتخذ','تاريخ المتابعة','ملاحظات']},
+    {'key':'safety-equipment','title':'نموذج تفقد أدوات السلامة العامة','page':8,'fields':['أداة السلامة','العدد/المتوفر','الحالة','تاريخ التفقد','الإجراء المطلوب','ملاحظات']},
+    {'key':'school-health-check','title':'نموذج متابعة الصحة المدرسية','page':9,'fields':['البند','نعم','لا','ملاحظات','الإجراء التصحيحي']},
+    {'key':'school-health-survey','title':'نموذج متابعة صحية مدرسية','page':10,'fields':['البند الصحي','الحالة/العدد','الملاحظات','الإجراء']},
+    {'key':'screening-log','title':'سجل المسح الصحي للطلبة','page':11,'fields':['اسم الطالب','الصف','نتيجة الفحص','الإحالة','ملاحظات']},
+    {'key':'common-diseases','title':'رصد الأمراض والمشكلات الصحية لدى الطلبة','page':12,'fields':['اسم الطالب','الصف','التشخيص/المشكلة','تاريخ الرصد','الإجراء','ملاحظات']},
+    {'key':'health-cases','title':'متابعة الحالات الصحية خلال العام الدراسي','page':13,'fields':['التاريخ','اسم الطالب','الصف','الحالة الصحية','الإجراء المتخذ','متابعة لاحقة']},
+    {'key':'chronic-conditions','title':'رصد الحالات الصحية المزمنة والدوائية','page':14,'fields':['اسم الطالب','الصف','الحالة الصحية','الدواء/الإجراء','ولي الأمر','ملاحظات']},
+    {'key':'health-information','title':'نموذج رصد المعلومات الصحية','page':15,'fields':['المعلومة/الموضوع','العدد','الفئة','المصدر','ملاحظات']},
+    {'key':'referral','title':'نموذج التحويل الطبي','page':16,'fields':['اسم الطالب','الصف','سبب التحويل','الجهة المحول إليها','تاريخ التحويل','نتيجة المتابعة']},
+    {'key':'school-statistics','title':'تقرير الإحصاءات الصحية المدرسية','page':17,'fields':['نوع الحالة/الإصابة','العدد حسب الشهر','الإجمالي','الإجراء المتخذ','ملاحظات']},
+    {'key':'injury-record','title':'نموذج رصد الإصابات المدرسية','page':18,'fields':['التاريخ','اسم الطالب','الصف','مكان الإصابة','نوع الإصابة','الإجراء المتخذ','إبلاغ ولي الأمر']},
+    {'key':'guardian-notice','title':'نموذج إشعار ولي الأمر','page':19,'fields':['اسم الطالب','الصف','موضوع الإشعار','نص الإشعار','التاريخ','اسم المسؤول']},
+    {'key':'vaccination-followup','title':'نموذج رصد اللقاحات/المتابعة الصحية','page':20,'fields':['اسم الطالب','الصف','نوع اللقاح/المتابعة','التاريخ','الحالة','ملاحظات']},
+    {'key':'health-awareness','title':'نموذج رصد الأنشطة الصحية التثقيفية','page':21,'fields':['موضوع النشاط','الفئة المستهدفة','التاريخ','عدد المشاركين','الجهة المنفذة','النتائج']},
+    {'key':'gifted-students','title':'رصد الطلبة الموهوبين بالمدرسة','page':22,'fields':['اسم الطالب','الصف','نوع الموهبة','ملاحظات']},
+]
+
+@login_required
+def health_committee_official_forms(request):
+    from .models import HealthCommitteeOfficialForm
+    if not has_perm(request.user, 'health_committee', 'view'):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى قسم اللجنة الصحية')
+        return redirect('dashboard')
+    selected = request.GET.get('form', '').strip()
+    entries = HealthCommitteeOfficialForm.objects.all()
+    if selected and selected in {item['key'] for item in HEALTH_COMMITTEE_FORM_CATALOG}:
+        entries = entries.filter(form_key=selected)
+    return render(request, 'school/health_committee_official_forms.html', {
+        'catalog': HEALTH_COMMITTEE_FORM_CATALOG,
+        'entries': entries[:150],
+        'selected_form': selected,
+        'can_add': has_perm(request.user, 'health_committee', 'add'),
+        'can_print': has_perm(request.user, 'health_committee', 'print') or has_perm(request.user, 'health_committee', 'view'),
+    })
+
+@login_required
+def health_committee_official_form_add(request, form_key):
+    from .models import HealthCommitteeOfficialForm
+    from django.utils.dateparse import parse_date
+    from django.utils import timezone
+    from django.shortcuts import render
+    item = next((form for form in HEALTH_COMMITTEE_FORM_CATALOG if form['key'] == form_key), None)
+    if item is None:
+        return redirect('health_committee_official_forms')
+    if not has_perm(request.user, 'health_committee', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لإضافة نماذج اللجنة الصحية')
+        return redirect('health_committee_official_forms')
+    if request.method == 'POST':
+        data = {field: request.POST.get('field_' + str(index), '').strip() for index, field in enumerate(item['fields'])}
+        entry_date = parse_date(request.POST.get('entry_date', '')) or timezone.localdate()
+        notes = request.POST.get('notes', '').strip()
+        HealthCommitteeOfficialForm.objects.create(
+            form_key=item['key'], form_title=item['title'], source_page=item['page'],
+            entry_date=entry_date, data=data, notes=notes, created_by=request.user,
+        )
+        log_action(request.user, 'إضافة نموذج اللجنة الصحية الرسمي', item['title'])
+        messages.success(request, 'تم حفظ النموذج بنجاح.')
+        return redirect('health_committee_official_forms')
+    return render(request, 'school/health_committee_official_form_entry.html', {
+        'form_item': item, 'today': timezone.localdate().isoformat()
+    })
