@@ -1,53 +1,57 @@
 {% extends 'school/base.html' %}
-{% block title %}طباعة نتائج المسح{% endblock %}
-{% block page_heading %}{% if mode == 'students' %}قائمة الطلاب (تقرير){% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
+{% block title %}تقارير المسح الصحي والاجتماعي{% endblock %}
+{% block page_heading %}{% if mode == 'official' %}نموذج الأمراض لمديرية التربية{% elif mode == 'chronic' %}كشف الأمراض المزمنة{% elif mode == 'disease' %}تقرير مرض محدد{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}{% endblock %}
 {% block content %}
-<div class="d-print-none text-center mb-3">
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة</button>
-    <a href="{% url 'survey_stats' %}" class="btn btn-outline-secondary ms-1">العودة للنتائج</a>
+<div class="d-print-none d-flex flex-wrap justify-content-center gap-2 mb-3">
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <a href="{% url 'survey_stats' %}" class="btn btn-outline-secondary">العودة للنتائج</a>
 </div>
-
-<div class="text-center mb-3">
-    <h4 class="mb-1">{{ info.name_ar|default:'المدرسة' }}</h4>
-    <h6 class="text-muted">نتائج المسح الصحي والاجتماعي — {{ today|date:'Y/m/d' }} — عدد المسوح: {{ submitted_count }}</h6>
-    <hr>
+<div class="health-print-report" dir="rtl">
+<div class="text-center mb-3 official-heading">
+    <div class="d-flex justify-content-between small"><span>دولة فلسطين</span><span>State of Palestine</span></div>
+    <h5 class="mb-1">وزارة التربية والتعليم العالي</h5>
+    <div>مديرية التربية والتعليم - يطا</div>
+    <h4 class="mt-3 mb-1">{% if mode == 'official' %}المسح الصحي للعام 2026-2027{% elif mode == 'chronic' %}كشف الطلبة ذوي الأمراض المزمنة{% elif mode == 'disease' %}تقرير الطلبة المصابين: {{ chosen_disease }}{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}</h4>
+    <div>المدرسة: {{ info.name_ar|default:'........................................' }}</div>
+    <div class="small text-muted mt-1">تاريخ استخراج التقرير: {{ today|date:'Y/m/d' }} — المسوح المسجلة: {{ submitted_count }}</div>
 </div>
-
-{% if mode == 'students' %}
-<div class="table-responsive">
-    <table class="table table-bordered align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>#</th>
-                <th>اسم الطالب</th>
-                <th>الصف</th>
-                <th>الحالات المسجلة</th>
-            </tr>
-        </thead>
+{% if mode == 'official' %}
+    {% for g in groups %}
+    <h6 class="disease-heading">{{ g.title }} <span class="float-start">العدد: {{ g.count }}</span></h6>
+    <table class="table table-bordered table-sm official-table">
+        <thead><tr><th style="width:8%">#</th><th style="width:32%">اسم المرض</th><th style="width:28%">اسم الطالب</th><th style="width:16%">الصف</th><th style="width:16%">رقم الهاتف</th></tr></thead>
         <tbody>
-            {% for row in rows %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ row.name }}</td>
-                <td>{{ row.cls }}</td>
-                <td>{{ row.labels }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="text-center text-muted py-4">لا توجد مسوح</td></tr>
-            {% endfor %}
+        {% for s in g.students %}
+        <tr><td>{{ forloop.counter }}</td><td>{{ g.title }}{% if s.notes != '-' %}<div class="small">{{ s.notes }}</div>{% endif %}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.phone }}</td></tr>
+        {% empty %}
+        <tr><td>—</td><td>{{ g.title }}</td><td></td><td></td><td></td></tr>
+        {% endfor %}
         </tbody>
     </table>
-</div>
-{% else %}
-{% for g in groups %}
-<h5 class="border-bottom pb-1 mt-4">{{ g.title }} ({{ g.students|length }})</h5>
-<div class="mb-1">
-    {% for s in g.students %}
-    <span class="d-inline-block border rounded px-2 py-1 m-1">{{ s.student.full_name }} — {{ s.student.student_class.name|default:'-' }}</span>
     {% endfor %}
-</div>
-{% empty %}
-<div class="text-center text-muted py-4">لا توجد بيانات</div>
-{% endfor %}
+    <div class="row mt-4"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
+{% elif mode == 'chronic' %}
+<table class="table table-bordered table-sm">
+<thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>المرض المزمن كما سجله ولي الأمر</th><th>ملاحظات ولي الأمر والتعليمات</th></tr></thead>
+<tbody>{% for s in rows %}<tr><td>{{ forloop.counter }}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.student_id }}</td><td>{{ s.disease }}</td><td>{{ s.notes }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center">لا توجد حالات مرض مزمن مسجلة.</td></tr>{% endfor %}</tbody>
+</table>
+{% elif mode == 'disease' %}
+<h5 class="text-center mb-3">{{ chosen_disease }} — إجمالي الطلاب: {{ groups.0.count }}</h5>
+<table class="table table-bordered table-sm"><thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>رقم الهاتف</th><th>التفاصيل والملاحظات المسجلة</th></tr></thead><tbody>
+{% for s in groups.0.students %}<tr><td>{{ forloop.counter }}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.student_id }}</td><td>{{ s.phone }}</td><td>{{ s.notes }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center">لا توجد حالات مسجلة لهذا المرض.</td></tr>{% endfor %}
+</tbody></table>
+{% elif mode == 'students' %}
+<table class="table table-bordered table-sm"><thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>الحالات المسجلة</th></tr></thead><tbody>{% for row in rows %}<tr><td>{{ forloop.counter }}</td><td>{{ row.name }}</td><td>{{ row.cls }}</td><td>{{ row.labels }}</td></tr>{% empty %}<tr><td colspan="4">لا توجد مسوح</td></tr>{% endfor %}</tbody></table>
+{% else %}
+{% for g in groups %}<h6 class="disease-heading">{{ g.title }} ({{ g.students|length }})</h6><div class="mb-2">{% for s in g.students %}<span class="d-inline-block border rounded px-2 py-1 m-1">{{ s.student.full_name }} — {{ s.student.student_class.name|default:'-' }}</span>{% empty %}<span class="text-muted">لا توجد حالات</span>{% endfor %}</div>{% empty %}<div class="text-center">لا توجد بيانات</div>{% endfor %}
 {% endif %}
+</div>
+<style>
+.health-print-report{font-size:12px}.official-heading{border-bottom:2px solid #222;padding-bottom:10px}
+.disease-heading{background:#f1f3f5;border:1px solid #777;padding:6px 8px;margin:12px 0 0;break-after:avoid}
+.health-print-report table{width:100%;border-collapse:collapse;margin-bottom:8px}
+.health-print-report th,.health-print-report td{border:1px solid #555!important;padding:5px;text-align:right;vertical-align:top}
+.health-print-report thead{display:table-header-group}.health-print-report tr{break-inside:avoid}
+@media print{@page{size:A4 landscape;margin:10mm}.health-print-report{font-size:10px}.d-print-none{display:none!important}.official-table{break-inside:auto}.official-heading{break-after:avoid}.table{color:#000!important}.disease-heading{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
 {% endblock %}
