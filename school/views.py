@@ -3991,10 +3991,27 @@ def official_diseases_for_survey(s):
 
 def survey_parent_notes(s):
     notes = []
-    for label, value in [('تفاصيل المرض', s.chronic_disease_details), ('الرعاية الخاصة', s.special_care_details), ('تعليمات طارئة', s.emergency_instructions), ('حساسية أخرى', s.allergy_other), ('الدواء', s.medication_name)]:
+    for label, value in [
+        ('تفاصيل المرض', s.chronic_disease_details),
+        ('الرعاية الخاصة', s.special_care_details),
+        ('تعليمات طارئة', s.emergency_instructions),
+        ('حساسية أخرى', s.allergy_other),
+        ('الدواء', s.medication_name),
+    ]:
         if value:
             notes.append(label + ': ' + value)
+    for label, enabled in [
+        ('حساسية أدوية', s.allergy_drugs),
+        ('حساسية أطعمة', s.allergy_food),
+        ('حساسية غبار', s.allergy_dust),
+        ('أدوية منتظمة', s.regular_medication),
+        ('رعاية صحية خاصة', s.special_care),
+        ('نظارات طبية', s.needs_glasses),
+    ]:
+        if enabled:
+            notes.append(label)
     return ' — '.join(notes) or '-'
+
 
 @login_required
 def survey_stats(request):
@@ -4005,10 +4022,9 @@ def survey_stats(request):
     return render(request, 'school/survey_stats.html', data)
 
 
-
 @login_required
 def survey_stats_print(request, mode):
-    """Render printable survey, chronic-condition, official and disease-specific reports."""
+    """Render printable survey, chronic-condition, official and comprehensive health reports."""
     if not has_perm(request.user, 'survey', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
@@ -4033,24 +4049,76 @@ def survey_stats_print(request, mode):
                 rows.append({'name': s.student.full_name, 'cls': s.student.student_class.name if s.student.student_class else '-', 'student_id': s.student.student_id, 'phone': s.student.parent_phone or '-', 'disease': s.chronic_disease_details or 'مرض مزمن (التفاصيل غير محددة)', 'notes': survey_parent_notes(s)})
         return render(request, 'school/survey_stats_print.html', {'mode': mode, 'rows': rows, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
 
-    if mode in ('official', 'disease'):
+    if mode in ('official', 'disease', 'comprehensive'):
         chosen_disease = request.GET.get('disease', '').strip()
         allowed = [item[0] for item in OFFICIAL_HEALTH_DISEASES] + [item[0] for item in SURVEY_EXTRA_HEALTH_CATEGORIES]
         if mode == 'disease' and chosen_disease not in allowed:
             messages.error(request, 'يرجى اختيار مرض من القائمة المعتمدة')
             return redirect('survey_stats')
-        catalog = OFFICIAL_HEALTH_DISEASES if mode == 'official' else [item for item in OFFICIAL_HEALTH_DISEASES if item[0] == chosen_disease]
-        if mode == 'disease' and chosen_disease in [item[0] for item in SURVEY_EXTRA_HEALTH_CATEGORIES]:
-            catalog = [(chosen_disease, (), dict(SURVEY_EXTRA_HEALTH_CATEGORIES)[chosen_disease])]
+
+        def student_row(s, disease_label):
+            return {
+                'name': s.student.full_name,
+                'cls': s.student.student_class.name if s.student.student_class else '-',
+                'student_id': s.student.student_id or '-',
+                'phone': s.student.parent_phone or '-',
+                'disease': disease_label,
+                'notes': survey_parent_notes(s),
+            }
+
         groups = []
-        for label, keywords, field in catalog:
-            members = []
+        if mode in ('official', 'disease'):
+            catalog = OFFICIAL_HEALTH_DISEASES if mode == 'official' else [item for item in OFFICIAL_HEALTH_DISEASES if item[0] == chosen_disease]
+            if mode == 'disease' and chosen_disease in [item[0] for item in SURVEY_EXTRA_HEALTH_CATEGORIES]:
+                catalog = [(chosen_disease, (), dict(SURVEY_EXTRA_HEALTH_CATEGORIES)[chosen_disease])]
+            for label, keywords, field in catalog:
+                members = []
+                for s in surveys:
+                    if mode == 'official':
+                        matches = label in official_diseases_for_survey(s)
+                    elif label in dict(SURVEY_EXTRA_HEALTH_CATEGORIES):
+                        matches = bool(getattr(s, field, False))
+                    else:
+                        matches = label in official_diseases_for_survey(s)
+                    if matches:
+                        members.append(student_row(s, label))
+                groups.append({'title': label, 'students': members, 'count': len(members)})
+        else:
+            grouped = {}
+            extra_fields = dict(SURVEY_EXTRA_HEALTH_CATEGORIES)
             for s in surveys:
-                matches = (label in official_diseases_for_survey(s)) if mode == 'official' else (bool(getattr(s, field, False)) if field and label in dict(SURVEY_EXTRA_HEALTH_CATEGORIES) else label in official_diseases_for_survey(s))
-                if matches:
-                    members.append({'name': s.student.full_name, 'cls': s.student.student_class.name if s.student.student_class else '-', 'student_id': s.student.student_id, 'phone': s.student.parent_phone or '-', 'disease': label, 'notes': survey_parent_notes(s)})
-            groups.append({'title': label, 'students': members, 'count': len(members)})
-        return render(request, 'school/survey_stats_print.html', {'mode': mode, 'groups': groups, 'chosen_disease': chosen_disease, 'disease_catalog': allowed, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
+                labels = [label for label in official_diseases_for_survey(s) if label != 'أمراض أخرى']
+                details = (s.chronic_disease_details or '').strip()
+                details_folded = details.casefold()
+                details_classified = any(word.casefold() in details_folded for label, words, field in OFFICIAL_HEALTH_DISEASES if label != 'أمراض أخرى' for word in words)
+                if s.chronic_disease and not details_classified:
+                    labels.append(details if details else 'مرض مزمن غير محدد')
+                for label, field in extra_fields.items():
+                    if getattr(s, field, False):
+                        labels.append(label)
+                if s.medication_name and 'أدوية منتظمة' not in labels:
+                    labels.append('أدوية منتظمة')
+                if s.special_care_details and 'رعاية صحية خاصة' not in labels:
+                    labels.append('رعاية صحية خاصة')
+                if s.allergy_other:
+                    labels.append('حساسية أخرى: ' + s.allergy_other.strip())
+                if s.needs_glasses:
+                    labels.append('نظارات طبية')
+                for label in dict.fromkeys(labels):
+                    grouped.setdefault(label, {})
+                    grouped[label][s.student_id] = student_row(s, label)
+            groups = [
+                {'title': label, 'students': list(members.values()), 'count': len(members)}
+                for label, members in sorted(grouped.items(), key=lambda item: arabic_sort_key(item[0]))
+                if members
+            ]
+        case_student_ids = {row['student_id'] for group in groups for row in group['students']}
+        return render(request, 'school/survey_stats_print.html', {
+            'mode': mode, 'groups': groups, 'chosen_disease': chosen_disease,
+            'disease_catalog': allowed, 'info': info, 'submitted_count': data['submitted_count'],
+            'today': data['today'], 'health_group_count': len(groups),
+            'health_case_student_count': len(case_student_ids),
+        })
 
     messages.error(request, 'نوع التقرير غير معروف')
     return redirect('survey_stats')
@@ -4069,8 +4137,6 @@ def survey_detail(request, student_id):
         'today': date.today(),
     })
 
-
-# ─── Guardians / Nominations / Certificates ───────────────────────────────────
 
 def current_teaching_year():
     today = date.today()

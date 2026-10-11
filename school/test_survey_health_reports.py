@@ -51,6 +51,47 @@ class SurveyHealthReportsTests(TestCase):
         self.assertContains(response, 'طالب التقرير الصحي')
         self.assertContains(response, 'إجمالي الطلاب: 1')
 
+    def test_official_report_has_one_row_per_disease_and_slash_separated_names(self):
+        second_user = User.objects.create_user(username='health-student-2', password='safe-password')
+        Profile.objects.create(user=second_user, role='student')
+        second_student = Student.objects.create(
+            user=second_user,
+            student_id='409876544',
+            full_name='طالب ثانٍ مصاب',
+            student_class=self.cls,
+            parent_phone='0599111111',
+        )
+        StudentSurvey.objects.create(
+            student=second_student,
+            chronic_disease=True,
+            chronic_disease_details='الربو',
+            condition_asthma=True,
+        )
+        # The first student also has asthma in addition to diabetes.
+        self.survey.chronic_disease_details = 'السكري والربو'
+        self.survey.condition_asthma = True
+        self.survey.save()
+        response = self.client.get(reverse('survey_stats_print', args=['official']))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertEqual(html.count('<td>الربو</td>'), 1)
+        self.assertContains(response, 'طالب التقرير الصحي / طالب ثانٍ مصاب')
+        self.assertContains(response, '@page{size:A4 portrait')
+
+    def test_comprehensive_report_lists_all_health_entries_without_disease_selection(self):
+        self.survey.chronic_disease_details = 'مرض نادر مسجل من ولي الأمر'
+        self.survey.allergy_food = True
+        self.survey.regular_medication = True
+        self.survey.medication_name = 'دواء تجريبي'
+        self.survey.save()
+        response = self.client.get(reverse('survey_stats_print', args=['comprehensive']))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'التقرير الصحي الشامل لطلاب المدرسة')
+        self.assertContains(response, 'مرض نادر مسجل من ولي الأمر')
+        self.assertContains(response, 'حساسية أطعمة')
+        self.assertContains(response, 'دواء تجريبي')
+        self.assertContains(response, 'الطلاب المصابون')
+
     def test_invalid_disease_is_rejected(self):
         response = self.client.get(reverse('survey_stats_print', args=['disease']), {'disease': 'غير موجود'})
         self.assertRedirects(response, reverse('survey_stats'))

@@ -11,24 +11,49 @@
     <div class="d-flex justify-content-between small"><span>دولة فلسطين</span><span>State of Palestine</span></div>
     <h5 class="mb-1">وزارة التربية والتعليم العالي</h5>
     <div>مديرية التربية والتعليم - يطا</div>
-    <h4 class="mt-3 mb-1">{% if mode == 'official' %}المسح الصحي للعام 2026-2027{% elif mode == 'chronic' %}كشف الطلبة ذوي الأمراض المزمنة{% elif mode == 'disease' %}تقرير الطلبة المصابين: {{ chosen_disease }}{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}</h4>
+    <h4 class="mt-3 mb-1">{% if mode == 'official' %}المسح الصحي للعام 2026-2027{% elif mode == 'comprehensive' %}التقرير الصحي الشامل لطلاب المدرسة{% elif mode == 'chronic' %}كشف الطلبة ذوي الأمراض المزمنة{% elif mode == 'disease' %}تقرير الطلبة المصابين: {{ chosen_disease }}{% elif mode == 'students' %}قائمة الطلاب{% else %}تقسيم الطلاب حسب الحالة{% endif %}</h4>
     <div>المدرسة: {{ info.name_ar|default:'........................................' }}</div>
-    <div class="small text-muted mt-1">تاريخ استخراج التقرير: {{ today|date:'Y/m/d' }} — المسوح المسجلة: {{ submitted_count }}</div>
+    <div class="small mt-1">تاريخ استخراج التقرير: {{ today|date:'Y/m/d' }} — المسوح المسجلة: {{ submitted_count }}</div>
 </div>
 {% if mode == 'official' %}
 <table class="table table-bordered table-sm official-table">
-<thead><tr><th style="width:8%">#</th><th style="width:28%">اسم المرض</th><th style="width:28%">اسم الطالب</th><th style="width:18%">الصف</th><th style="width:18%">رقم الهاتف</th></tr></thead>
+<thead><tr><th style="width:5%">#</th><th style="width:22%">اسم المرض</th><th style="width:38%">أسماء الطلاب المصابين</th><th style="width:17%">الصفوف</th><th style="width:18%">أرقام الهواتف</th></tr></thead>
 <tbody>
 {% for g in groups %}
-    {% for s in g.students %}
-    <tr><td>{{ forloop.parentloop.counter }}-{{ forloop.counter }}</td><td>{{ g.title }}</td><td>{{ s.name }}</td><td>{{ s.cls }}</td><td>{{ s.phone }}</td></tr>
-    {% empty %}
-    <tr><td>—</td><td>{{ g.title }}</td><td></td><td></td><td></td></tr>
-    {% endfor %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ g.title }}</td>
+    <td>{% for s in g.students %}{% if not forloop.first %} / {% endif %}{{ s.name }}{% empty %}—{% endfor %}</td>
+    <td>{% for s in g.students %}{% if not forloop.first %} / {% endif %}{{ s.cls }}{% empty %}—{% endfor %}</td>
+    <td>{% for s in g.students %}{% if not forloop.first %} / {% endif %}{{ s.phone }}{% empty %}—{% endfor %}</td>
+</tr>
 {% endfor %}
 </tbody>
 </table>
-<div class="row mt-4"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
+<div class="row mt-3"><div class="col-6">اسم مدير المدرسة: ................................</div><div class="col-6 text-start">التوقيع والختم: ................................</div></div>
+{% elif mode == 'comprehensive' %}
+<div class="summary-strip">
+    <strong>عدد المسوح المكتملة:</strong> {{ submitted_count }}
+    <span class="mx-2">|</span><strong>عدد الأمراض والمؤشرات المسجلة:</strong> {{ health_group_count }}
+    <span class="mx-2">|</span><strong>عدد الطلاب ذوي الحالات الصحية المسجلة:</strong> {{ health_case_student_count }}
+</div>
+<table class="table table-bordered table-sm comprehensive-table">
+<thead><tr><th style="width:4%">#</th><th style="width:19%">اسم المرض / الحالة</th><th style="width:32%">الطلاب المصابون (الاسم، الصف، الهوية، الهاتف)</th><th style="width:37%">تفاصيل المرض وملاحظات ولي الأمر وتعليمات المتابعة</th><th style="width:8%">العدد</th></tr></thead>
+<tbody>
+{% for g in groups %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td><strong>{{ g.title }}</strong></td>
+    <td>{% for s in g.students %}{% if not forloop.first %}<div class="record-separator">/</div>{% endif %}<div><strong>{{ s.name }}</strong><br>الصف: {{ s.cls }} — الهوية: {{ s.student_id }} — الهاتف: {{ s.phone }}</div>{% empty %}—{% endfor %}</td>
+    <td>{% for s in g.students %}{% if not forloop.first %}<div class="record-separator">/</div>{% endif %}<div>{{ s.notes }}</div>{% empty %}—{% endfor %}</td>
+    <td>{{ g.count }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="text-center">لا توجد حالات صحية مسجلة في المسوح المكتملة.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<div class="small mt-3">ملاحظة: يعتمد هذا التقرير على المعلومات الصحية التي أدخلها أولياء الأمور، ويعرض التفاصيل والملاحظات المسجلة دون استنتاج تشخيص طبي غير مدخل.</div>
 {% elif mode == 'chronic' %}
 <table class="table table-bordered table-sm">
 <thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>المرض المزمن كما سجله ولي الأمر</th><th>ملاحظات ولي الأمر والتعليمات</th></tr></thead>
@@ -48,9 +73,22 @@
 <style>
 .health-print-report{font-size:12px}.official-heading{border-bottom:2px solid #222;padding-bottom:10px}
 .disease-heading{background:#f1f3f5;border:1px solid #777;padding:6px 8px;margin:12px 0 0;break-after:avoid}
-.health-print-report table{width:100%;border-collapse:collapse;margin-bottom:8px}
-.health-print-report th,.health-print-report td{border:1px solid #555!important;padding:5px;text-align:right;vertical-align:top}
+.summary-strip{border:1px solid #555;padding:7px;margin-bottom:8px;font-size:11px}
+.record-separator{border-top:1px dotted #aaa;margin:4px 0;color:#555}
+.health-print-report table{width:100%;border-collapse:collapse;margin-bottom:8px;table-layout:fixed}
+.health-print-report th,.health-print-report td{border:1px solid #555!important;padding:4px;text-align:right;vertical-align:top;overflow-wrap:anywhere}
 .health-print-report thead{display:table-header-group}.health-print-report tr{break-inside:avoid}
-@media print{@page{size:A4 landscape;margin:10mm}.health-print-report{font-size:10px}.d-print-none{display:none!important}.official-table{break-inside:auto}.official-heading{break-after:avoid}.table{color:#000!important}.disease-heading{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{
+  @page{size:A4 portrait;margin:8mm}
+  .health-print-report{font-size:9px}
+  .d-print-none{display:none!important}
+  .official-table{font-size:9px;break-inside:auto}
+  .official-table th,.official-table td{padding:3px}
+  .comprehensive-table{font-size:8px}
+  .comprehensive-table th,.comprehensive-table td{padding:3px}
+  .official-heading{break-after:avoid}
+  .table{color:#000!important}
+  .disease-heading{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 {% endblock %}
