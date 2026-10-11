@@ -5615,6 +5615,13 @@ def health_committee_record_add(request):
                 recommendations=request.POST.get('recommendations', '').strip(),
                 responsible_person=request.POST.get('responsible_person', '').strip(),
                 due_date=due_date, outcome=request.POST.get('outcome', '').strip(),
+            meeting_number=request.POST.get('meeting_number', '').strip(),
+            agenda=request.POST.get('agenda', '').strip(),
+            decisions=request.POST.get('decisions', '').strip(),
+            inspection_findings=request.POST.get('inspection_findings', '').strip(),
+            corrective_actions=request.POST.get('corrective_actions', '').strip(),
+            activity_target=request.POST.get('activity_target', '').strip(),
+            activity_participants_count=int(request.POST.get('activity_participants_count') or 0) or None,
                 created_by=request.user,
             )
             record.save()
@@ -5652,6 +5659,13 @@ def health_committee_record_edit(request, record_id):
         record.responsible_person = request.POST.get('responsible_person', '').strip()
         record.due_date = due_date
         record.outcome = request.POST.get('outcome', '').strip()
+        record.meeting_number = request.POST.get('meeting_number', '').strip()
+        record.agenda = request.POST.get('agenda', '').strip()
+        record.decisions = request.POST.get('decisions', '').strip()
+        record.inspection_findings = request.POST.get('inspection_findings', '').strip()
+        record.corrective_actions = request.POST.get('corrective_actions', '').strip()
+        record.activity_target = request.POST.get('activity_target', '').strip()
+        record.activity_participants_count = int(request.POST.get('activity_participants_count') or 0) or None
         record.save()
         log_action(request.user, 'تعديل سجل اللجنة الصحية', record.title)
         messages.success(request, 'تم تحديث السجل بنجاح.')
