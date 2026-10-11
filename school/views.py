@@ -3807,7 +3807,8 @@ def build_survey_stats_data():
         arabic_sort_key(s.student.student_class.name) if s.student.student_class else (0,),
         arabic_sort_key(s.student.full_name),
     ))
-    n = max(len(submitted), 1)
+    submitted_count = len(submitted)
+    n = max(submitted_count, 1)
 
     def cnt(pred):
         return len([s for s in submitted if pred(s)])
@@ -3914,7 +3915,7 @@ def build_survey_stats_data():
         })
 
     return {
-        'submitted_count': n,
+        'submitted_count': submitted_count,
         'health_rows': health_rows,
         'social_rows': social_rows,
         'supports': supports,
