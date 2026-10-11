@@ -23,6 +23,23 @@ class HealthCommitteeAccessTests(TestCase):
         response = self.client.get(reverse('health_committee_dashboard'))
         self.assertRedirects(response, reverse('dashboard'))
 
+    def test_invalid_activity_participant_count_does_not_crash(self):
+        UserPermission.objects.create(
+            user=self.teacher,
+            permissions={'health_committee': ['view', 'add']},
+        )
+        self.client.force_login(self.teacher)
+        response = self.client.post(reverse('health_committee_record_add'), {
+            'title': 'نشاط توعوي',
+            'record_type': 'activity',
+            'record_date': '2026-10-11',
+            'status': 'planned',
+            'activity_participants_count': 'غير صالح',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'عدد مشاركين صحيح')
+        self.assertFalse(HealthCommitteeRecord.objects.filter(title='نشاط توعوي').exists())
+
     def test_user_with_explicit_permissions_can_create_record(self):
         UserPermission.objects.create(
             user=self.teacher,
