@@ -21,7 +21,8 @@ class HealthCommitteeAccessTests(TestCase):
     def test_teacher_without_permission_is_denied(self):
         self.client.force_login(self.teacher)
         response = self.client.get(reverse('health_committee_dashboard'))
-        self.assertRedirects(response, reverse('dashboard'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], reverse('dashboard'))
 
     def test_invalid_activity_participant_count_does_not_crash(self):
         UserPermission.objects.create(
