@@ -5621,7 +5621,7 @@ def health_committee_record_add(request):
             inspection_findings=request.POST.get('inspection_findings', '').strip(),
             corrective_actions=request.POST.get('corrective_actions', '').strip(),
             activity_target=request.POST.get('activity_target', '').strip(),
-            activity_participants_count=int(request.POST.get('activity_participants_count') or 0) or None,
+            activity_participants_count=request.POST.get('activity_participants_count') or None,
                 created_by=request.user,
             )
             record.save()
