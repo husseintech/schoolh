@@ -76,6 +76,9 @@ def user_permissions(request):
             ('school_radio', 'delete'), ('school_radio', 'generate'), ('school_radio', 'review'),
             ('curriculum_assistant', 'view'), ('curriculum_assistant', 'add'),
             ('curriculum_assistant', 'delete'), ('curriculum_assistant', 'monitor'),
+            ('health_committee', 'view'), ('health_committee', 'add'),
+            ('health_committee', 'edit'), ('health_committee', 'delete'),
+            ('health_committee', 'print'), ('health_committee', 'monitor'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
