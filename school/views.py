@@ -3956,6 +3956,17 @@ OFFICIAL_HEALTH_DISEASES = [
     ('أمراض أخرى', (), None),
 ]
 
+SURVEY_EXTRA_HEALTH_CATEGORIES = [
+    ('مشاكل في القلب', 'condition_heart'),
+    ('ضعف السمع', 'condition_hearing'),
+    ('ضعف البصر', 'condition_vision'),
+    ('حساسية أدوية', 'allergy_drugs'),
+    ('حساسية أطعمة', 'allergy_food'),
+    ('حساسية غبار', 'allergy_dust'),
+    ('أدوية منتظمة', 'regular_medication'),
+    ('رعاية صحية خاصة', 'special_care'),
+]
+
 def _health_text(s):
     return ' '.join([s.chronic_disease_details or '', s.special_care_details or '', s.emergency_instructions or '', s.allergy_other or '']).strip().casefold()
 
@@ -4020,16 +4031,19 @@ def survey_stats_print(request, mode):
 
     if mode in ('official', 'disease'):
         chosen_disease = request.GET.get('disease', '').strip()
-        allowed = [item[0] for item in OFFICIAL_HEALTH_DISEASES]
+        allowed = [item[0] for item in OFFICIAL_HEALTH_DISEASES] + [item[0] for item in SURVEY_EXTRA_HEALTH_CATEGORIES]
         if mode == 'disease' and chosen_disease not in allowed:
             messages.error(request, 'يرجى اختيار مرض من القائمة المعتمدة')
             return redirect('survey_stats')
-        catalog = [item for item in OFFICIAL_HEALTH_DISEASES if mode != 'disease' or item[0] == chosen_disease]
+        catalog = OFFICIAL_HEALTH_DISEASES if mode == 'official' else [item for item in OFFICIAL_HEALTH_DISEASES if item[0] == chosen_disease]
+        if mode == 'disease' and chosen_disease in [item[0] for item in SURVEY_EXTRA_HEALTH_CATEGORIES]:
+            catalog = [(chosen_disease, (), dict(SURVEY_EXTRA_HEALTH_CATEGORIES)[chosen_disease])]
         groups = []
         for label, keywords, field in catalog:
             members = []
             for s in surveys:
-                if label in official_diseases_for_survey(s):
+                matches = (label in official_diseases_for_survey(s)) if mode == 'official' else (bool(getattr(s, field, False)) if field and label in dict(SURVEY_EXTRA_HEALTH_CATEGORIES) else label in official_diseases_for_survey(s))
+                if matches:
                     members.append({'name': s.student.full_name, 'cls': s.student.student_class.name if s.student.student_class else '-', 'student_id': s.student.student_id, 'phone': s.student.parent_phone or '-', 'disease': label, 'notes': survey_parent_notes(s)})
             groups.append({'title': label, 'students': members, 'count': len(members)})
         return render(request, 'school/survey_stats_print.html', {'mode': mode, 'groups': groups, 'chosen_disease': chosen_disease, 'disease_catalog': allowed, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
