@@ -3981,7 +3981,9 @@ def official_diseases_for_survey(s):
             found.append(label)
     if s.condition_heart:
         found.append('أمراض أخرى')
-    if s.chronic_disease and not found:
+    chronic_text = (s.chronic_disease_details or '').strip().casefold()
+    chronic_text_is_classified = any(word.casefold() in chronic_text for label, keywords, field in OFFICIAL_HEALTH_DISEASES if label != 'أمراض أخرى' for word in keywords)
+    if s.chronic_disease and ((chronic_text and not chronic_text_is_classified) or (not chronic_text and not found)):
         found.append('أمراض أخرى')
     return list(dict.fromkeys(found))
 
