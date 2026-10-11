@@ -928,10 +928,11 @@
         {% endif %}
         {% if 'health_committee_view' in user_perms %}
         <a href="{% url 'health_committee_dashboard' %}" class="nav-link {% if 'health_committee' in request.resolver_match.url_name %}active{% endif %}">
-            <i class="bi bi-heart-pulse-fill"></i> اللجنة الصحية المدرسية
+            <i class="bi bi-heart-pulse-fill"></i> ملف الصحة المدرسية
         </a>
         {% endif %}
-        {% if 'classes_view' in user_perms %} class="nav-link {% if 'class' in request.resolver_match.url_name %}active{% endif %}">
+        {% if 'classes_view' in user_perms %}
+        <a href="{% url 'class_list' %}" class="nav-link {% if 'class' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-building"></i> الصفوف الدراسية
         </a>
         {% endif %}
