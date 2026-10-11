@@ -3928,6 +3928,58 @@ def build_survey_stats_data():
     }
 
 
+
+# Health report classification
+OFFICIAL_HEALTH_DISEASES = [
+    ('السكري', ('السكري', 'سكري', 'diabetes'), 'condition_diabetes'),
+    ('السرطان', ('السرطان', 'سرطان', 'cancer'), None),
+    ('الصرع', ('الصرع', 'صرع', 'epilepsy'), 'condition_epilepsy'),
+    ('الربو', ('الربو', 'ربو', 'asthma'), 'condition_asthma'),
+    ('التلاسيميا', ('التلاسيميا', 'ثلاسيميا', 'thalassemia'), None),
+    ('الهيموفيليا', ('الهيموفيليا', 'هيموفيليا', 'hemophilia'), None),
+    ('الكلى', ('الكلى', 'كلوي', 'kidney', 'renal'), None),
+    ('الجلدية(نوعها)', ('جلدي', 'جلدية', 'اكزيما', 'أكزيما', 'صدفية'), None),
+    ('التهاب الكبد B', ('التهاب الكبد b', 'التهاب الكبد بي', 'hepatitis b'), None),
+    ('إعاقة طرفية', ('إعاقة طرفية', 'اعاقة طرفية', 'بتر طرف'), None),
+    ('إعاقة سمعية ونطق', ('إعاقة سمعية', 'اعاقة سمعية', 'ضعف السمع', 'ضعف سمع', 'صعوبة النطق'), 'condition_hearing'),
+    ('إعاقة بصرية', ('إعاقة بصرية', 'اعاقة بصرية', 'ضعف البصر', 'ضعف بصر', 'كفيف'), 'condition_vision'),
+    ('إعاقة عقلية', ('إعاقة عقلية', 'اعاقة عقلية', 'إعاقة ذهنية', 'اعاقة ذهنية'), None),
+    ('حمى البحر الأبيض المتوسط', ('حمى البحر الأبيض المتوسط', 'حمى البحر الابيض المتوسط', 'حمى البحر المتوسط'), None),
+    ('تشوه العمود الفقري', ('تشوه العمود الفقري', 'اعوجاج العمود الفقري', 'الجنف'), None),
+    ('تشوه خلقي في الرئتين', ('تشوه خلقي في الرئتين', 'تشوه خلقي بالرئتين'), None),
+    ('شفة أرنبية', ('شفة أرنبية', 'شفة ارنبية', 'شق الشفة'), None),
+    ('حروق بحاجة إلى عمليات', ('حروق بحاجة إلى عمليات', 'حروق تحتاج إلى عمليات'), None),
+    ('أورام', ('أورام', 'اورام', 'ورم', 'tumor', 'tumour'), None),
+    ('مشاكل في الغدد اللمفاوية', ('مشاكل في الغدد اللمفاوية', 'الغدد اللمفاوية', 'الغدد الليمفاوية'), None),
+    ('تشوهات خلقية أخرى', ('تشوهات خلقية أخرى', 'تشوه خلقي آخر', 'تشوه خلقي'), None),
+    ('أمراض أخرى', (), None),
+]
+
+def _health_text(s):
+    return ' '.join([s.chronic_disease_details or '', s.special_care_details or '', s.emergency_instructions or '', s.allergy_other or '']).strip().casefold()
+
+def official_diseases_for_survey(s):
+    text = _health_text(s)
+    found = []
+    for label, keywords, field in OFFICIAL_HEALTH_DISEASES:
+        if label == 'أمراض أخرى':
+            continue
+        flagged = bool(getattr(s, field, False)) if field else False
+        if flagged or any(word.casefold() in text for word in keywords):
+            found.append(label)
+    if s.condition_heart:
+        found.append('أمراض أخرى')
+    if s.chronic_disease and not found:
+        found.append('أمراض أخرى')
+    return list(dict.fromkeys(found))
+
+def survey_parent_notes(s):
+    notes = []
+    for label, value in [('تفاصيل المرض', s.chronic_disease_details), ('الرعاية الخاصة', s.special_care_details), ('تعليمات طارئة', s.emergency_instructions), ('حساسية أخرى', s.allergy_other), ('الدواء', s.medication_name)]:
+        if value:
+            notes.append(label + ': ' + value)
+    return ' — '.join(notes) or '-'
+
 @login_required
 def survey_stats(request):
     if not has_perm(request.user, 'survey', 'view'):
