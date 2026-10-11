@@ -3989,43 +3989,52 @@ def survey_stats(request):
     return render(request, 'school/survey_stats.html', data)
 
 
+
 @login_required
 def survey_stats_print(request, mode):
-    """تقرير قابل للطباعة: students = قائمة بكل الطلاب، groups = تقسيمات حسب الحالة."""
+    """Render printable survey, chronic-condition, official and disease-specific reports."""
     if not has_perm(request.user, 'survey', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     data = build_survey_stats_data()
     info = SchoolInfo.objects.first()
+    surveys = data['submitted']
 
     if mode == 'students':
-        rows = []
-        for s in data['submitted']:
-            rows.append({
-                'survey': s,
-                'name': s.student.full_name,
-                'cls': s.student.student_class.name if s.student.student_class else '-',
-                'labels': survey_condition_labels(s),
-            })
-        return render(request, 'school/survey_stats_print.html', {
-            'mode': 'students',
-            'rows': rows,
-            'info': info,
-            'submitted_count': data['submitted_count'],
-            'today': data['today'],
-        })
+        rows = [{'survey': s, 'name': s.student.full_name,
+                 'cls': s.student.student_class.name if s.student.student_class else '-',
+                 'labels': survey_condition_labels(s)} for s in surveys]
+        return render(request, 'school/survey_stats_print.html', {'mode': mode, 'rows': rows, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
 
-    groups = []
-    for r in data['health_rows'] + data['digital_rows'] + data['social_rows'] + data['supports']:
-        if r['students']:
-            groups.append({'title': r['label'], 'students': r['students']})
-    return render(request, 'school/survey_stats_print.html', {
-        'mode': 'groups',
-        'groups': groups,
-        'info': info,
-        'submitted_count': data['submitted_count'],
-        'today': data['today'],
-    })
+    if mode == 'groups':
+        groups = [{'title': r['label'], 'students': r['students']} for r in data['health_rows'] + data['digital_rows'] + data['social_rows'] + data['supports'] if r['students']]
+        return render(request, 'school/survey_stats_print.html', {'mode': mode, 'groups': groups, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
+
+    if mode == 'chronic':
+        rows = []
+        for s in surveys:
+            if s.chronic_disease:
+                rows.append({'name': s.student.full_name, 'cls': s.student.student_class.name if s.student.student_class else '-', 'student_id': s.student.student_id, 'phone': s.student.parent_phone or '-', 'disease': s.chronic_disease_details or 'مرض مزمن (التفاصيل غير محددة)', 'notes': survey_parent_notes(s)})
+        return render(request, 'school/survey_stats_print.html', {'mode': mode, 'rows': rows, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
+
+    if mode in ('official', 'disease'):
+        chosen_disease = request.GET.get('disease', '').strip()
+        allowed = [item[0] for item in OFFICIAL_HEALTH_DISEASES]
+        if mode == 'disease' and chosen_disease not in allowed:
+            messages.error(request, 'يرجى اختيار مرض من القائمة المعتمدة')
+            return redirect('survey_stats')
+        catalog = [item for item in OFFICIAL_HEALTH_DISEASES if mode != 'disease' or item[0] == chosen_disease]
+        groups = []
+        for label, keywords, field in catalog:
+            members = []
+            for s in surveys:
+                if label in official_diseases_for_survey(s):
+                    members.append({'name': s.student.full_name, 'cls': s.student.student_class.name if s.student.student_class else '-', 'student_id': s.student.student_id, 'phone': s.student.parent_phone or '-', 'disease': label, 'notes': survey_parent_notes(s)})
+            groups.append({'title': label, 'students': members, 'count': len(members)})
+        return render(request, 'school/survey_stats_print.html', {'mode': mode, 'groups': groups, 'chosen_disease': chosen_disease, 'disease_catalog': allowed, 'info': info, 'submitted_count': data['submitted_count'], 'today': data['today']})
+
+    messages.error(request, 'نوع التقرير غير معروف')
+    return redirect('survey_stats')
 
 
 @login_required
