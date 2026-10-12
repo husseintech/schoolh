@@ -4,39 +4,115 @@
 {% block page_heading %}تقرير الملاحظات{% endblock %}
 {% block content %}
 {% include 'school/includes/report_premium_styles.html' %}
-<div class="report-page">
+<div class="report-page notes-report-page">
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center gap-2">
-        <span><i class="bi bi-sticky-fill"></i> جميع الملاحظات</span>
-        <button onclick="window.print()" class="btn btn-success btn-sm no-print"><i class="bi bi-printer"></i> طباعة</button>
+    <div class="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap no-print">
+        <span><i class="bi bi-sticky-fill"></i> تقرير ملاحظات الطلاب</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <label for="notes-student-filter" class="form-label mb-0">طباعة ملاحظات طالب:</label>
+            <select id="notes-student-filter" class="form-select form-select-sm" style="min-width:220px;max-width:100%">
+                <option value="">جميع الطلاب</option>
+                {% for student in students %}
+                <option value="{{ student.id }}"{% if selected_student_id == student.id|stringformat:"s" %} selected{% endif %}>{{ student.full_name }}{% if student.student_class %} — {{ student.student_class.name }}{% endif %}</option>
+                {% endfor %}
+            </select>
+            <button type="button" onclick="printNotesReport()" class="btn btn-success btn-sm"><i class="bi bi-printer"></i> طباعة التقرير</button>
+            <button type="button" onclick="clearNotesFilter()" class="btn btn-outline-secondary btn-sm">عرض الجميع</button>
+        </div>
     </div>
     <div class="card-body">
-        <div class="report-title-box d-none d-print-block"><h4>تقرير الملاحظات</h4><p>سجل الملاحظات الطلابية</p></div>
-        <div class="report-summary"><span class="chip">إجمالي الملاحظات: {{ notes.count }}</span></div>
+        <div class="report-title-box d-none d-print-block">
+            <h4>تقرير الملاحظات الطلابية</h4>
+            <p id="print-report-subtitle">{% if selected_student %}الطالب: {{ selected_student.full_name }}{% else %}سجل جميع الملاحظات الطلابية{% endif %}</p>
+        </div>
+        <div class="report-summary no-print"><span class="chip">عدد الملاحظات المعروضة: <span id="visible-notes-count">{{ notes.count }}</span></span></div>
         <div class="table-responsive">
-            <table class="table table-hover table-bordered">
+            <table class="table table-hover table-bordered notes-report-table">
                 <thead>
-                    <tr><th>#</th><th>الطالب</th><th>الصف</th><th>النوع</th><th>المحتوى</th><th>كاتبها</th><th>التاريخ</th></tr>
+                    <tr><th>#</th><th>الطالب</th><th>الصف</th><th>النوع</th><th>المحتوى الكامل للملاحظة</th><th>كاتبها</th><th>التاريخ</th></tr>
                 </thead>
                 <tbody>
                     {% for note in notes %}
-                    <tr>
+                    <tr class="note-row" data-student-id="{{ note.student_id }}">
                         <td>{{ forloop.counter }}</td>
-                        <td><a class="fw-bold text-decoration-none" href="{% url 'student_detail' note.student.id %}">{{ note.student.full_name }}</a></td>
+                        <td><a class="fw-bold text-decoration-none student-name-link" href="{% url 'student_detail' note.student.id %}">{{ note.student.full_name }}</a></td>
                         <td>{{ note.student.student_class.name|default:"-" }}</td>
                         <td><span class="badge bg-{% if note.note_type == 'تأخير' %}warning{% elif note.note_type == 'تأديبية' %}danger{% elif note.note_type == 'سلوك' %}info{% elif note.note_type == 'تحصيل' %}primary{% else %}secondary{% endif %}">{{ note.note_type }}</span></td>
-                        <td>{{ note.content|truncatewords:15 }}</td>
+                        <td class="note-content">{{ note.content|linebreaksbr }}</td>
                         <td>{{ note.created_by|by_name }}</td>
                         <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-sticky" style="font-size:2rem"></i><div class="mt-2">لا توجد ملاحظات</div></td></tr>
+                    <tr class="empty-notes-row"><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-sticky" style="font-size:2rem"></i><div class="mt-2">لا توجد ملاحظات</div></td></tr>
                     {% endfor %}
+                    <tr class="filtered-empty-row" style="display:none"><td colspan="7" class="text-center text-muted py-4">لا توجد ملاحظات مسجلة لهذا الطالب.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 </div>
-<style>@media print{@page{size:A4 landscape}}</style>
+<style>
+.notes-report-table{width:100%;table-layout:auto}
+.notes-report-table th,.notes-report-table td{vertical-align:top;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.notes-report-table .note-content{min-width:220px;max-width:520px;line-height:1.75}
+.notes-report-table .student-name-link{color:inherit}
+@media print{
+    @page{size:A4 landscape;margin:10mm}
+    body *{visibility:hidden}
+    .notes-report-page,.notes-report-page *{visibility:visible}
+    .notes-report-page{position:absolute;inset:0;width:100%;margin:0;padding:0}
+    .notes-report-page .card{border:0!important;box-shadow:none!important}
+    .notes-report-page .card-body{padding:0!important}
+    .notes-report-page .table-responsive{overflow:visible!important}
+    .notes-report-table{width:100%;font-size:9pt;border-collapse:collapse!important}
+    .notes-report-table th,.notes-report-table td{padding:4px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+    .notes-report-table .note-content{min-width:0;max-width:none;line-height:1.45}
+    .notes-report-table tr{break-inside:avoid;page-break-inside:avoid}
+    .notes-report-table a{color:#000!important;text-decoration:none!important}
+    .notes-report-page .report-title-box{display:block!important;text-align:center;margin-bottom:10px}
+    .notes-report-page .report-title-box h4{margin-bottom:4px}
+    .notes-report-page .report-title-box p{margin:0}
+    .notes-report-table .badge{border:1px solid #888;background:transparent!important;color:#000!important}
+}
+</style>
+<script>
+(function(){
+    const selector = document.getElementById('notes-student-filter');
+    const rows = Array.from(document.querySelectorAll('.note-row'));
+    const emptyRow = document.querySelector('.filtered-empty-row');
+    const count = document.getElementById('visible-notes-count');
+    const subtitle = document.getElementById('print-report-subtitle');
+    const originalSubtitle = 'سجل جميع الملاحظات الطلابية';
+    function applyFilter(){
+        const studentId = selector.value;
+        let visible = 0;
+        rows.forEach(function(row){
+            const show = !studentId || row.dataset.studentId === studentId;
+            row.style.display = show ? '' : 'none';
+            if(show) visible++;
+        });
+        if(emptyRow) emptyRow.style.display = visible === 0 ? '' : 'none';
+        if(count) count.textContent = visible;
+        if(subtitle){
+            if(studentId){
+                const option = selector.options[selector.selectedIndex];
+                subtitle.textContent = 'ملاحظات الطالب: ' + option.text;
+            }else{
+                subtitle.textContent = originalSubtitle;
+            }
+        }
+    }
+    selector.addEventListener('change', applyFilter);
+    window.printNotesReport = function(){
+        applyFilter();
+        window.print();
+    };
+    window.clearNotesFilter = function(){
+        selector.value = '';
+        applyFilter();
+    };
+    applyFilter();
+})();
+</script>
 {% endblock %}
