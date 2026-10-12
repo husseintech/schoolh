@@ -59,6 +59,9 @@ urlpatterns = [
     path('notes/add/', views.add_note, name='add_note'),
     path('notes/add/<int:student_id>/', views.add_note, name='add_note_with_student'),
     path('notes/', views.note_list, name='note_list'),
+    path('notes/print/', views.print_notes_report, name='print_all_notes'),
+    path('notes/<int:note_id>/print/', views.print_notes_report, name='print_single_note'),
+    path('students/<int:student_id>/notes/print/', views.print_notes_report, name='print_student_notes'),
 
     # Teachers
     path('teachers/', views.teacher_list, name='teacher_list'),
