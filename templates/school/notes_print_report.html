@@ -1,0 +1,112 @@
+{% extends 'school/base.html' %}
+{% load school_tags %}
+{% block title %}طباعة تقرير الملاحظات{% endblock %}
+{% block page_heading %}تقرير الملاحظات الطلابية{% endblock %}
+{% block content %}
+<div class="notes-print-screen no-print">
+    <div class="alert alert-info">التقرير جاهز للطباعة. يمكنك اختيار «حفظ بتنسيق PDF» من نافذة الطباعة.</div>
+    <button type="button" class="btn btn-success" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">عودة</button>
+</div>
+
+<div class="notes-print-report" dir="rtl">
+    <header class="school-letterhead">
+        <div class="school-logo">
+            {% if school_info and school_info.school_logo %}<img src="{{ school_info.school_logo }}" alt="شعار المدرسة">{% endif %}
+        </div>
+        <div class="school-heading">
+            <div class="ministry-name">وزارة التربية والتعليم</div>
+            <h1>{{ school_info.name_ar|default:"المدرسة" }}</h1>
+            <div class="report-heading">تقرير الملاحظات الطلابية</div>
+        </div>
+        <div class="report-meta">
+            {% if selected_note %}<span>نوع التقرير: ملاحظة منفردة</span>
+            {% elif selected_student %}<span>نوع التقرير: سجل ملاحظات طالب</span>
+            {% else %}<span>نوع التقرير: جميع الملاحظات</span>{% endif %}
+            <span>تاريخ إعداد التقرير: {{ printed_at|date:"Y-m-d H:i" }}</span>
+        </div>
+    </header>
+
+    {% if selected_student %}
+    <section class="student-summary">
+        <h2>بيانات الطالب</h2>
+        <div><strong>اسم الطالب:</strong> {{ selected_student.full_name }}</div>
+        <div><strong>الصف:</strong> {{ selected_student.student_class.name|default:"—" }}</div>
+    </section>
+    {% endif %}
+
+    <div class="report-count">عدد الملاحظات في التقرير: {{ notes.count }}</div>
+
+    {% for note in notes %}
+    <article class="note-document">
+        <div class="note-document-title">
+            <h2>{% if selected_note %}تفاصيل الملاحظة{% else %}ملاحظة رقم {{ forloop.counter }}{% endif %}</h2>
+            <span class="note-type">{{ note.note_type }}</span>
+        </div>
+        {% if not selected_student %}
+        <div class="note-field"><strong>اسم الطالب:</strong> {{ note.student.full_name }}</div>
+        <div class="note-field"><strong>الصف:</strong> {{ note.student.student_class.name|default:"—" }}</div>
+        {% endif %}
+        <div class="note-field"><strong>تاريخ ووقت كتابة الملاحظة:</strong> {{ note.created_at|date:"Y-m-d H:i" }}</div>
+        <div class="note-field"><strong>كاتب الملاحظة:</strong> {{ note.created_by|by_name|default:"—" }}</div>
+        <div class="note-content">
+            <div class="note-content-label">نص الملاحظة</div>
+            <div class="note-text">{{ note.content|linebreaksbr }}</div>
+        </div>
+        <div class="note-signatures">
+            <div>كاتب الملاحظة: <span>{{ note.created_by|by_name|default:"—" }}</span></div>
+            <div>مدير المدرسة: <span>{{ school_info.principal_name|default:"—" }}</span></div>
+        </div>
+    </article>
+    {% empty %}
+    <div class="empty-report">لا توجد ملاحظات مطابقة لطلب الطباعة.</div>
+    {% endfor %}
+
+    <footer class="report-footer">
+        <span>{{ school_info.name_ar|default:"المدرسة" }}</span>
+        <span>تقرير رسمي للملاحظات الطلابية</span>
+    </footer>
+</div>
+
+<style>
+.notes-print-report{max-width:1000px;margin:24px auto;background:#fff;color:#172033;padding:30px;font-family:Tahoma,'Segoe UI',sans-serif;line-height:1.7;border:1px solid #d9e0e8;border-radius:10px}
+.school-letterhead{display:grid;grid-template-columns:100px 1fr;gap:16px;align-items:center;padding-bottom:18px;border-bottom:3px double #1e3a5f;margin-bottom:22px}
+.school-logo{display:flex;align-items:center;justify-content:center;min-height:75px}
+.school-logo img{max-width:90px;max-height:90px;object-fit:contain}
+.school-heading{text-align:center}
+.ministry-name{font-size:14px;color:#475569}
+.school-heading h1{font-size:23px;margin:5px 0;font-weight:800;color:#142d4e}
+.report-heading{font-size:18px;font-weight:700}
+.report-meta{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:#475569;border-top:1px solid #dbe3ed;padding-top:10px}
+.student-summary{padding:14px 16px;margin-bottom:18px;background:#f4f7fb;border:1px solid #dbe3ed;border-radius:6px;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.student-summary h2{grid-column:1/-1;font-size:15px;margin:0 0 5px;color:#1e3a5f}
+.report-count{font-weight:700;margin:10px 0 16px}
+.note-document{border:1px solid #cbd5e1;border-radius:7px;margin:0 0 18px;padding:18px;break-inside:avoid;page-break-inside:avoid}
+.note-document-title{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #dbe3ed;padding-bottom:10px;margin-bottom:12px}
+.note-document-title h2{font-size:17px;font-weight:800;margin:0;color:#1e3a5f}
+.note-type{border:1px solid #94a3b8;border-radius:20px;padding:3px 12px;font-size:12px;white-space:nowrap}
+.note-field{margin:6px 0}
+.note-content{margin-top:14px;border:1px solid #e2e8f0;border-radius:5px;overflow-wrap:anywhere}
+.note-content-label{background:#f1f5f9;font-weight:700;padding:7px 10px;border-bottom:1px solid #e2e8f0}
+.note-text{padding:12px;min-height:55px;line-height:1.9;white-space:normal}
+.note-signatures{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+.note-signatures div{border-top:1px solid #94a3b8;padding-top:7px;font-size:13px}
+.note-signatures span{font-weight:700}
+.report-footer{display:flex;justify-content:space-between;border-top:1px solid #cbd5e1;padding-top:10px;margin-top:22px;font-size:11px;color:#64748b}
+.empty-report{text-align:center;padding:35px;border:1px dashed #94a3b8}
+@media(max-width:700px){.notes-print-report{padding:14px}.school-letterhead{grid-template-columns:60px 1fr}.school-logo img{max-width:55px}.school-heading h1{font-size:18px}.student-summary{grid-template-columns:1fr}.report-meta{display:block}.note-signatures{grid-template-columns:1fr}}
+@media print{
+    @page{size:A4 portrait;margin:14mm}
+    body{background:#fff!important}
+    body *{visibility:hidden}
+    .notes-print-report,.notes-print-report *{visibility:visible}
+    .notes-print-screen{display:none!important}
+    .notes-print-report{position:absolute;top:0;right:0;width:100%;max-width:none;margin:0;padding:0;border:0;border-radius:0}
+    .school-letterhead,.student-summary,.note-document-title,.note-content-label{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .note-document{border-color:#aab4c2;margin-bottom:12px;padding:12px}
+    .note-signatures{margin-top:20px}
+    .report-footer{margin-top:14px}
+    a{color:#000;text-decoration:none}
+}
+</style>
+{% endblock %}
