@@ -31,3 +31,26 @@ def by_name(value, fallback='---'):
     if not name:
         name = getattr(value, 'username', '')
     return name or fallback
+
+
+@register.filter
+def teacher_full_name(value, fallback='غير محدد'):
+    """يعرض الاسم الكامل المرتبط بحساب المعلم، ولا يعرض رقم الهوية كاسم."""
+    if value is None:
+        return fallback
+    try:
+        teacher = value.teacher_profile
+        if teacher.full_name and teacher.full_name.strip():
+            return teacher.full_name.strip()
+    except Exception:
+        pass
+
+    name = (getattr(value, 'get_full_name', None) or (lambda: ''))()
+    name = name.strip() if name else ''
+    if name:
+        return name
+
+    username = str(getattr(value, 'username', '') or '').strip()
+    if username.isdigit():
+        return fallback
+    return username or fallback

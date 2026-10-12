@@ -48,13 +48,13 @@
         <div class="note-field"><strong>الصف:</strong> {{ note.student.student_class.name|default:"—" }}</div>
         {% endif %}
         <div class="note-field"><strong>تاريخ ووقت كتابة الملاحظة:</strong> {{ note.created_at|date:"Y-m-d H:i" }}</div>
-        <div class="note-field"><strong>كاتب الملاحظة:</strong> {{ note.created_by|by_name|default:"—" }}</div>
+        <div class="note-field"><strong>كاتب الملاحظة:</strong> {{ note.created_by|teacher_full_name|default:"—" }}</div>
         <div class="note-content">
             <div class="note-content-label">نص الملاحظة</div>
             <div class="note-text">{{ note.content|linebreaksbr }}</div>
         </div>
         <div class="note-signatures">
-            <div>كاتب الملاحظة: <span>{{ note.created_by|by_name|default:"—" }}</span></div>
+            <div>كاتب الملاحظة: <span>{{ note.created_by|teacher_full_name|default:"—" }}</span></div>
             <div>مدير المدرسة: <span>{{ school_info.principal_name|default:"—" }}</span></div>
         </div>
     </article>
