@@ -1423,6 +1423,36 @@ def note_list(request):
             notes = Note.objects.none()
     return render(request, 'school/note_list.html', {'notes': notes})
 
+@login_required
+def print_notes_report(request, student_id=None, note_id=None):
+    if request.user.profile.role not in ['admin', 'teacher']:
+        messages.error(request, 'ليس لديك صلاحية لطباعة الملاحظات')
+        return redirect('dashboard')
+
+    notes = Note.objects.select_related('student__student_class', 'created_by').order_by('-created_at')
+    if request.user.profile.role != 'admin':
+        notes = notes.filter(created_by=request.user)
+
+    selected_student = None
+    selected_note = None
+    if note_id is not None:
+        selected_note = get_object_or_404(notes, id=note_id)
+        notes = notes.filter(id=selected_note.id)
+        selected_student = selected_note.student
+    elif student_id is not None:
+        selected_student = get_object_or_404(Student.objects.select_related('student_class'), id=student_id)
+        notes = notes.filter(student=selected_student)
+
+    return render(request, 'school/notes_print_report.html', {
+        'notes': notes,
+        'school_info': SchoolInfo.objects.first(),
+        'selected_student': selected_student,
+        'selected_note': selected_note,
+        'printed_at': timezone.localtime(),
+    })
+
+
+
 
 # ─── Teachers ─────────────────────────────────────────────────────────────────
 
