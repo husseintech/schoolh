@@ -1708,8 +1708,26 @@ def notes_report(request):
     if not has_perm(request.user, 'notes', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    notes = Note.objects.all().select_related('student__student_class', 'created_by').order_by('-created_at')
-    return render(request, 'school/notes_report.html', {'notes': notes})
+
+    students = Student.objects.select_related('student_class').order_by('full_name')
+    selected_student_id = request.GET.get('student', '').strip()
+    selected_student = None
+    if selected_student_id:
+        if selected_student_id.isdigit():
+            selected_student = Student.objects.filter(id=int(selected_student_id)).select_related('student_class').first()
+        if not selected_student:
+            selected_student_id = ''
+
+    notes = Note.objects.select_related('student__student_class', 'created_by').order_by('-created_at')
+    if selected_student:
+        notes = notes.filter(student=selected_student)
+
+    return render(request, 'school/notes_report.html', {
+        'notes': notes,
+        'students': students,
+        'selected_student': selected_student,
+        'selected_student_id': selected_student_id,
+    })
 
 
 @login_required
