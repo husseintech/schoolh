@@ -7,7 +7,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-sticky-fill"></i> جميع الملاحظات ({{ notes.count }})</span>
         <div>
-            <a href="{% url 'notes_report' %}" class="btn btn-success btn-sm"><i class="bi bi-printer"></i> طباعة الملاحظات</a>
+            <a href="{% url 'print_all_notes' %}" class="btn btn-success btn-sm"><i class="bi bi-printer"></i> طباعة جميع الملاحظات</a>
             <a href="{% url 'add_note' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة ملاحظة</a>
         </div>
     </div>
@@ -30,6 +30,10 @@
                         <td>{% if note.is_private %}<span class="badge bg-danger">خاص</span>{% else %}<span class="badge bg-success">عام</span>{% endif %}</td>
                         <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
                         <td>
+                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                <a href="{% url 'print_single_note' note.id %}" class="btn btn-sm btn-outline-primary" title="طباعة هذه الملاحظة فقط"><i class="bi bi-file-earmark-text"></i> طباعة الملاحظة</a>
+                                <a href="{% url 'print_student_notes' note.student.id %}" class="btn btn-sm btn-outline-success" title="طباعة جميع ملاحظات هذا الطالب"><i class="bi bi-files"></i> ملاحظات الطالب</a>
+                            </div>
                             {% if user.profile.role == 'admin' or note.created_by_id == user.id %}
                             <form method="post" action="{% url 'delete_note' note.id %}" onsubmit="return confirm('هل تريد حذف هذه الملاحظة نهائياً؟')" class="d-inline">
                                 {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
