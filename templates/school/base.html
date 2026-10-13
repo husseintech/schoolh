@@ -408,6 +408,34 @@
             top: 0;
             z-index: 999;
         }
+        .page-heading-chip {
+            align-items: center;
+            gap: 10px;
+            min-height: 42px;
+            padding: 9px 17px;
+            border: 1px solid rgba(59, 130, 246, .16);
+            border-right: 4px solid #2563eb;
+            border-radius: 13px;
+            background: linear-gradient(110deg, #f8fbff 0%, #eaf2ff 100%);
+            color: #172b4d;
+            font-size: 1.03rem;
+            font-weight: 850;
+            letter-spacing: -.2px;
+            box-shadow: 0 5px 16px rgba(30, 64, 175, .09), inset 0 1px 0 rgba(255,255,255,.9);
+        }
+        .page-heading-chip > i {
+            display: grid;
+            width: 27px;
+            height: 27px;
+            place-items: center;
+            border-radius: 9px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: .9rem;
+        }
+        @media (max-width: 767.98px) {
+            .top-bar { min-height: 66px; }
+        }
         .top-bar .user-info {
             display: flex;
             align-items: center;
@@ -1197,7 +1225,7 @@
                 <button class="sidebar-toggle" type="button" data-sidebar-open aria-controls="sidebar" aria-expanded="false" aria-label="فتح القائمة">
                     <i class="bi bi-list"></i>
                 </button>
-                <span class="d-none d-md-inline text-muted">{% block page_heading %}{% endblock %}</span>
+                <span class="page-heading-chip d-none d-md-inline-flex"><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i><span>{% block page_heading %}{% endblock %}</span></span>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <a href="https://www.facebook.com/ALMANSOUR.SCHOOL.YATTA" target="_blank" rel="noopener" class="btn btn-social-fb d-none d-md-inline-flex align-items-center gap-2">
