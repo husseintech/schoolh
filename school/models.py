@@ -1470,5 +1470,20 @@ class HealthCommitteeOfficialForm(models.Model):
         return f'{self.form_title} - {self.entry_date or self.created_at.date()}'
 
 
-# Saved supervisory evaluation forms
-from .visit_assessment_models import VisitAssessmentReport
+
+class VisitProgramDriveFile(models.Model):
+    file_name = models.CharField('اسم الملف', max_length=300)
+    mime_type = models.CharField('نوع الملف', max_length=150, blank=True)
+    file_size = models.PositiveBigIntegerField('حجم الملف', null=True, blank=True)
+    google_drive_file_id = models.CharField('معرّف ملف Google Drive', max_length=200, unique=True)
+    google_drive_url = models.URLField('رابط Google Drive', max_length=1000, blank=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='visit_program_drive_files')
+    created_at = models.DateTimeField('تاريخ الرفع', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'ملف برنامج الزيارات'
+        verbose_name_plural = 'ملفات برنامج الزيارات'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.file_name
