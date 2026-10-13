@@ -1387,7 +1387,7 @@ def check_missing_student_ids(request):
             }
 
             def normalized_class_name(value):
-                value = re.sub(r'\\s+', '', str(value or '').strip())
+                value = re.sub(r'\s+', '', str(value or '').strip())
                 return value[2:] if value.startswith('ال') else value
 
             existing_classes = list(Class.objects.all())
