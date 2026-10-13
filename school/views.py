@@ -47,7 +47,12 @@ from .grade_register import (
 
 
 def sort_students(students):
-    return sorted(students, key=lambda s: arabic_sort_key(s.full_name))
+    """Keep Excel-defined student order; legacy/unlisted students follow alphabetically."""
+    return sorted(students, key=lambda s: (
+        s.display_order if getattr(s, 'display_order', 0) > 0 else 2147483647,
+        arabic_sort_key(s.full_name),
+        s.pk or 0,
+    ))
 
 
 def current_teacher_scope(user):
@@ -1148,7 +1153,12 @@ def import_students(request):
                     errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
                     continue
 
+                # Excel row order is authoritative. For an existing student, update only
+                # the display-order field: never overwrite identity, class, credentials,
+                # notes, leave records, attendance, or any other related data.
+                excel_order = i - 1
                 if student_id in known_student_ids:
+                    Student.objects.filter(student_id=student_id).update(display_order=excel_order)
                     skipped_existing += 1
                     continue
 
@@ -1173,6 +1183,7 @@ def import_students(request):
                     Student.objects.create(
                         user=user,
                         student_id=student_id,
+                        display_order=excel_order,
                         full_name=full_name,
                         student_class=class_obj,
                         parent_phone=parent_phone,
@@ -1195,7 +1206,7 @@ def import_students(request):
             )
             messages.success(request, msg)
         if skipped_existing:
-            messages.info(request, f'تم تجاهل {skipped_existing} طالب لأن رقم الهوية موجود مسبقاً، ولم يتم تعديل بياناتهم')
+            messages.info(request, f'تم تحديث ترتيب {skipped_existing} طالب موجود مسبقاً فقط، دون تعديل بياناتهم أو سجلاتهم المرتبطة')
         if errors:
             for err in errors[:10]:
                 messages.warning(request, err)
