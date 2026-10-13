@@ -315,6 +315,7 @@ class Student(models.Model):
     class Meta:
         verbose_name = 'طالب'
         verbose_name_plural = 'الطلاب'
+        ordering = ['display_order', 'full_name', 'id']
 
     def __str__(self):
         return f'{self.full_name} - {self.student_class.name if self.student_class else "بدون صف"}'
