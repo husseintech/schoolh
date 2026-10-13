@@ -96,12 +96,18 @@ def audit_log_list(request):
 def sort_students_class_first(students):
     return sorted(students, key=lambda s: (
         arabic_sort_key(s.student_class.name) if getattr(s, 'student_class', None) else (0,),
+        s.display_order if getattr(s, 'display_order', 0) > 0 else 2147483647,
         arabic_sort_key(s.full_name),
+        s.pk or 0,
     ))
 
 
 def sort_by_student_name(items):
-    return sorted(items, key=lambda x: arabic_sort_key(x.student.full_name))
+    return sorted(items, key=lambda x: (
+        x.student.display_order if getattr(x.student, 'display_order', 0) > 0 else 2147483647,
+        arabic_sort_key(x.student.full_name),
+        x.student_id or 0,
+    ))
 
 MODULE_KEYS = ['students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant', 'health_committee']
 ACTION_KEYS = [
@@ -1941,7 +1947,7 @@ def notes_report(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
 
-    students = Student.objects.select_related('student_class').order_by('full_name')
+    students = Student.objects.select_related('student_class').order_by('display_order', 'full_name', 'id')
     selected_student_id = request.GET.get('student', '').strip()
     selected_student = None
     if selected_student_id:
