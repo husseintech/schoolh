@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.encoding import escape_uri_path
 from open_learning.google_drive import GoogleDriveAuthError, GoogleDriveService
-from .models import VisitProgramDriveFile, has_perm
+from .models import VisitProgramDriveFile, Teacher, has_perm
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'}
@@ -21,6 +21,8 @@ def _allowed(request, action):
 def visit_program_files(request):
     if not _allowed(request, 'view'):
         return redirect('visit_program_list')
+    teacher_id = request.GET.get('teacher_id') or request.POST.get('teacher_id') or ''
+    teacher = get_object_or_404(Teacher, pk=teacher_id) if str(teacher_id).isdigit() else None
     if request.method == 'POST':
         if not _allowed(request, 'add'):
             return redirect('visit_program_list')
@@ -44,6 +46,7 @@ def visit_program_files(request):
             mime_type = uploaded.content_type or mimetypes.guess_type(uploaded.name)[0] or 'application/octet-stream'
             result = service.upload_to_folder_path(Path(uploaded.name).name, data, mime_type, ['أرشيف تقارير الزيارات الميدانية'])
             VisitProgramDriveFile.objects.create(
+                teacher=teacher,
                 file_name=result.get('name') or Path(uploaded.name).name,
                 mime_type=result.get('mimeType') or mime_type,
                 file_size=int(result.get('size') or uploaded.size or 0) or None,
@@ -56,9 +59,13 @@ def visit_program_files(request):
             messages.error(request, 'انتهى اتصال Google Drive. أعد ربط الحساب من إعدادات التخزين ثم حاول مجددًا.')
         except Exception:
             messages.error(request, 'تعذّر رفع الملف إلى Google Drive. لم يُسجل الملف في الأرشيف؛ حاول مرة أخرى.')
-        return redirect('visit_program_files')
+        return redirect(f"/visit-program/files/?teacher_id={teacher.pk}") if teacher else redirect('visit_program_files')
+    files = VisitProgramDriveFile.objects.select_related('uploaded_by', 'teacher').all()
+    if teacher:
+        files = files.filter(teacher=teacher)
     return render(request, 'school/visit_program_files.html', {
-        'files': VisitProgramDriveFile.objects.select_related('uploaded_by').all(),
+        'files': files,
+        'teacher': teacher,
         'gdrive_connected': GoogleDriveService().is_connected(),
         'can_upload': has_perm(request.user, 'inspection_visits', 'add'),
         'can_delete': has_perm(request.user, 'inspection_visits', 'delete'),
