@@ -1224,6 +1224,73 @@ def import_students(request):
 
 
 @login_required
+def reorder_students_from_excel(request):
+    """Update only display_order for existing students matched by student ID."""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية لترتيب الطلاب')
+        return redirect('dashboard')
+    if request.method != 'POST' or not request.FILES.get('excel_file'):
+        messages.error(request, 'اختر ملف Excel لترتيب الطلاب أولاً')
+        return redirect('student_list')
+
+    wb = None
+    try:
+        wb, ws = _load_excel_worksheet(request.FILES['excel_file'])
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+        if not rows:
+            messages.warning(request, 'الملف لا يحتوي على طلاب لترتيبهم')
+            return redirect('student_list')
+
+        ordered_ids = []
+        seen_ids = set()
+        invalid_rows = []
+        for row_number, row in enumerate(rows, start=2):
+            student_id = _normalize_student_id(row[1] if len(row) > 1 else None)
+            if not student_id:
+                full_name = str(row[0]).strip() if row and row[0] else ''
+                if full_name:
+                    invalid_rows.append(row_number)
+                continue
+            if student_id in seen_ids:
+                messages.error(request, f'رقم الهوية {student_id} مكرر في ملف Excel (الصف {row_number}). لم يتم تغيير أي ترتيب.')
+                return redirect('student_list')
+            seen_ids.add(student_id)
+            ordered_ids.append((student_id, row_number - 1))
+
+        if invalid_rows:
+            messages.error(request, 'توجد أسماء بلا أرقام هوية في الصفوف: ' + ', '.join(map(str, invalid_rows[:10])) + '؛ لم يتم تغيير أي ترتيب.')
+            return redirect('student_list')
+        if not ordered_ids:
+            messages.error(request, 'لم نعثر على أرقام هويات في العمود الثاني من الملف؛ لم يتم تغيير أي ترتيب.')
+            return redirect('student_list')
+
+        existing_ids = set(Student.objects.values_list('student_id', flat=True))
+        updates = [(student_id, order) for student_id, order in ordered_ids if student_id in existing_ids]
+        missing_count = len(ordered_ids) - len(updates)
+
+        with transaction.atomic():
+            for student_id, display_order in updates:
+                Student.objects.filter(student_id=student_id).update(display_order=display_order)
+
+        log_action(
+            request.user,
+            'ترتيب الطلاب من Excel',
+            f'تم تحديث ترتيب {len(updates)} طالب موجود؛ هويات غير موجودة بالنظام: {missing_count}. لم تتم إضافة أو حذف أو تعديل بيانات الطلاب.',
+        )
+        messages.success(request, f'تم ترتيب {len(updates)} طالب موجود حسب ترتيب ملف Excel، دون تغيير بياناتهم أو سجلاتهم.')
+        if missing_count:
+            messages.info(request, f'تم تجاهل {missing_count} رقم هوية غير موجود في النظام؛ لم تتم إضافة أي طالب.')
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    except Exception:
+        messages.error(request, 'تعذر ترتيب الطلاب من الملف. لم تتم إضافة أو حذف الطلاب؛ تحقق من صيغة الملف ثم حاول مجدداً.')
+    finally:
+        if wb is not None:
+            wb.close()
+    return redirect('student_list')
+
+
+@login_required
 def check_missing_student_ids(request):
     """Synchronize students from a complete Excel roster, then offer safe manual deletion."""
     if request.user.profile.role != 'admin':
