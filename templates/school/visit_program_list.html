@@ -52,109 +52,59 @@
 </div>
 {% endif %}
 
-<div class="visit-program-links my-4">
-    <div class="visit-program-links__heading">اختر برنامج الزيارات المناسب</div>
+<div class="visit-program-links my-3">
     <div class="visit-program-links__buttons">
         <a href="https://oer-abedradwan.ai.studio/" target="_blank" rel="noopener noreferrer" class="visit-program-link visit-program-link--primary">
-            <span class="visit-program-link__icon"><i class="bi bi-book-half"></i></span>
-            <span class="visit-program-link__copy">
-                <strong>من (1-لرابع)</strong>
-                <small>برنامج الزيارات للصفوف من الأول إلى الرابع</small>
-            </span>
-            <i class="bi bi-arrow-up-left visit-program-link__arrow"></i>
+            <i class="bi bi-book-half"></i>
+            <span>من (1-لرابع)</span>
         </a>
         <a href="https://supvisits-2027.ai.studio/" target="_blank" rel="noopener noreferrer" class="visit-program-link visit-program-link--secondary">
-            <span class="visit-program-link__icon"><i class="bi bi-clipboard2-check"></i></span>
-            <span class="visit-program-link__copy">
-                <strong>(5 - فاعلى)</strong>
-                <small>برنامج الزيارات للصف الخامس فما فوق</small>
-            </span>
-            <i class="bi bi-arrow-up-left visit-program-link__arrow"></i>
+            <i class="bi bi-clipboard2-check"></i>
+            <span>(5 - فاعلى)</span>
         </a>
     </div>
 </div>
 
 <style>
 .visit-program-links {
-    max-width: 560px;
+    max-width: 600px;
     margin-right: auto;
     margin-left: auto;
-    padding: 20px;
-    border: 1px solid #e8edf3;
-    border-radius: 20px;
-    background: linear-gradient(145deg, #ffffff, #f7f9fc);
-    box-shadow: 0 12px 30px rgba(20, 40, 70, .07);
-}
-.visit-program-links__heading {
-    margin-bottom: 16px;
-    color: #26364a;
-    text-align: center;
-    font-size: 1.05rem;
-    font-weight: 800;
 }
 .visit-program-links__buttons {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    justify-content: center;
+    align-items: center;
     gap: 12px;
 }
 .visit-program-link {
-    display: flex;
+    display: inline-flex;
+    flex: 1 1 0;
+    max-width: 260px;
+    min-height: 42px;
     align-items: center;
-    gap: 13px;
-    padding: 15px 17px;
-    border: 1px solid transparent;
-    border-radius: 15px;
+    justify-content: center;
+    gap: 9px;
+    padding: 9px 16px;
+    border-radius: 9px;
     color: #fff;
     text-decoration: none;
-    box-shadow: 0 7px 16px rgba(15, 23, 42, .12);
-    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    font-size: .92rem;
+    font-weight: 750;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, .12);
+    transition: transform .18s ease, box-shadow .18s ease;
 }
 .visit-program-link:hover {
     color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 11px 22px rgba(15, 23, 42, .17);
-    filter: saturate(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(15, 23, 42, .16);
 }
-.visit-program-link--primary {
-    background: linear-gradient(120deg, #159957, #087443);
-}
-.visit-program-link--secondary {
-    background: linear-gradient(120deg, #e5484d, #b91c2b);
-}
-.visit-program-link__icon {
-    display: grid;
-    flex: 0 0 44px;
-    width: 44px;
-    height: 44px;
-    place-items: center;
-    border: 1px solid rgba(255,255,255,.28);
-    border-radius: 13px;
-    background: rgba(255,255,255,.16);
-    font-size: 1.25rem;
-}
-.visit-program-link__copy {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 3px;
-}
-.visit-program-link__copy strong {
-    font-size: 1rem;
-    font-weight: 800;
-}
-.visit-program-link__copy small {
-    color: rgba(255,255,255,.86);
-    font-size: .78rem;
-}
-.visit-program-link__arrow {
-    font-size: 1.1rem;
-    opacity: .9;
-}
-@media (max-width: 576px) {
-    .visit-program-links { padding: 14px; }
-    .visit-program-link { padding: 13px; }
-    .visit-program-link__copy small { font-size: .72rem; }
+.visit-program-link--primary { background: #198754; }
+.visit-program-link--secondary { background: #dc3545; }
+.visit-program-link i { font-size: 1rem; }
+@media (max-width: 420px) {
+    .visit-program-links__buttons { gap: 8px; }
+    .visit-program-link { min-height: 40px; padding: 8px 10px; font-size: .82rem; gap: 6px; }
 }
 </style>
 
