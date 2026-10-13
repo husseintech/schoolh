@@ -302,6 +302,7 @@ class TeacherNote(models.Model):
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     student_id = models.CharField('رقم الهوية', max_length=20, unique=True)
+    display_order = models.PositiveIntegerField('ترتيب الطالب المعتمد', default=0, db_index=True, help_text='يحفظ ترتيب الطالب الوارد في ملف Excel المعتمد')
     full_name = models.CharField('الاسم الكامل', max_length=200)
     student_class = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, verbose_name='الصف', related_name='students')
     parent_phone = models.CharField('هاتف ولي الأمر', max_length=20, blank=True)
