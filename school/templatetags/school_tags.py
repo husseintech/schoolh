@@ -54,3 +54,11 @@ def teacher_full_name(value, fallback='غير محدد'):
     if username.isdigit():
         return fallback
     return username or fallback
+
+
+@register.filter
+def get_item(value, key):
+    """Look up a JSON dictionary key in templates."""
+    if not isinstance(value, dict):
+        return ''
+    return value.get(str(key), value.get(key, ''))

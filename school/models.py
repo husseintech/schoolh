@@ -1468,3 +1468,7 @@ class HealthCommitteeOfficialForm(models.Model):
 
     def __str__(self):
         return f'{self.form_title} - {self.entry_date or self.created_at.date()}'
+
+
+# Saved supervisory evaluation forms
+from .visit_assessment_models import VisitAssessmentReport
