@@ -1,5 +1,46 @@
 {% extends 'school/base.html' %}{% load school_tags %}
-{% block title %}{{ report_type_label }}{% endblock %}
+{% block title %}{{ report_type_label }}
+<script>
+(function(){
+ const button=document.getElementById('oer-generate-report'); if(!button)return;
+ const field=n=>document.querySelector('[name="'+n+'"]');
+ const read=n=>(field(n)?.value||'').trim();
+ const write=(n,v)=>{const e=field(n);if(e)e.value=v;};
+ button.addEventListener('click',()=>{
+  const items=[...document.querySelectorAll('select[name^="score_"]')].map((e,i)=>({n:i+1,score:Number(e.value)||0,title:e.closest('.oer-indicator')?.querySelector('.oer-indicator-head strong')?.textContent?.trim()||('المؤشر '+(i+1)),evidence:read('evidence_'+(i+1))})).filter(x=>x.score>0);
+  const status=document.getElementById('oer-generation-status');
+  if(!items.length){status.textContent='أدخل درجة مؤشر واحد على الأقل أولًا.';status.style.color='#b45309';return;}
+  const avg=items.reduce((s,x)=>s+x.score,0)/items.length;
+  const strong=items.filter(x=>x.score>=4), weak=items.filter(x=>x.score<=2), mid=items.filter(x=>x.score===3);
+  let grade,action;
+  if(avg>=4.5){grade='أداء متميز';action='المحافظة على الممارسات الفاعلة وتوثيقها وتبادل الخبرات المهنية.';}
+  else if(avg>=3.75){grade='أداء جيد جدًا';action='تعزيز الممارسات الإيجابية ومعالجة فرص التحسين المحدودة بمتابعة دورية.';}
+  else if(avg>=3){grade='أداء جيد مع جوانب تحتاج إلى تطوير';action='وضع خطة تحسين قصيرة المدى بإجراءات عملية ومؤشرات متابعة واضحة.';}
+  else if(avg>=2){grade='أداء يحتاج إلى دعم وتحسين';action='تقديم دعم مهني مركز ومتابعة ميدانية لمعالجة الفجوات ذات الأولوية.';}
+  else{grade='أداء يحتاج إلى دعم وتحسين مكثف';action='تقديم توصيات واضحة ومتدرجة قابلة للتطبيق، مع متابعة ميدانية مباشرة لمعالجة الفجوات الأساسية.';}
+  const list=arr=>arr.length?arr.map(x=>'• '+x.title+(x.evidence?' — الشاهد: '+x.evidence:'')).join('\n'):'لم تُحدد مؤشرات كافية ضمن هذه الفئة؛ يُرجى استكمال التقييم والشواهد.';
+  const diagnosis=[];
+  if(weak.length)diagnosis.push('تظهر الحاجة إلى تطوير الجوانب التالية: '+weak.map(x=>x.title).join('، ')+'.');
+  if(mid.length)diagnosis.push('تحتاج المؤشرات متوسطة المستوى إلى ممارسات أكثر اتساقًا وشواهد أوضح على أثرها في تعلم الطلبة.');
+  if(!weak.length&&!mid.length)diagnosis.push('تشير الدرجات المدخلة إلى مستوى إيجابي في المؤشرات المقيمة، ويوصى بالتحقق من أثر الممارسات في تعلم الطلبة.');
+  if(items.some(x=>!x.evidence))diagnosis.push('يوصى باستكمال الشواهد الميدانية للمؤشرات التي لا تتضمن ملاحظات موثقة.');
+  write('general_judgement','الحكم الإشرافي العام: '+grade+'؛ متوسط الدرجات '+avg.toFixed(2)+' من 5، وتم تقييم '+items.length+' من أصل 20 مؤشرًا. '+action);
+  write('strengths',list(strong));
+  write('improvement_areas',list(weak.length?weak:mid));
+  write('diagnosis',diagnosis.join('\n\n'));
+  const rec=[];
+  if(weak.length)rec.push('1. إعطاء الأولوية للمؤشرات منخفضة الدرجة وتحديد إجراء تطوير وموعد متابعة لكل منها: '+weak.map(x=>x.title).join('، ')+'.');
+  if(mid.length)rec.push('2. تطوير المؤشرات متوسطة المستوى عبر التخطيط المسبق وتنوع الاستراتيجيات وجمع شواهد تقدم الطلبة.');
+  if(strong.length)rec.push('3. المحافظة على جوانب القوة وتبادل الخبرات المهنية المرتبطة بها: '+strong.map(x=>x.title).join('، ')+'.');
+  rec.push((rec.length+1)+'. تنفيذ زيارة متابعة للتحقق من تطبيق التوصيات وأثرها وتوثيق الشواهد.');
+  write('recommendations',rec.join('\n\n'));
+  status.textContent='تم إنشاء مسودة مبنية على الدرجات والشواهد المدخلة. راجعها وعدّلها مهنيًا قبل حفظ التقرير.';status.style.color='#166534';
+  field('general_judgement')?.scrollIntoView({behavior:'smooth',block:'center'});
+ });
+})();
+</script>
+
+{% endblock %}
 {% block page_heading %}{{ report_type_label }}{% endblock %}
 {% block content %}
 <div class="oer-assessment" dir="rtl">
@@ -66,6 +107,7 @@
     </section>
     <section class="oer-section">
       <div class="oer-section-title"><span class="oer-section-icon">✎</span><h3>المصدر التعليمي المفتوح ونتائج الزيارة</h3></div>
+      <div style="padding:14px 22px 0"><button type="button" id="oer-generate-report" class="oer-btn oer-btn-primary">✦ توليد التقرير النوعي آليًا</button><p id="oer-generation-status" style="font-size:12px;color:#7b8799;margin-top:8px">يولّد مسودة من درجات المؤشرات والشواهد المدخلة، ويمكن مراجعتها وتعديلها قبل الحفظ.</p></div>
       <div class="oer-grid">
         <div class="oer-field oer-field-wide"><label>اسم المصدر التعليمي المفتوح المستخدم</label><input name="source_name" value="{{ report.details.source_name }}" placeholder="اسم المصدر أو المنصة التعليمية"></div>
         <div class="oer-field oer-field-wide"><label>نتاجات الدرس</label><textarea name="lesson_objectives" rows="3" placeholder="اكتب نتاجات التعلم المتوقعة">{{ report.details.lesson_objectives }}</textarea></div>
