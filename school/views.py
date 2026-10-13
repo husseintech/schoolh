@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Count, Max, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -1375,24 +1375,46 @@ def check_missing_student_ids(request):
     try:
         with transaction.atomic():
             # Lock the existing records used for the comparison to reduce race-condition risk.
+            students_query = Student.objects.select_related('user', 'student_class')
+            # Apply row locks only on database backends that support SELECT ... FOR UPDATE.
+            if connection.features.has_select_for_update:
+                students_query = students_query.select_for_update()
             existing_by_id = {
                 student.student_id: student
-                for student in Student.objects.select_for_update().select_related('user', 'student_class').filter(
+                for student in students_query.filter(
                     student_id__in=[row['student_id'] for row in parsed_rows]
                 )
             }
+
+            def normalized_class_name(value):
+                value = re.sub(r'\\s+', '', str(value or '').strip())
+                return value[2:] if value.startswith('ال') else value
+
+            existing_classes = list(Class.objects.all())
             for row in parsed_rows:
                 student_id = row['student_id']
-                class_obj, _ = Class.objects.get_or_create(name=row['class_name'])
+                class_name = row['class_name'].strip()
+                class_key = normalized_class_name(class_name)
+                # Match harmless spelling variants such as "التمهيدي" and "تمهيدي"
+                # before creating a new Class record.
+                class_obj = next(
+                    (item for item in existing_classes
+                     if normalized_class_name(item.name) == class_key),
+                    None
+                )
+                if class_obj is None:
+                    class_obj = Class.objects.create(name=class_name)
+                    existing_classes.append(class_obj)
                 if student_id in existing_by_id:
                     student = existing_by_id[student_id]
                     old_class = student.student_class.name if student.student_class else ''
-                    if old_class != row['class_name']:
+                    same_class = student.student_class_id == class_obj.id
+                    if not same_class:
                         student.student_class = class_obj
                         student.save(update_fields=['student_class'])
                         changed_classes.append({
                             'full_name': student.full_name, 'student_id': student.student_id,
-                            'old_class': old_class or 'غير محدد', 'new_class': row['class_name'],
+                            'old_class': old_class or 'غير محدد', 'new_class': class_obj.name,
                         })
                     skipped_existing += 1
                     continue
