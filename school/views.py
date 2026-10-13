@@ -1376,8 +1376,10 @@ def check_missing_student_ids(request):
     try:
         with transaction.atomic():
             # Lock the existing records used for the comparison to reduce race-condition risk.
-            students_query = Student.objects.select_related('user', 'student_class')
-            # Apply row locks only on database backends that support SELECT ... FOR UPDATE.
+            # Lock only the Student rows. Do not join nullable relations (especially
+            # student_class) in a SELECT FOR UPDATE query, because PostgreSQL rejects
+            # locking the nullable side of an outer join.
+            students_query = Student.objects.all()
             if connection.features.has_select_for_update:
                 students_query = students_query.select_for_update()
             existing_by_id = {
