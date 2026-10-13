@@ -14,8 +14,8 @@
 
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-blue"><i class="bi bi-list-ol"></i></div><div><strong>{{ total_unique }}</strong><small>هوية فريدة</small></div></div></div>
-  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-green"><i class="bi bi-check2-circle"></i></div><div><strong>{{ existing_count }}</strong><small>موجودة</small></div></div></div>
-  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-orange"><i class="bi bi-person-plus"></i></div><div><strong>{{ missing_count }}</strong><small>غير موجودة</small></div></div></div>
+  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-green"><i class="bi bi-check2-circle"></i></div><div><strong>{{ existing_count }}</strong><small>موجودة مسبقًا دون تعديل</small></div></div></div>
+  <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-orange"><i class="bi bi-person-plus"></i></div><div><strong>{% if validation_failed %}{{ missing_count }}{% else %}{{ added_count }}{% endif %}</strong><small>{% if validation_failed %}غير موجودة وتحتاج مراجعة{% else %}تمت إضافتها{% endif %}</small></div></div></div>
   <div class="col-6 col-lg-3"><div class="result-stat d-flex gap-3 align-items-center"><div class="icon stat-red"><i class="bi bi-exclamation-triangle"></i></div><div><strong>{{ invalid_count }}</strong><small>غير صالحة</small></div></div></div>
 </div>
 
