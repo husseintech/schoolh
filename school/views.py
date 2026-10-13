@@ -1338,7 +1338,11 @@ def check_missing_student_ids(request):
             if row['student_id'] in existing_by_id:
                 continue
             username = row['username'].strip()
-            if username:
+            # In the supplied eSchool template, every username cell is prefilled
+            # with the student's ID. Treat that same-as-ID value as the default,
+            # not as a manually chosen username that must fail on collision.
+            use_generated_username = not username or username == row['student_id']
+            if username and not use_generated_username:
                 if len(username) > 150:
                     validation_errors.append(f"الصف {row['row']}: اسم المستخدم أطول من الحد المسموح (150 حرفًا).")
                 elif username.casefold() in reserved_usernames or username.casefold() in planned_usernames:
@@ -1412,7 +1416,7 @@ def check_missing_student_ids(request):
         request.session.pop('student_compare_delete_ids', None)
         return render(request, 'school/student_id_check_result.html', {
             'file_name': file_name, 'validation_failed': True,
-            'validation_errors': ['لم تكتمل المزامنة بسبب تعارض في البيانات؛ لم تُعتمد العملية. تحقق من أسماء المستخدمين وأعد المحاولة.'],
+            'validation_errors': [f'لم تكتمل المزامنة بسبب خطأ من نوع {type(exc).__name__}. أُلغيت العملية بالكامل ولم تُعتمد أي تغييرات. أرسل هذه الرسالة للدعم لتحديد السبب بدقة.'],
             'invalid_rows': [], 'invalid_count': 0, 'duplicate_count': duplicate_count,
             'deletion_allowed': False, 'deletion_candidates': [], 'deletion_candidate_count': 0,
             'added_students': [], 'changed_classes': [], 'added_count': 0, 'updated_class_count': 0,
