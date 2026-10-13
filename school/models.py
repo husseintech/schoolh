@@ -1472,6 +1472,7 @@ class HealthCommitteeOfficialForm(models.Model):
 
 
 class VisitProgramDriveFile(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True, related_name='visit_program_drive_files', verbose_name='المعلم المرتبط')
     file_name = models.CharField('اسم الملف', max_length=300)
     mime_type = models.CharField('نوع الملف', max_length=150, blank=True)
     file_size = models.PositiveBigIntegerField('حجم الملف', null=True, blank=True)
