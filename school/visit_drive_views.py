@@ -36,14 +36,14 @@ def visit_program_files(request):
         extension = Path(uploaded.name).suffix.lower()
         if extension not in ALLOWED_EXTENSIONS:
             messages.error(request, 'نوع الملف غير مدعوم. المسموح PDF وWord وExcel وPowerPoint والصور JPG/PNG.')
-            return redirect('visit_program_files')
+            return _files_redirect(teacher)
         if uploaded.size > MAX_FILE_SIZE:
             messages.error(request, 'حجم الملف يتجاوز 10 ميغابايت.')
-            return redirect('visit_program_files')
+            return _files_redirect(teacher)
         service = GoogleDriveService()
         if not service.is_connected():
             messages.error(request, 'Google Drive غير متصل. اربطه من إعدادات التخزين في قسم التعلم المفتوح أولًا.')
-            return redirect('visit_program_files')
+            return _files_redirect(teacher)
         try:
             data = uploaded.read()
             mime_type = uploaded.content_type or mimetypes.guess_type(uploaded.name)[0] or 'application/octet-stream'
