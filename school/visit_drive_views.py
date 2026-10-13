@@ -11,6 +11,9 @@ from .models import VisitProgramDriveFile, Teacher, has_perm
 MAX_FILE_SIZE = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'}
 
+def _files_redirect(teacher):
+    return redirect(f'/visit-program/files/?teacher_id={teacher.pk}') if teacher else redirect('visit_program_files')
+
 def _allowed(request, action):
     if has_perm(request.user, 'inspection_visits', action):
         return True
@@ -29,7 +32,7 @@ def visit_program_files(request):
         uploaded = request.FILES.get('file')
         if not uploaded:
             messages.error(request, 'اختر ملفًا قبل الرفع.')
-            return redirect('visit_program_files')
+            return _files_redirect(teacher)
         extension = Path(uploaded.name).suffix.lower()
         if extension not in ALLOWED_EXTENSIONS:
             messages.error(request, 'نوع الملف غير مدعوم. المسموح PDF وWord وExcel وPowerPoint والصور JPG/PNG.')
