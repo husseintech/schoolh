@@ -1207,80 +1207,217 @@ def import_students(request):
 
 @login_required
 def check_missing_student_ids(request):
-    """Compare Excel IDs in both directions and preview safe deletion candidates."""
+    """Synchronize students from a complete Excel roster, then offer safe manual deletion."""
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     if request.method != 'POST' or not request.FILES.get('excel_file'):
+        request.session.pop('student_compare_delete_ids', None)
+        messages.error(request, 'اختر ملف Excel الكامل للطلاب أولاً')
         return redirect('student_list')
 
+    request.session.pop('student_compare_delete_ids', None)
     wb = None
-    try:
-        wb, ws = _load_excel_worksheet(request.FILES['excel_file'])
-        header_row, id_column = _find_student_id_column(ws)
-    except ValueError as exc:
-        if wb:
-            wb.close()
-        messages.error(request, str(exc))
-        return redirect('student_list')
-
-    unique_ids = []
-    seen_ids = set()
+    file_name = request.FILES['excel_file'].name
+    validation_errors = []
     duplicate_count = 0
     invalid_rows = []
-    first_data_row = header_row + 1 if header_row else 1
+    parsed_rows = []
+    changed_classes = []
+    added_students = []
+    skipped_existing = 0
 
-    for row_number in range(first_data_row, (ws.max_row or 0) + 1):
-        raw_value = ws.cell(row_number, id_column).value
-        if raw_value in (None, ''):
-            continue
-        student_id = _normalize_student_id(raw_value)
-        if not re.fullmatch(r'\d{1,20}', student_id):
-            invalid_rows.append({'row': row_number, 'value': student_id or str(raw_value)})
-            continue
-        if student_id in seen_ids:
-            duplicate_count += 1
-            continue
-        seen_ids.add(student_id)
-        unique_ids.append(student_id)
+    def normalized_header(value):
+        return re.sub(r'[\s_\-:/\\().]+', '', str(value or '').strip().translate(_ARABIC_DIGITS).lower())
 
-    wb.close()
-    if not unique_ids:
-        messages.warning(request, 'لم يتم العثور على أرقام هوية صالحة في الملف؛ لم يتم إجراء مقارنة أو إتاحة الحذف')
-        return redirect('student_list')
+    def header_kind(value):
+        h = normalized_header(value)
+        if h in _STUDENT_ID_HEADERS or ('هوية' in h and ('طالب' in h or h == 'رقمالهوية')) or h in ('nationalid', 'identitynumber', 'studentnumber'):
+            return 'student_id'
+        if h in ('الاسمالكامل', 'اسمالطالب', 'اسم الطالب', 'fullname', 'studentname', 'name'):
+            return 'full_name'
+        if h in ('الصف', 'الشعبة', 'الصفوالشعبة', 'الصفالدراسي', 'الصفالشعبة', 'class', 'classname', 'grade', 'section', 'classsection'):
+            return 'class_name'
+        if h in ('هاتفوليالامر', 'رقموليالامر', 'parentphone', 'guardianphone', 'phone'):
+            return 'parent_phone'
+        if h in ('اسموليالامر', 'اسمالولي', 'parentname', 'guardianname'):
+            return 'parent_name'
+        if h in ('العنوان', 'address'):
+            return 'address'
+        if h in ('تاريخالميلاد', 'الميلاد', 'birthdate', 'dateofbirth'):
+            return 'birth_date'
+        if h in ('كلمةالمرور', 'كلم ةالمرور', 'password'):
+            return 'password'
+        if h in ('اسمالمستخدم', 'username', 'login'):
+            return 'username'
+        return None
 
-    existing_ids = set()
-    for start_index in range(0, len(unique_ids), 500):
-        existing_ids.update(
-            Student.objects.filter(student_id__in=unique_ids[start_index:start_index + 500])
-            .values_list('student_id', flat=True)
-        )
-    missing_ids = [student_id for student_id in unique_ids if student_id not in existing_ids]
+    try:
+        wb, ws = _load_excel_worksheet(request.FILES['excel_file'])
+        max_scan_row = min(ws.max_row or 1, 15)
+        max_scan_col = min(ws.max_column or 1, 40)
+        header_row = None
+        columns = {}
+        for rn in range(1, max_scan_row + 1):
+            candidate = {}
+            for cn in range(1, max_scan_col + 1):
+                kind = header_kind(ws.cell(rn, cn).value)
+                if kind and kind not in candidate:
+                    candidate[kind] = cn
+            if {'student_id', 'full_name', 'class_name'}.issubset(candidate):
+                header_row, columns = rn, candidate
+                break
+        if header_row is None:
+            raise ValueError('لم نعثر على عناوين الأعمدة الأساسية: الاسم الكامل، رقم الهوية، الصف/الشعبة. لا تستخدم ملف هويات فقط؛ نزّل نموذج الطلاب أو أضف هذه الأعمدة.')
 
-    # Invalid non-empty IDs disable deletion to prevent false-positive candidates.
-    deletion_candidates = []
-    if not invalid_rows:
-        deletion_candidates = list(
-            Student.objects.exclude(student_id__in=unique_ids)
-            .select_related('user', 'student_class')
-            .order_by('full_name', 'id')
-        )
-        request.session['student_compare_delete_ids'] = [student.id for student in deletion_candidates]
-    else:
+        seen_ids = set()
+        for row_number in range(header_row + 1, (ws.max_row or 0) + 1):
+            raw_id = ws.cell(row_number, columns['student_id']).value
+            raw_name = ws.cell(row_number, columns['full_name']).value
+            raw_class = ws.cell(row_number, columns['class_name']).value
+            if all(v in (None, '') for v in (raw_id, raw_name, raw_class)):
+                continue
+            student_id = _normalize_student_id(raw_id)
+            full_name = str(raw_name or '').strip()
+            class_name = str(raw_class or '').strip()
+            if not re.fullmatch(r'\d{1,20}', student_id):
+                invalid_rows.append({'row': row_number, 'value': student_id or str(raw_id or ''), 'reason': 'رقم الهوية فارغ أو غير رقمي'})
+                continue
+            if not full_name:
+                validation_errors.append(f'الصف {row_number}: اسم الطالب فارغ (الهوية {student_id}).')
+                continue
+            if not class_name:
+                validation_errors.append(f'الصف {row_number}: الصف/الشعبة فارغ (الهوية {student_id}).')
+                continue
+            if student_id in seen_ids:
+                duplicate_count += 1
+                validation_errors.append(f'الصف {row_number}: رقم الهوية {student_id} مكرر في الملف.')
+                continue
+            seen_ids.add(student_id)
+            row = {
+                'row': row_number, 'student_id': student_id, 'full_name': full_name,
+                'class_name': class_name,
+                'parent_phone': str(ws.cell(row_number, columns['parent_phone']).value or '').strip() if 'parent_phone' in columns else '',
+                'parent_name': str(ws.cell(row_number, columns['parent_name']).value or '').strip() if 'parent_name' in columns else '',
+                'address': str(ws.cell(row_number, columns['address']).value or '').strip() if 'address' in columns else '',
+                'birth_date': ws.cell(row_number, columns['birth_date']).value if 'birth_date' in columns else None,
+                'password': str(ws.cell(row_number, columns['password']).value or '').strip() if 'password' in columns else '',
+                'username': str(ws.cell(row_number, columns['username']).value or '').strip() if 'username' in columns else '',
+            }
+            parsed_rows.append(row)
+    except ValueError as exc:
+        validation_errors.append(str(exc))
+    except Exception:
+        validation_errors.append('تعذر قراءة الملف. تأكد أنه ملف Excel صالح ويحتوي على بيانات الطلاب.')
+    finally:
+        if wb:
+            wb.close()
+
+    if not parsed_rows:
+        validation_errors.append('لم يتم العثور على أي سجل طالب صالح في الملف.')
+    if invalid_rows:
+        validation_errors.extend([f"الصف {item['row']}: رقم الهوية غير صالح ({item['value']})." for item in invalid_rows[:20]])
+
+    # Validate every row and account name before making any database changes.
+    existing_by_id = {}
+    if parsed_rows and not validation_errors:
+        file_ids = [row['student_id'] for row in parsed_rows]
+        existing_by_id = {
+            student.student_id: student
+            for student in Student.objects.select_related('user', 'student_class').filter(student_id__in=file_ids)
+        }
+        reserved_usernames = set(User.objects.values_list('username', flat=True))
+        planned_usernames = set()
+        for row in parsed_rows:
+            if row['student_id'] in existing_by_id:
+                continue
+            username = row['username'] or row['student_id']
+            if username in reserved_usernames or username in planned_usernames:
+                validation_errors.append(f"الصف {row['row']}: اسم المستخدم «{username}» مستخدم مسبقًا؛ عدّله في الملف أو اتركه فارغًا ليُستخدم رقم الهوية.")
+            planned_usernames.add(username)
+
+    if validation_errors:
         request.session.pop('student_compare_delete_ids', None)
+        return render(request, 'school/student_id_check_result.html', {
+            'file_name': file_name, 'validation_failed': True, 'validation_errors': validation_errors,
+            'invalid_rows': invalid_rows, 'invalid_count': len(invalid_rows), 'duplicate_count': duplicate_count,
+            'deletion_allowed': False, 'deletion_candidates': [], 'deletion_candidate_count': 0,
+            'added_students': [], 'changed_classes': [], 'added_count': 0, 'updated_class_count': 0,
+            'existing_count': len(existing_by_id), 'skipped_existing': len(existing_by_id),
+            'total_unique': len(parsed_rows), 'missing_ids': [], 'missing_count': 0,
+        })
 
+    try:
+        with transaction.atomic():
+            # Lock the existing records used for the comparison to reduce race-condition risk.
+            existing_by_id = {
+                student.student_id: student
+                for student in Student.objects.select_for_update().select_related('user', 'student_class').filter(
+                    student_id__in=[row['student_id'] for row in parsed_rows]
+                )
+            }
+            for row in parsed_rows:
+                student_id = row['student_id']
+                class_obj, _ = Class.objects.get_or_create(name=row['class_name'])
+                if student_id in existing_by_id:
+                    student = existing_by_id[student_id]
+                    old_class = student.student_class.name if student.student_class else ''
+                    if old_class != row['class_name']:
+                        student.student_class = class_obj
+                        student.save(update_fields=['student_class'])
+                        changed_classes.append({
+                            'full_name': student.full_name, 'student_id': student.student_id,
+                            'old_class': old_class or 'غير محدد', 'new_class': row['class_name'],
+                        })
+                    skipped_existing += 1
+                    continue
+
+                birth_date = row['birth_date']
+                if isinstance(birth_date, datetime):
+                    birth_date = birth_date.date()
+                elif not isinstance(birth_date, date):
+                    birth_date = None
+                password = row['password'] or (student_id[-6:] if len(student_id) >= 6 else student_id)
+                username = row['username'] or student_id
+                user = User.objects.create_user(username=username, password=password)
+                Profile.objects.create(user=user, role='student')
+                student = Student.objects.create(
+                    user=user, student_id=student_id, full_name=row['full_name'], student_class=class_obj,
+                    parent_phone=row['parent_phone'], parent_name=row['parent_name'], address=row['address'],
+                    birth_date=birth_date, plain_password=password,
+                )
+                added_students.append({'full_name': student.full_name, 'student_id': student.student_id, 'class_name': row['class_name']})
+    except Exception as exc:
+        request.session.pop('student_compare_delete_ids', None)
+        return render(request, 'school/student_id_check_result.html', {
+            'file_name': file_name, 'validation_failed': True,
+            'validation_errors': ['لم تكتمل المزامنة بسبب تعارض في البيانات؛ لم تُعتمد العملية. تحقق من أسماء المستخدمين وأعد المحاولة.'],
+            'invalid_rows': [], 'invalid_count': 0, 'duplicate_count': duplicate_count,
+            'deletion_allowed': False, 'deletion_candidates': [], 'deletion_candidate_count': 0,
+            'added_students': [], 'changed_classes': [], 'added_count': 0, 'updated_class_count': 0,
+            'existing_count': skipped_existing, 'skipped_existing': skipped_existing,
+            'total_unique': len(parsed_rows), 'missing_ids': [], 'missing_count': 0,
+        })
+
+    file_ids = [row['student_id'] for row in parsed_rows]
+    deletion_candidates = list(
+        Student.objects.exclude(student_id__in=file_ids)
+        .select_related('user', 'student_class').order_by('full_name', 'id')
+    )
+    request.session['student_compare_delete_ids'] = [student.id for student in deletion_candidates]
+    log_action(
+        request.user, 'مزامنة الطلاب من Excel',
+        f"الملف: {file_name}؛ أضيف: {len(added_students)}؛ تحديث صفوف: {len(changed_classes)}؛ موجودون: {skipped_existing}؛ مرشحو الحذف: {len(deletion_candidates)}"
+    )
     return render(request, 'school/student_id_check_result.html', {
-        'file_name': request.FILES['excel_file'].name,
-        'total_unique': len(unique_ids),
-        'existing_count': len(existing_ids),
-        'missing_ids': missing_ids,
-        'missing_count': len(missing_ids),
-        'duplicate_count': duplicate_count,
-        'invalid_rows': invalid_rows,
-        'invalid_count': len(invalid_rows),
-        'deletion_candidates': deletion_candidates,
-        'deletion_candidate_count': len(deletion_candidates),
-        'deletion_allowed': not invalid_rows,
+        'file_name': file_name, 'validation_failed': False,
+        'validation_errors': [], 'invalid_rows': [], 'invalid_count': 0, 'duplicate_count': duplicate_count,
+        'total_unique': len(parsed_rows), 'existing_count': skipped_existing, 'skipped_existing': skipped_existing,
+        'added_students': added_students, 'added_count': len(added_students),
+        'changed_classes': changed_classes, 'updated_class_count': len(changed_classes),
+        'missing_ids': [], 'missing_count': 0,
+        'deletion_candidates': deletion_candidates, 'deletion_candidate_count': len(deletion_candidates),
+        'deletion_allowed': True,
     })
 
 
