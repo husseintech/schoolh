@@ -1286,8 +1286,14 @@ def check_missing_student_ids(request):
             if not full_name:
                 validation_errors.append(f'الصف {row_number}: اسم الطالب فارغ (الهوية {student_id}).')
                 continue
+            if len(full_name) > 200:
+                validation_errors.append(f'الصف {row_number}: اسم الطالب أطول من الحد المسموح (200 حرف).')
+                continue
             if not class_name:
                 validation_errors.append(f'الصف {row_number}: الصف/الشعبة فارغ (الهوية {student_id}).')
+                continue
+            if len(class_name) > 100:
+                validation_errors.append(f'الصف {row_number}: اسم الصف/الشعبة أطول من الحد المسموح (100 حرف).')
                 continue
             if student_id in seen_ids:
                 duplicate_count += 1
@@ -1326,15 +1332,30 @@ def check_missing_student_ids(request):
             student.student_id: student
             for student in Student.objects.select_related('user', 'student_class').filter(student_id__in=file_ids)
         }
-        reserved_usernames = set(User.objects.values_list('username', flat=True))
+        reserved_usernames = {name.casefold() for name in User.objects.values_list('username', flat=True)}
         planned_usernames = set()
         for row in parsed_rows:
             if row['student_id'] in existing_by_id:
                 continue
-            username = row['username'] or row['student_id']
-            if username in reserved_usernames or username in planned_usernames:
-                validation_errors.append(f"الصف {row['row']}: اسم المستخدم «{username}» مستخدم مسبقًا؛ عدّله في الملف أو اتركه فارغًا ليُستخدم رقم الهوية.")
-            planned_usernames.add(username)
+            username = row['username'].strip()
+            if username:
+                if len(username) > 150:
+                    validation_errors.append(f"الصف {row['row']}: اسم المستخدم أطول من الحد المسموح (150 حرفًا).")
+                elif username.casefold() in reserved_usernames or username.casefold() in planned_usernames:
+                    validation_errors.append(f"الصف {row['row']}: اسم المستخدم «{username}» مستخدم مسبقًا؛ اختر اسمًا آخر.")
+                planned_usernames.add(username.casefold())
+            else:
+                # If the ID is already used by another account, generate a unique login name
+                # rather than accidentally attaching the new student to that account.
+                base = row['student_id'][:140]
+                username = base
+                suffix = 2
+                while username.casefold() in reserved_usernames or username.casefold() in planned_usernames:
+                    tail = f'_{suffix}'
+                    username = base[:150-len(tail)] + tail
+                    suffix += 1
+                row['_resolved_username'] = username
+                planned_usernames.add(username.casefold())
 
     if validation_errors:
         request.session.pop('student_compare_delete_ids', None)
@@ -1378,7 +1399,7 @@ def check_missing_student_ids(request):
                 elif not isinstance(birth_date, date):
                     birth_date = None
                 password = row['password'] or (student_id[-6:] if len(student_id) >= 6 else student_id)
-                username = row['username'] or student_id
+                username = row.get('_resolved_username') or row['username'] or student_id
                 user = User.objects.create_user(username=username, password=password)
                 Profile.objects.create(user=user, role='student')
                 student = Student.objects.create(
