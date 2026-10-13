@@ -1,3 +1,4 @@
+import logging
 import os, io, csv, re
 from collections import defaultdict
 from datetime import date, datetime
@@ -1435,6 +1436,10 @@ def check_missing_student_ids(request):
                 )
                 added_students.append({'full_name': student.full_name, 'student_id': student.student_id, 'class_name': row['class_name']})
     except Exception as exc:
+        logging.getLogger(__name__).exception(
+            'Student Excel sync failed; file=%s; parsed_rows=%s; added_before_rollback=%s; class_updates_before_rollback=%s',
+            file_name, len(parsed_rows), len(added_students), len(changed_classes),
+        )
         request.session.pop('student_compare_delete_ids', None)
         return render(request, 'school/student_id_check_result.html', {
             'file_name': file_name, 'validation_failed': True,
