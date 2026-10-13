@@ -1,9 +1,9 @@
 from django.urls import path
 from . import views
+from . import visit_drive_views
 from . import student_assistant_views
 from . import curriculum_assistant_views
 from . import social_committee_views
-from . import visit_assessment_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -208,16 +208,15 @@ urlpatterns = [
 
     # Inspection Visits (Principal)
     path('inspection-visits/', views.inspection_visit_list, name='inspection_visit_list'),
-    path('visit-assessments/new/<str:report_type>/<int:teacher_id>/', visit_assessment_views.visit_assessment_form, name='visit_assessment_create'),
-    path('visit-assessments/<int:report_id>/edit/', visit_assessment_views.visit_assessment_edit, name='visit_assessment_edit'),
-    path('visit-assessments/<int:report_id>/', visit_assessment_views.visit_assessment_report, name='visit_assessment_report'),
-    path('visit-assessments/<int:report_id>/word/', visit_assessment_views.visit_assessment_word, name='visit_assessment_word'),
     path('inspection-visits/<int:visit_id>/report/', views.inspection_visit_report, name='inspection_visit_report'),
     path('inspection-visits/all-report/', views.inspection_visits_all_report, name='inspection_visits_all_report'),
 
     # Visit Program
     path('visit-program/<int:entry_id>/', views.visit_program_entry, name='visit_program_entry'),
     path('visit-program/', views.visit_program_list, name='visit_program_list'),
+    path('visit-program/files/', visit_drive_views.visit_program_files, name='visit_program_files'),
+    path('visit-program/files/<int:file_id>/open/', visit_drive_views.visit_program_file_open, name='visit_program_file_open'),
+    path('visit-program/files/<int:file_id>/delete/', visit_drive_views.visit_program_file_delete, name='visit_program_file_delete'),
     path('visit-program/<int:entry_id>/delete/', views.visit_program_delete, name='visit_program_delete'),
     path('visit-program/<int:entry_id>/update/', views.visit_program_update, name='visit_program_update'),
     path('visit-program/report/', views.visit_program_report, name='visit_program_report'),
