@@ -4,7 +4,10 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import connection
 from django.db.models import Count, Prefetch
+from django.core.management import call_command
+import logging
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -17,6 +20,8 @@ from .attendance_register import (
     normalize_row_count,
     normalize_start_year,
 )
+logger = logging.getLogger(__name__)
+
 from .models import (
     Class,
     SchoolInfo,
@@ -224,10 +229,35 @@ def followup_register(request):
         request.POST.get("year") if request.method == "POST" else request.GET.get("year")
     )
 
-    saved_settings = (
-        TeacherFollowupRegisterSettings.objects.filter(teacher=teacher).first()
-        if teacher else None
-    )
+    # The Vercel entry point runs migrations at startup but historically swallowed
+    # migration errors. Heal the specific settings migration here if the table is
+    # missing, so this page can recover without touching student records.
+    settings_table_ready = True
+    saved_settings = None
+    if teacher:
+        try:
+            table_name = TeacherFollowupRegisterSettings._meta.db_table
+            with connection.cursor() as cursor:
+                table_exists = table_name in connection.introspection.table_names(cursor)
+            if not table_exists:
+                call_command(
+                    "migrate", "school", "0065_teacherfollowupregistersettings",
+                    interactive=False, verbosity=0,
+                )
+                with connection.cursor() as cursor:
+                    table_exists = table_name in connection.introspection.table_names(cursor)
+            if not table_exists:
+                raise RuntimeError(
+                    "The teacher follow-up settings table is still missing after migration."
+                )
+            saved_settings = TeacherFollowupRegisterSettings.objects.filter(teacher=teacher).first()
+        except Exception:
+            settings_table_ready = False
+            logger.exception("Unable to initialize/read teacher follow-up register settings")
+            messages.error(
+                request,
+                "تعذر تهيئة جدول حفظ بنود دفتر المتابعة. لم تُحذف أي بيانات؛ يرجى إعادة المحاولة بعد اكتمال اتصال قاعدة البيانات.",
+            )
     saved_criteria = []
     if saved_settings:
         for item in saved_settings.criteria or []:
@@ -273,15 +303,30 @@ def followup_register(request):
 
         # Persist criteria as soon as they validate, so printing and cover printing
         # both retain them even if the user later changes the selected classes.
-        TeacherFollowupRegisterSettings.objects.update_or_create(
-            teacher=teacher,
-            defaults={
-                "criteria": [
-                    {"name": item["name"], "weight": str(item["weight"])}
-                    for item in criteria
-                ]
-            },
-        )
+        if not settings_table_ready:
+            messages.error(request, "لم يتم حفظ البنود لأن جدول الحفظ غير متاح. أعد المحاولة لاحقًا، ولم تتأثر بيانات الطلاب.")
+            return redirect(
+                f"/teachers/followup-register/?teacher={teacher.pk}"
+                if role == "admin" else "followup_register"
+            )
+
+        try:
+            TeacherFollowupRegisterSettings.objects.update_or_create(
+                teacher=teacher,
+                defaults={
+                    "criteria": [
+                        {"name": item["name"], "weight": str(item["weight"])}
+                        for item in criteria
+                    ]
+                },
+            )
+        except Exception:
+            logger.exception("Unable to save teacher follow-up register settings")
+            messages.error(request, "تعذر حفظ البنود في قاعدة البيانات. لم تتأثر بيانات الطلاب؛ أعد المحاولة لاحقًا.")
+            return redirect(
+                f"/teachers/followup-register/?teacher={teacher.pk}"
+                if role == "admin" else "followup_register"
+            )
 
         if action == "save":
             messages.success(request, f"تم حفظ بنود دفتر المتابعة للمعلم {teacher.full_name}، وستظهر عند العودة إلى هذه الصفحة.")
