@@ -203,7 +203,7 @@ body.print-document {
   font-weight: 700;
 }
 .day-head .day-number { position: absolute; right: 0; bottom: .2mm; left: 0; font-size: 4.6pt; }
-.attendance-table tbody tr { height: var(--attendance-row-height, 5.128mm); }
+.attendance-table tbody tr { height: var(--attendance-row-height, 4.85mm); }
 .attendance-table .student-name-cell { padding: 0 .8mm; text-align: right; font-size: 6pt; font-weight: 700; white-space: nowrap; overflow: hidden; }
 .attendance-table .is-shaded { background: var(--register-shade) !important; }
 .attendance-table .is-missing { background: #fff !important; }
@@ -262,5 +262,10 @@ body.print-document {
     padding: 3mm;
     box-shadow: none;
   }
+  /* Keep the monthly attendance footer inside the printable A4 area. */
+  .month-page { height: 287mm; overflow: hidden; }
+  .month-page .attendance-table tfoot tr:first-child { height: 4.2mm; }
+  .month-page .attendance-table tfoot tr:not(:first-child) { height: 4.5mm; }
+  .month-page .attendance-table tfoot td { padding: .3mm; font-size: 5.6pt; }
   .cover-page { padding: 7mm; }
 }
