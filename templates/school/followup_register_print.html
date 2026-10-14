@@ -8,7 +8,7 @@
 body{font-family:Arial,Tahoma,sans-serif;color:#1d2e48;margin:0;background:#eef2f8}
 .toolbar{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#1e345c,#355f9e);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 3px 12px #14284a22}
 .toolbar button,.toolbar a{border:0;border-radius:8px;padding:9px 14px;font-weight:bold;text-decoration:none;cursor:pointer}.toolbar button{background:#fff;color:#234271}.toolbar a{background:#dce8fb;color:#234271}
-.page{width:277mm;min-height:190mm;margin:12px auto;background:#fff;padding:7mm;border:1px solid #d1dcec;box-shadow:0 8px 28px #23395d1c;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}
+.page{width:194mm;min-height:0;margin:12px auto;background:#fff;padding:7mm;border:1px solid #d1dcec;box-shadow:0 8px 28px #23395d1c;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}
 .school-line{display:grid;grid-template-columns:1fr 1.5fr 1fr;align-items:center;gap:8px;font-size:10pt;font-weight:bold;border-bottom:2px solid var(--blue);padding:0 0 3mm;color:var(--navy)}.school-line span:nth-child(2){text-align:center}.school-line span:last-child{text-align:left}
 .heading{text-align:center;margin:4mm 0 3mm;font-size:20pt;color:var(--navy);letter-spacing:.2px}
 .subheading{display:flex;justify-content:space-between;align-items:center;gap:5mm;font-weight:bold;margin-bottom:3mm;color:#284a7d;background:#f1f5fc;border:1px solid #d4e0f1;border-radius:8px;padding:2.5mm 3mm}
@@ -34,7 +34,7 @@ th,td{border:1px solid #000!important}
 thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.student-row:nth-child(even) td{background:#fff!important;color:#000!important}
 
 .warning{margin-top:3mm;font-size:9pt;color:#8a4b12;background:#fff4df;padding:2mm;border-radius:5px}
-@page{size:A4 landscape;margin:8mm}
+@page{size:A4 portrait;margin:8mm}
 @media print{body{background:#fff}.toolbar{display:none}.page{margin:0;width:auto;min-height:0;padding:0;border:0;box-shadow:none}.student-row td{height:{{ row_height }}mm}.warning{display:none}thead{display:table-header-group}tr{break-inside:avoid}}
 /* Keep the paper register plain and economical for black-and-white printers. */
 @media print{
@@ -56,9 +56,9 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
 <div class="toolbar"><span>دفتر متابعة الطلاب — {{ selected_teacher.full_name }} — {{ academic_year }} — {{ class_pages|length }} صف/شعبة</span><button onclick="window.print()">طباعة جميع الدفاتر</button><a href="{% url 'followup_register' %}?{% if request.user.profile.role == 'admin' %}teacher={{ selected_teacher.id }}{% endif %}">العودة للإعدادات</a></div>
 <main>
 {% for page in class_pages %}
+  {% for semester in page.semesters %}
 <section class="page">
   <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>المبحث: {{ selected_subject.name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
-  {% for semester in page.semesters %}
   <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span><span class="semester-chip">الفصل {{ semester.number }}</span><span>مجموع الأوزان: {{ total_weight }}%</span></div>
   <div class="table-wrap"><table class="{% if criteria|length > 5 %}many-criteria{% endif %}">
     <thead>
@@ -67,9 +67,9 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
     </thead>
     <tbody>{% for row in page.student_rows %}<tr class="student-row"><td class="number">{{ row.number }}</td><td class="student">{{ row.name }}</td>{% for criterion in criteria %}<td></td>{% endfor %}</tr>{% endfor %}</tbody>
   </table></div>
-  {% endfor %}
   {% if page.students_omitted %}<p class="warning">تنبيه: عدد الطلاب {{ page.student_count }}، وعدد السجلات المختار {{ row_count }}؛ لم تظهر أسماء {{ page.students_omitted }} طالبًا بسبب حد السجلات.</p>{% endif %}
 </section>
+  {% endfor %}
 {% endfor %}
 </main>
 </body></html>
