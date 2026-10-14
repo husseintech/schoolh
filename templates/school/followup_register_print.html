@@ -62,7 +62,7 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
   <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span></div>
   <div class="table-wrap"><table class="{% if criteria|length > 5 %}many-criteria{% endif %}">
     <thead>
-      <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion" {% if criteria|length > 5 %}rowspan="2"{% endif %}>{% if criteria|length > 5 %}{{ criterion.name }} ({{ criterion.weight }}%){% else %}{{ criterion.name }}{% endif %}</th>{% endfor %}</tr>
+      <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion" {% if criteria|length > 5 %}rowspan="2"{% endif %}>{% if criteria|length > 5 %}{{ criterion.name }}{% if criterion.weight %} ({{ criterion.weight }}%){% endif %}{% else %}{{ criterion.name }}{% endif %}</th>{% endfor %}</tr>
       {% if criteria|length <= 5 %}<tr class="weights">{% for criterion in criteria %}<th>{{ criterion.weight }}%</th>{% endfor %}</tr>{% else %}<tr class="weights"></tr>{% endif %}
     </thead>
     <tbody>{% for row in page.student_rows %}<tr class="student-row"><td class="number">{{ row.number }}</td><td class="student">{{ row.name }}</td>{% for criterion in criteria %}<td></td>{% endfor %}</tr>{% endfor %}</tbody>
