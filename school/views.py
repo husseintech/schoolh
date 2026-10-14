@@ -604,7 +604,7 @@ def dashboard(request):
         notes_count = Note.objects.count()
         teachers_count = Teacher.objects.count()
         pending_agenda = Agenda.objects.filter(is_completed=False).count()
-        today = date.today()
+        today = timezone.localdate()
         arabic_months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
                          'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
         today_str = f'{today.day} {arabic_months[today.month - 1]} {today.year}'
