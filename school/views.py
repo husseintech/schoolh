@@ -610,7 +610,7 @@ def dashboard(request):
         today_str = f'{today.day} {arabic_months[today.month - 1]} {today.year}'
         today_lateness = StudentLateness.objects.filter(date=today).count()
         today_absence = StudentAbsence.objects.filter(absence_date=today).count()
-        recent_notes = list(Note.objects.select_related('student__student_class', 'created_by').order_by('-created_at')[:6])
+        today_visit_program = list(VisitProgram.objects.filter(visit_date=today).select_related('teacher').order_by('teacher__full_name'))
         radio_summary = None
         if profile.role == 'admin' and has_perm(request.user, 'school_radio', 'view'):
             from open_learning.radio_reports import build_radio_participation_report
@@ -623,7 +623,7 @@ def dashboard(request):
             'today_lateness': today_lateness,
             'today_absence': today_absence,
             'today_str': today_str,
-            'recent_notes': recent_notes,
+            'today_visit_program': today_visit_program,
             'show_quick_actions': profile.role in ('admin', 'vice_principal'),
             'radio_summary': radio_summary,
         })
