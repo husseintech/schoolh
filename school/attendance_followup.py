@@ -24,6 +24,7 @@ from .models import (
     StudentAbsence,
     Teacher,
     TeacherScheduleEntry,
+    TeacherFollowupRegisterSettings,
     has_perm,
 )
 
@@ -223,33 +224,29 @@ def followup_register(request):
         request.POST.get("year") if request.method == "POST" else request.GET.get("year")
     )
 
+    saved_settings = (
+        TeacherFollowupRegisterSettings.objects.filter(teacher=teacher).first()
+        if teacher else None
+    )
+    saved_criteria = []
+    if saved_settings:
+        for item in saved_settings.criteria or []:
+            if not isinstance(item, dict) or not str(item.get("name", "")).strip():
+                continue
+            try:
+                weight = Decimal(str(item.get("weight", "0")))
+            except (InvalidOperation, TypeError, ValueError):
+                weight = Decimal("0")
+            saved_criteria.append({"name": str(item["name"]).strip(), "weight": weight})
+
     if request.method == "POST":
         action = request.POST.get("action", "print")
         semester_values = request.POST.getlist("semesters")
         semesters = tuple(number for number in (1, 2) if str(number) in semester_values)
-        if not semesters:
-            messages.error(request, "اختر الفصل الأول أو الفصل الثاني أو كليهما.")
-            return render(request, "school/followup_register.html", {
-                "teachers": teachers, "selected_teacher": teacher,
-                "available_classes": available_classes, "selected_class_ids": set(request.POST.getlist("class_ids")),
-                "criteria_form_rows": [{"name": n, "weight": w} for n, w in zip(request.POST.getlist("criterion_name"), request.POST.getlist("criterion_weight"))],
-                "row_count": row_count, "row_options": range(MIN_REGISTER_STUDENTS, MAX_REGISTER_STUDENTS + 1),
-                "start_year": start_year, "default_criteria": False, "selected_semesters": set(semester_values),
-            })
+
         if not teacher:
             messages.error(request, "اختر المعلم أولًا.")
             return redirect("followup_register")
-        selected_ids = []
-        for raw_id in request.POST.getlist("class_ids"):
-            if raw_id.isdigit() and int(raw_id) not in selected_ids:
-                selected_ids.append(int(raw_id))
-        allowed_ids = set(available_classes.values_list("pk", flat=True))
-        selected_ids = [class_id for class_id in selected_ids if class_id in allowed_ids]
-        classes_by_id = {cls.pk: cls for cls in available_classes.filter(pk__in=selected_ids)}
-        selected_classes = [classes_by_id[class_id] for class_id in selected_ids if class_id in classes_by_id]
-        if not selected_classes:
-            messages.error(request, "حدد شعبة أو صفًا واحدًا على الأقل.")
-            return redirect(f"/teachers/followup-register/?teacher={teacher.pk}" if role == "admin" else "followup_register")
 
         criteria, errors = _parse_followup_criteria(request.POST)
         if errors:
@@ -259,7 +256,7 @@ def followup_register(request):
                 "teachers": teachers,
                 "selected_teacher": teacher,
                 "available_classes": available_classes,
-                "selected_class_ids": set(selected_ids),
+                "selected_class_ids": set(request.POST.getlist("class_ids")),
                 "criteria_form_rows": [
                     {"name": name, "weight": weight}
                     for name, weight in zip(
@@ -271,14 +268,76 @@ def followup_register(request):
                 "row_options": range(MIN_REGISTER_STUDENTS, MAX_REGISTER_STUDENTS + 1),
                 "start_year": start_year,
                 "default_criteria": False,
+                "selected_semesters": set(semester_values),
             })
 
-        context = _followup_print_context(request, teacher, selected_classes, criteria, row_count, start_year, semesters=semesters)
+        # Persist criteria as soon as they validate, so printing and cover printing
+        # both retain them even if the user later changes the selected classes.
+        TeacherFollowupRegisterSettings.objects.update_or_create(
+            teacher=teacher,
+            defaults={
+                "criteria": [
+                    {"name": item["name"], "weight": str(item["weight"])}
+                    for item in criteria
+                ]
+            },
+        )
+
+        if action == "save":
+            messages.success(request, f"تم حفظ بنود دفتر المتابعة للمعلم {teacher.full_name}، وستظهر عند العودة إلى هذه الصفحة.")
+            return redirect(
+                f"/teachers/followup-register/?teacher={teacher.pk}"
+                if role == "admin" else "followup_register"
+            )
+
+        if not semesters:
+            messages.error(request, "اختر الفصل الأول أو الفصل الثاني أو كليهما.")
+            return render(request, "school/followup_register.html", {
+                "teachers": teachers,
+                "selected_teacher": teacher,
+                "available_classes": available_classes,
+                "selected_class_ids": set(request.POST.getlist("class_ids")),
+                "criteria_form_rows": [
+                    {"name": item["name"], "weight": item["weight"]}
+                    for item in criteria
+                ],
+                "row_count": row_count,
+                "row_options": range(MIN_REGISTER_STUDENTS, MAX_REGISTER_STUDENTS + 1),
+                "start_year": start_year,
+                "default_criteria": False,
+                "selected_semesters": set(semester_values),
+            })
+
+        selected_ids = []
+        for raw_id in request.POST.getlist("class_ids"):
+            if raw_id.isdigit() and int(raw_id) not in selected_ids:
+                selected_ids.append(int(raw_id))
+        allowed_ids = set(available_classes.values_list("pk", flat=True))
+        selected_ids = [class_id for class_id in selected_ids if class_id in allowed_ids]
+        classes_by_id = {cls.pk: cls for cls in available_classes.filter(pk__in=selected_ids)}
+        selected_classes = [classes_by_id[class_id] for class_id in selected_ids if class_id in classes_by_id]
+        if not selected_classes:
+            messages.error(request, "تم حفظ البنود، لكن حدد شعبة أو صفًا واحدًا على الأقل للطباعة.")
+            return redirect(
+                f"/teachers/followup-register/?teacher={teacher.pk}"
+                if role == "admin" else "followup_register"
+            )
+
+        context = _followup_print_context(
+            request, teacher, selected_classes, criteria, row_count, start_year,
+            semesters=semesters,
+        )
         context["print_cover_only"] = action == "cover"
-        template = "school/followup_register_cover.html" if action == "cover" else "school/followup_register_print.html"
+        template = (
+            "school/followup_register_cover.html"
+            if action == "cover" else "school/followup_register_print.html"
+        )
         return render(request, template, context)
 
-    criteria_form_rows = [{"name": "", "weight": ""}]
+    criteria_form_rows = (
+        [{"name": item["name"], "weight": item["weight"]} for item in saved_criteria]
+        if saved_criteria else [{"name": "", "weight": ""}]
+    )
     return render(request, "school/followup_register.html", {
         "teachers": teachers,
         "selected_teacher": teacher,
@@ -288,5 +347,5 @@ def followup_register(request):
         "row_count": row_count,
         "row_options": range(MIN_REGISTER_STUDENTS, MAX_REGISTER_STUDENTS + 1),
         "start_year": start_year,
-        "default_criteria": True,
+        "default_criteria": not bool(saved_criteria),
     })
