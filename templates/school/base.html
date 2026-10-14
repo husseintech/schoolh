@@ -923,6 +923,9 @@
         <a href="{% url 'grade_register' %}" class="nav-link {% if 'grade_register' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-journal-text"></i> دفتر العلامات
         </a>
+        <a href="{% url 'followup_register' %}" class="nav-link {% if 'followup_register' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-clipboard2-data-fill"></i> دفتر المتابعة
+        </a>
         {% endif %}
         {% if 'teacher_followup_view' in user_perms %}
         <a href="{% url 'teacher_followups' %}" class="nav-link {% if 'followup' in request.resolver_match.url_name %}active{% endif %}">

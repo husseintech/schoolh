@@ -4,6 +4,7 @@ from . import visit_drive_views
 from . import student_assistant_views
 from . import curriculum_assistant_views
 from . import social_committee_views
+from . import attendance_followup
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -85,6 +86,7 @@ urlpatterns = [
     path('teachers/grade-register/cover/', views.grade_register_cover, name='grade_register_cover'),
     path('teachers/grade-register/print/', views.grade_register_print, name='grade_register_print'),
     path('teachers/grade-register/print/detailed/', views.grade_register_detailed_print, name='grade_register_detailed_print'),
+    path('teachers/followup-register/', attendance_followup.followup_register, name='followup_register'),
     path('teachers/social-committee/', social_committee_views.social_committee, name='social_committee'),
     path('teachers/social-committee/report/', social_committee_views.social_committee_report, name='social_committee_report'),
     path('teachers/social-committee/expenses/<int:expense_id>/', social_committee_views.social_committee_expense, name='social_committee_expense'),
@@ -237,6 +239,7 @@ urlpatterns = [
     # Absence
     path('absence/', views.absence_list, name='absence_list'),
     path('absence/report/', views.absence_report, name='absence_report'),
+    path('absence/frequent/', attendance_followup.frequent_absence_report, name='frequent_absence_report'),
 
     # PWA
     path('sw.js', views.service_worker, name='service_worker'),

@@ -1,0 +1,70 @@
+{% extends 'school/base.html' %}
+{% block title %}تقرير الطلاب كثيري الغياب{% endblock %}
+{% block page_heading %}تقرير الطلاب كثيري الغياب{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm mb-3 no-print">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-bold">عدد مرات الغياب (أكثر من)</label>
+        <input class="form-control" type="number" min="1" max="100" name="threshold" value="{{ threshold }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold">من تاريخ</label>
+        <input class="form-control" type="date" name="start" value="{{ start_date|date:'Y-m-d' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold">إلى تاريخ</label>
+        <input class="form-control" type="date" name="end" value="{{ end_date|date:'Y-m-d' }}">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel"></i> تطبيق الفرز</button>
+        <button class="btn btn-success" type="button" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <div class="text-center mb-3">
+      <h3 class="fw-bold">تقرير الطلاب كثيري الغياب</h3>
+      <div>العام الدراسي: {{ academic_year }} | الفترة: {{ start_date|date:'Y/m/d' }} — {{ end_date|date:'Y/m/d' }}</div>
+      <div class="mt-2">عدد الطلاب المطابقين: <strong>{{ total_students }}</strong></div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle" id="frequentAbsenceTable">
+        <thead class="table-light"><tr><th>الرقم</th><th>اسم الطالب</th><th>الصف</th><th>عدد أيام الغياب</th><th>تفاصيل أيام الغياب</th><th>ولي الأمر</th><th>هاتف ولي الأمر</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.number }}</td>
+            <td class="fw-bold">{{ row.student.full_name }}</td>
+            <td>{{ row.class_name }}</td>
+            <td class="text-center fw-bold">{{ row.count }}</td>
+            <td>{% for day in row.days %}{{ day.day }} {{ day.date|date:'Y/m/d' }}{% if not forloop.last %}، {% endif %}{% endfor %}</td>
+            <td>{{ row.student.parent_name|default:'—' }}</td>
+            <td dir="ltr">{{ row.student.parent_phone|default:'—' }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center py-4">لا يوجد طلاب تجاوز غيابهم {{ threshold }} يومًا خلال الفترة المحددة.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="small text-muted mb-0">هذا التقرير مخصص لمراجعة الغياب وإرسال إشعار مفصل لولي الأمر؛ لا يتم إرسال أي رسالة تلقائيًا من هذه الصفحة.</p>
+  </div>
+</div>
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  .no-print, .sidebar, nav, header, footer, .navbar, .sidebar-overlay { display:none!important; }
+  body, main, .container, .container-fluid { background:#fff!important; margin:0!important; padding:0!important; width:100%!important; max-width:none!important; }
+  .card { border:0!important; box-shadow:none!important; }
+  table { width:100%!important; border-collapse:collapse!important; font-size:9pt!important; }
+  th,td { border:1px solid #222!important; padding:4px!important; vertical-align:top!important; }
+  thead { display:table-header-group; }
+  tr { break-inside:avoid; }
+  .small { font-size:8pt!important; }
+}
+</style>
+{% endblock %}

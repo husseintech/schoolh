@@ -1,0 +1,92 @@
+{% extends 'school/base.html' %}
+{% block title %}دفتر المتابعة{% endblock %}
+{% block page_heading %}دفتر متابعة الطلاب{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm mb-4" style="border-radius:18px">
+  <div class="card-body p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+      <div><h3 class="fw-bold mb-1">إعداد دفتر متابعة الطلاب</h3><p class="text-muted mb-0">اختر المعلم والصفوف، ثم أضف بنود المتابعة وأوزانها. يمكنك طباعة دفاتر جميع الصفوف المحددة في ملف واحد.</p></div>
+      <span class="badge bg-primary fs-6">35–50 سجلًا</span>
+    </div>
+    {% if request.user.profile.role == 'admin' %}
+    <form method="get" class="row g-3 align-items-end mb-4 pb-3 border-bottom">
+      <div class="col-md-8"><label class="form-label fw-bold">المعلم</label>
+        <select class="form-select" name="teacher" required>
+          <option value="">اختر المعلم</option>
+          {% for item in teachers %}<option value="{{ item.id }}" {% if selected_teacher and selected_teacher.id == item.id %}selected{% endif %}>{{ item.full_name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4"><button class="btn btn-outline-primary w-100" type="submit">عرض صفوف المعلم</button></div>
+    </form>
+    {% endif %}
+    {% if selected_teacher %}
+    <form method="post" id="followupSetupForm">
+      {% csrf_token %}
+      {% if request.user.profile.role == 'admin' %}<input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">{% endif %}
+      <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="p-3 rounded-3 bg-light h-100"><small class="text-muted d-block">المعلم</small><strong>{{ selected_teacher.full_name }}</strong></div></div>
+        <div class="col-md-4"><label class="form-label fw-bold">العام الدراسي (بداية العام)</label><input type="number" class="form-control" name="year" min="2020" max="2100" value="{{ start_year }}" required></div>
+        <div class="col-md-4"><label class="form-label fw-bold">عدد سجلات الدفتر لكل صف</label><select class="form-select" name="row_count">{% for n in row_options %}<option value="{{ n }}" {% if n == row_count %}selected{% endif %}>{{ n }} سجلًا</option>{% endfor %}</select></div>
+      </div>
+      <h5 class="fw-bold mb-2">أولًا: اختر الصفوف والشعب</h5>
+      <div class="row g-2 mb-4">
+        {% for cls in available_classes %}
+        <div class="col-sm-6 col-lg-4"><label class="border rounded-3 p-3 d-flex gap-2 align-items-center h-100">
+          <input class="form-check-input mt-0" type="checkbox" name="class_ids" value="{{ cls.id }}" {% if cls.id in selected_class_ids %}checked{% endif %}>
+          <span>{{ cls.name }}</span>
+        </label></div>
+        {% empty %}<div class="col-12"><div class="alert alert-warning mb-0">لا توجد صفوف مرتبطة بهذا المعلم في بيانات الصفوف أو الجدول اليومي.</div></div>{% endfor %}
+      </div>
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+        <h5 class="fw-bold mb-0">ثانيًا: بنود المتابعة وأوزانها</h5>
+        <button class="btn btn-outline-primary btn-sm" type="button" id="addCriterion"><i class="bi bi-plus-circle"></i> إضافة بند</button>
+      </div>
+      <p class="text-muted small">اكتب اسم كل بند ووزنه من 100%. ستظهر أسماء البنود في رؤوس الأعمدة والوزن أسفل كل عنوان. الحد الأقصى 12 بندًا لتسهيل الطباعة.</p>
+      <div class="table-responsive mb-4"><table class="table table-bordered align-middle" id="criteriaTable">
+        <thead class="table-light"><tr><th>اسم بند المتابعة</th><th style="width:190px">الوزن (%)</th><th style="width:80px">حذف</th></tr></thead>
+        <tbody>
+          {% for item in criteria_form_rows %}
+          <tr><td><input class="form-control criterion-name" name="criterion_name" value="{{ item.name }}" placeholder="مثال: المشاركة الصفية والمتابعة" maxlength="100"></td><td><input class="form-control" name="criterion_weight" type="number" min="0" max="100" step="0.5" value="{{ item.weight }}" placeholder="10"></td><td class="text-center"><button class="btn btn-outline-danger btn-sm remove-criterion" type="button" aria-label="حذف البند"><i class="bi bi-trash"></i></button></td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-primary" type="submit" name="action" value="print"><i class="bi bi-printer-fill"></i> طباعة دفاتر المتابعة المحددة</button>
+        <button class="btn btn-outline-secondary" type="submit" name="action" value="cover"><i class="bi bi-file-earmark-person"></i> طباعة غلاف دفتر المتابعة</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="alert alert-info mb-0">اختر المعلم لعرض الصفوف التي يمكن تجهيز دفتر متابعة لها.</div>
+    {% endif %}
+  </div>
+</div>
+<script>
+(function(){
+  const tableBody = document.querySelector('#criteriaTable tbody');
+  const addButton = document.getElementById('addCriterion');
+  if (!tableBody || !addButton) return;
+  function updateRemoveButtons(){
+    tableBody.querySelectorAll('.remove-criterion').forEach(button => {
+      button.disabled = tableBody.querySelectorAll('tr').length <= 1;
+    });
+    addButton.disabled = tableBody.querySelectorAll('tr').length >= 12;
+  }
+  addButton.addEventListener('click', function(){
+    if (tableBody.querySelectorAll('tr').length >= 12) return;
+    const row = document.createElement('tr');
+    row.innerHTML = '<td><input class="form-control criterion-name" name="criterion_name" maxlength="100" placeholder="اسم بند المتابعة"></td><td><input class="form-control" name="criterion_weight" type="number" min="0" max="100" step="0.5" placeholder="10"></td><td class="text-center"><button class="btn btn-outline-danger btn-sm remove-criterion" type="button" aria-label="حذف البند"><i class="bi bi-trash"></i></button></td>';
+    tableBody.appendChild(row);
+    updateRemoveButtons();
+    row.querySelector('.criterion-name').focus();
+  });
+  tableBody.addEventListener('click', function(event){
+    const button = event.target.closest('.remove-criterion');
+    if (button && tableBody.querySelectorAll('tr').length > 1) {
+      button.closest('tr').remove();
+      updateRemoveButtons();
+    }
+  });
+  updateRemoveButtons();
+})();
+</script>
+{% endblock %}

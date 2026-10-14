@@ -20,6 +20,7 @@
             </div>
             <div class="col-md-4 d-flex gap-2">
                 <a href="{% url 'absence_report' %}?date={{ absence_date }}" class="btn btn-success"><i class="bi bi-printer"></i> طباعة تقرير الغياب</a>
+                <a href="{% url 'frequent_absence_report' %}" class="btn btn-warning"><i class="bi bi-person-exclamation"></i> الطلاب كثيرو الغياب (+10)</a>
             </div>
         </form>
     </div>
