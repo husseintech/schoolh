@@ -303,14 +303,18 @@ def followup_register(request):
 
         # Persist criteria as soon as they validate, so printing and cover printing
         # both retain them even if the user later changes the selected classes.
-        if not settings_table_ready:
-            messages.error(request, "لم يتم حفظ البنود لأن جدول الحفظ غير متاح. أعد المحاولة لاحقًا، ولم تتأثر بيانات الطلاب.")
+        # Printing must remain available even if the optional persistence table
+        # cannot be initialized. Saving settings is blocked explicitly, while a
+        # print request continues using the criteria submitted with this form.
+        if not settings_table_ready and action == "save":
+            messages.error(request, "تعذر حفظ البنود لأن جدول الحفظ غير متاح حاليًا. يمكنك طباعة الدفتر بالبنود الظاهرة، ولم تتأثر بيانات الطلاب.")
             return redirect(
                 f"/teachers/followup-register/?teacher={teacher.pk}"
                 if role == "admin" else "followup_register"
             )
 
-        try:
+        if settings_table_ready:
+          try:
             TeacherFollowupRegisterSettings.objects.update_or_create(
                 teacher=teacher,
                 defaults={
@@ -320,13 +324,14 @@ def followup_register(request):
                     ]
                 },
             )
-        except Exception:
+          except Exception:
             logger.exception("Unable to save teacher follow-up register settings")
-            messages.error(request, "تعذر حفظ البنود في قاعدة البيانات. لم تتأثر بيانات الطلاب؛ أعد المحاولة لاحقًا.")
-            return redirect(
-                f"/teachers/followup-register/?teacher={teacher.pk}"
-                if role == "admin" else "followup_register"
-            )
+            if action == "save":
+                messages.error(request, "تعذر حفظ البنود في قاعدة البيانات. يمكنك طباعة الدفتر بالبنود الحالية؛ ولم تتأثر بيانات الطلاب.")
+                return redirect(
+                    f"/teachers/followup-register/?teacher={teacher.pk}"
+                    if role == "admin" else "followup_register"
+                )
 
         if action == "save":
             messages.success(request, f"تم حفظ بنود دفتر المتابعة للمعلم {teacher.full_name}، وستظهر عند العودة إلى هذه الصفحة.")
