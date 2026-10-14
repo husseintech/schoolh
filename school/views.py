@@ -476,6 +476,8 @@ def warden_followup_report(request):
             for column in criterion_order
         ]
 
+    report_columns = [{'key': f'c{i}', 'name': criterion} for i, criterion in enumerate(criterion_order)]
+
     return render(request, 'school/warden_report.html', {
         'wardens': wardens, 'selected': selected, 'followups': qs,
         'report_records': report_records, 'report_columns': report_columns,
