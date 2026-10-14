@@ -78,6 +78,7 @@
         <option value="">اختر المبحث</option>
         {% for subject in available_subjects %}<option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>{{ subject.name }}</option>{% endfor %}
       </select>
+      <p class="small text-muted mt-2 mb-0">لكل مبحث بنوده وأوزانه المستقلة؛ يتغير الجدول عند اختيار المبحث.</p>
       </section>
       <section class="section-panel">
       <h5 class="section-title">أولًا: اختر الصفوف والشعب</h5>
@@ -130,6 +131,20 @@
 </div>
 <script>
 (function(){
+  const subjectSelect = document.getElementById('followupSubject');
+  if(subjectSelect){
+    subjectSelect.addEventListener('change', function(){
+      const params = new URLSearchParams();
+      const teacherField = document.querySelector('input[name="teacher_id"]');
+      if(teacherField && teacherField.value) params.set('teacher', teacherField.value);
+      else {
+        const teacherFromUrl = new URLSearchParams(window.location.search).get('teacher');
+        if(teacherFromUrl) params.set('teacher', teacherFromUrl);
+      }
+      if(this.value) params.set('subject_id', this.value);
+      window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    });
+  }
   const tableBody = document.querySelector('#criteriaTable tbody');
   const addButton = document.getElementById('addCriterion');
   if (!tableBody || !addButton) return;
