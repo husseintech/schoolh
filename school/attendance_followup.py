@@ -169,7 +169,7 @@ def _parse_followup_criteria(post_data):
     return criteria, errors
 
 
-def _followup_print_context(request, teacher, classes, criteria, row_count, start_year, semesters=(1, 2)):
+def _followup_print_context(request, teacher, subject, classes, criteria, row_count, start_year, semesters=(1, 2)):
     class_pages = []
     for cls in classes:
         students = list(
@@ -200,6 +200,7 @@ def _followup_print_context(request, teacher, classes, criteria, row_count, star
         })
     return {
         "selected_teacher": teacher,
+        "selected_subject": subject,
         "class_pages": class_pages,
         "criteria": criteria,
         "row_count": row_count,
@@ -222,6 +223,11 @@ def followup_register(request):
     teacher_id = request.POST.get("teacher_id", "") if request.method == "POST" else request.GET.get("teacher", "")
     teacher = _teacher_for_request(request, teacher_id)
     available_classes = _classes_for_teacher(teacher)
+    available_subjects = teacher.subjects.all().order_by("name") if teacher else []
+    subject_id = request.POST.get("subject_id", "") if request.method == "POST" else request.GET.get("subject_id", "")
+    selected_subject = available_subjects.filter(pk=subject_id).first() if subject_id and str(subject_id).isdigit() else None
+    if not selected_subject and len(available_subjects) == 1:
+        selected_subject = available_subjects[0]
     row_count = normalize_row_count(
         request.POST.get("row_count") if request.method == "POST" else request.GET.get("rows")
     )
@@ -276,6 +282,10 @@ def followup_register(request):
             messages.error(request, "اختر المعلم أولًا.")
             return redirect("followup_register")
 
+        if not selected_subject:
+            messages.error(request, "اختر المبحث المطلوب المتابعة فيه.")
+            return redirect(f"/teachers/followup-register/?teacher={teacher.pk}" if role == "admin" else "followup_register")
+
         criteria, errors = _parse_followup_criteria(request.POST)
         if errors:
             for error in errors:
@@ -284,6 +294,8 @@ def followup_register(request):
                 "teachers": teachers,
                 "selected_teacher": teacher,
                 "available_classes": available_classes,
+                "available_subjects": available_subjects,
+                "selected_subject": selected_subject,
                 "selected_class_ids": set(request.POST.getlist("class_ids")),
                 "criteria_form_rows": [
                     {"name": name, "weight": weight}
@@ -372,7 +384,7 @@ def followup_register(request):
             )
 
         context = _followup_print_context(
-            request, teacher, selected_classes, criteria, row_count, start_year,
+            request, teacher, selected_subject, selected_classes, criteria, row_count, start_year,
             semesters=semesters,
         )
         context["print_cover_only"] = action == "cover"
@@ -390,6 +402,8 @@ def followup_register(request):
         "teachers": teachers,
         "selected_teacher": teacher,
         "available_classes": available_classes,
+        "available_subjects": available_subjects,
+        "selected_subject": selected_subject,
         "selected_class_ids": set(),
         "criteria_form_rows": criteria_form_rows,
         "row_count": row_count,
