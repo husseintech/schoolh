@@ -20,7 +20,9 @@ thead tr.weights th{background:#e5f5f2;color:#17665f;border-color:#9accc4;font-s
 th.number,td.number{width:9mm;background:#f0f4fb}th.student,td.student{text-align:right;width:48mm;padding-right:2mm}
 .criterion{width:auto}.student-row td{height:{{ row_height }}mm;background:#fff; padding:.4mm .5mm}.student-row:nth-child(even) td{background:#f6f9fe}.student-row td:first-child{color:#47658e;font-weight:700}
 /* When there are more than five criteria, use narrow vertical headers and include each weight in parentheses. */
-table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:mixed;vertical-align:middle;height:30mm;min-width:9mm;padding:1mm .5mm;white-space:normal;overflow-wrap:anywhere;font-size:8pt;line-height:1.2;direction:rtl}
+table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:mixed;vertical-align:middle;height:30mm;min-width:9mm;padding:1mm .5mm;white-space:normal;overflow-wrap:anywhere;font-size:var(--criterion-font-size,8pt);font-weight:400;line-height:1.2;direction:rtl}
+body.criteria-bold table.many-criteria th.criterion{font-weight:700}
+#criterionFontSize{padding:6px;border-radius:6px;border:1px solid #777;font-weight:bold}
 table.many-criteria th.number,table.many-criteria th.student{writing-mode:horizontal-tb}
 /* The report itself stays monochrome in both preview and print: no colored fills, only clear black borders. */
 .page{background:#fff!important;color:#000!important;box-shadow:none;border:1px solid #000}
@@ -53,7 +55,18 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
 </style>
 </head>
 <body>
-<div class="toolbar"><span>دفتر متابعة الطلاب — {{ selected_teacher.full_name }} — {{ academic_year }} — {{ class_pages|length }} صف/شعبة</span><button onclick="window.print()">طباعة جميع الدفاتر</button><a href="{% url 'followup_register' %}?{% if request.user.profile.role == 'admin' %}teacher={{ selected_teacher.id }}{% endif %}">العودة للإعدادات</a></div>
+<div class="toolbar">
+  <span>دفتر متابعة الطلاب — {{ selected_teacher.full_name }} — {{ academic_year }} — {{ class_pages|length }} صف/شعبة</span>
+  <label for="criterionFontSize">حجم خط البنود</label>
+  <button type="button" id="criterionSmaller" aria-label="تصغير خط البنود">−</button>
+  <select id="criterionFontSize" aria-label="حجم خط البنود">
+    <option value="7">7</option><option value="8" selected>8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+  </select>
+  <button type="button" id="criterionLarger" aria-label="تكبير خط البنود">+</button>
+  <button type="button" id="criterionWeight" aria-pressed="false">الخط: عادي</button>
+  <button onclick="window.print()">طباعة جميع الدفاتر</button>
+  <a href="{% url 'followup_register' %}?{% if request.user.profile.role == 'admin' %}teacher={{ selected_teacher.id }}{% endif %}">العودة للإعدادات</a>
+</div>
 <main>
 {% for page in class_pages %}
   {% for semester in page.semesters %}
@@ -72,4 +85,26 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
   {% endfor %}
 {% endfor %}
 </main>
+<script>
+(function(){
+  const root=document.documentElement;
+  const sizeSelect=document.getElementById('criterionFontSize');
+  const smaller=document.getElementById('criterionSmaller');
+  const larger=document.getElementById('criterionLarger');
+  const weightButton=document.getElementById('criterionWeight');
+  function setSize(value){
+    const size=Math.max(7,Math.min(12,Number(value)||8));
+    root.style.setProperty('--criterion-font-size',size+'pt');
+    sizeSelect.value=String(size);
+  }
+  sizeSelect.addEventListener('change',()=>setSize(sizeSelect.value));
+  smaller.addEventListener('click',()=>setSize(Number(sizeSelect.value)-1));
+  larger.addEventListener('click',()=>setSize(Number(sizeSelect.value)+1));
+  weightButton.addEventListener('click',()=>{
+    const bold=document.body.classList.toggle('criteria-bold');
+    weightButton.textContent=bold?'الخط: عريض':'الخط: عادي';
+    weightButton.setAttribute('aria-pressed',String(bold));
+  });
+})();
+</script>
 </body></html>
