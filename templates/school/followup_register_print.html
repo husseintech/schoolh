@@ -57,8 +57,6 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
 <main>
 {% for page in class_pages %}
 <section class="page">
-  <div class="school-line"><span>{{ page.class_name }}</span><span>متابعة المعلم: {{ selected_teacher.full_name }} — المبحث: {{ selected_subject.name }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
-  <h1 class="heading">متابعة الطلاب — {{ selected_subject.name }}</h1>
   <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
   {% for semester in page.semesters %}
   <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span><span class="semester-chip">الفصل {{ semester.number }}</span><span>مجموع الأوزان: {{ total_weight }}%</span></div>
