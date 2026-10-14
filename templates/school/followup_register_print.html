@@ -19,6 +19,10 @@ thead tr:first-child th{background:#dce8f8;color:#1f3c6a;border-color:#91a8c9;fo
 thead tr.weights th{background:#e5f5f2;color:#17665f;border-color:#9accc4;font-size:9pt}
 th.number,td.number{width:9mm;background:#f0f4fb}th.student,td.student{text-align:right;width:48mm;padding-right:2mm}
 .criterion{width:auto}.student-row td{height:{{ row_height }}mm;background:#fff}.student-row:nth-child(even) td{background:#f6f9fe}.student-row td:first-child{color:#47658e;font-weight:700}
+/* When there are more than five criteria, use narrow vertical headers and include each weight in parentheses. */
+table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:mixed;vertical-align:middle;height:43mm;min-width:11mm;padding:2mm 1mm;white-space:normal;overflow-wrap:anywhere;font-size:8.5pt;line-height:1.35}
+table.many-criteria th.number,table.many-criteria th.student{writing-mode:horizontal-tb}
+
 .warning{margin-top:3mm;font-size:9pt;color:#8a4b12;background:#fff4df;padding:2mm;border-radius:5px}
 @page{size:A4 landscape;margin:8mm}
 @media print{body{background:#fff}.toolbar{display:none}.page{margin:0;width:auto;min-height:0;padding:0;border:0;box-shadow:none}.student-row td{height:{{ row_height }}mm}.warning{display:none}thead{display:table-header-group}tr{break-inside:avoid}}
@@ -48,10 +52,10 @@ th.number,td.number{width:9mm;background:#f0f4fb}th.student,td.student{text-alig
   <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
   {% for semester in page.semesters %}
   <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span><span class="semester-chip">الفصل {{ semester.number }}</span><span>مجموع الأوزان: {{ total_weight }}%</span></div>
-  <div class="table-wrap"><table>
+  <div class="table-wrap"><table class="{% if criteria|length > 5 %}many-criteria{% endif %}">
     <thead>
-      <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion">{{ criterion.name }}</th>{% endfor %}</tr>
-      <tr class="weights">{% for criterion in criteria %}<th>{{ criterion.weight }}%</th>{% endfor %}</tr>
+      <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion" {% if criteria|length > 5 %}rowspan="2"{% endif %}>{% if criteria|length > 5 %}{{ criterion.name }} ({{ criterion.weight }}%){% else %}{{ criterion.name }}{% endif %}</th>{% endfor %}</tr>
+      {% if criteria|length <= 5 %}<tr class="weights">{% for criterion in criteria %}<th>{{ criterion.weight }}%</th>{% endfor %}</tr>{% else %}<tr class="weights"></tr>{% endif %}
     </thead>
     <tbody>{% for row in page.student_rows %}<tr class="student-row"><td class="number">{{ row.number }}</td><td class="student">{{ row.name }}</td>{% for criterion in criteria %}<td></td>{% endfor %}</tr>{% endfor %}</tbody>
   </table></div>
