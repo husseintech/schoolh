@@ -72,6 +72,14 @@
         <div class="col-md-4"><label class="form-label fw-bold">عدد سجلات الدفتر لكل صف</label><select class="form-select" name="row_count">{% for n in row_options %}<option value="{{ n }}" {% if n == row_count %}selected{% endif %}>{{ n }} سجلًا</option>{% endfor %}</select></div>
       </div>
       <section class="section-panel">
+      <h5 class="section-title">المبحث</h5>
+      <label class="form-label fw-bold" for="followupSubject">اختر المبحث المطلوب المتابعة فيه</label>
+      <select class="form-select" id="followupSubject" name="subject_id" required>
+        <option value="">اختر المبحث</option>
+        {% for subject in available_subjects %}<option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>{{ subject.name }}</option>{% endfor %}
+      </select>
+      </section>
+      <section class="section-panel">
       <h5 class="section-title">أولًا: اختر الصفوف والشعب</h5>
       <div class="row g-2 mb-2">
         {% for cls in available_classes %}
