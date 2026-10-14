@@ -1,15 +1,28 @@
 {% extends 'school/base.html' %}
 {% block title %}دفتر المتابعة<style>
-.followup-setup{border-radius:22px;overflow:hidden;border-top:5px solid #4776c7;background:linear-gradient(180deg,#f7faff,#fff 210px);box-shadow:0 12px 32px rgba(31,65,114,.09)!important}
-.followup-setup h3,.followup-setup h5{color:#244879}
-.followup-setup .semester-picker{border:1px solid #c8d9f4;background:linear-gradient(135deg,#eef5ff,#f8f2ff);border-radius:15px}
-.semester-option{display:flex;align-items:center;gap:9px;padding:10px 16px;border:1px solid #b7cbed;border-radius:12px;background:#fff;font-weight:700;color:#284b7b;cursor:pointer}
-.semester-option:has(input:checked){background:#dfeaff;border-color:#4776c7;box-shadow:0 0 0 2px rgba(71,118,199,.1)}
-#criteriaTable{border-color:#cad9ed}#criteriaTable thead th{background:#e8effb;color:#274879;border-color:#c4d4eb}
-#criteriaTable tbody tr:nth-child(even){background:#f7faff}
-#criteriaTable .form-control{border-color:#d0dced;border-radius:9px}
-#addCriterion{border-radius:10px}
-.followup-setup .btn-primary{background:#365fa5;border-color:#365fa5}
+.followup-setup{border:0;border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(38,53,89,.10)!important;border-top:5px solid #6d5bd0}
+.followup-setup .card-body{background:linear-gradient(135deg,#fbfaff 0%,#fff 36%,#f5fbff 100%)}
+.followup-setup h3{color:#332b64;font-size:1.55rem}
+.followup-setup h5{color:#403783}
+.followup-setup .text-muted{color:#667085!important}
+.followup-setup .badge.bg-primary{background:#6d5bd0!important;border-radius:999px;padding:.65rem .9rem}
+.followup-setup .teacher-summary{background:linear-gradient(135deg,#eeeaff,#eaf8ff);border:1px solid #dcd5ff;border-radius:14px}
+.followup-setup .form-control,.followup-setup .form-select{border:1px solid #d8d5ee;border-radius:10px;min-height:42px}
+.followup-setup .form-control:focus,.followup-setup .form-select:focus{border-color:#8273df;box-shadow:0 0 0 .2rem rgba(109,91,208,.14)}
+.followup-setup .class-choice{border:1px solid #d9e4f3!important;border-radius:13px!important;background:#fff;transition:all .15s ease}
+.followup-setup .class-choice:has(input:checked){background:#eef9f7;border-color:#66b9ad!important;box-shadow:0 0 0 2px #d7f2ed}
+.followup-setup .semester-picker{border:1px solid #d8d2fa;background:linear-gradient(135deg,#f1edff,#edfaff);border-radius:16px}
+.semester-option{display:flex;align-items:center;gap:9px;padding:10px 16px;border:1px solid #cfc8f6;border-radius:12px;background:#fff;font-weight:700;color:#403783;cursor:pointer}
+.semester-option:has(input:checked){background:#e5e0ff;border-color:#8172d8;box-shadow:0 0 0 2px rgba(109,91,208,.1)}
+#criteriaTable{border-color:#d8dced;border-radius:12px;overflow:hidden}
+#criteriaTable thead th{background:#e9e6fb;color:#39316e;border-color:#d4ceef}
+#criteriaTable tbody tr:nth-child(even){background:#f8f9ff}
+#criteriaTable .form-control{border-color:#d8d5ee;border-radius:9px}
+#addCriterion{border-radius:10px;border-color:#8172d8;color:#5547a8}
+.followup-setup .btn-primary{background:#6554c0;border-color:#6554c0}
+.followup-setup .btn-primary:hover{background:#5142a4;border-color:#5142a4}
+.followup-setup .btn-success{background:#198b78;border-color:#198b78}
+.followup-setup .btn{border-radius:10px;font-weight:700;padding:.65rem 1rem}
 @media(max-width:600px){.followup-setup .card-body{padding:1rem!important}.semester-option{flex:1}}
 </style>
 {% endblock %}
@@ -37,14 +50,14 @@
       {% csrf_token %}
       {% if request.user.profile.role == 'admin' %}<input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">{% endif %}
       <div class="row g-3 mb-4">
-        <div class="col-md-4"><div class="p-3 rounded-3 bg-light h-100"><small class="text-muted d-block">المعلم</small><strong>{{ selected_teacher.full_name }}</strong></div></div>
+        <div class="col-md-4"><div class="teacher-summary p-3 h-100"><small class="text-muted d-block">المعلم</small><strong>{{ selected_teacher.full_name }}</strong></div></div>
         <div class="col-md-4"><label class="form-label fw-bold">العام الدراسي (بداية العام)</label><input type="number" class="form-control" name="year" min="2020" max="2100" value="{{ start_year }}" required></div>
         <div class="col-md-4"><label class="form-label fw-bold">عدد سجلات الدفتر لكل صف</label><select class="form-select" name="row_count">{% for n in row_options %}<option value="{{ n }}" {% if n == row_count %}selected{% endif %}>{{ n }} سجلًا</option>{% endfor %}</select></div>
       </div>
       <h5 class="fw-bold mb-2">أولًا: اختر الصفوف والشعب</h5>
       <div class="row g-2 mb-4">
         {% for cls in available_classes %}
-        <div class="col-sm-6 col-lg-4"><label class="border rounded-3 p-3 d-flex gap-2 align-items-center h-100">
+        <div class="col-sm-6 col-lg-4"><label class="class-choice p-3 d-flex gap-2 align-items-center h-100">
           <input class="form-check-input mt-0" type="checkbox" name="class_ids" value="{{ cls.id }}" {% if cls.id in selected_class_ids %}checked{% endif %}>
           <span>{{ cls.name }}</span>
         </label></div>
