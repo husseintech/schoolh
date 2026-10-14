@@ -254,10 +254,8 @@ def followup_register(request):
         except Exception:
             settings_table_ready = False
             logger.exception("Unable to initialize/read teacher follow-up register settings")
-            messages.error(
-                request,
-                "تعذر تهيئة جدول حفظ بنود دفتر المتابعة. لم تُحذف أي بيانات؛ يرجى إعادة المحاولة بعد اكتمال اتصال قاعدة البيانات.",
-            )
+            # Keep the register page usable; the persistence failure is logged,
+            # and a warning is shown only if the user explicitly tries to save.
     saved_criteria = []
     if saved_settings:
         for item in saved_settings.criteria or []:
