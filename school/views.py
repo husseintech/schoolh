@@ -401,13 +401,15 @@ def warden_followup_report(request):
     # Build one row per follow-up and make the criteria the table headers.
     # When "all wardens" is selected, use the union of their criteria so that
     # each warden can still have a different set of follow-up items.
+    # Keep legacy database fields aligned with the exact default criteria
+    # shown on the follow-up form, so the report never invents uneditable labels.
     legacy_items = [
-        ('الغرف الصفية', 'classrooms_status', 'classrooms_notes'),
-        ('الساحات والملاعب', 'yards_status', 'yards_notes'),
-        ('غرفة المعلمين والإدارة', 'staff_rooms_status', 'staff_rooms_notes'),
-        ('الممرات والطوابق', 'corridors_status', 'corridors_notes'),
-        ('الروضة والمرافق', 'kindergarten_status', 'kindergarten_notes'),
-        ('الوحدات الصحية والمدخل', 'sanitary_status', 'sanitary_notes'),
+        (WARDEN_DEFAULT_CRITERIA[0], 'classrooms_status', 'classrooms_notes'),
+        (WARDEN_DEFAULT_CRITERIA[1], 'yards_status', 'yards_notes'),
+        (WARDEN_DEFAULT_CRITERIA[2], 'staff_rooms_status', 'staff_rooms_notes'),
+        (WARDEN_DEFAULT_CRITERIA[3], 'corridors_status', 'corridors_notes'),
+        (WARDEN_DEFAULT_CRITERIA[4], 'kindergarten_status', 'kindergarten_notes'),
+        (WARDEN_DEFAULT_CRITERIA[5], 'sanitary_status', 'sanitary_notes'),
     ]
     report_records = []
     criterion_order = []
