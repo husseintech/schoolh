@@ -398,66 +398,72 @@ def warden_followup_report(request):
     if month:
         qs = qs.filter(followup_date__month=int(month))
     status_labels = dict(WardenFollowup.STATUS_CHOICES)
-    # Build one row per follow-up and make the criteria the table headers.
-    # When "all wardens" is selected, use the union of their criteria so that
-    # each warden can still have a different set of follow-up items.
-    # Keep legacy database fields aligned with the exact default criteria
-    # shown on the follow-up form, so the report never invents uneditable labels.
+    # Report columns must come from the criteria actually configured on the
+    # follow-up form for each warden, not stale historical labels or fixed fields.
     legacy_items = [
-        (WARDEN_DEFAULT_CRITERIA[0], 'classrooms_status', 'classrooms_notes'),
-        (WARDEN_DEFAULT_CRITERIA[1], 'yards_status', 'yards_notes'),
-        (WARDEN_DEFAULT_CRITERIA[2], 'staff_rooms_status', 'staff_rooms_notes'),
-        (WARDEN_DEFAULT_CRITERIA[3], 'corridors_status', 'corridors_notes'),
-        (WARDEN_DEFAULT_CRITERIA[4], 'kindergarten_status', 'kindergarten_notes'),
-        (WARDEN_DEFAULT_CRITERIA[5], 'sanitary_status', 'sanitary_notes'),
+        (WARDEN_DEFAULT_CRITERIA[0], 'classrooms_status', 'classrooms_notes', 'classrooms_status'),
+        (WARDEN_DEFAULT_CRITERIA[1], 'yards_status', 'yards_notes', 'yards_status'),
+        (WARDEN_DEFAULT_CRITERIA[2], 'staff_rooms_status', 'staff_rooms_notes', 'staff_rooms_status'),
+        (WARDEN_DEFAULT_CRITERIA[3], 'corridors_status', 'corridors_notes', 'corridors_status'),
+        (WARDEN_DEFAULT_CRITERIA[4], 'kindergarten_status', 'kindergarten_notes', 'kindergarten_status'),
+        (WARDEN_DEFAULT_CRITERIA[5], 'sanitary_status', 'sanitary_notes', 'sanitary_status'),
     ]
+    legacy_by_criterion = {item[0]: item for item in legacy_items}
     report_records = []
     criterion_order = []
 
-    for followup in qs.order_by('followup_date', 'warden__full_name'):
-        items = followup.evaluation_data or []
-        if items:
-            evaluations = {
-                item.get('criterion', ''): {
-                    'status': status_labels.get(item.get('status', ''), item.get('status', '')),
-                    'notes': item.get('notes', ''),
-                }
-                for item in items if item.get('criterion', '')
-            }
-        else:
-            # Legacy rows have only six fixed database fields and no saved criterion
-            # snapshot. Show those values only when the exact criterion is still
-            # configured for this warden; never add unrelated fixed headings.
-            evaluations = {}
-            configured_criteria = followup.warden.criteria or WARDEN_DEFAULT_CRITERIA
-            configured_criteria = [
-                str(item).strip() for item in configured_criteria
-                if str(item).strip()
-            ]
-            legacy_display = {
-                'classrooms_status': followup.get_classrooms_status_display(),
-                'yards_status': followup.get_yards_status_display(),
-                'staff_rooms_status': followup.get_staff_rooms_status_display(),
-                'corridors_status': followup.get_corridors_status_display(),
-                'kindergarten_status': followup.get_kindergarten_status_display(),
-                'sanitary_status': followup.get_sanitary_status_display(),
-            }
-            for criterion, status_field, notes_field in legacy_items:
-                if criterion not in configured_criteria:
-                    continue
-                status_value = getattr(followup, status_field)
-                notes_value = getattr(followup, notes_field) or ''
-                # Do not add an empty legacy item to the report.
-                if not status_value and not notes_value:
-                    continue
-                evaluations[criterion] = {
-                    'status': legacy_display[status_field] or '-',
-                    'notes': notes_value,
-                }
-
-        for criterion in evaluations:
+    # Use the current criteria shown on each warden's follow-up form as the
+    # sole source of report headings. This prevents removed/old criteria from
+    # leaking into the report through historical JSON snapshots.
+    configured_by_warden = {}
+    for warden in ( [selected] if selected else wardens ):
+        raw_criteria = warden.criteria or WARDEN_DEFAULT_CRITERIA
+        configured_by_warden[warden.id] = list(dict.fromkeys(
+            str(item).strip() for item in raw_criteria if str(item).strip()
+        ))
+        for criterion in configured_by_warden[warden.id]:
             if criterion not in criterion_order:
                 criterion_order.append(criterion)
+
+    for followup in qs.order_by('followup_date', 'warden__full_name'):
+        allowed_criteria = configured_by_warden.get(followup.warden_id, [])
+        saved_items = followup.evaluation_data or []
+        saved_evaluations = {
+            str(item.get('criterion', '')).strip(): {
+                'status': status_labels.get(item.get('status', ''), item.get('status', '')),
+                'notes': item.get('notes', '') or '',
+            }
+            for item in saved_items
+            if str(item.get('criterion', '')).strip()
+        }
+        evaluations = {}
+        legacy_display = {
+            'classrooms_status': followup.get_classrooms_status_display(),
+            'yards_status': followup.get_yards_status_display(),
+            'staff_rooms_status': followup.get_staff_rooms_status_display(),
+            'corridors_status': followup.get_corridors_status_display(),
+            'kindergarten_status': followup.get_kindergarten_status_display(),
+            'sanitary_status': followup.get_sanitary_status_display(),
+        }
+        for criterion in allowed_criteria:
+            # Prefer the saved evaluation for this exact criterion. For older
+            # rows without that snapshot, use a legacy field only when its
+            # criterion exactly matches one configured for this warden.
+            if criterion in saved_evaluations:
+                evaluations[criterion] = saved_evaluations[criterion]
+                continue
+            legacy = legacy_by_criterion.get(criterion)
+            if legacy:
+                _, status_field, notes_field, display_key = legacy
+                status_value = getattr(followup, status_field)
+                notes_value = getattr(followup, notes_field) or ''
+                if status_value or notes_value:
+                    evaluations[criterion] = {
+                        'status': legacy_display[display_key] or '-',
+                        'notes': notes_value,
+                    }
+                    continue
+            evaluations[criterion] = {'status': '-', 'notes': ''}
 
         report_records.append({
             'date': followup.followup_date,
@@ -465,12 +471,9 @@ def warden_followup_report(request):
             'evaluations': evaluations,
             'general_notes': followup.general_notes or '',
         })
-
-    report_columns = [{'key': f'c{i}', 'name': criterion} for i, criterion in enumerate(criterion_order)]
-    for record in report_records:
-        record['cells'] = [
-            record['evaluations'].get(column['name'], {'status': '-', 'notes': ''})
-            for column in report_columns
+        report_records[-1]['cells'] = [
+            evaluations.get(column, {'status': '-', 'notes': ''})
+            for column in criterion_order
         ]
 
     return render(request, 'school/warden_report.html', {
