@@ -425,12 +425,15 @@ def warden_followup_report(request):
                 for item in items if item.get('criterion', '')
             }
         else:
+            # Legacy rows have only six fixed database fields and no saved criterion
+            # snapshot. Show those values only when the exact criterion is still
+            # configured for this warden; never add unrelated fixed headings.
             evaluations = {}
-            for criterion, status_field, notes_field in legacy_items:
-                evaluations[criterion] = {
-                    'status': getattr(followup, status_field).replace('_', ' ') if getattr(followup, status_field) else '-',
-                    'notes': getattr(followup, notes_field) or '',
-                }
+            configured_criteria = followup.warden.criteria or WARDEN_DEFAULT_CRITERIA
+            configured_criteria = [
+                str(item).strip() for item in configured_criteria
+                if str(item).strip()
+            ]
             legacy_display = {
                 'classrooms_status': followup.get_classrooms_status_display(),
                 'yards_status': followup.get_yards_status_display(),
@@ -440,7 +443,17 @@ def warden_followup_report(request):
                 'sanitary_status': followup.get_sanitary_status_display(),
             }
             for criterion, status_field, notes_field in legacy_items:
-                evaluations[criterion]['status'] = legacy_display[status_field]
+                if criterion not in configured_criteria:
+                    continue
+                status_value = getattr(followup, status_field)
+                notes_value = getattr(followup, notes_field) or ''
+                # Do not add an empty legacy item to the report.
+                if not status_value and not notes_value:
+                    continue
+                evaluations[criterion] = {
+                    'status': legacy_display[status_field] or '-',
+                    'notes': notes_value,
+                }
 
         for criterion in evaluations:
             if criterion not in criterion_order:
