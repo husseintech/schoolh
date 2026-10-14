@@ -20,7 +20,7 @@ thead tr.weights th{background:#e5f5f2;color:#17665f;border-color:#9accc4;font-s
 th.number,td.number{width:9mm;background:#f0f4fb}th.student,td.student{text-align:right;width:48mm;padding-right:2mm}
 .criterion{width:auto}.student-row td{height:{{ row_height }}mm;background:#fff; padding:.4mm .5mm}.student-row:nth-child(even) td{background:#f6f9fe}.student-row td:first-child{color:#47658e;font-weight:700}
 /* When there are more than five criteria, use narrow vertical headers and include each weight in parentheses. */
-table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:mixed;vertical-align:middle;height:30mm;min-width:9mm;padding:1mm .5mm;white-space:normal;overflow-wrap:anywhere;font-size:8pt;line-height:1.2}
+table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:upright;vertical-align:middle;height:30mm;min-width:9mm;padding:1mm .5mm;white-space:normal;overflow-wrap:anywhere;font-size:8pt;line-height:1.2;direction:rtl}
 table.many-criteria th.number,table.many-criteria th.student{writing-mode:horizontal-tb}
 /* The report itself stays monochrome in both preview and print: no colored fills, only clear black borders. */
 .page{background:#fff!important;color:#000!important;box-shadow:none;border:1px solid #000}
@@ -59,7 +59,7 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
   {% for semester in page.semesters %}
 <section class="page">
   <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>المبحث: {{ selected_subject.name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
-  <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span><span>مجموع الأوزان: {{ total_weight }}%</span></div>
+  <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span></div>
   <div class="table-wrap"><table class="{% if criteria|length > 5 %}many-criteria{% endif %}">
     <thead>
       <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion" {% if criteria|length > 5 %}rowspan="2"{% endif %}>{% if criteria|length > 5 %}{{ criterion.name }} ({{ criterion.weight }}%){% else %}{{ criterion.name }}{% endif %}</th>{% endfor %}</tr>
