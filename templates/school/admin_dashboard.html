@@ -249,6 +249,37 @@
     </div>
 </div>
 
+<div class="row g-4 mt-1">
+    <div class="col-12">
+        <div class="panel">
+            <div class="panel-head">
+                <h5><i class="bi bi-sticky-fill"></i> آخر الملاحظات المسجلة</h5>
+                <a href="{% url 'note_list' %}" class="btn btn-sm btn-light"><i class="bi bi-journal-text"></i> جميع الملاحظات</a>
+            </div>
+            <div class="panel-body">
+                {% if recent_notes %}
+                <div class="alert-list">
+                    {% for note in recent_notes %}
+                    <div class="alert-link">
+                        <div class="alert-main">
+                            <div class="alert-dot info"><i class="bi bi-sticky"></i></div>
+                            <div>
+                                <div class="alert-text">{{ note.student.full_name }} — {{ note.note_type }}</div>
+                                <div class="alert-sub">{{ note.content|truncatechars:150 }}</div>
+                                <div class="activity-meta">{{ note.created_by.get_full_name|default:note.created_by.username }} · {{ note.created_at|date:"Y-m-d H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="all-good"><i class="bi bi-sticky"></i><div>لا توجد ملاحظات مسجلة حتى الآن.</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {% if show_quick_actions %}
 <section class="qa-row" aria-label="إجراءات سريعة">
