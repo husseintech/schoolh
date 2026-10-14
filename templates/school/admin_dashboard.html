@@ -156,10 +156,6 @@
         <div class="icon"><i class="bi bi-door-open"></i></div>
         <div><div class="today-value">{{ today.leaves }}</div><div class="today-label">أذونات المغادرة</div></div>
     </a>
-    <a class="today-card" href="{% url 'note_list' %}">
-        <div class="icon"><i class="bi bi-sticky-fill"></i></div>
-        <div><div class="today-value">{{ today.notes }}</div><div class="today-label">ملاحظات اليوم</div></div>
-    </a>
     <a class="today-card attention" href="{% url 'student_discipline' %}">
         <div class="icon"><i class="bi bi-exclamation-triangle"></i></div>
         <div><div class="today-value">{{ today.warnings|add:today.summons }}</div><div class="today-label">إنذارات واستدعاءات</div></div>
@@ -175,7 +171,6 @@
     <a class="qa-btn" href="{% url 'absence_list' %}"><i class="bi bi-person-x"></i> تسجيل/متابعة الغياب</a>
     <a class="qa-btn" href="{% url 'lateness_list' %}"><i class="bi bi-clock"></i> تسجيل/متابعة التأخير</a>
     <a class="qa-btn" href="{% url 'add_leave' %}"><i class="bi bi-door-open"></i> إذن مغادرة</a>
-    <a class="qa-btn" href="{% url 'add_note' %}"><i class="bi bi-sticky"></i> إضافة ملاحظة</a>
     <a class="qa-btn" href="{% url 'send_message' %}"><i class="bi bi-send"></i> إرسال رسالة</a>
 </section>
 {% endif %}
@@ -292,27 +287,27 @@
     <div class="col-12">
         <div class="panel">
             <div class="panel-head">
-                <h5><i class="bi bi-activity"></i> آخر الأحداث اليوم</h5>
-                <a href="{% url 'note_list' %}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i> كل الملاحظات</a>
+                <h5><i class="bi bi-person-video3"></i> المعلمون المطلوب حضور حصصهم اليوم</h5>
+                <a href="{% url 'visit_program_list' %}" class="btn btn-sm btn-light"><i class="bi bi-calendar-check"></i> برنامج الزيارات</a>
             </div>
             <div class="panel-body">
-                {% if recent_notes %}
-                <div class="row g-3">
-                    {% for note in recent_notes %}
-                    <div class="col-md-6 col-xl-4">
-                        <div class="activity-item">
-                            <div class="activity-avatar">{{ note.student.full_name|first }}</div>
-                            <div class="activity-body">
-                                <div class="activity-top"><span class="activity-title">{{ note.student.full_name }}</span><span class="note-type">{{ note.get_note_type_display }}</span></div>
-                                <div class="activity-text">{{ note.content|truncatechars:58 }}</div>
-                                <div class="activity-meta"><i class="bi bi-clock"></i> {{ note.created_at|timesince }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
+                {% if today_visit_program %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>المعلم</th><th>الحصة / الدرس</th><th>الملاحظات</th></tr></thead>
+                        <tbody>
+                            {% for entry in today_visit_program %}
+                            <tr>
+                                <td class="fw-bold">{{ entry.teacher.full_name }}</td>
+                                <td>{{ entry.lesson|default:"غير محددة" }}</td>
+                                <td>{{ entry.notes|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 {% else %}
-                <div class="all-good"><i class="bi bi-inbox"></i><div>لا توجد أحداث حديثة للعرض</div></div>
+                <div class="all-good"><i class="bi bi-calendar2-check"></i><div>لا يوجد معلمون محددون للزيارة في برنامج اليوم.</div></div>
                 {% endif %}
             </div>
         </div>
