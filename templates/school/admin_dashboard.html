@@ -166,6 +166,38 @@
     </a>
 </section>
 
+<div class="row g-4 mt-1">
+    <div class="col-12">
+        <div class="panel">
+            <div class="panel-head">
+                <h5><i class="bi bi-person-video3"></i> المعلمون المطلوب حضور حصصهم اليوم</h5>
+                <a href="{% url 'visit_program_list' %}" class="btn btn-sm btn-light"><i class="bi bi-calendar-check"></i> برنامج الزيارات</a>
+            </div>
+            <div class="panel-body">
+                {% if today_visit_program %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>المعلم</th><th>الحصة / الدرس</th><th>الملاحظات</th></tr></thead>
+                        <tbody>
+                            {% for entry in today_visit_program %}
+                            <tr>
+                                <td class="fw-bold">{{ entry.teacher.full_name }}</td>
+                                <td>{{ entry.lesson|default:"غير محددة" }}</td>
+                                <td>{{ entry.notes|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="all-good"><i class="bi bi-calendar2-check"></i><div>لا يوجد معلمون محددون للزيارة في برنامج اليوم.</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {% if show_quick_actions %}
 <section class="qa-row" aria-label="إجراءات سريعة">
     <a class="qa-btn" href="{% url 'absence_list' %}"><i class="bi bi-person-x"></i> تسجيل/متابعة الغياب</a>
@@ -283,34 +315,4 @@
     </div>
 </div>
 
-<div class="row g-4 mt-1">
-    <div class="col-12">
-        <div class="panel">
-            <div class="panel-head">
-                <h5><i class="bi bi-person-video3"></i> المعلمون المطلوب حضور حصصهم اليوم</h5>
-                <a href="{% url 'visit_program_list' %}" class="btn btn-sm btn-light"><i class="bi bi-calendar-check"></i> برنامج الزيارات</a>
-            </div>
-            <div class="panel-body">
-                {% if today_visit_program %}
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead><tr><th>المعلم</th><th>الحصة / الدرس</th><th>الملاحظات</th></tr></thead>
-                        <tbody>
-                            {% for entry in today_visit_program %}
-                            <tr>
-                                <td class="fw-bold">{{ entry.teacher.full_name }}</td>
-                                <td>{{ entry.lesson|default:"غير محددة" }}</td>
-                                <td>{{ entry.notes|default:"—" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="all-good"><i class="bi bi-calendar2-check"></i><div>لا يوجد معلمون محددون للزيارة في برنامج اليوم.</div></div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
