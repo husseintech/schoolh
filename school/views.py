@@ -1666,6 +1666,10 @@ def add_note(request, student_id=None):
                     messages.warning(request, 'تم إضافة الملاحظة ولكن تعذر إرسال رسالة واتساب')
             else:
                 messages.success(request, 'تم إضافة الملاحظة بنجاح (لا يوجد رقم هاتف مسجل لولي الأمر)')
+            # When the note was opened from a specific student on the students page,
+            # return to the students list instead of the general notes page.
+            if student_id:
+                return redirect('student_list')
             return redirect('note_list')
     else:
         initial = {}
