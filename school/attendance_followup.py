@@ -196,6 +196,7 @@ def _followup_print_context(request, teacher, classes, criteria, row_count, star
         "class_pages": class_pages,
         "criteria": criteria,
         "row_count": row_count,
+        "row_height": f"{155 / row_count:.3f}",
         "start_year": start_year,
         "academic_year": f"{start_year}/{start_year + 1}",
         "info": SchoolInfo.objects.first(),
