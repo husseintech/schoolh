@@ -888,7 +888,7 @@
         </div>
         {% endif %}
 
-        {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms or 'social_committee_view' in user_perms or 'nominations_view' in user_perms or 'guardians_view' in user_perms or show_attendance_register or show_grade_register %}
+        {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms or 'social_committee_view' in user_perms or 'nominations_view' in user_perms or 'guardians_view' in user_perms or show_attendance_register or show_grade_register or user.profile.role == 'teacher' or user.profile.role == 'admin' %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-teachers" aria-expanded="false">
             <span class="nav-section-label"><span class="section-icon"><i class="bi bi-person-workspace"></i></span><span>المعلمون</span></span><i class="bi bi-chevron-down"></i>
         </button>
@@ -923,6 +923,8 @@
         <a href="{% url 'grade_register' %}" class="nav-link {% if 'grade_register' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-journal-text"></i> دفتر العلامات
         </a>
+        {% endif %}
+        {% if user.profile.role == 'teacher' or user.profile.role == 'admin' %}
         <a href="{% url 'followup_register' %}" class="nav-link {% if 'followup_register' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-clipboard2-data-fill"></i> دفتر المتابعة
         </a>
