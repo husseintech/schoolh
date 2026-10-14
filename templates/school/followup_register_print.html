@@ -3,8 +3,25 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>دفتر متابعة الطلاب — {{ selected_teacher.full_name }}</title>
-<style>
-*{box-sizing:border-box}body{font-family:Arial,Tahoma,sans-serif;color:#111;margin:0;background:#eee}.toolbar{position:sticky;top:0;z-index:5;background:#222;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px}.toolbar button,.toolbar a{border:0;border-radius:6px;padding:9px 14px;font-weight:bold;text-decoration:none;cursor:pointer}.toolbar button{background:#fff;color:#111}.toolbar a{background:#555;color:#fff}.page{width:277mm;min-height:190mm;margin:12px auto;background:#fff;padding:8mm;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.school-line{display:flex;justify-content:space-between;gap:8px;font-size:10pt;font-weight:bold;border-bottom:1px solid #222;padding-bottom:4mm}.heading{text-align:center;margin:5mm 0 3mm;font-size:20pt}.subheading{display:flex;justify-content:space-between;gap:5mm;font-weight:bold;margin-bottom:4mm}.weights{font-weight:bold;background:#f0f0f0}.table-wrap{width:100%}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #222;text-align:center;padding:2mm 1mm;font-size:9pt;overflow-wrap:anywhere}th{background:#f4f4f4}th.number,td.number{width:9mm}th.student,td.student{text-align:right;width:48mm;padding-right:2mm}.criterion{width:auto}.student-row td{height:{{ row_height }}mm}.warning{margin-top:3mm;font-size:9pt;color:#555}@page{size:A4 landscape;margin:8mm}@media print{body{background:#fff}.toolbar{display:none}.page{margin:0;width:auto;min-height:0;padding:0}.student-row td{height:{{ row_height }}mm}.warning{display:none}}
+<style>*{box-sizing:border-box}
+:root{--navy:#203b68;--blue:#3f69ad;--blue-light:#e8f0ff;--teal:#dff4f1;--purple:#eee8ff;--line:#9eb1cc}
+body{font-family:Arial,Tahoma,sans-serif;color:#1d2e48;margin:0;background:#eef2f8}
+.toolbar{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#1e345c,#355f9e);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 3px 12px #14284a22}
+.toolbar button,.toolbar a{border:0;border-radius:8px;padding:9px 14px;font-weight:bold;text-decoration:none;cursor:pointer}.toolbar button{background:#fff;color:#234271}.toolbar a{background:#dce8fb;color:#234271}
+.page{width:277mm;min-height:190mm;margin:12px auto;background:#fff;padding:7mm;border:1px solid #d1dcec;box-shadow:0 8px 28px #23395d1c;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}
+.school-line{display:grid;grid-template-columns:1fr 1.5fr 1fr;align-items:center;gap:8px;font-size:10pt;font-weight:bold;border-bottom:2px solid var(--blue);padding:0 0 3mm;color:var(--navy)}.school-line span:nth-child(2){text-align:center}.school-line span:last-child{text-align:left}
+.heading{text-align:center;margin:4mm 0 3mm;font-size:20pt;color:var(--navy);letter-spacing:.2px}
+.subheading{display:flex;justify-content:space-between;align-items:center;gap:5mm;font-weight:bold;margin-bottom:3mm;color:#284a7d;background:#f1f5fc;border:1px solid #d4e0f1;border-radius:8px;padding:2.5mm 3mm}
+.semester-heading{display:flex;align-items:center;justify-content:space-between;gap:5mm;padding:2.5mm 4mm;margin:0 0 3mm;border-radius:9px;background:linear-gradient(90deg,#244879,#4777bb);color:#fff;font-size:13pt;font-weight:800;box-shadow:inset 0 -2px #18375f}.semester-heading .semester-chip{border:1px solid #ffffff77;background:#ffffff1c;border-radius:30px;padding:1mm 4mm;font-size:9pt}
+.weights{font-weight:bold;background:#e3edf9;color:#274879}.table-wrap{width:100%}table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border:1px solid var(--line);text-align:center;padding:1.6mm 1mm;font-size:9pt;overflow-wrap:anywhere}
+thead tr:first-child th{background:#dce8f8;color:#1f3c6a;border-color:#91a8c9;font-weight:800}
+thead tr.weights th{background:#e5f5f2;color:#17665f;border-color:#9accc4;font-size:9pt}
+th.number,td.number{width:9mm;background:#f0f4fb}th.student,td.student{text-align:right;width:48mm;padding-right:2mm}
+.criterion{width:auto}.student-row td{height:{{ row_height }}mm;background:#fff}.student-row:nth-child(even) td{background:#f6f9fe}.student-row td:first-child{color:#47658e;font-weight:700}
+.warning{margin-top:3mm;font-size:9pt;color:#8a4b12;background:#fff4df;padding:2mm;border-radius:5px}
+@page{size:A4 landscape;margin:8mm}
+@media print{body{background:#fff}.toolbar{display:none}.page{margin:0;width:auto;min-height:0;padding:0;border:0;box-shadow:none}.student-row td{height:{{ row_height }}mm}.warning{display:none}thead{display:table-header-group}tr{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -14,7 +31,9 @@
 <section class="page">
   <div class="school-line"><span>{{ page.class_name }}</span><span>متابعة المعلم: {{ selected_teacher.full_name }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
   <h1 class="heading">متابعة الطلاب</h1>
-  <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>مجموع الأوزان: {{ total_weight }}%</span></div>
+  <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
+  {% for semester in page.semesters %}
+  <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span><span class="semester-chip">الفصل {{ semester.number }}</span><span>مجموع الأوزان: {{ total_weight }}%</span></div>
   <div class="table-wrap"><table>
     <thead>
       <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion">{{ criterion.name }}</th>{% endfor %}</tr>
@@ -22,6 +41,7 @@
     </thead>
     <tbody>{% for row in page.student_rows %}<tr class="student-row"><td class="number">{{ row.number }}</td><td class="student">{{ row.name }}</td>{% for criterion in criteria %}<td></td>{% endfor %}</tr>{% endfor %}</tbody>
   </table></div>
+  {% endfor %}
   {% if page.students_omitted %}<p class="warning">تنبيه: عدد الطلاب {{ page.student_count }}، وعدد السجلات المختار {{ row_count }}؛ لم تظهر أسماء {{ page.students_omitted }} طالبًا بسبب حد السجلات.</p>{% endif %}
 </section>
 {% endfor %}

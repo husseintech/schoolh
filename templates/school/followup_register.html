@@ -1,8 +1,21 @@
 {% extends 'school/base.html' %}
-{% block title %}دفتر المتابعة{% endblock %}
+{% block title %}دفتر المتابعة<style>
+.followup-setup{border-radius:22px;overflow:hidden;border-top:5px solid #4776c7;background:linear-gradient(180deg,#f7faff,#fff 210px);box-shadow:0 12px 32px rgba(31,65,114,.09)!important}
+.followup-setup h3,.followup-setup h5{color:#244879}
+.followup-setup .semester-picker{border:1px solid #c8d9f4;background:linear-gradient(135deg,#eef5ff,#f8f2ff);border-radius:15px}
+.semester-option{display:flex;align-items:center;gap:9px;padding:10px 16px;border:1px solid #b7cbed;border-radius:12px;background:#fff;font-weight:700;color:#284b7b;cursor:pointer}
+.semester-option:has(input:checked){background:#dfeaff;border-color:#4776c7;box-shadow:0 0 0 2px rgba(71,118,199,.1)}
+#criteriaTable{border-color:#cad9ed}#criteriaTable thead th{background:#e8effb;color:#274879;border-color:#c4d4eb}
+#criteriaTable tbody tr:nth-child(even){background:#f7faff}
+#criteriaTable .form-control{border-color:#d0dced;border-radius:9px}
+#addCriterion{border-radius:10px}
+.followup-setup .btn-primary{background:#365fa5;border-color:#365fa5}
+@media(max-width:600px){.followup-setup .card-body{padding:1rem!important}.semester-option{flex:1}}
+</style>
+{% endblock %}
 {% block page_heading %}دفتر متابعة الطلاب{% endblock %}
 {% block content %}
-<div class="card border-0 shadow-sm mb-4" style="border-radius:18px">
+<div class="followup-setup card border-0 shadow-sm mb-4">
   <div class="card-body p-4">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
       <div><h3 class="fw-bold mb-1">إعداد دفتر متابعة الطلاب</h3><p class="text-muted mb-0">اختر المعلم والصفوف، ثم أضف بنود المتابعة وأوزانها. يمكنك طباعة دفاتر جميع الصفوف المحددة في ملف واحد.</p></div>
@@ -50,6 +63,14 @@
           {% endfor %}
         </tbody>
       </table></div>
+      <div class="semester-picker p-3 mb-4">
+        <h5 class="fw-bold mb-2">ثالثًا: الفصول المطلوب طباعتها</h5>
+        <p class="small text-muted mb-3">اختر فصلًا واحدًا أو الفصلين معًا. سيظهر الفصل المختار في عنوان كل دفتر قبل مجموع الأوزان.</p>
+        <div class="d-flex flex-wrap gap-3">
+          <label class="semester-option"><input class="form-check-input" type="checkbox" name="semesters" value="1" {% if not selected_semesters or '1' in selected_semesters %}checked{% endif %}><span>الفصل الأول</span></label>
+          <label class="semester-option"><input class="form-check-input" type="checkbox" name="semesters" value="2" {% if not selected_semesters or '2' in selected_semesters %}checked{% endif %}><span>الفصل الثاني</span></label>
+        </div>
+      </div>
       <div class="d-flex flex-wrap gap-2">
         <button class="btn btn-primary" type="submit" name="action" value="print"><i class="bi bi-printer-fill"></i> طباعة دفاتر المتابعة المحددة</button>
         <button class="btn btn-outline-secondary" type="submit" name="action" value="cover"><i class="bi bi-file-earmark-person"></i> طباعة غلاف دفتر المتابعة</button>

@@ -163,7 +163,7 @@ def _parse_followup_criteria(post_data):
     return criteria, errors
 
 
-def _followup_print_context(request, teacher, classes, criteria, row_count, start_year):
+def _followup_print_context(request, teacher, classes, criteria, row_count, start_year, semesters=(1, 2)):
     class_pages = []
     for cls in classes:
         students = list(
@@ -190,6 +190,7 @@ def _followup_print_context(request, teacher, classes, criteria, row_count, star
             "student_rows": student_rows,
             "student_count": len(students),
             "students_omitted": max(0, len(students) - row_count),
+            "semesters": [{"number": number, "label": "الفصل الأول" if number == 1 else "الفصل الثاني"} for number in semesters],
         })
     return {
         "selected_teacher": teacher,
@@ -224,6 +225,17 @@ def followup_register(request):
 
     if request.method == "POST":
         action = request.POST.get("action", "print")
+        semester_values = request.POST.getlist("semesters")
+        semesters = tuple(number for number in (1, 2) if str(number) in semester_values)
+        if not semesters:
+            messages.error(request, "اختر الفصل الأول أو الفصل الثاني أو كليهما.")
+            return render(request, "school/followup_register.html", {
+                "teachers": teachers, "selected_teacher": teacher,
+                "available_classes": available_classes, "selected_class_ids": set(request.POST.getlist("class_ids")),
+                "criteria_form_rows": [{"name": n, "weight": w} for n, w in zip(request.POST.getlist("criterion_name"), request.POST.getlist("criterion_weight"))],
+                "row_count": row_count, "row_options": range(MIN_REGISTER_STUDENTS, MAX_REGISTER_STUDENTS + 1),
+                "start_year": start_year, "default_criteria": False, "selected_semesters": set(semester_values),
+            })
         if not teacher:
             messages.error(request, "اختر المعلم أولًا.")
             return redirect("followup_register")
@@ -261,7 +273,7 @@ def followup_register(request):
                 "default_criteria": False,
             })
 
-        context = _followup_print_context(request, teacher, selected_classes, criteria, row_count, start_year)
+        context = _followup_print_context(request, teacher, selected_classes, criteria, row_count, start_year, semesters=semesters)
         context["print_cover_only"] = action == "cover"
         template = "school/followup_register_cover.html" if action == "cover" else "school/followup_register_print.html"
         return render(request, template, context)
