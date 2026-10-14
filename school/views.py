@@ -983,7 +983,7 @@ def reset_student_password(request, student_id):
         student.plain_password = new_password
         student.save()
         messages.success(request, f'تم تغيير كلمة مرور الطالب {student.full_name} إلى: {new_password}')
-        return redirect('student_detail', student_id=student.id)
+        return redirect('student_list')
     return render(request, 'school/reset_password.html', {'student': student})
 
 
@@ -2415,6 +2415,9 @@ def add_leave(request, student_id=None):
                 )
             log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.leave_date}')
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
+            # If the leave was started from a student's row, return to all students.
+            if student_id:
+                return redirect('student_list')
             if request.user.profile.role == 'admin':
                 return redirect('leave_list')
             return redirect('student_list')
