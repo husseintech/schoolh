@@ -1490,3 +1490,22 @@ class VisitProgramDriveFile(models.Model):
 
     def __str__(self):
         return self.file_name
+
+class TeacherFollowupRegisterSettings(models.Model):
+    """Reusable follow-up criteria saved independently for each teacher."""
+    teacher = models.OneToOneField(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name='followup_register_settings',
+        verbose_name='المعلم',
+    )
+    criteria = models.JSONField('بنود المتابعة وأوزانها', default=list, blank=True)
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+
+    class Meta:
+        verbose_name = 'إعدادات دفتر متابعة المعلم'
+        verbose_name_plural = 'إعدادات دفاتر متابعة المعلمين'
+
+    def __str__(self):
+        return f'إعدادات دفتر المتابعة - {self.teacher.full_name}'
+
