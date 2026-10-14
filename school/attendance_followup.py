@@ -264,7 +264,23 @@ def followup_register(request):
             # and a warning is shown only if the user explicitly tries to save.
     saved_criteria = []
     if saved_settings:
-        for item in saved_settings.criteria or []:
+        stored_criteria = saved_settings.criteria or []
+        # Older settings were stored as a single list per teacher. Preserve that
+        # list by assigning it to the currently selected subject once, then use
+        # a subject-id keyed map for all future settings.
+        if isinstance(stored_criteria, list) and selected_subject:
+            stored_criteria = {str(selected_subject.pk): stored_criteria}
+            try:
+                saved_settings.criteria = stored_criteria
+                saved_settings.save(update_fields=["criteria", "updated_at"])
+            except Exception:
+                logger.exception("Unable to migrate legacy follow-up criteria to subject scope")
+        subject_key = str(selected_subject.pk) if selected_subject else ""
+        if isinstance(stored_criteria, dict):
+            subject_items = stored_criteria.get(subject_key, []) if subject_key else []
+        else:
+            subject_items = []
+        for item in subject_items:
             if not isinstance(item, dict) or not str(item.get("name", "")).strip():
                 continue
             try:
@@ -325,15 +341,22 @@ def followup_register(request):
 
         if settings_table_ready:
           try:
-            TeacherFollowupRegisterSettings.objects.update_or_create(
+            settings_obj, _ = TeacherFollowupRegisterSettings.objects.get_or_create(
                 teacher=teacher,
-                defaults={
-                    "criteria": [
-                        {"name": item["name"], "weight": str(item["weight"])}
-                        for item in criteria
-                    ]
-                },
+                defaults={"criteria": {}},
             )
+            stored = settings_obj.criteria or {}
+            if isinstance(stored, list):
+                # Preserve older criteria under the currently selected subject.
+                stored = {str(selected_subject.pk): stored}
+            if not isinstance(stored, dict):
+                stored = {}
+            stored[str(selected_subject.pk)] = [
+                {"name": item["name"], "weight": str(item["weight"])}
+                for item in criteria
+            ]
+            settings_obj.criteria = stored
+            settings_obj.save(update_fields=["criteria", "updated_at"])
           except Exception:
             logger.exception("Unable to save teacher follow-up register settings")
             if action == "save":
@@ -354,8 +377,10 @@ def followup_register(request):
             messages.error(request, "اختر الفصل الأول أو الفصل الثاني أو كليهما.")
             return render(request, "school/followup_register.html", {
                 "teachers": teachers,
-                "selected_teacher": teacher,
+                "                selected_teacher": teacher,
                 "available_classes": available_classes,
+                "available_subjects": available_subjects,
+                "selected_subject": selected_subject,
                 "selected_class_ids": set(request.POST.getlist("class_ids")),
                 "criteria_form_rows": [
                     {"name": item["name"], "weight": item["weight"]}
