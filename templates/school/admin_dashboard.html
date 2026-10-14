@@ -70,6 +70,58 @@
     .panel-head h5 i { color:#3498db; }
     .panel-body { padding:16px 18px; }
 
+    /* إبراز اسم المعلم في برنامج الزيارات */
+    .visit-teacher-name {
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:8px 13px;
+        border-radius:12px;
+        color:#08783f;
+        background:linear-gradient(120deg,#e5f9ec,#f4fff7,#e0f6e8);
+        border:1px solid #a9e7bd;
+        font-weight:800;
+        box-shadow:0 3px 10px rgba(22,163,74,.10);
+        position:relative;
+        overflow:hidden;
+        transition:transform .22s ease, box-shadow .22s ease;
+        animation:visitNamePulse 3s ease-in-out infinite;
+    }
+    .visit-teacher-name::before {
+        content:"";
+        width:8px;
+        height:8px;
+        flex:0 0 8px;
+        border-radius:50%;
+        background:#16a34a;
+        box-shadow:0 0 0 4px rgba(22,163,74,.13);
+    }
+    .visit-teacher-name::after {
+        content:"";
+        position:absolute;
+        top:-40%;
+        bottom:-40%;
+        left:-45%;
+        width:28%;
+        transform:rotate(18deg);
+        background:rgba(255,255,255,.7);
+        animation:visitNameShine 4.5s ease-in-out infinite;
+        pointer-events:none;
+    }
+    .visit-teacher-name:hover {
+        transform:translateY(-2px) scale(1.02);
+        box-shadow:0 7px 17px rgba(22,163,74,.20);
+    }
+    @keyframes visitNamePulse {
+        0%,100% { box-shadow:0 3px 10px rgba(22,163,74,.10); }
+        50% { box-shadow:0 4px 16px rgba(22,163,74,.20); }
+    }
+    @keyframes visitNameShine {
+        0%,55% { left:-45%; opacity:0; }
+        65% { opacity:.8; }
+        85%,100% { left:125%; opacity:0; }
+    }
+
     .alert-list { display:flex; flex-direction:column; gap:9px; }
     .alert-link {
         display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 13px;
@@ -181,7 +233,7 @@
                         <tbody>
                             {% for entry in today_visit_program %}
                             <tr>
-                                <td class="fw-bold">{{ entry.teacher.full_name }}</td>
+                                <td><span class="visit-teacher-name">{{ entry.teacher.full_name }}</span></td>
                                 <td>{{ entry.lesson|default:"غير محددة" }}</td>
                                 <td>{{ entry.notes|default:"—" }}</td>
                             </tr>
