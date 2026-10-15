@@ -18,7 +18,7 @@ th,td{border:1px solid var(--line);text-align:center;padding:.6mm .6mm;font-size
 thead tr:first-child th{background:#dce8f8;color:#1f3c6a;border-color:#91a8c9;font-weight:800}
 thead tr.weights th{background:#e5f5f2;color:#17665f;border-color:#9accc4;font-size:9pt}
 th.number,td.number{width:9mm;background:#f0f4fb}th.student,td.student{text-align:right;width:48mm;padding-right:2mm}
-.criterion{width:auto}.student-row td{height:{{ row_height }}mm;background:#fff; padding:.4mm .5mm}.student-row:nth-child(even) td{background:#f6f9fe}.student-row td:first-child{color:#47658e;font-weight:700}
+.criterion{width:auto}.student{font-size:var(--student-font-size,9pt)}.student-row td{height:{{ row_height }}mm;background:#fff; padding:.4mm .5mm}.student-row:nth-child(even) td{background:#f6f9fe}.student-row td:first-child{color:#47658e;font-weight:700}
 /* When there are more than five criteria, use narrow vertical headers and include each weight in parentheses. */
 table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:mixed;vertical-align:middle;height:30mm;min-width:9mm;padding:1mm .5mm;white-space:normal;overflow-wrap:anywhere;font-size:var(--criterion-font-size,8pt);font-weight:400;line-height:1.2;direction:rtl}
 body.criteria-bold table.many-criteria th.criterion{font-weight:700}
@@ -141,6 +141,11 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
     const enabled=document.body.classList.toggle('monthly-layout');
     monthlyToggle.setAttribute('aria-pressed',String(enabled));
     monthlyToggle.textContent=enabled?'العودة إلى البنود العادية':'تقسيم البنود حسب الأشهر';
+    let pageStyle=document.getElementById('monthlyPageStyle');
+    if(enabled){
+      if(!pageStyle){pageStyle=document.createElement('style');pageStyle.id='monthlyPageStyle';document.head.appendChild(pageStyle);}
+      pageStyle.textContent='@page { size: A4 landscape; margin: 6mm; }';
+    }else if(pageStyle){pageStyle.remove();}
   });
   function setSize(value){
     const size=Math.max(7,Math.min(12,Number(value)||8));
