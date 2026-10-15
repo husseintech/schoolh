@@ -23,4 +23,14 @@ def school_ad_studio(request):
         defaults["title"] = request.POST.get("title", defaults["title"])[:160]
         defaults["body"] = request.POST.get("body", defaults["body"])[:1200]
         defaults["palette"] = request.POST.get("palette", "blue")
+    defaults["meta_pages"] = [
+        {"id": page.get("id"), "name": page.get("name")}
+        for page in request.session.get("meta_pages", [])
+        if page.get("id") and page.get("name")
+    ]
+    defaults["meta_selected_page"] = request.session.get("meta_selected_page", {})
+    defaults["meta_configured"] = bool(
+        getattr(__import__("django.conf", fromlist=["settings"]).settings, "META_APP_ID", "")
+        and getattr(__import__("django.conf", fromlist=["settings"]).settings, "META_OAUTH_REDIRECT_URI", "")
+    )
     return render(request, "school/ad_studio.html", defaults)
