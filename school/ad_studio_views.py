@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render
+from django.conf import settings
 
 
 @login_required
@@ -30,7 +31,8 @@ def school_ad_studio(request):
     ]
     defaults["meta_selected_page"] = request.session.get("meta_selected_page", {})
     defaults["meta_configured"] = bool(
-        getattr(__import__("django.conf", fromlist=["settings"]).settings, "META_APP_ID", "")
-        and getattr(__import__("django.conf", fromlist=["settings"]).settings, "META_OAUTH_REDIRECT_URI", "")
+        getattr(settings, "META_APP_ID", "")
+        and getattr(settings, "META_APP_SECRET", "")
+        and getattr(settings, "META_OAUTH_REDIRECT_URI", "")
     )
     return render(request, "school/ad_studio.html", defaults)
