@@ -63,6 +63,9 @@
   <div class="card-body p-4">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
       <div><h3 class="fw-bold mb-1">إعداد دفتر متابعة الطلاب</h3><p class="text-muted mb-0">اختر المعلم والصفوف، ثم أضف بنود المتابعة وأوزانها. يمكنك طباعة دفاتر جميع الصفوف المحددة في ملف واحد.</p></div>
+      {% if request.user.profile.role == 'admin' %}
+      <a href="{% url 'followup_register_missing_teachers' %}" class="btn btn-outline-danger"><i class="bi bi-printer"></i> تقرير المعلمين الذين لم يضيفوا بنودًا</a>
+      {% endif %}
       <span class="badge bg-primary fs-6">35–50 سجلًا</span>
     </div>
     {% if request.user.profile.role == 'admin' %}
