@@ -1,5 +1,3 @@
-import json
-
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render
@@ -8,8 +6,11 @@ from django.shortcuts import render
 @login_required
 def school_ad_studio(request):
     """Safe first-stage ad studio: preview only; no image API or Facebook publishing."""
-    profile = getattr(request.user, "profile", None)
-    if not (request.user.is_staff or getattr(profile, "role", "") == "admin"):
+    try:
+        profile = request.user.profile
+    except Exception:
+        profile = None
+    if getattr(profile, "role", "") != "admin":
         return HttpResponseForbidden("ليس لديك صلاحية الوصول إلى استوديو الإعلانات.")
     defaults = {
         "kind": "تهنئة وتفوق",
