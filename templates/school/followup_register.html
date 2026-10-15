@@ -40,7 +40,21 @@
 .followup-setup .section-panel .section-help{color:#4b6481}
 
 .followup-setup .btn{border-radius:10px;font-weight:700;padding:.65rem 1rem}
-@media(max-width:600px){.followup-setup .card-body{padding:1rem!important}.semester-option{flex:1}}
+/* Keep criterion names readable on narrow phone screens; allow the table to scroll instead of crushing the name field. */
+#criteriaTable{min-width:560px;table-layout:auto}
+#criteriaTable th:first-child,#criteriaTable td:first-child{min-width:230px}
+#criteriaTable th:nth-child(2),#criteriaTable td:nth-child(2){width:130px;min-width:130px}
+#criteriaTable th:nth-child(3),#criteriaTable td:nth-child(3){width:90px;min-width:90px}
+#criteriaTable .criterion-name{width:100%;min-width:210px;font-size:16px;line-height:1.4;min-height:48px;padding:.65rem .75rem}
+#criteriaTable input[name="criterion_weight"]{font-size:16px;min-height:48px}
+@media(max-width:600px){
+ .followup-setup .card-body{padding:1rem!important}
+ .semester-option{flex:1}
+ .followup-setup .section-panel{padding:.75rem}
+ .followup-setup .section-panel .table-responsive{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ #criteriaTable{min-width:560px}
+ #criteriaTable .criterion-name{font-size:16px;min-width:210px}
+}
 </style>
 {% endblock %}
 {% block page_heading %}دفتر متابعة الطلاب{% endblock %}
