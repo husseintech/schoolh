@@ -30,17 +30,20 @@ table.many-criteria th.number,table.many-criteria th.student{writing-mode:horizo
 body.monthly-layout .standard-table{display:none}
 body.monthly-layout .monthly-table{display:table}
 .monthly-table th.criterion-group{font-weight:400;line-height:1.15;vertical-align:middle}
-.monthly-table th.month-cell,.monthly-table td.month-cell{width:7mm;min-width:7mm;padding:.4mm .2mm}
-.monthly-table th.student,.monthly-table td.student{width:35mm}
+.monthly-table th.month-cell,.monthly-table td.month-cell{width:2.7mm;min-width:2.7mm;padding:.3mm 0}
+.monthly-table th.student,.monthly-table td.student{width:39mm}
 #studentFontSize,#criterionFontSize{padding:6px;border-radius:6px;border:1px solid #777;font-weight:bold}
 #monthlyLayoutToggle[aria-pressed="true"]{background:#dbeafe;color:#123b73}
-body.monthly-layout .page{width:278mm}
 body.monthly-layout .monthly-table th.criterion-group{font-size:var(--criterion-font-size,8pt);font-weight:400}
 body.criteria-bold .monthly-table th.criterion-group{font-weight:700}
 body.monthly-layout .monthly-table td.student{font-size:var(--student-font-size,9pt)}
 @page{size:A4 portrait;margin:8mm}
+body.monthly-layout .monthly-table th.month-cell{writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;font-size:6pt;line-height:1;height:13mm;vertical-align:middle}
+body.monthly-layout .monthly-table td.month-cell{padding:0}
+body.monthly-layout .monthly-table th.criterion-group{font-size:var(--criterion-font-size,8pt)}
 @media print{
-  body.monthly-layout .page{width:auto}
+  body.monthly-layout .page{width:auto;min-height:278mm;height:278mm;overflow:hidden}
+  body.monthly-layout .monthly-table{width:100%;table-layout:fixed}
   body.monthly-layout .monthly-table th.month-cell,body.monthly-layout .monthly-table td.month-cell{width:auto;min-width:0}
 }
 /* The report itself stays monochrome in both preview and print: no colored fills, only clear black borders. */
@@ -141,11 +144,7 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
     const enabled=document.body.classList.toggle('monthly-layout');
     monthlyToggle.setAttribute('aria-pressed',String(enabled));
     monthlyToggle.textContent=enabled?'العودة إلى البنود العادية':'تقسيم البنود حسب الأشهر';
-    let pageStyle=document.getElementById('monthlyPageStyle');
-    if(enabled){
-      if(!pageStyle){pageStyle=document.createElement('style');pageStyle.id='monthlyPageStyle';document.head.appendChild(pageStyle);}
-      pageStyle.textContent='@page { size: A4 landscape; margin: 6mm; }';
-    }else if(pageStyle){pageStyle.remove();}
+
   });
   function setSize(value){
     const size=Math.max(7,Math.min(12,Number(value)||8));
