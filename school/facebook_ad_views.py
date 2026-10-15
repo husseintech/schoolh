@@ -1,3 +1,5 @@
+import base64
+import binascii
 import secrets
 from urllib.parse import urlencode
 
@@ -128,4 +130,57 @@ def facebook_disconnect(request):
     for key in ("meta_oauth_state", "meta_oauth_user_id", "meta_user_access_token", "meta_pages", "meta_selected_page"):
         request.session.pop(key, None)
     messages.success(request, "تم فصل الربط المحلي وحذف الرموز من الجلسة الحالية.")
+    return redirect("school_ad_studio")
+
+
+@login_required
+@require_POST
+def facebook_publish_announcement(request):
+    """Publish a user-confirmed PNG only when the deployment explicitly enables it."""
+    if not _is_school_admin(request.user):
+        return HttpResponseForbidden("هذه العملية متاحة لمسؤول المدرسة فقط.")
+    if not getattr(settings, "META_PUBLISH_ENABLED", False):
+        messages.error(request, "النشر المباشر غير مفعّل بعد. فعّله فقط بعد اختبار الربط والصلاحيات.")
+        return redirect("school_ad_studio")
+    page = request.session.get("meta_selected_page") or {}
+    page_id, page_token = page.get("id"), page.get("access_token")
+    if not page_id or not page_token:
+        messages.error(request, "اربط صفحة المدرسة واخترها أولًا.")
+        return redirect("school_ad_studio")
+    if request.POST.get("confirm_publish") != "yes":
+        messages.error(request, "لم يتم النشر لأن التأكيد الصريح غير موجود.")
+        return redirect("school_ad_studio")
+    data_url = request.POST.get("image_data", "")
+    prefix = "data:image/png;base64,"
+    if not data_url.startswith(prefix):
+        messages.error(request, "تعذر قراءة صورة الإعلان. أنشئ المعاينة مجددًا ثم حاول.")
+        return redirect("school_ad_studio")
+    try:
+        image_bytes = base64.b64decode(data_url[len(prefix):], validate=True)
+    except (binascii.Error, ValueError):
+        messages.error(request, "صيغة صورة الإعلان غير صحيحة.")
+        return redirect("school_ad_studio")
+    # Keep requests bounded to protect the serverless function and avoid oversized uploads.
+    if not image_bytes or len(image_bytes) > 8 * 1024 * 1024 or not image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        messages.error(request, "حجم الصورة غير مناسب أو أن الملف ليس PNG صالحًا (الحد 8 ميغابايت).")
+        return redirect("school_ad_studio")
+    message = request.POST.get("message", "").strip()[:2000]
+    if not message:
+        messages.error(request, "أدخل نص المنشور قبل النشر.")
+        return redirect("school_ad_studio")
+    try:
+        response = requests.post(
+            f"{GRAPH_BASE}/{page_id}/photos",
+            data={"access_token": page_token, "message": message, "published": "true"},
+            files={"source": ("school-announcement.png", image_bytes, "image/png")},
+            timeout=30,
+        )
+        response.raise_for_status()
+        result = response.json()
+        if not result.get("id"):
+            raise ValueError("Meta response did not contain a photo id")
+        messages.success(request, f"أُرسل الإعلان إلى صفحة «{page.get('name', 'المدرسة')}» بنجاح. معرّف الصورة: {result['id']}")
+    except (requests.RequestException, ValueError):
+        # Never log or expose the page access token in the user-facing error.
+        messages.error(request, "لم يؤكد Meta نجاح النشر. لم نعرض بيانات الاتصال الحساسة؛ راجع صلاحيات التطبيق وسجل Meta ثم أعد المحاولة عند الحاجة.")
     return redirect("school_ad_studio")
