@@ -1,0 +1,52 @@
+{% load static %}
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>استوديو الإعلانات المدرسية | SchoolHH</title>
+<style>
+:root{--navy:#10264a;--blue:#1769aa;--pale:#edf5ff;--gold:#d9b86c}
+*{box-sizing:border-box}body{margin:0;background:#f3f6fb;color:#17243a;font-family:Tahoma,Arial,sans-serif}
+header{background:linear-gradient(120deg,#10264a,#1769aa);color:#fff;padding:24px 5%;box-shadow:0 4px 18px #10264a22}
+header h1{margin:0 0 8px;font-size:clamp(22px,4vw,32px)}header p{margin:0;color:#e3efff}
+main{max-width:1200px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:minmax(280px,1fr) minmax(280px,1fr);gap:22px}
+.panel{background:#fff;border:1px solid #e0e7f0;border-radius:16px;padding:22px;box-shadow:0 5px 18px #1a365b0b}
+h2{font-size:19px;margin:0 0 18px;color:var(--navy)}label{display:block;font-weight:bold;margin:15px 0 7px}
+input,textarea,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:#fff;color:#17243a}
+textarea{min-height:130px;resize:vertical;line-height:1.8}
+button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bold;cursor:pointer}
+.primary{background:var(--blue);color:white}.secondary{background:#e8eef7;color:var(--navy)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.notice{background:#fff7df;border:1px solid #f0d58a;color:#634b12;padding:12px;border-radius:10px;font-size:13px;line-height:1.8;margin-top:15px}
+.poster{min-height:480px;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;text-align:center;padding:28px 22px;background:radial-gradient(circle at top left,#2b86c9 0,#163e70 44%,#0d1f3d 100%);color:white;position:relative}
+.poster:before{content:"";position:absolute;inset:12px;border:1px solid #d9b86c;border-radius:9px;pointer-events:none}
+.crest{width:68px;height:68px;border:2px solid var(--gold);border-radius:50%;margin:5px auto 18px;display:grid;place-items:center;font-size:28px;color:var(--gold)}
+.school{font-size:15px;color:#e4edf8}.poster h3{font-size:clamp(24px,3vw,34px);line-height:1.5;color:#f5d98e;margin:20px 0}
+.poster .copy{font-size:17px;line-height:2;white-space:pre-wrap}.footer{border-top:1px solid #d9b86c;padding-top:14px;color:#e5edf8;font-size:13px}
+.preview-label{font-size:12px;color:#68758a;margin-bottom:10px}
+@media(max-width:760px){main{grid-template-columns:1fr;margin:14px auto}.poster{min-height:430px}.panel{padding:16px}}
+@media print{body{background:white}header,main>.panel:first-child,.preview-label{display:none}main{display:block;margin:0;padding:0}.panel{border:0;box-shadow:none;padding:0}.poster{min-height:100vh;border-radius:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style></head>
+<body>
+<header><h1>استوديو الإعلانات المدرسية</h1><p>SchoolHH · تصميم ومعاينة إعلان المدرسة قبل اعتماده</p></header>
+<main>
+<section class="panel">
+<h2>محتوى الإعلان</h2>
+<form method="post" id="adForm">{% csrf_token %}
+<label for="kind">نوع الإعلان</label><select id="kind" name="kind"><option {% if kind == "تهنئة وتفوق" %}selected{% endif %}>تهنئة وتفوق</option><option>إعلان مدرسي</option><option>تذكير لأولياء الأمور</option><option>نشاط وفعالية</option></select>
+<label for="title">عنوان الإعلان</label><input id="title" name="title" maxlength="160" value="{{ title }}" required>
+<label for="body">نص الإعلان</label><textarea id="body" name="body" maxlength="1200" required>{{ body }}</textarea>
+<label for="palette">القالب اللوني</label><select id="palette" name="palette"><option value="blue" selected>أزرق وكحلي رسمي</option><option value="light">أزرق فاتح وأبيض</option></select>
+<div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
+</form>
+<div class="notice">هذا نموذج أولي للمعاينة فقط. لا ينشئ صورة مولّدة بالذكاء الاصطناعي ولا ينشر على فيسبوك، ولا يرسل أي محتوى إلى Meta.</div>
+</section>
+<section class="panel"><div class="preview-label">معاينة الإعلان · تتحدث أثناء الكتابة</div>
+<div class="poster" id="poster"><div><div class="crest">✦</div><div class="school">مدرسة المنصور الأساسية</div><h3 id="previewTitle">{{ title }}</h3><div class="copy" id="previewBody">{{ body }}</div></div><div class="footer">معًا نحو النجاح والتميز</div></div>
+</section></main>
+<script>
+const titleInput=document.getElementById('title'),bodyInput=document.getElementById('body'),palette=document.getElementById('palette');
+titleInput.addEventListener('input',()=>document.getElementById('previewTitle').textContent=titleInput.value);
+bodyInput.addEventListener('input',()=>document.getElementById('previewBody').textContent=bodyInput.value);
+palette.addEventListener('change',()=>{const p=document.getElementById('poster');if(palette.value==='light'){p.style.background='linear-gradient(145deg,#eff7ff,#cfe5fa)';p.style.color='#10264a';p.querySelector('.school').style.color='#254a72';p.querySelector('.copy').style.color='#10264a';p.querySelector('.footer').style.color='#254a72';p.querySelector('h3').style.color='#1769aa'}else{p.style.background='radial-gradient(circle at top left,#2b86c9 0,#163e70 44%,#0d1f3d 100%)';p.style.color='white';p.querySelector('.school').style.color='#e4edf8';p.querySelector('.copy').style.color='white';p.querySelector('.footer').style.color='#e5edf8';p.querySelector('h3').style.color='#f5d98e'}});
+</script></body></html>
