@@ -984,6 +984,11 @@
             <i class="bi bi-mic-fill"></i> ملف الإذاعة المدرسية
         </a>
         {% endif %}
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'school_ad_studio' %}" class="nav-link {% if request.resolver_match.url_name == 'school_ad_studio' %}active{% endif %}">
+            <i class="bi bi-palette-fill"></i> استوديو الإعلانات المدرسية
+        </a>
+        {% endif %}
         {% if 'announcements_view' in user_perms %}
         <a href="{% url 'announcement_list' %}" class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-megaphone-fill"></i> الإعلانات
