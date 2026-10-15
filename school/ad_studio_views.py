@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render
 from django.conf import settings
+import os
 
 
 @login_required
@@ -30,7 +31,7 @@ def school_ad_studio(request):
         if page.get("id") and page.get("name")
     ]
     defaults["meta_selected_page"] = request.session.get("meta_selected_page", {})
-    defaults["meta_publish_enabled"] = getattr(settings, "META_PUBLISH_ENABLED", False)
+    defaults["meta_publish_enabled"] = os.getenv("META_PUBLISH_ENABLED", "false").strip().lower() == "true"
     defaults["meta_configured"] = bool(
         getattr(settings, "META_APP_ID", "")
         and getattr(settings, "META_APP_SECRET", "")
