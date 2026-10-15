@@ -30,6 +30,7 @@ def school_ad_studio(request):
         if page.get("id") and page.get("name")
     ]
     defaults["meta_selected_page"] = request.session.get("meta_selected_page", {})
+    defaults["meta_publish_enabled"] = getattr(settings, "META_PUBLISH_ENABLED", False)
     defaults["meta_configured"] = bool(
         getattr(settings, "META_APP_ID", "")
         and getattr(settings, "META_APP_SECRET", "")
