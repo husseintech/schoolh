@@ -54,7 +54,7 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <label for="palette">القالب اللوني</label><select id="palette" name="palette"><option value="blue" selected>أزرق وكحلي رسمي</option><option value="light">أزرق فاتح وأبيض</option></select>
 <div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="downloadAnnouncementPng()">تنزيل صورة PNG</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
 </form>
-<div class="notice">المعاينة والطباعة متاحتان. ربط الصفحة يجهز التفويض فقط؛ توليد الصورة والنشر الفعلي غير مفعّلين في هذه النسخة، ولن يُنشر شيء تلقائيًا.</div>
+<div class="notice">المعاينة والطباعة وتنزيل PNG متاحة. لا يُنشر أي إعلان دون ضغط زر النشر وتأكيدك الصريح، والنشر المباشر معطل افتراضيًا حتى يكتمل الإعداد والاختبار.</div>
 {% if meta_publish_enabled and meta_selected_page.name %}
 <form method="post" action="{% url 'facebook_publish_announcement' %}" id="publishForm" style="margin-top:16px;border:1px solid #f0d58a;background:#fffaf0;padding:14px;border-radius:12px">
 {% csrf_token %}
@@ -66,7 +66,7 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <button class="primary" type="submit">مراجعة ثم نشر على الصفحة</button>
 </form>
 {% elif meta_selected_page.name %}
-<div class="notice">تم ربط الصفحة، لكن النشر المباشر معطل افتراضيًا لحماية الصفحة. يلزم تفعيل META_PUBLISH_ENABLED=true بعد اختبار الربط.</div>
+<div class="notice">تم ربط الصفحة. النشر المباشر معطل افتراضيًا لحماية الصفحة، ولا يُنصح بتفعيله قبل اختبار الصلاحيات في Meta.</div>
 {% endif %}
 </section>
 <section class="panel"><div class="preview-label">معاينة الإعلان · تتحدث أثناء الكتابة</div>
@@ -92,6 +92,6 @@ function buildAnnouncementPngDataUrl(){
 }
 function downloadAnnouncementPng(){const a=document.createElement('a');a.download='school-announcement.png';a.href=buildAnnouncementPngDataUrl();a.click();}
 const publishForm=document.getElementById('publishForm');
-if(publishForm){publishForm.addEventListener('submit',function(event){if(!window.confirm('هل راجعت نص الإعلان والصورة وتريد نشرهما الآن على صفحة المدرسة؟')){event.preventDefault();return;}document.getElementById('publishImageData').value=buildAnnouncementPngDataUrl();document.getElementById('publishMessage').value=(titleInput.value.trim()+'\\n\\n'+bodyInput.value.trim()).slice(0,2000);document.getElementById('confirmPublish').value='yes';});}
+if(publishForm){publishForm.addEventListener('submit',function(event){if(!window.confirm('هل راجعت نص الإعلان والصورة وتريد نشرهما الآن على صفحة المدرسة؟')){event.preventDefault();return;}document.getElementById('publishImageData').value=buildAnnouncementPngDataUrl();document.getElementById('publishMessage').value=(titleInput.value.trim()+'\n\n'+bodyInput.value.trim()).slice(0,2000);document.getElementById('confirmPublish').value='yes';});}
 function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){const words=text.split(/\\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else{line=test}}if(line)lines.push(line);if(lines.length>maxLines){lines=lines.slice(0,maxLines);let last=lines[maxLines-1];while(ctx.measureText(last+'…').width>maxWidth&&last.length)last=last.slice(0,-1);lines[maxLines-1]=last+'…'}lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight,maxWidth))}
 </script></body></html>
