@@ -162,8 +162,8 @@ def facebook_publish_announcement(request):
         messages.error(request, "صيغة صورة الإعلان غير صحيحة.")
         return redirect("school_ad_studio")
     # Keep requests bounded to protect the serverless function and avoid oversized uploads.
-    if not image_bytes or len(image_bytes) > 8 * 1024 * 1024 or not image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
-        messages.error(request, "حجم الصورة غير مناسب أو أن الملف ليس PNG صالحًا (الحد 8 ميغابايت).")
+    if not image_bytes or len(image_bytes) > 3 * 1024 * 1024 or not image_bytes.startswith(bytes.fromhex("89504e470d0a1a0a")):
+        messages.error(request, "حجم الصورة غير مناسب أو أن الملف ليس PNG صالحًا (الحد 3 ميغابايت).")
         return redirect("school_ad_studio")
     message = request.POST.get("message", "").strip()[:2000]
     if not message:
