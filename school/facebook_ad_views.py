@@ -1,5 +1,6 @@
 import base64
 import binascii
+import os
 import secrets
 from urllib.parse import urlencode
 
@@ -139,7 +140,7 @@ def facebook_publish_announcement(request):
     """Publish a user-confirmed PNG only when the deployment explicitly enables it."""
     if not _is_school_admin(request.user):
         return HttpResponseForbidden("هذه العملية متاحة لمسؤول المدرسة فقط.")
-    if not getattr(settings, "META_PUBLISH_ENABLED", False):
+    if os.getenv("META_PUBLISH_ENABLED", "false").strip().lower() != "true":
         messages.error(request, "النشر المباشر غير مفعّل بعد. فعّله فقط بعد اختبار الربط والصلاحيات.")
         return redirect("school_ad_studio")
     page = request.session.get("meta_selected_page") or {}
