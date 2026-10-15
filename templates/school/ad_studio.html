@@ -31,6 +31,21 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <header><h1>استوديو الإعلانات المدرسية</h1><p>SchoolHH · تصميم ومعاينة إعلان المدرسة قبل اعتماده</p></header>
 <main>
 <section class="panel">
+<h2>ربط صفحة فيسبوك</h2>
+<div style="border:1px solid #dbe5f0;border-radius:12px;padding:14px;margin-bottom:18px;background:#f8fbff">
+{% if meta_selected_page.name %}
+<p style="margin:0 0 10px;color:#17613a;font-weight:bold">الصفحة المختارة: {{ meta_selected_page.name }}</p>
+{% elif meta_pages %}
+<p style="margin:0 0 10px">تم العثور على الصفحات التي يتيح حسابك إدارتها. اختر صفحة المدرسة:</p>
+<form method="post" action="{% url 'facebook_select_page' %}">{% csrf_token %}
+<label for="page_id">صفحة فيسبوك</label><select name="page_id" id="page_id" required>{% for page in meta_pages %}<option value="{{ page.id }}">{{ page.name }}</option>{% endfor %}</select>
+<div class="actions"><button class="primary" type="submit">اختيار الصفحة</button></div></form>
+{% else %}
+<p style="font-size:13px;line-height:1.8;margin-top:0">اربط حسابك الإداري لاختيار صفحة المدرسة. لن يتم نشر أي منشور من هذه الخطوة.</p>
+{% if meta_configured %}<a class="primary" style="display:inline-block;text-decoration:none;padding:10px 14px;border-radius:8px" href="{% url 'facebook_connect' %}">ربط حساب فيسبوك</a>{% else %}<p style="color:#8a5a00;font-size:13px">يلزم إضافة META_APP_ID وMETA_APP_SECRET في إعدادات الاستضافة أولًا.</p>{% endif %}
+{% endif %}
+{% if meta_selected_page.name %}<form method="post" action="{% url 'facebook_disconnect' %}" style="margin-top:12px">{% csrf_token %}<button class="secondary" type="submit">فصل الربط من هذه الجلسة</button></form>{% endif %}
+</div>
 <h2>محتوى الإعلان</h2>
 <form method="post" id="adForm">{% csrf_token %}
 <label for="kind">نوع الإعلان</label><select id="kind" name="kind"><option {% if kind == "تهنئة وتفوق" %}selected{% endif %}>تهنئة وتفوق</option><option>إعلان مدرسي</option><option>تذكير لأولياء الأمور</option><option>نشاط وفعالية</option></select>
@@ -39,7 +54,7 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <label for="palette">القالب اللوني</label><select id="palette" name="palette"><option value="blue" selected>أزرق وكحلي رسمي</option><option value="light">أزرق فاتح وأبيض</option></select>
 <div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
 </form>
-<div class="notice">هذا نموذج أولي للمعاينة فقط. لا ينشئ صورة مولّدة بالذكاء الاصطناعي ولا ينشر على فيسبوك، ولا يرسل أي محتوى إلى Meta.</div>
+<div class="notice">المعاينة والطباعة متاحتان. ربط الصفحة يجهز التفويض فقط؛ توليد الصورة والنشر الفعلي غير مفعّلين في هذه النسخة، ولن يُنشر شيء تلقائيًا.</div>
 </section>
 <section class="panel"><div class="preview-label">معاينة الإعلان · تتحدث أثناء الكتابة</div>
 <div class="poster" id="poster"><div><div class="crest">✦</div><div class="school">مدرسة المنصور الأساسية</div><h3 id="previewTitle">{{ title }}</h3><div class="copy" id="previewBody">{{ body }}</div></div><div class="footer">معًا نحو النجاح والتميز</div></div>
