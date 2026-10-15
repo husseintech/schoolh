@@ -1,41 +1,60 @@
 import base64
-import os
+from urllib.parse import quote
+
 import requests
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
 
+
 @login_required
 @require_POST
 def generate_ad_background(request):
+    """Use a no-key image generation service; availability and rate limits depend on the provider."""
     try:
         if request.user.profile.role != "admin":
             return HttpResponseForbidden("هذه العملية متاحة لمسؤول المدرسة فقط.")
     except Exception:
         return HttpResponseForbidden("هذه العملية متاحة لمسؤول المدرسة فقط.")
-    key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not key:
-        return JsonResponse({"ok": False, "error": "أضف OPENAI_API_KEY إلى متغيرات البيئة في الاستضافة لتفعيل توليد الصور."}, status=503)
+
     kind = request.POST.get("kind", "إعلان مدرسي").strip()[:80]
-    palette = "light blue, white and restrained gold" if request.POST.get("palette") == "light" else "navy blue, royal blue and restrained gold"
-    prompt = ("Create a premium portrait 2:3 background for a public elementary school social media announcement. Theme: " + kind +
-      ". Palette: " + palette + ". Elegant subtle arabesque geometry and tiny educational motifs near outer edges. Keep center uncluttered for Arabic text overlay. No text, letters, numbers, logos, watermark or people. Professional clean graphic design.")
+    palette = (
+        "light sky blue, white and restrained gold accents"
+        if request.POST.get("palette") == "light"
+        else "formal deep navy blue, royal blue and restrained gold accents"
+    )
+    prompt = (
+        "Premium portrait 2:3 background artwork for a public elementary school's social media announcement. "
+        f"Theme: {kind}. Palette: {palette}. Elegant subtle arabesque geometry and small educational motifs "
+        "near outer edges, generous calm central space for Arabic text to be overlaid later. "
+        "No text, letters, numbers, logos, watermarks, or people. Clean professional graphic design."
+    )
     try:
-        response = requests.post("https://api.openai.com/v1/images/generations",
-          headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
-          json={"model":"gpt-image-1","prompt":prompt,"size":"1024x1536","quality":"medium","output_format":"png"},
-          timeout=(10,90))
+        # No personal API key is required by this third-party endpoint at the time of implementation.
+        url = "https://image.pollinations.ai/prompt/" + quote(prompt, safe="")
+        response = requests.get(
+            url,
+            params={"width": 1024, "height": 1536, "model": "flux", "nologo": "true", "safe": "true"},
+            headers={"Accept": "image/png,image/jpeg,image/webp"},
+            timeout=(10, 85),
+        )
         response.raise_for_status()
-        image_b64 = (response.json().get("data") or [{}])[0].get("b64_json")
-        if not image_b64:
-            return JsonResponse({"ok":False,"error":"لم تُرجع خدمة الصور ملفًا صالحًا."}, status=502)
-        raw = base64.b64decode(image_b64, validate=True)
-        if not raw.startswith(bytes.fromhex("89504e470d0a1a0a")):
-            return JsonResponse({"ok":False,"error":"صيغة الصورة الناتجة غير صالحة."}, status=502)
-        return JsonResponse({"ok":True,"image_data":"data:image/png;base64,"+image_b64})
+        content_type = response.headers.get("Content-Type", "").split(";")[0].lower()
+        if content_type not in ("image/png", "image/jpeg", "image/webp"):
+            return JsonResponse({"ok": False, "error": "لم تُرجع خدمة الصور ملف صورة صالحًا. جرّب مرة أخرى."}, status=502)
+        image_bytes = response.content
+        if not image_bytes or len(image_bytes) > 8 * 1024 * 1024:
+            return JsonResponse({"ok": False, "error": "حجم الصورة الناتجة غير مناسب. حاول مرة أخرى."}, status=502)
+        signature_ok = (
+            (content_type == "image/png" and image_bytes.startswith(bytes.fromhex("89504e470d0a1a0a")))
+            or (content_type == "image/jpeg" and image_bytes.startswith(bytes.fromhex("ffd8ff")))
+            or (content_type == "image/webp" and len(image_bytes) > 12 and image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP")
+        )
+        if not signature_ok:
+            return JsonResponse({"ok": False, "error": "تعذر التحقق من ملف الصورة الناتج."}, status=502)
+        image_b64 = base64.b64encode(image_bytes).decode("ascii")
+        return JsonResponse({"ok": True, "image_data": f"data:{content_type};base64,{image_b64}"})
     except requests.Timeout:
-        return JsonResponse({"ok":False,"error":"استغرق توليد الصورة وقتًا طويلًا. حاول مجددًا."}, status=504)
+        return JsonResponse({"ok": False, "error": "تأخر توليد الصورة. جرّب مرة أخرى بعد قليل."}, status=504)
     except requests.RequestException:
-        return JsonResponse({"ok":False,"error":"تعذر توليد الصورة. تحقق من مفتاح الخدمة ورصيد API."}, status=502)
-    except (ValueError, TypeError):
-        return JsonResponse({"ok":False,"error":"وصل رد غير متوقع من خدمة الصور."}, status=502)
+        return JsonResponse({"ok": False, "error": "خدمة التوليد المجانية غير متاحة الآن أو وصلت إلى حد الاستخدام. حاول لاحقًا."}, status=502)
