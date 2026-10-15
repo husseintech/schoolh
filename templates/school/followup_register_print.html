@@ -24,6 +24,25 @@ table.many-criteria th.criterion{writing-mode:vertical-rl;text-orientation:mixed
 body.criteria-bold table.many-criteria th.criterion{font-weight:700}
 #criterionFontSize{padding:6px;border-radius:6px;border:1px solid #777;font-weight:bold}
 table.many-criteria th.number,table.many-criteria th.student{writing-mode:horizontal-tb}
+
+/* Monthly layout: each criterion spans four month cells. */
+.monthly-table{display:none}
+body.monthly-layout .standard-table{display:none}
+body.monthly-layout .monthly-table{display:table}
+.monthly-table th.criterion-group{font-weight:400;line-height:1.15;vertical-align:middle}
+.monthly-table th.month-cell,.monthly-table td.month-cell{width:7mm;min-width:7mm;padding:.4mm .2mm}
+.monthly-table th.student,.monthly-table td.student{width:35mm}
+#studentFontSize,#criterionFontSize{padding:6px;border-radius:6px;border:1px solid #777;font-weight:bold}
+#monthlyLayoutToggle[aria-pressed="true"]{background:#dbeafe;color:#123b73}
+body.monthly-layout .page{width:278mm}
+body.monthly-layout .monthly-table th.criterion-group{font-size:var(--criterion-font-size,8pt);font-weight:400}
+body.criteria-bold .monthly-table th.criterion-group{font-weight:700}
+body.monthly-layout .monthly-table td.student{font-size:var(--student-font-size,9pt)}
+@page{size:A4 portrait;margin:8mm}
+@media print{
+  body.monthly-layout .page{width:auto}
+  body.monthly-layout .monthly-table th.month-cell,body.monthly-layout .monthly-table td.month-cell{width:auto;min-width:0}
+}
 /* The report itself stays monochrome in both preview and print: no colored fills, only clear black borders. */
 .page{background:#fff!important;color:#000!important;box-shadow:none;border:1px solid #000}
 .school-line{color:#000;border-bottom:1px solid #000}
@@ -64,6 +83,13 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
   </select>
   <button type="button" id="criterionLarger" aria-label="تكبير خط البنود">+</button>
   <button type="button" id="criterionWeight" aria-pressed="false">الخط: عادي</button>
+  <label for="studentFontSize">حجم أسماء الطلاب</label>
+  <button type="button" id="studentSmaller" aria-label="تصغير أسماء الطلاب">−</button>
+  <select id="studentFontSize" aria-label="حجم أسماء الطلاب">
+    <option value="7">7</option><option value="8">8</option><option value="9" selected>9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option>
+  </select>
+  <button type="button" id="studentLarger" aria-label="تكبير أسماء الطلاب">+</button>
+  <button type="button" id="monthlyLayoutToggle" aria-pressed="false">تقسيم البنود حسب الأشهر</button>
   <button onclick="window.print()">طباعة جميع الدفاتر</button>
   <a href="{% url 'followup_register' %}?{% if request.user.profile.role == 'admin' %}teacher={{ selected_teacher.id }}{% endif %}">العودة للإعدادات</a>
 </div>
@@ -73,12 +99,19 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
 <section class="page">
   <div class="subheading"><span>الصف / الشعبة: {{ page.class_name }}</span><span>المبحث: {{ selected_subject.name }}</span><span>عدد الطلاب: {{ page.student_count }}</span><span>السنة الدراسية: {{ academic_year }}</span></div>
   <div class="semester-heading"><span>متابعة الطلاب — {{ semester.label }}</span></div>
-  <div class="table-wrap"><table class="{% if criteria|length > 5 %}many-criteria{% endif %}">
+  <div class="table-wrap"><table class="standard-table {% if criteria|length > 5 %}many-criteria{% endif %}">
     <thead>
       <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion" {% if criteria|length > 5 %}rowspan="2"{% endif %}>{% if criteria|length > 5 %}{{ criterion.name }}{% if criterion.weight %} ({{ criterion.weight }}%){% endif %}{% else %}{{ criterion.name }}{% endif %}</th>{% endfor %}</tr>
       {% if criteria|length <= 5 %}<tr class="weights">{% for criterion in criteria %}<th>{{ criterion.weight }}%</th>{% endfor %}</tr>{% else %}<tr class="weights"></tr>{% endif %}
     </thead>
     <tbody>{% for row in page.student_rows %}<tr class="student-row"><td class="number">{{ row.number }}</td><td class="student">{{ row.name }}</td>{% for criterion in criteria %}<td></td>{% endfor %}</tr>{% endfor %}</tbody>
+  </table>
+  <table class="monthly-table">
+    <thead>
+      <tr><th class="number" rowspan="2">الرقم</th><th class="student" rowspan="2">اسم الطالب</th>{% for criterion in criteria %}<th class="criterion-group" colspan="4">{{ criterion.name }}</th>{% endfor %}</tr>
+      <tr class="weights">{% for criterion in criteria %}{% if semester.number == 1 %}<th class="month-cell">9</th><th class="month-cell">10</th><th class="month-cell">11</th><th class="month-cell">12</th>{% else %}<th class="month-cell">1</th><th class="month-cell">2</th><th class="month-cell">3</th><th class="month-cell">4</th>{% endif %}{% endfor %}</tr>
+    </thead>
+    <tbody>{% for row in page.student_rows %}<tr class="student-row"><td class="number">{{ row.number }}</td><td class="student">{{ row.name }}</td>{% for criterion in criteria %}<td class="month-cell"></td><td class="month-cell"></td><td class="month-cell"></td><td class="month-cell"></td>{% endfor %}</tr>{% endfor %}</tbody>
   </table></div>
   {% if page.students_omitted %}<p class="warning">تنبيه: عدد الطلاب {{ page.student_count }}، وعدد السجلات المختار {{ row_count }}؛ لم تظهر أسماء {{ page.students_omitted }} طالبًا بسبب حد السجلات.</p>{% endif %}
 </section>
@@ -92,6 +125,23 @@ thead tr:first-child th,thead tr.weights th,.weights th,th.number,td.number,.stu
   const smaller=document.getElementById('criterionSmaller');
   const larger=document.getElementById('criterionLarger');
   const weightButton=document.getElementById('criterionWeight');
+  const studentSizeSelect=document.getElementById('studentFontSize');
+  const studentSmaller=document.getElementById('studentSmaller');
+  const studentLarger=document.getElementById('studentLarger');
+  const monthlyToggle=document.getElementById('monthlyLayoutToggle');
+  function setStudentSize(value){
+    const size=Math.max(7,Math.min(16,Number(value)||9));
+    root.style.setProperty('--student-font-size',size+'pt');
+    studentSizeSelect.value=String(size);
+  }
+  studentSizeSelect.addEventListener('change',()=>setStudentSize(studentSizeSelect.value));
+  studentSmaller.addEventListener('click',()=>setStudentSize(Number(studentSizeSelect.value)-1));
+  studentLarger.addEventListener('click',()=>setStudentSize(Number(studentSizeSelect.value)+1));
+  monthlyToggle.addEventListener('click',()=>{
+    const enabled=document.body.classList.toggle('monthly-layout');
+    monthlyToggle.setAttribute('aria-pressed',String(enabled));
+    monthlyToggle.textContent=enabled?'العودة إلى البنود العادية':'تقسيم البنود حسب الأشهر';
+  });
   function setSize(value){
     const size=Math.max(7,Math.min(12,Number(value)||8));
     root.style.setProperty('--criterion-font-size',size+'pt');
