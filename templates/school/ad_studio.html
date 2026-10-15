@@ -52,7 +52,7 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <label for="title">عنوان الإعلان</label><input id="title" name="title" maxlength="160" value="{{ title }}" required>
 <label for="body">نص الإعلان</label><textarea id="body" name="body" maxlength="1200" required>{{ body }}</textarea>
 <label for="palette">القالب اللوني</label><select id="palette" name="palette"><option value="blue" selected>أزرق وكحلي رسمي</option><option value="light">أزرق فاتح وأبيض</option></select>
-<div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="downloadAnnouncementPng()">تنزيل صورة PNG</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
+<div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" id="generateAiBackground">توليد خلفية بالذكاء الاصطناعي</button><button class="secondary" type="button" onclick="downloadAnnouncementPng()">تنزيل صورة PNG</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div><p id="aiStatus" role="status" aria-live="polite" style="font-size:13px;line-height:1.7;color:#52627a"></p>
 </form>
 <div class="notice">المعاينة والطباعة وتنزيل PNG متاحة. لا يُنشر أي إعلان دون ضغط زر النشر وتأكيدك الصريح، والنشر المباشر معطل افتراضيًا حتى يكتمل الإعداد والاختبار.</div>
 {% if meta_publish_enabled and meta_selected_page.name %}
@@ -77,11 +77,12 @@ const titleInput=document.getElementById('title'),bodyInput=document.getElementB
 titleInput.addEventListener('input',()=>document.getElementById('previewTitle').textContent=titleInput.value);
 bodyInput.addEventListener('input',()=>document.getElementById('previewBody').textContent=bodyInput.value);
 palette.addEventListener('change',()=>{const p=document.getElementById('poster');if(palette.value==='light'){p.style.background='linear-gradient(145deg,#eff7ff,#cfe5fa)';p.style.color='#10264a';p.querySelector('.school').style.color='#254a72';p.querySelector('.copy').style.color='#10264a';p.querySelector('.footer').style.color='#254a72';p.querySelector('h3').style.color='#1769aa'}else{p.style.background='radial-gradient(circle at top left,#2b86c9 0,#163e70 44%,#0d1f3d 100%)';p.style.color='white';p.querySelector('.school').style.color='#e4edf8';p.querySelector('.copy').style.color='white';p.querySelector('.footer').style.color='#e5edf8';p.querySelector('h3').style.color='#f5d98e'}});
-function buildAnnouncementPngDataUrl(){
+let generatedBackgroundData = null;
+async function buildAnnouncementPngDataUrl(){
  const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1500;const ctx=canvas.getContext('2d');
- const light=palette.value==='light';const grad=ctx.createLinearGradient(0,0,1200,1500);
- if(light){grad.addColorStop(0,'#eff7ff');grad.addColorStop(1,'#cfe5fa')}else{grad.addColorStop(0,'#2b86c9');grad.addColorStop(.48,'#163e70');grad.addColorStop(1,'#0d1f3d')}
- ctx.fillStyle=grad;ctx.fillRect(0,0,1200,1500);ctx.strokeStyle='#d9b86c';ctx.lineWidth=4;ctx.strokeRect(38,38,1124,1424);
+ const light=palette.value==='light';
+ if(generatedBackgroundData){const bg=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=generatedBackgroundData});ctx.drawImage(bg,0,0,1200,1500);ctx.fillStyle=light?'rgba(239,247,255,.48)':'rgba(9,25,52,.40)';ctx.fillRect(0,0,1200,1500)}else{const grad=ctx.createLinearGradient(0,0,1200,1500);if(light){grad.addColorStop(0,'#eff7ff');grad.addColorStop(1,'#cfe5fa')}else{grad.addColorStop(0,'#2b86c9');grad.addColorStop(.48,'#163e70');grad.addColorStop(1,'#0d1f3d')}ctx.fillStyle=grad;ctx.fillRect(0,0,1200,1500)}
+ ctx.strokeStyle='#d9b86c';ctx.lineWidth=4;ctx.strokeRect(38,38,1124,1424);
  const ink=light?'#10264a':'#ffffff',gold=light?'#1769aa':'#f5d98e';ctx.textAlign='center';ctx.direction='rtl';
  ctx.strokeStyle='#d9b86c';ctx.lineWidth=4;ctx.beginPath();ctx.arc(600,190,58,0,Math.PI*2);ctx.stroke();ctx.fillStyle=gold;ctx.font='bold 62px Tahoma, Arial';ctx.fillText('✦',600,211);
  ctx.fillStyle=ink;ctx.font='bold 34px Tahoma, Arial';ctx.fillText('مدرسة المنصور الأساسية',600,310);
