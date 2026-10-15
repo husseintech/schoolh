@@ -436,3 +436,44 @@ def followup_register(request):
         "start_year": start_year,
         "default_criteria": not bool(saved_criteria),
     })
+
+@login_required
+def followup_register_missing_teachers(request):
+    """Printable admin report of teachers with no saved follow-up criteria in any subject."""
+    if request.user.profile.role != "admin":
+        messages.error(request, "ليس لديك صلاحية لعرض هذا التقرير")
+        return redirect("dashboard")
+
+    settings_by_teacher = {
+        item.teacher_id: item.criteria
+        for item in TeacherFollowupRegisterSettings.objects.select_related("teacher").all()
+    }
+
+    def has_any_criteria(stored):
+        # Support both the current subject-id mapping and legacy list-shaped data.
+        if isinstance(stored, list):
+            return any(
+                isinstance(item, dict) and str(item.get("name", "")).strip()
+                for item in stored
+            )
+        if isinstance(stored, dict):
+            for subject_items in stored.values():
+                if isinstance(subject_items, list) and any(
+                    isinstance(item, dict) and str(item.get("name", "")).strip()
+                    for item in subject_items
+                ):
+                    return True
+        return False
+
+    all_teachers = list(Teacher.objects.all().order_by("full_name", "pk"))
+    missing_teachers = [
+        teacher for teacher in all_teachers
+        if not has_any_criteria(settings_by_teacher.get(teacher.pk))
+    ]
+    return render(request, "school/followup_register_missing_teachers.html", {
+        "missing_teachers": missing_teachers,
+        "total_teachers": len(all_teachers),
+        "info": SchoolInfo.objects.first(),
+        "today": timezone.localdate(),
+    })
+
