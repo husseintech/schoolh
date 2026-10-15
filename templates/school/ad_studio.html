@@ -52,7 +52,7 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <label for="title">عنوان الإعلان</label><input id="title" name="title" maxlength="160" value="{{ title }}" required>
 <label for="body">نص الإعلان</label><textarea id="body" name="body" maxlength="1200" required>{{ body }}</textarea>
 <label for="palette">القالب اللوني</label><select id="palette" name="palette"><option value="blue" selected>أزرق وكحلي رسمي</option><option value="light">أزرق فاتح وأبيض</option></select>
-<div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
+<div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="downloadAnnouncementPng()">تنزيل صورة PNG</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
 </form>
 <div class="notice">المعاينة والطباعة متاحتان. ربط الصفحة يجهز التفويض فقط؛ توليد الصورة والنشر الفعلي غير مفعّلين في هذه النسخة، ولن يُنشر شيء تلقائيًا.</div>
 </section>
@@ -64,4 +64,18 @@ const titleInput=document.getElementById('title'),bodyInput=document.getElementB
 titleInput.addEventListener('input',()=>document.getElementById('previewTitle').textContent=titleInput.value);
 bodyInput.addEventListener('input',()=>document.getElementById('previewBody').textContent=bodyInput.value);
 palette.addEventListener('change',()=>{const p=document.getElementById('poster');if(palette.value==='light'){p.style.background='linear-gradient(145deg,#eff7ff,#cfe5fa)';p.style.color='#10264a';p.querySelector('.school').style.color='#254a72';p.querySelector('.copy').style.color='#10264a';p.querySelector('.footer').style.color='#254a72';p.querySelector('h3').style.color='#1769aa'}else{p.style.background='radial-gradient(circle at top left,#2b86c9 0,#163e70 44%,#0d1f3d 100%)';p.style.color='white';p.querySelector('.school').style.color='#e4edf8';p.querySelector('.copy').style.color='white';p.querySelector('.footer').style.color='#e5edf8';p.querySelector('h3').style.color='#f5d98e'}});
+function downloadAnnouncementPng(){
+ const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1500;const ctx=canvas.getContext('2d');
+ const light=palette.value==='light';const grad=ctx.createLinearGradient(0,0,1200,1500);
+ if(light){grad.addColorStop(0,'#eff7ff');grad.addColorStop(1,'#cfe5fa')}else{grad.addColorStop(0,'#2b86c9');grad.addColorStop(.48,'#163e70');grad.addColorStop(1,'#0d1f3d')}
+ ctx.fillStyle=grad;ctx.fillRect(0,0,1200,1500);ctx.strokeStyle='#d9b86c';ctx.lineWidth=4;ctx.strokeRect(38,38,1124,1424);
+ const ink=light?'#10264a':'#ffffff',gold=light?'#1769aa':'#f5d98e';ctx.textAlign='center';ctx.direction='rtl';
+ ctx.strokeStyle='#d9b86c';ctx.lineWidth=4;ctx.beginPath();ctx.arc(600,190,58,0,Math.PI*2);ctx.stroke();ctx.fillStyle=gold;ctx.font='bold 62px Tahoma, Arial';ctx.fillText('✦',600,211);
+ ctx.fillStyle=ink;ctx.font='bold 34px Tahoma, Arial';ctx.fillText('مدرسة المنصور الأساسية',600,310);
+ ctx.fillStyle=gold;ctx.font='bold 58px Tahoma, Arial';wrapCanvasText(ctx,titleInput.value.trim()||' ',600,450,980,82,3);
+ ctx.fillStyle=ink;ctx.font='34px Tahoma, Arial';wrapCanvasText(ctx,bodyInput.value.trim()||' ',600,700,930,64,7);
+ ctx.strokeStyle='#d9b86c';ctx.beginPath();ctx.moveTo(150,1320);ctx.lineTo(1050,1320);ctx.stroke();ctx.fillStyle=ink;ctx.font='28px Tahoma, Arial';ctx.fillText('معًا نحو النجاح والتميز',600,1380);
+ const a=document.createElement('a');a.download='school-announcement.png';a.href=canvas.toDataURL('image/png');a.click();
+}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){const words=text.split(/\\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else{line=test}}if(line)lines.push(line);if(lines.length>maxLines){lines=lines.slice(0,maxLines);let last=lines[maxLines-1];while(ctx.measureText(last+'…').width>maxWidth&&last.length)last=last.slice(0,-1);lines[maxLines-1]=last+'…'}lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight,maxWidth))}
 </script></body></html>
