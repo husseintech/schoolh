@@ -87,6 +87,7 @@ urlpatterns = [
     path('teachers/grade-register/print/', views.grade_register_print, name='grade_register_print'),
     path('teachers/grade-register/print/detailed/', views.grade_register_detailed_print, name='grade_register_detailed_print'),
     path('teachers/followup-register/', attendance_followup.followup_register, name='followup_register'),
+    path('teachers/followup-register/missing-teachers/', attendance_followup.followup_register_missing_teachers, name='followup_register_missing_teachers'),
     path('teachers/social-committee/', social_committee_views.social_committee, name='social_committee'),
     path('teachers/social-committee/report/', social_committee_views.social_committee_report, name='social_committee_report'),
     path('teachers/social-committee/expenses/<int:expense_id>/', social_committee_views.social_committee_expense, name='social_committee_expense'),
