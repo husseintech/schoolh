@@ -8,6 +8,7 @@ from school.health_views import database_health
 from school.note_actions import delete_note
 from school.health_views import database_heartbeat
 from school.ad_studio_views import school_ad_studio
+from school.ai_ad_views import generate_ad_background
 from school.facebook_ad_views import (
     facebook_connect, facebook_callback, facebook_select_page, facebook_disconnect, facebook_publish_announcement,
 )
@@ -19,6 +20,7 @@ urlpatterns = [
     path('administration/academic-achievement/', academic_achievement_report, name='academic_achievement_report'),
     path('administration/teacher-records/', include('school.teacher_records_urls')),
     path('administration/ad-studio/', school_ad_studio, name='school_ad_studio'),
+    path('administration/ad-studio/generate-background/', generate_ad_background, name='generate_ad_background'),
     path('facebook/connect/', facebook_connect, name='facebook_connect'),
     path('facebook/callback/', facebook_callback, name='facebook_callback'),
     path('facebook/select-page/', facebook_select_page, name='facebook_select_page'),
