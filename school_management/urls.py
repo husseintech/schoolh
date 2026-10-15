@@ -1,4 +1,4 @@
-""""URL configuration for school_management project."""
+"""URL configuration for school_management project."""
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -8,6 +8,9 @@ from school.health_views import database_health
 from school.note_actions import delete_note
 from school.health_views import database_heartbeat
 from school.ad_studio_views import school_ad_studio
+from school.facebook_ad_views import (
+    facebook_connect, facebook_callback, facebook_select_page, facebook_disconnect,
+)
 
 urlpatterns = [
     path('health/database/', database_health, name='database_health'),
@@ -16,6 +19,10 @@ urlpatterns = [
     path('administration/academic-achievement/', academic_achievement_report, name='academic_achievement_report'),
     path('administration/teacher-records/', include('school.teacher_records_urls')),
     path('administration/ad-studio/', school_ad_studio, name='school_ad_studio'),
+    path('facebook/connect/', facebook_connect, name='facebook_connect'),
+    path('facebook/callback/', facebook_callback, name='facebook_callback'),
+    path('facebook/select-page/', facebook_select_page, name='facebook_select_page'),
+    path('facebook/disconnect/', facebook_disconnect, name='facebook_disconnect'),
     path('notes/<int:note_id>/delete/', delete_note, name='delete_note'),
     path('', include('school.supervisor_followup_urls')),
     path('', include('school.urls')),
