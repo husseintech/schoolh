@@ -55,6 +55,19 @@ button{border:0;border-radius:9px;padding:12px 18px;font:inherit;font-weight:bol
 <div class="actions"><button class="primary" type="submit">تحديث المعاينة</button><button class="secondary" type="button" onclick="downloadAnnouncementPng()">تنزيل صورة PNG</button><button class="secondary" type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
 </form>
 <div class="notice">المعاينة والطباعة متاحتان. ربط الصفحة يجهز التفويض فقط؛ توليد الصورة والنشر الفعلي غير مفعّلين في هذه النسخة، ولن يُنشر شيء تلقائيًا.</div>
+{% if meta_publish_enabled and meta_selected_page.name %}
+<form method="post" action="{% url 'facebook_publish_announcement' %}" id="publishForm" style="margin-top:16px;border:1px solid #f0d58a;background:#fffaf0;padding:14px;border-radius:12px">
+{% csrf_token %}
+<h2 style="margin-bottom:8px">النشر المباشر على فيسبوك</h2>
+<p style="font-size:13px;line-height:1.8">الصفحة المستهدفة: <strong>{{ meta_selected_page.name }}</strong>. لن يتم الإرسال إلا بعد ضغط زر النشر وتأكيد الرسالة.</p>
+<input type="hidden" name="image_data" id="publishImageData">
+<input type="hidden" name="message" id="publishMessage">
+<input type="hidden" name="confirm_publish" id="confirmPublish" value="">
+<button class="primary" type="submit">مراجعة ثم نشر على الصفحة</button>
+</form>
+{% elif meta_selected_page.name %}
+<div class="notice">تم ربط الصفحة، لكن النشر المباشر معطل افتراضيًا لحماية الصفحة. يلزم تفعيل META_PUBLISH_ENABLED=true بعد اختبار الربط.</div>
+{% endif %}
 </section>
 <section class="panel"><div class="preview-label">معاينة الإعلان · تتحدث أثناء الكتابة</div>
 <div class="poster" id="poster"><div><div class="crest">✦</div><div class="school">مدرسة المنصور الأساسية</div><h3 id="previewTitle">{{ title }}</h3><div class="copy" id="previewBody">{{ body }}</div></div><div class="footer">معًا نحو النجاح والتميز</div></div>
@@ -64,7 +77,7 @@ const titleInput=document.getElementById('title'),bodyInput=document.getElementB
 titleInput.addEventListener('input',()=>document.getElementById('previewTitle').textContent=titleInput.value);
 bodyInput.addEventListener('input',()=>document.getElementById('previewBody').textContent=bodyInput.value);
 palette.addEventListener('change',()=>{const p=document.getElementById('poster');if(palette.value==='light'){p.style.background='linear-gradient(145deg,#eff7ff,#cfe5fa)';p.style.color='#10264a';p.querySelector('.school').style.color='#254a72';p.querySelector('.copy').style.color='#10264a';p.querySelector('.footer').style.color='#254a72';p.querySelector('h3').style.color='#1769aa'}else{p.style.background='radial-gradient(circle at top left,#2b86c9 0,#163e70 44%,#0d1f3d 100%)';p.style.color='white';p.querySelector('.school').style.color='#e4edf8';p.querySelector('.copy').style.color='white';p.querySelector('.footer').style.color='#e5edf8';p.querySelector('h3').style.color='#f5d98e'}});
-function downloadAnnouncementPng(){
+function buildAnnouncementPngDataUrl(){
  const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1500;const ctx=canvas.getContext('2d');
  const light=palette.value==='light';const grad=ctx.createLinearGradient(0,0,1200,1500);
  if(light){grad.addColorStop(0,'#eff7ff');grad.addColorStop(1,'#cfe5fa')}else{grad.addColorStop(0,'#2b86c9');grad.addColorStop(.48,'#163e70');grad.addColorStop(1,'#0d1f3d')}
@@ -75,7 +88,10 @@ function downloadAnnouncementPng(){
  ctx.fillStyle=gold;ctx.font='bold 58px Tahoma, Arial';wrapCanvasText(ctx,titleInput.value.trim()||' ',600,450,980,82,3);
  ctx.fillStyle=ink;ctx.font='34px Tahoma, Arial';wrapCanvasText(ctx,bodyInput.value.trim()||' ',600,700,930,64,7);
  ctx.strokeStyle='#d9b86c';ctx.beginPath();ctx.moveTo(150,1320);ctx.lineTo(1050,1320);ctx.stroke();ctx.fillStyle=ink;ctx.font='28px Tahoma, Arial';ctx.fillText('معًا نحو النجاح والتميز',600,1380);
- const a=document.createElement('a');a.download='school-announcement.png';a.href=canvas.toDataURL('image/png');a.click();
+ return canvas.toDataURL('image/png');
 }
+function downloadAnnouncementPng(){const a=document.createElement('a');a.download='school-announcement.png';a.href=buildAnnouncementPngDataUrl();a.click();}
+const publishForm=document.getElementById('publishForm');
+if(publishForm){publishForm.addEventListener('submit',function(event){if(!window.confirm('هل راجعت نص الإعلان والصورة وتريد نشرهما الآن على صفحة المدرسة؟')){event.preventDefault();return;}document.getElementById('publishImageData').value=buildAnnouncementPngDataUrl();document.getElementById('publishMessage').value=(titleInput.value.trim()+'\\n\\n'+bodyInput.value.trim()).slice(0,2000);document.getElementById('confirmPublish').value='yes';});}
 function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){const words=text.split(/\\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else{line=test}}if(line)lines.push(line);if(lines.length>maxLines){lines=lines.slice(0,maxLines);let last=lines[maxLines-1];while(ctx.measureText(last+'…').width>maxWidth&&last.length)last=last.slice(0,-1);lines[maxLines-1]=last+'…'}lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight,maxWidth))}
 </script></body></html>
