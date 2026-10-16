@@ -58,6 +58,8 @@ self.addEventListener('push', (e) => {
             badge: '/static/pwa/icon-192.png',
             dir: 'rtl',
             lang: 'ar',
+            // Request the platform's normal notification sound where supported.
+            silent: false,
             data: { url: data.url },
         })
     );
