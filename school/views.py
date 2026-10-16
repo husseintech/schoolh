@@ -910,6 +910,7 @@ def add_student_warning(request, student_id):
                     message=f'تم توجيه إنذار لك بتاريخ {warning.incident_date}.',
                     link='/notifications/',
                 )
+                send_push(student.user, 'إنذار جديد', f'تم توجيه إنذار لك بتاريخ {warning.incident_date}.', '/notifications/')
             log_action(request.user, 'توجيه إنذار', f'{student.full_name} ({student.student_id})')
             messages.success(request, f'تم توجيه إنذار للطالب {student.full_name}')
             return redirect('print_student_warning', warning_id=warning.id)
@@ -943,6 +944,7 @@ def add_guardian_summons(request, student_id):
                     message=f'تم إصدار استدعاء لولي أمرك بتاريخ {summons.summons_date}.',
                     link='/notifications/',
                 )
+                send_push(student.user, 'استدعاء ولي أمر', f'تم إصدار استدعاء لولي أمرك بتاريخ {summons.summons_date}.', '/notifications/')
             log_action(request.user, 'استدعاء ولي أمر', f'{student.full_name} ({student.student_id})')
             messages.success(request, f'تم إصدار استدعاء ولي أمر للطالب {student.full_name}')
             return redirect('print_guardian_summons', summons_id=summons.id)
@@ -1677,6 +1679,12 @@ def add_note(request, student_id=None):
                     title='ملاحظة جديدة',
                     message=f'تمت إضافة ملاحظة ({note.get_note_type_display()}) لك: {note.content[:120]}',
                     link='/notifications/',
+                )
+                send_push(
+                    student.user,
+                    'ملاحظة جديدة',
+                    f'تمت إضافة ملاحظة ({note.get_note_type_display()}) لك: {note.content[:120]}',
+                    '/notifications/',
                 )
             if student.parent_phone:
                 note_type = note.get_note_type_display()
@@ -2438,6 +2446,12 @@ def add_leave(request, student_id=None):
                     title='إذن مغادرة جديد',
                     message=f'تم تسجيل إذن مغادرة لك بتاريخ {leave.leave_date} من الساعة {leave.leave_time}.',
                     link='/notifications/',
+                )
+                send_push(
+                    leave.student.user,
+                    'إذن مغادرة جديد',
+                    f'تم تسجيل إذن مغادرة لك بتاريخ {leave.leave_date} من الساعة {leave.leave_time}.',
+                    '/notifications/',
                 )
             log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.leave_date}')
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
@@ -3893,6 +3907,12 @@ def absence_list(request):
                             title='تنبيه بغياب الطالب',
                             message=f'الطالب {s.full_name} مسجَّل غائب بتاريخ {absence_date}. يرجى مراجعة المدرسة أو التواصل مع الإدارة.',
                             link='/leaves/',
+                        )
+                        send_push(
+                            s.user,
+                            'تنبيه بغياب الطالب',
+                            f'الطالب {s.full_name} مسجَّل غائب بتاريخ {absence_date}. يرجى مراجعة المدرسة أو التواصل مع الإدارة.',
+                            '/leaves/',
                         )
                     except Exception:
                         pass
