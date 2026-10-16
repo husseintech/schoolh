@@ -98,6 +98,38 @@
     </div>
 </div>
 
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-chat-left-text-fill"></i> مراسلات المعلم ({{ teacher_messages|length }})</span>
+        <a href="{% url 'send_message_to' teacher.user.id %}" class="btn btn-primary btn-sm"><i class="bi bi-reply-fill"></i> إرسال رسالة للمعلم</a>
+    </div>
+    <div class="card-body p-0">
+        {% if teacher_messages %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>الاتجاه</th><th>الطرف الآخر</th><th>الموضوع</th><th>محتوى الرسالة</th><th>التاريخ</th><th>الحالة</th><th>عرض</th></tr></thead>
+                <tbody>
+                {% for msg in teacher_messages %}
+                    <tr>
+                        <td>{% if msg.sender_id == teacher.user_id %}<span class="badge bg-primary">مرسلة</span>{% else %}<span class="badge bg-success">مستلمة / رد</span>{% endif %}</td>
+                        <td>{% if msg.sender_id == teacher.user_id %}{% if msg.recipient %}{{ msg.recipient.get_full_name|default:msg.recipient.username }}{% else %}الجميع{% endif %}{% else %}{% if msg.sender %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% else %}مجهول{% endif %}{% endif %}</td>
+                        <td>{{ msg.subject }}</td>
+                        <td>{{ msg.content|truncatewords:12 }}</td>
+                        <td>{{ msg.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{% if msg.is_read %}<span class="badge bg-success">مقروءة</span>{% else %}<span class="badge bg-warning text-dark">غير مقروءة</span>{% endif %}</td>
+                        <td><a href="{% url 'read_message' msg.id %}" class="btn btn-info btn-sm"><i class="bi bi-eye"></i> فتح</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted p-4">لا توجد رسائل مرسلة أو مستلمة لهذا المعلم حتى الآن.</div>
+        {% endif %}
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-md-6">
         <div class="card">
