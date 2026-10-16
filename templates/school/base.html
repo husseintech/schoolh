@@ -1500,62 +1500,127 @@
         })();
     </script>
     <script>
-        // PWA + Web Push
+        // PWA + Web Push: keep browser and server subscriptions in sync.
         (function () {
-            var VAPID_KEY = '{{ vapid_public_key }}';
+            var VAPID_KEY = '{{ vapid_public_key|escapejs }}';
             var btn = document.getElementById('notifBtn');
             if (!('serviceWorker' in navigator)) return;
-            navigator.serviceWorker.register('/sw.js').catch(function () {});
+            navigator.serviceWorker.register('/sw.js').catch(function (err) {
+                console.error('Service worker registration failed:', err);
+            });
             var isSecure = window.isSecureContext || location.hostname === 'localhost';
-            // The login page uses the same base template but has no notification button.
-            if (!btn || !isSecure || !VAPID_KEY || !window.PushManager || !('Notification' in window)) return;
+            if (!btn) return;
+            btn.classList.remove('d-none');
             function getCSRF() {
                 var m = document.cookie.match(/csrftoken=([^;]+)/);
                 return m ? m[1] : '';
             }
-            function setBtn(on) {
-                btn.classList.remove('d-none');
+            function setBtn(on, label) {
                 btn.classList.toggle('btn-outline-primary', !on);
                 btn.classList.toggle('btn-primary', on);
-                btn.innerHTML = on ? '<i class="bi bi-bell-fill"></i> <span class="d-none d-sm-inline">مفعّل</span>' : '<i class="bi bi-bell-fill"></i> <span class="d-none d-sm-inline">إشعارات</span>';
+                btn.innerHTML = on
+                    ? '<i class="bi bi-bell-fill"></i> <span class="d-none d-sm-inline">الإشعارات مفعّلة</span>'
+                    : '<i class="bi bi-bell"></i> <span class="d-none d-sm-inline">تفعيل الإشعارات</span>';
+                btn.title = label || (on ? 'الإشعارات مفعّلة' : 'تفعيل إشعارات الهاتف');
                 btn.dataset.on = on ? '1' : '0';
             }
-            navigator.serviceWorker.ready.then(function (reg) {
-                reg.pushManager.getSubscription().then(function (sub) {
-                    setBtn(!!sub);
-                    btn.addEventListener('click', function () {
-                        if (sub) {
-                            fetch('/push/unsubscribe/', {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRF()},
-                                body: JSON.stringify({endpoint: sub.endpoint})
-                            });
-                            sub.unsubscribe().then(function () { sub = null; setBtn(false); });
-                        } else {
-                            reg.pushManager.subscribe({
-                                userVisibleOnly: true,
-                                applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
-                            }).then(function (newSub) {
-                                return fetch('/push/subscribe/', {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRF()},
-                                    body: JSON.stringify(newSub.toJSON())
-                                }).then(function (r) {
-                                    if (!r.ok) throw new Error('server');
-                                    sub = newSub;
-                                    setBtn(true);
-                                });
-                            }).catch(function (err) {
-                                console.error('Push error:', err);
-                                if (Notification.permission === 'denied') {
-                                    alert('إشعارات SchoolHH محظورة من إعدادات المتصفح. اسمح بها من إعدادات الموقع ثم أعد المحاولة.');
-                                } else {
-                                    alert('تعذّر تفعيل الإشعارات. تحقق من اتصال الإنترنت وإعدادات المتصفح ثم حاول مجددًا.');
-                                }
-                            });
-                        }
-                    });
+            function saveSubscription(sub) {
+                return fetch('/push/subscribe/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRF()},
+                    body: JSON.stringify(sub.toJSON())
+                }).then(function (r) {
+                    if (!r.ok) return r.text().then(function (t) { throw new Error('تعذر حفظ الاشتراك على الخادم: ' + r.status + ' ' + t); });
+                    return r.json();
                 });
+            }
+            if (!isSecure || !window.PushManager || !('Notification' in window)) {
+                setBtn(false, 'المتصفح لا يدعم إشعارات الويب أو أن الاتصال غير آمن');
+                btn.addEventListener('click', function () {
+                    alert('إشعارات الهاتف تحتاج متصفحًا يدعم Web Push واتصال HTTPS.');
+                });
+                return;
+            }
+            if (!VAPID_KEY) {
+                setBtn(false, 'إعداد مفاتيح VAPID مفقود في إعدادات الاستضافة');
+                btn.addEventListener('click', function () {
+                    alert('لم تُضبط مفاتيح الإشعارات VAPID في إعدادات Vercel بعد. يلزم ضبط VAPID_PUBLIC_KEY وVAPID_PRIVATE_KEY ثم إعادة النشر.');
+                });
+                return;
+            }
+            navigator.serviceWorker.ready.then(function (reg) {
+                return reg.pushManager.getSubscription().then(function (sub) {
+                    if (sub) {
+                        // Repair stale state: a browser subscription may exist while
+                        // its matching database record is missing.
+                        return saveSubscription(sub).then(function () {
+                            setBtn(true);
+                            return sub;
+                        }).catch(function (err) {
+                            console.error('Could not sync existing push subscription:', err);
+                            setBtn(false, 'الاشتراك موجود لكن لم يتم حفظه على الخادم');
+                            return sub;
+                        });
+                    }
+                    setBtn(false);
+                    return null;
+                });
+            }).then(function (initialSub) {
+                var sub = initialSub;
+                btn.addEventListener('click', function () {
+                    btn.disabled = true;
+                    if (sub) {
+                        fetch('/push/unsubscribe/', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRF()},
+                            body: JSON.stringify({endpoint: sub.endpoint})
+                        }).then(function (r) {
+                            if (!r.ok) throw new Error('تعذر إلغاء الاشتراك من الخادم');
+                            return sub.unsubscribe();
+                        }).then(function () {
+                            sub = null;
+                            setBtn(false);
+                        }).catch(function (err) {
+                            console.error('Push unsubscribe failed:', err);
+                            alert('تعذر إيقاف الإشعارات. حاول مجددًا.');
+                        }).finally(function () { btn.disabled = false; });
+                        return;
+                    }
+                    if (Notification.permission === 'denied') {
+                        alert('إشعارات الموقع محظورة من إعدادات المتصفح. افتح إعدادات الموقع واسمح بالإشعارات ثم أعد المحاولة.');
+                        btn.disabled = false;
+                        return;
+                    }
+                    var permissionPromise = Notification.permission === 'granted'
+                        ? Promise.resolve('granted')
+                        : Notification.requestPermission();
+                    permissionPromise.then(function (permission) {
+                        if (permission !== 'granted') throw new Error('لم يتم السماح بالإشعارات');
+                        return navigator.serviceWorker.ready;
+                    }).then(function (reg) {
+                        return reg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(VAPID_KEY)
+                        });
+                    }).then(function (newSub) {
+                        return saveSubscription(newSub).then(function () {
+                            sub = newSub;
+                            setBtn(true);
+                            alert('تم تفعيل إشعارات الهاتف وحفظ الاشتراك. اضغط رابط اختبار الإشعار للتأكد من وصوله.');
+                        }).catch(function (err) {
+                            newSub.unsubscribe();
+                            throw err;
+                        });
+                    }).catch(function (err) {
+                        console.error('Push activation failed:', err);
+                        alert('تعذر تفعيل الإشعارات: ' + (err && err.message ? err.message : 'خطأ غير معروف'));
+                    }).finally(function () { btn.disabled = false; });
+                });
+            }).catch(function (err) {
+                console.error('Push initialization failed:', err);
+                setBtn(false, 'تعذر تجهيز خدمة الإشعارات');
             });
             function urlBase64ToUint8Array(base64String) {
                 var padding = '='.repeat((4 - base64String.length % 4) % 4);
