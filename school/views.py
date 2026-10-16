@@ -15,13 +15,12 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, PushSubscription, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup
 from .models import CurriculumConversation
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
     StudentLeaveForm, StudentLevelForm, ExamAnalysisForm, MessageForm,
     ClassForm, SubjectForm, StudentSurveyForm)
-from .services import send_push
 from .services import send_whatsapp_message
 from .arabic_sort import arabic_sort_key
 from .attendance_register import (
@@ -910,7 +909,6 @@ def add_student_warning(request, student_id):
                     message=f'تم توجيه إنذار لك بتاريخ {warning.incident_date}.',
                     link='/notifications/',
                 )
-                send_push(student.user, 'إنذار جديد', f'تم توجيه إنذار لك بتاريخ {warning.incident_date}.', '/notifications/')
             log_action(request.user, 'توجيه إنذار', f'{student.full_name} ({student.student_id})')
             messages.success(request, f'تم توجيه إنذار للطالب {student.full_name}')
             return redirect('print_student_warning', warning_id=warning.id)
@@ -944,7 +942,6 @@ def add_guardian_summons(request, student_id):
                     message=f'تم إصدار استدعاء لولي أمرك بتاريخ {summons.summons_date}.',
                     link='/notifications/',
                 )
-                send_push(student.user, 'استدعاء ولي أمر', f'تم إصدار استدعاء لولي أمرك بتاريخ {summons.summons_date}.', '/notifications/')
             log_action(request.user, 'استدعاء ولي أمر', f'{student.full_name} ({student.student_id})')
             messages.success(request, f'تم إصدار استدعاء ولي أمر للطالب {student.full_name}')
             return redirect('print_guardian_summons', summons_id=summons.id)
@@ -1679,12 +1676,6 @@ def add_note(request, student_id=None):
                     title='ملاحظة جديدة',
                     message=f'تمت إضافة ملاحظة ({note.get_note_type_display()}) لك: {note.content[:120]}',
                     link='/notifications/',
-                )
-                send_push(
-                    student.user,
-                    'ملاحظة جديدة',
-                    f'تمت إضافة ملاحظة ({note.get_note_type_display()}) لك: {note.content[:120]}',
-                    '/notifications/',
                 )
             if student.parent_phone:
                 note_type = note.get_note_type_display()
@@ -2447,12 +2438,6 @@ def add_leave(request, student_id=None):
                     message=f'تم تسجيل إذن مغادرة لك بتاريخ {leave.leave_date} من الساعة {leave.leave_time}.',
                     link='/notifications/',
                 )
-                send_push(
-                    leave.student.user,
-                    'إذن مغادرة جديد',
-                    f'تم تسجيل إذن مغادرة لك بتاريخ {leave.leave_date} من الساعة {leave.leave_time}.',
-                    '/notifications/',
-                )
             log_action(request.user, 'تسجيل إذن مغادرة', f'{leave.student.full_name} - {leave.leave_date}')
             messages.success(request, 'تم تسجيل إذن المغادرة بنجاح')
             # If the leave was started from a student's row, return to all students.
@@ -2891,12 +2876,6 @@ def send_message(request, user_id=None):
         recipient = get_object_or_404(allowed_recipients, id=recipient_id)
         Message.objects.create(sender=request.user, recipient=recipient, subject=subject, content=content)
         notification_link = '/wardens/messages/' if recipient.profile.role == 'warden' else '/messages/'
-        send_push(
-            recipient,
-            f'رسالة جديدة من {request.user.first_name or request.user.username}',
-            subject[:150],
-            notification_link,
-        )
         messages.success(request, f'تم إرسال الرسالة إلى {recipient.first_name or recipient.username}')
         return redirect('send_message')
     students = [] if is_student else sort_students(Student.objects.all().select_related('student_class'))
@@ -3701,7 +3680,6 @@ def supervisor_visit_list(request):
                     message=msg,
                     link=f'/supervisor-visits/{visit.id}/report/',
                 )
-                send_push(selected_teacher.user, 'زيارة مشرف جديدة', f'تم تسجيل زيارة مشرف بتاريخ {visit.visit_date}', f'/supervisor-visits/{visit.id}/report/')
             messages.success(request, 'تم إضافة الزيارة بنجاح')
             return redirect(f'{request.path}?teacher_id={teacher_id}')
         messages.error(request, 'الرجاء اختيار معلم')
@@ -3907,12 +3885,6 @@ def absence_list(request):
                             title='تنبيه بغياب الطالب',
                             message=f'الطالب {s.full_name} مسجَّل غائب بتاريخ {absence_date}. يرجى مراجعة المدرسة أو التواصل مع الإدارة.',
                             link='/leaves/',
-                        )
-                        send_push(
-                            s.user,
-                            'تنبيه بغياب الطالب',
-                            f'الطالب {s.full_name} مسجَّل غائب بتاريخ {absence_date}. يرجى مراجعة المدرسة أو التواصل مع الإدارة.',
-                            '/leaves/',
                         )
                     except Exception:
                         pass
@@ -5096,62 +5068,6 @@ def certificates_export(request):
     return response
 
 
-# ─── PWA & Web Push ───────────────────────────────────────────────────────────
-
-import json as json_lib
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-
-
-@login_required
-def push_subscribe(request):
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'error': 'POST فقط'}, status=405)
-    try:
-        data = json_lib.loads(request.body.decode('utf-8'))
-        endpoint = data.get('endpoint', '')
-        p256dh = data.get('keys', {}).get('p256dh', '')
-        auth = data.get('keys', {}).get('auth', '')
-        if not (endpoint and p256dh and auth):
-            return JsonResponse({'ok': False, 'error': 'بيانات ناقصة'}, status=400)
-        PushSubscription.objects.update_or_create(
-            endpoint=endpoint,
-            defaults={'user': request.user, 'p256dh': p256dh, 'auth': auth},
-        )
-        return JsonResponse({'ok': True})
-    except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
-
-
-@login_required
-def push_unsubscribe(request):
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'error': 'POST فقط'}, status=405)
-    try:
-        data = json_lib.loads(request.body.decode('utf-8'))
-        PushSubscription.objects.filter(user=request.user, endpoint=data.get('endpoint', '')).delete()
-        return JsonResponse({'ok': True})
-    except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
-
-
-@login_required
-def push_test(request):
-    sent = send_push(request.user, 'اختبار الإشعارات', 'إشعارات النظام تعمل بنجاح', '/dashboard/')
-    if sent:
-        messages.success(request, 'تم إرسال إشعار تجريبي لجهازك')
-    else:
-        messages.error(request, 'لا يوجد اشتراك مفعّل لهذا الحساب، أو لم تُضبط مفاتيح VAPID')
-    return redirect('dashboard')
-
-
-def service_worker(request):
-    response = render(request, 'school/sw.js', content_type='application/javascript')
-    response['Service-Worker-Allowed'] = '/'
-    response['Cache-Control'] = 'no-cache'
-    return response
-
-
 def manifest_view(request):
     info = SchoolInfo.objects.first()
     return JsonResponse({
@@ -5339,7 +5255,6 @@ def inspection_visit_list(request):
                     message=f'تم تسجيل زيارة إشرافية بتاريخ {visit.visit_date}',
                     link=f'/inspection-visits/{visit.id}/report/',
                 )
-                send_push(selected_teacher.user, 'زيارة إشرافية جديدة', f'تم تسجيل زيارة إشرافية بتاريخ {visit.visit_date}', f'/inspection-visits/{visit.id}/report/')
             messages.success(request, 'تم إضافة الزيارة الإشرافية بنجاح')
             return redirect(f'{request.path}?teacher_id={teacher_id}')
         messages.error(request, 'الرجاء اختيار معلم')
