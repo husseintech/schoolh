@@ -27,14 +27,12 @@ def send_visit_reminders():
                     link=f'/visit-program/{entry.id}/',
                     defaults={'title': 'تذكير بموعد حضور الحصة', 'message': text},
                 )
-                send_push(teacher_user, 'تذكير بموعد حضور الحصة', text, f'/visit-program/{entry.id}/')
             for manager in manager_users:
                 Notification.objects.get_or_create(
                     user=manager,
                     link=f'/visit-program/{entry.id}/',
                     defaults={'title': 'قرب موعد حضور معلم', 'message': text},
                 )
-                send_push(manager, 'قرب موعد حضور معلم', text, f'/visit-program/{entry.id}/')
             VisitProgram.objects.filter(id=entry.id).update(reminder_sent=True)
     except Exception as e:
         logger.error('خطأ في إرسال تذكيرات الزيارات: %s', e)
