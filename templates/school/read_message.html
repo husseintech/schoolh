@@ -18,7 +18,7 @@
                     <div class="col-md-6">
                         <strong>من:</strong>
                         {% if msg.sender %}
-                        {{ msg.sender.first_name|default:msg.sender.username }}
+                        {% if msg.sender.teacher_profile %}{{ msg.sender.teacher_profile.full_name }}{% elif msg.sender.student_profile %}{{ msg.sender.student_profile.full_name }}{% elif msg.sender.warden_profile %}{{ msg.sender.warden_profile.full_name }}{% else %}{{ msg.sender.get_full_name|default:msg.sender.first_name|default:msg.sender.username }}{% endif %}
                         <span class="badge bg-{% if msg.sender.profile.role == 'admin' %}danger{% elif msg.sender.profile.role == 'teacher' %}success{% else %}info{% endif %}">
                             {{ msg.sender.profile.get_role_display }}
                         </span>
@@ -29,7 +29,7 @@
                     <div class="col-md-6 text-md-start">
                         <strong>إلى:</strong>
                         {% if msg.recipient %}
-                        {{ msg.recipient.first_name|default:msg.recipient.username }}
+                        {% if msg.recipient.teacher_profile %}{{ msg.recipient.teacher_profile.full_name }}{% elif msg.recipient.student_profile %}{{ msg.recipient.student_profile.full_name }}{% elif msg.recipient.warden_profile %}{{ msg.recipient.warden_profile.full_name }}{% else %}{{ msg.recipient.get_full_name|default:msg.recipient.first_name|default:msg.recipient.username }}{% endif %}
                         {% else %}
                         <span class="text-muted">الكل</span>
                         {% endif %}
