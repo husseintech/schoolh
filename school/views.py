@@ -1975,10 +1975,14 @@ def teacher_detail(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
     notes = TeacherNote.objects.filter(teacher=teacher).select_related('created_by').order_by('-created_at')
     followups = TeacherFollowup.objects.filter(teacher=teacher).order_by('-follow_date')
+    teacher_messages = Message.objects.filter(
+        Q(sender=teacher.user) | Q(recipient=teacher.user)
+    ).select_related('sender', 'recipient').order_by('-created_at')
     return render(request, 'school/teacher_detail.html', {
         'teacher': teacher,
         'notes': notes,
         'followups': followups,
+        'teacher_messages': teacher_messages,
     })
 
 
