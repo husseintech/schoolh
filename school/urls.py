@@ -245,9 +245,6 @@ urlpatterns = [
     # PWA
     path('sw.js', views.service_worker, name='service_worker'),
     path('manifest.json', views.manifest_view, name='manifest'),
-    path('push/subscribe/', views.push_subscribe, name='push_subscribe'),
-    path('push/unsubscribe/', views.push_unsubscribe, name='push_unsubscribe'),
-    path('push/test/', views.push_test, name='push_test'),
 
     # Guardians
     path('guardians/', views.guardian_assign, name='guardian_assign'),
