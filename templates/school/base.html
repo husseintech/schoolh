@@ -1516,7 +1516,9 @@
             btn.classList.remove('d-none');
             function getCSRF() {
                 var m = document.cookie.match(/csrftoken=([^;]+)/);
-                return m ? m[1] : '';
+                if (m) return m[1];
+                var input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+                return input ? input.value : '';
             }
             function setBtn(on, label) {
                 btn.classList.toggle('btn-outline-primary', !on);
