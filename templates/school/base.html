@@ -1507,7 +1507,8 @@
             if (!('serviceWorker' in navigator)) return;
             navigator.serviceWorker.register('/sw.js').catch(function () {});
             var isSecure = window.isSecureContext || location.hostname === 'localhost';
-            if (!isSecure || !VAPID_KEY || !window.PushManager) return;
+            // The login page uses the same base template but has no notification button.
+            if (!btn || !isSecure || !VAPID_KEY || !window.PushManager || !('Notification' in window)) return;
             function getCSRF() {
                 var m = document.cookie.match(/csrftoken=([^;]+)/);
                 return m ? m[1] : '';
@@ -1546,6 +1547,11 @@
                                 });
                             }).catch(function (err) {
                                 console.error('Push error:', err);
+                                if (Notification.permission === 'denied') {
+                                    alert('إشعارات SchoolHH محظورة من إعدادات المتصفح. اسمح بها من إعدادات الموقع ثم أعد المحاولة.');
+                                } else {
+                                    alert('تعذّر تفعيل الإشعارات. تحقق من اتصال الإنترنت وإعدادات المتصفح ثم حاول مجددًا.');
+                                }
                             });
                         }
                     });
