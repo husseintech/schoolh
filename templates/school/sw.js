@@ -44,39 +44,3 @@ self.addEventListener('fetch', (e) => {
     );
 });
 
-self.addEventListener('push', (e) => {
-    let data = { title: 'النظام المدرسي', body: 'لديك إشعار جديد', url: '/dashboard/' };
-    try {
-        if (e.data) data = Object.assign(data, e.data.json());
-    } catch (err) {
-        if (e.data) data.body = e.data.text();
-    }
-    e.waitUntil(
-        self.registration.showNotification(data.title, {
-            body: data.body,
-            icon: '/static/pwa/icon-192.png',
-            badge: '/static/pwa/icon-192.png',
-            dir: 'rtl',
-            lang: 'ar',
-            // Request the platform's normal notification sound where supported.
-            silent: false,
-            data: { url: data.url },
-        })
-    );
-});
-
-self.addEventListener('notificationclick', (e) => {
-    e.notification.close();
-    const url = (e.notification.data && e.notification.data.url) || '/dashboard/';
-    e.waitUntil(
-        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-            for (const client of list) {
-                if (client.url.startsWith(location.origin) && 'focus' in client) {
-                    client.navigate(url);
-                    return client.focus();
-                }
-            }
-            return self.clients.openWindow(url);
-        })
-    );
-});
