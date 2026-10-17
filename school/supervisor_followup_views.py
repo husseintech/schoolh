@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .models import Notification, SchoolInfo, SupervisorVisit, Teacher, has_perm
-from .services import send_push
 from .supervisor_followup_models import SupervisorVisitFollowup
 
 
@@ -89,12 +88,6 @@ def supervisor_visit_list(request):
                 title='زيارة مشرف جديدة',
                 message=msg,
                 link=f'/supervisor-visits/{visit.id}/report/',
-            )
-            send_push(
-                selected_teacher.user,
-                'زيارة مشرف جديدة',
-                f'تم تسجيل زيارة مشرف بتاريخ {visit.visit_date}',
-                f'/supervisor-visits/{visit.id}/report/',
             )
         messages.success(request, 'تم حفظ الزيارة. أصبحت الآن بانتظار متابعة الإدارة.')
         return redirect(f'/supervisor-visits/?teacher_id={selected_teacher.id}')
