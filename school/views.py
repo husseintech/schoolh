@@ -6268,3 +6268,11 @@ def health_committee_official_form_add(request, form_key):
     return render(request, 'school/health_committee_official_form_entry.html', {
         'form_item': item, 'today': timezone.localdate().isoformat()
     })
+
+
+def service_worker(request):
+    """Serve the site's remaining service worker without Web Push handlers."""
+    response = render(request, 'school/sw.js', content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response
