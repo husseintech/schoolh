@@ -142,7 +142,8 @@
                                 <a href="{% url 'visit_program_files' %}?teacher_id={{ e.teacher_id }}" class="btn btn-outline-success btn-sm text-nowrap" title="رفع ملف إلى Google Drive" aria-label="رفع ملف إلى Google Drive">
                                     <i class="bi bi-cloud-arrow-up"></i> رفع ملف
                                 </a>
-                                {% elif scoped_teacher and scoped_teacher.id == e.teacher_id %}
+                                {% endif %}
+                                {% if scoped_teacher and scoped_teacher.id == e.teacher_id %}
                                 <a href="{% url 'visit_program_files' %}" class="btn btn-outline-primary btn-sm text-nowrap" title="عرض الملفات المخصصة لك" aria-label="عرض ملفاتي">
                                     <i class="bi bi-folder2-open"></i> ملفاتي
                                 </a>
