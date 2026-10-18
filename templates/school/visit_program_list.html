@@ -4,6 +4,11 @@
 {% block content %}
 
 <div class="mb-3">
+    {% if scoped_teacher %}
+    <a href="{% url 'visit_program_files' %}" class="btn btn-outline-primary mb-2">
+        <i class="bi bi-folder2-open"></i> ملفاتي المرفوعة إليّ
+    </a>
+    {% endif %}
     <a href="{% url 'visit_program_report' %}" class="btn btn-success">
         <i class="bi bi-printer"></i> طباعة البرنامج كاملاً
     </a>
