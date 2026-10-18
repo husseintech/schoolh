@@ -553,13 +553,15 @@ def teacher_plans_list(request):
         return redirect('home')
 
     plans = TeacherPlan.objects.select_related('teacher', 'student_class', 'subject').prefetch_related('files')
+    teacher_id = request.GET.get('teacher', '') if role != 'teacher' else ''
+    class_id = request.GET.get('class', '') if role != 'teacher' else ''
+    subject_id = request.GET.get('subject', '') if role != 'teacher' else ''
+    show_missing = _is_admin(request) and request.GET.get('missing') == '1'
+
     if role == 'teacher':
         plans = plans.filter(teacher=teacher)
     else:
-        teacher_id = request.GET.get('teacher', '')
-        class_id = request.GET.get('class', '')
-        subject_id = request.GET.get('subject', '')
-        if teacher_id:
+        if teacher_id and not show_missing:
             plans = plans.filter(teacher_id=teacher_id)
         if class_id:
             plans = plans.filter(student_class_id=class_id)
@@ -571,9 +573,17 @@ def teacher_plans_list(request):
         'role': role,
         'is_admin': _is_admin(request),
         'can_add': bool(teacher) or _is_admin(request),
+        'show_missing': show_missing,
     }
     if _is_admin(request):
-        ctx['teachers'] = Teacher.objects.all()
+        uploaded = TeacherPlan.objects.all()
+        if class_id:
+            uploaded = uploaded.filter(student_class_id=class_id)
+        if subject_id:
+            uploaded = uploaded.filter(subject_id=subject_id)
+        uploaded_teacher_ids = uploaded.values_list('teacher_id', flat=True).distinct()
+        ctx['missing_teachers'] = Teacher.objects.exclude(pk__in=uploaded_teacher_ids).order_by('full_name')
+        ctx['teachers'] = Teacher.objects.all().order_by('full_name')
         ctx['classes'] = Class.objects.all()
         ctx['subjects'] = Subject.objects.all()
         ctx['sel'] = {'teacher': teacher_id, 'class': class_id, 'subject': subject_id}
