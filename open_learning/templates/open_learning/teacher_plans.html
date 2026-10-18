@@ -16,6 +16,47 @@
 </div>
 
 {% if is_admin %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-warning" href="?missing=1{% if sel.class %}&class={{ sel.class }}{% endif %}{% if sel.subject %}&subject={{ sel.subject }}{% endif %}">
+        <i class="bi bi-person-x"></i> المعلمون الذين لم يرفعوا خططًا أو ملفات
+    </a>
+    {% if show_missing %}
+    <a class="btn btn-outline-secondary" href="?{% if sel.class %}class={{ sel.class }}&{% endif %}{% if sel.subject %}subject={{ sel.subject }}{% endif %}"><i class="bi bi-arrow-return-right"></i> العودة إلى الخطط المرفوعة</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if is_admin and show_missing %}
+<div class="card mb-3" id="missingTeachersReport">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="mb-1">المعلمون الذين لم يرفعوا خططًا أو ملفات</h5>
+                <div class="text-muted small">{% if sel.class or sel.subject %}وفق التصفية المحددة{% else %}على مستوى قسم الخطط كاملًا{% endif %} — العدد: {{ missing_teachers|length }}</div>
+            </div>
+            <button class="btn btn-primary no-print" type="button" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الأسماء</button>
+        </div>
+        {% if missing_teachers %}
+        <ol class="mb-0">{% for t in missing_teachers %}<li class="py-1">{{ t.full_name }}</li>{% endfor %}</ol>
+        {% else %}
+        <div class="alert alert-success mb-0">جميع المعلمين رفعوا خططًا أو ملفات ضمن التصفية المحددة.</div>
+        {% endif %}
+    </div>
+</div>
+<style>
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+  body * { visibility: hidden !important; }
+  #missingTeachersReport, #missingTeachersReport * { visibility: visible !important; }
+  #missingTeachersReport { position: absolute !important; inset: 0 auto auto 0 !important; width: 100% !important; border: 0 !important; box-shadow: none !important; }
+  #missingTeachersReport .card-body { padding: 0 !important; }
+  #missingTeachersReport li { font-size: 12pt; }
+  .no-print { display: none !important; }
+}
+</style>
+{% endif %}
+
+{% if is_admin and not show_missing %}
 <form method="get" class="row g-2 mb-3">
     <div class="col-auto">
         <select name="teacher" class="form-select">
@@ -39,6 +80,7 @@
 </form>
 {% endif %}
 
+{% if not show_missing %}
 {% if plans %}
 {% for plan in plans %}
 <div class="card mb-3 shadow-sm">
@@ -77,5 +119,6 @@
 {% endfor %}
 {% else %}
 <div class="alert alert-info"><i class="bi bi-info-circle"></i> لا توجد خطط مرفوعة بعد.</div>
+{% endif %}
 {% endif %}
 {% endblock %}
