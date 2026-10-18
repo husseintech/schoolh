@@ -14,7 +14,18 @@ ALLOWED_EXTENSIONS = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
 def _files_redirect(teacher):
     return redirect(f'/visit-program/files/?teacher_id={teacher.pk}') if teacher else redirect('visit_program_files')
 
+def _teacher_scope(user):
+    """Return the linked teacher only for a signed-in teacher account."""
+    if getattr(getattr(user, 'profile', None), 'role', None) != 'teacher':
+        return None
+    return getattr(user, 'teacher_profile', None)
+
+
 def _allowed(request, action):
+    # Teachers may view assigned files only; upload/delete require staff permissions.
+    teacher = _teacher_scope(request.user)
+    if teacher and action == 'view':
+        return True
     if has_perm(request.user, 'inspection_visits', action):
         return True
     messages.error(request, 'ليس لديك صلاحية للوصول إلى أرشيف ملفات الزيارات.')
@@ -24,8 +35,13 @@ def _allowed(request, action):
 def visit_program_files(request):
     if not _allowed(request, 'view'):
         return redirect('visit_program_list')
+    teacher_scope = _teacher_scope(request.user)
     teacher_id = request.GET.get('teacher_id') or request.POST.get('teacher_id') or ''
-    teacher = get_object_or_404(Teacher, pk=teacher_id) if str(teacher_id).isdigit() else None
+    # Ignore teacher_id supplied by a teacher account; it must always be their own linked profile.
+    if teacher_scope:
+        teacher = teacher_scope
+    else:
+        teacher = get_object_or_404(Teacher, pk=teacher_id) if str(teacher_id).isdigit() else None
     if request.method == 'POST':
         if not _allowed(request, 'add'):
             return redirect('visit_program_list')
@@ -64,7 +80,9 @@ def visit_program_files(request):
             messages.error(request, 'تعذّر رفع الملف إلى Google Drive. لم يُسجل الملف في الأرشيف؛ حاول مرة أخرى.')
         return redirect(f"/visit-program/files/?teacher_id={teacher.pk}") if teacher else redirect('visit_program_files')
     files = VisitProgramDriveFile.objects.select_related('uploaded_by', 'teacher').all()
-    if teacher:
+    if teacher_scope:
+        files = files.filter(teacher=teacher_scope)
+    elif teacher:
         files = files.filter(teacher=teacher)
     return render(request, 'school/visit_program_files.html', {
         'files': files,
@@ -79,6 +97,10 @@ def visit_program_file_open(request, file_id):
     if not _allowed(request, 'view'):
         return redirect('visit_program_list')
     record = get_object_or_404(VisitProgramDriveFile, pk=file_id)
+    teacher_scope = _teacher_scope(request.user)
+    if teacher_scope and record.teacher_id != teacher_scope.pk:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('لا يمكنك الوصول إلى ملف غير مخصص لك.')
     try:
         content, mime_type, drive_name = GoogleDriveService().download_file(record.google_drive_file_id)
     except Exception:
