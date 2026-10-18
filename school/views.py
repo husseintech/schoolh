@@ -747,6 +747,7 @@ def student_absence_report(request):
         'rows': rows,
         'total': len(rows),
         'today': date.today(),
+        'scoped_teacher': scoped_teacher,
     })
 
 
