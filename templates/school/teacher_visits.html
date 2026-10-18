@@ -70,6 +70,37 @@
     </div>
 </div>
 
+
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white"><i class="bi bi-folder2-open"></i> التقارير والملفات المخصصة لك</div>
+    <div class="card-body">
+        {% if assigned_files %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>#</th><th>اسم التقرير / الملف</th><th>تاريخ الرفع</th><th class="text-center">الإجراء</th></tr>
+                </thead>
+                <tbody>
+                    {% for file in assigned_files %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><i class="bi bi-file-earmark-text text-primary me-1"></i>{{ file.file_name }}</td>
+                        <td>{{ file.created_at|date:'Y/m/d H:i' }}</td>
+                        <td class="text-center text-nowrap">
+                            <a href="{% url 'visit_program_file_open' file.id %}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهدة التقرير</a>
+                            <a href="{% url 'visit_program_file_open' file.id %}?download=1" class="btn btn-sm btn-success"><i class="bi bi-download"></i> تنزيل</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">لا توجد تقارير أو ملفات مخصصة لك حاليًا.</p>
+        {% endif %}
+    </div>
+</div>
+
 <div class="card mb-4">
     <div class="card-header"><i class="bi bi-arrow-left-right"></i> الزيارات التبادلية التي يجب أن تقوم بها</div>
     <div class="card-body">
