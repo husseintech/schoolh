@@ -953,7 +953,7 @@
         </div>
         {% endif %}
 
-        {% if user.profile.role == 'admin' or 'registers_view' in user_perms or 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'visit_program_view' in user_perms or 'absence_view' in user_perms or 'schedule_view' in user_perms or 'certificates_view' in user_perms or 'exams_view' in user_perms or 'survey_view' in user_perms or 'school_radio_view' in user_perms or 'health_committee_view' in user_perms %}
+        {% if user.profile.role == 'admin' or 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'visit_program_view' in user_perms or 'absence_view' in user_perms or 'schedule_view' in user_perms or 'certificates_view' in user_perms or 'exams_view' in user_perms or 'survey_view' in user_perms or 'school_radio_view' in user_perms or 'health_committee_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-admin" aria-expanded="false">
             <span class="nav-section-label"><span class="section-icon"><i class="bi bi-building-gear"></i></span><span>الإدارة</span></span><i class="bi bi-chevron-down"></i>
         </button>
@@ -1054,12 +1054,27 @@
             <i class="bi bi-clipboard-data-fill"></i> تحليل الامتحانات
         </a>
         {% endif %}
-        {% if user.profile.role == 'admin' or 'registers_view' in user_perms %}
-        <a href="{% url 'registers_home' %}" class="nav-link {% if 'registers' in request.resolver_match.url_name %}active{% endif %}">
-            <i class="bi bi-journals"></i> السجلات المدرسية
-        </a>
-        {% endif %}
         {% if 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'visit_program_view' in user_perms or 'absence_view' in user_perms or 'schedule_view' in user_perms or 'certificates_view' in user_perms or 'exams_view' in user_perms or 'survey_view' in user_perms or 'school_radio_view' in user_perms or 'health_committee_view' in user_perms %}
+        </div>
+        {% endif %}
+
+        {% if user.profile.role == 'admin' or 'registers_view' in user_perms %}
+        <button class="nav-section nav-toggle" type="button" data-target="collapse-registers" aria-expanded="{% if 'registers' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
+            <span class="nav-section-label"><span class="section-icon"><i class="bi bi-journals"></i></span><span>السجلات المدرسية</span></span><i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="nav-collapse {% if 'registers' in request.resolver_match.url_name %}show{% endif %}" id="collapse-registers">
+            <a href="{% url 'registers_home' %}" class="nav-link {% if request.resolver_match.url_name == 'registers_home' %}active{% endif %}">
+                <i class="bi bi-grid"></i> جميع السجلات
+            </a>
+            <a href="{% url 'library_register' %}" class="nav-link {% if request.resolver_match.url_name == 'library_register' or request.resolver_match.url_name == 'library_report' %}active{% endif %}">
+                <i class="bi bi-book-half"></i> سجل المكتبة
+            </a>
+            <a href="{% url 'lab_register' 'science' %}" class="nav-link {% if request.resolver_match.url_name == 'lab_register' and request.resolver_match.kwargs.register_type == 'science' %}active{% endif %}">
+                <i class="bi bi-flask"></i> سجل مختبر العلوم
+            </a>
+            <a href="{% url 'lab_register' 'computer' %}" class="nav-link {% if request.resolver_match.url_name == 'lab_register' and request.resolver_match.kwargs.register_type == 'computer' %}active{% endif %}">
+                <i class="bi bi-pc-display"></i> سجل مختبر الحاسوب
+            </a>
         </div>
         {% endif %}
 
