@@ -953,7 +953,7 @@
         </div>
         {% endif %}
 
-        {% if 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'visit_program_view' in user_perms or 'absence_view' in user_perms or 'schedule_view' in user_perms or 'certificates_view' in user_perms or 'exams_view' in user_perms or 'survey_view' in user_perms or 'school_radio_view' in user_perms or 'health_committee_view' in user_perms %}
+        {% if user.profile.role == 'admin' or 'registers_view' in user_perms or 'classes_view' in user_perms or 'subjects_view' in user_perms or 'announcements_view' in user_perms or 'agenda_view' in user_perms or 'leaves_view' in user_perms or 'lateness_view' in user_perms or 'meetings_view' in user_perms or 'supervisor_visits_view' in user_perms or 'inspection_visits_view' in user_perms or 'visit_program_view' in user_perms or 'absence_view' in user_perms or 'schedule_view' in user_perms or 'certificates_view' in user_perms or 'exams_view' in user_perms or 'survey_view' in user_perms or 'school_radio_view' in user_perms or 'health_committee_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-admin" aria-expanded="false">
             <span class="nav-section-label"><span class="section-icon"><i class="bi bi-building-gear"></i></span><span>الإدارة</span></span><i class="bi bi-chevron-down"></i>
         </button>
