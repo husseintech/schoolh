@@ -80,6 +80,9 @@ def user_permissions(request):
             ('health_committee', 'edit'), ('health_committee', 'delete'),
             ('health_committee', 'print'), ('health_committee', 'monitor'),
             ('registers', 'view'), ('registers', 'add'), ('registers', 'edit'), ('registers', 'delete'), ('registers', 'print'),
+            ('library_register', 'view'), ('library_register', 'add'), ('library_register', 'edit'), ('library_register', 'delete'), ('library_register', 'print'),
+            ('science_lab_register', 'view'), ('science_lab_register', 'add'), ('science_lab_register', 'edit'), ('science_lab_register', 'delete'), ('science_lab_register', 'print'),
+            ('computer_lab_register', 'view'), ('computer_lab_register', 'add'), ('computer_lab_register', 'edit'), ('computer_lab_register', 'delete'), ('computer_lab_register', 'print'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
