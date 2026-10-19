@@ -79,6 +79,7 @@ def user_permissions(request):
             ('health_committee', 'view'), ('health_committee', 'add'),
             ('health_committee', 'edit'), ('health_committee', 'delete'),
             ('health_committee', 'print'), ('health_committee', 'monitor'),
+            ('registers', 'view'), ('registers', 'add'), ('registers', 'edit'), ('registers', 'delete'), ('registers', 'print'),
         ]
         for module, action in modules_actions:
             if has_perm(request.user, module, action):
