@@ -15,7 +15,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup, VisitProgramDriveFile
 from .models import CurriculumConversation
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
@@ -3823,32 +3823,67 @@ def visit_program_update(request, entry_id):
 
 @login_required
 def visit_program_report(request):
+    """Report teachers as visited only when a non-empty note exists in VisitProgram."""
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    entries = VisitProgram.objects.select_related('teacher').order_by('-visit_date', 'teacher__full_name')
+
     scoped_teacher = current_teacher_scope(request.user)
+    source_entries = VisitProgram.objects.select_related('teacher').order_by(
+        '-visit_date', '-created_at', 'teacher__full_name'
+    )
     if scoped_teacher:
-        entries = entries.filter(teacher=scoped_teacher)
+        source_entries = source_entries.filter(teacher=scoped_teacher)
+
+    # One report row per teacher: the latest entry with a real note determines display.
+    rows = []
+    seen_teacher_ids = set()
+    for entry in source_entries:
+        if not (entry.notes or '').strip() or entry.teacher_id in seen_teacher_ids:
+            continue
+        seen_teacher_ids.add(entry.teacher_id)
+        files = list(VisitProgramDriveFile.objects.filter(
+            teacher_id=entry.teacher_id
+        ).order_by('-created_at'))
+        rows.append({
+            'teacher': entry.teacher,
+            'visit_date': entry.visit_date,
+            'lesson': entry.lesson,
+            'notes': entry.notes.strip(),
+            'files': files,
+        })
+
     info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
-        'entries': entries,
+        'entries': rows,
         'info': info,
+        'missing_only': False,
     })
 
 
 @login_required
 def visit_program_missing_notes_report(request):
+    """List teachers with no non-empty note in any visit-program entry."""
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
-    entries = VisitProgram.objects.filter(Q(notes__isnull=True) | Q(notes='')).filter(visit_date__gte=date.today()).select_related('teacher').order_by('visit_date', 'teacher__full_name')
+
     scoped_teacher = current_teacher_scope(request.user)
+    teachers = Teacher.objects.all().order_by('full_name')
     if scoped_teacher:
-        entries = entries.filter(teacher=scoped_teacher)
+        teachers = teachers.filter(pk=scoped_teacher.pk)
+
+    noted_teacher_ids = set()
+    for entry in VisitProgram.objects.select_related('teacher').only(
+        'teacher_id', 'notes'
+    ):
+        if (entry.notes or '').strip():
+            noted_teacher_ids.add(entry.teacher_id)
+
+    rows = [{'teacher': teacher} for teacher in teachers if teacher.pk not in noted_teacher_ids]
     info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
-        'entries': entries,
+        'entries': rows,
         'info': info,
         'missing_only': True,
     })
