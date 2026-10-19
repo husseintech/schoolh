@@ -52,6 +52,9 @@ class Profile(models.Model):
 DEFAULT_PERMISSIONS = {
     'admin': {
         'registers': ['view', 'add', 'edit', 'delete', 'print'],
+        'library_register': ['view', 'add', 'edit', 'delete', 'print'],
+        'science_lab_register': ['view', 'add', 'edit', 'delete', 'print'],
+        'computer_lab_register': ['view', 'add', 'edit', 'delete', 'print'],
         'health_committee': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
         'students': ['view', 'add', 'edit', 'delete', 'import', 'export'],
         'teachers': ['view', 'add', 'edit', 'delete', 'notes'],
@@ -91,6 +94,12 @@ DEFAULT_PERMISSIONS = {
     },
     'vice_principal': {
         'registers': ['view', 'add', 'edit', 'print'],
+        'library_register': [],
+        'science_lab_register': [],
+        'computer_lab_register': [],
+        'library_register': [],
+        'science_lab_register': [],
+        'computer_lab_register': [],
         'students': ['view', 'add', 'edit', 'import', 'export'],
         'teachers': ['view', 'notes'],
         'classes': ['view'],
@@ -135,7 +144,11 @@ DEFAULT_PERMISSIONS = {
         'wardens': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
         'messages': ['view', 'send'],
     },
-    'teacher': {        'students': ['view'],
+    'teacher': {
+        'library_register': [],
+        'science_lab_register': [],
+        'computer_lab_register': [],
+        'students': ['view'],
         'teachers': [],
         'classes': ['view'],
         'subjects': ['view'],
@@ -159,6 +172,9 @@ DEFAULT_PERMISSIONS = {
         'messages': ['view'],
     },
     'student': {
+        'library_register': [],
+        'science_lab_register': [],
+        'computer_lab_register': [],
         'students': [],
         'teachers': [],
         'classes': [],
