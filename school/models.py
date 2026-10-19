@@ -51,6 +51,7 @@ class Profile(models.Model):
 # Default permissions by role
 DEFAULT_PERMISSIONS = {
     'admin': {
+        'registers': ['view', 'add', 'edit', 'delete', 'print'],
         'health_committee': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
         'students': ['view', 'add', 'edit', 'delete', 'import', 'export'],
         'teachers': ['view', 'add', 'edit', 'delete', 'notes'],
@@ -89,6 +90,7 @@ DEFAULT_PERMISSIONS = {
         'wardens': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
     },
     'vice_principal': {
+        'registers': ['view', 'add', 'edit', 'print'],
         'students': ['view', 'add', 'edit', 'import', 'export'],
         'teachers': ['view', 'notes'],
         'classes': ['view'],
@@ -108,7 +110,8 @@ DEFAULT_PERMISSIONS = {
         'reciprocal_visits': ['view', 'add', 'edit', 'delete'],
         'no_objection': ['view', 'add'],
     },
-    'secretary': {        'students': ['view', 'add', 'edit', 'import', 'export'],
+    'secretary': {
+        'registers': ['view', 'add', 'edit', 'print'],        'students': ['view', 'add', 'edit', 'import', 'export'],
         'teachers': ['view'],
         'classes': ['view'],
         'subjects': ['view'],
@@ -1509,3 +1512,45 @@ class TeacherFollowupRegisterSettings(models.Model):
     def __str__(self):
         return f'إعدادات دفتر المتابعة - {self.teacher.full_name}'
 
+
+
+class LibraryLoan(models.Model):
+    borrower_name = models.CharField("اسم مستعير الكتاب", max_length=200)
+    book_title = models.CharField("اسم الكتاب", max_length=250)
+    classification_number = models.CharField("رقم التصنيف", max_length=100, blank=True)
+    loan_date = models.DateField("تاريخ الإعارة", default=timezone.localdate)
+    due_date = models.DateField("موعد الإعادة المحدد", null=True, blank=True)
+    returned_date = models.DateField("تاريخ إعادة الكتاب الفعلي", null=True, blank=True)
+    notes = models.TextField("ملاحظات", blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="library_loans_created", verbose_name="أُضيف بواسطة")
+    created_at = models.DateTimeField("تاريخ التسجيل", auto_now_add=True)
+    updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
+    class Meta:
+        verbose_name = "إعارة كتاب"
+        verbose_name_plural = "إعارات الكتب"
+        ordering = ["-loan_date", "borrower_name", "book_title"]
+    @property
+    def days_out(self):
+        return max(0, ((self.returned_date or timezone.localdate()) - self.loan_date).days)
+    @property
+    def is_overdue(self):
+        return self.returned_date is None and (timezone.localdate() - self.loan_date).days > 15
+    def __str__(self):
+        return f"{self.book_title} — {self.borrower_name}"
+
+class LabRegisterEntry(models.Model):
+    REGISTER_TYPES = [("science", "سجل مختبر العلوم"), ("computer", "سجل مختبر الحاسوب")]
+    register_type = models.CharField("نوع السجل", max_length=20, choices=REGISTER_TYPES, db_index=True)
+    entry_date = models.DateField("التاريخ", default=timezone.localdate)
+    title = models.CharField("عنوان / موضوع", max_length=250)
+    details = models.TextField("التفاصيل", blank=True)
+    notes = models.TextField("ملاحظات", blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="lab_register_entries", verbose_name="أُضيف بواسطة")
+    created_at = models.DateTimeField("تاريخ التسجيل", auto_now_add=True)
+    updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
+    class Meta:
+        verbose_name = "بيان سجل مختبر"
+        verbose_name_plural = "بيانات سجلات المختبرات"
+        ordering = ["-entry_date", "-created_at"]
+    def __str__(self):
+        return f"{self.get_register_type_display()} — {self.title}"
