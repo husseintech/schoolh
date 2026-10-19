@@ -1,6 +1,45 @@
-{% extends 'school/base.html' %}{% block title %}{{ register_title }}{% endblock %}{% block page_heading %}{{ register_title }}{% endblock %}{% block content %}
-<style>.lab{direction:rtl}.entry-form{border:1px solid #e5ebf2;border-radius:14px;background:#fff;padding:18px;margin-bottom:18px}.lab-wrap{overflow:auto;border:1px solid #e5ebf2;border-radius:12px}.lab th{background:#f2f5f9}@media print{.no-print{display:none!important}}</style>
-<div class="lab"><div class="d-flex justify-content-between gap-2 mb-3"><div><h2 class="h4 fw-bold">{{ register_title }}</h2><p class="text-muted">سجل مستقل لبيانات المختبر.</p></div><a href="{% url 'registers_home' %}" class="btn btn-outline-secondary no-print">كل السجلات</a></div>
-{% if can_add %}<form method="post" class="entry-form no-print">{% csrf_token %}<div class="row g-3"><div class="col-md-3"><label class="form-label">التاريخ</label><input class="form-control" type="date" name="entry_date" required></div><div class="col-md-9"><label class="form-label">عنوان / موضوع *</label><input class="form-control" name="title" required></div><div class="col-12"><label class="form-label">التفاصيل</label><textarea class="form-control" name="details" rows="3"></textarea></div><div class="col-12"><label class="form-label">ملاحظات</label><textarea class="form-control" name="notes" rows="2"></textarea></div></div><button class="btn btn-primary mt-3">حفظ البيان</button></form>{% endif %}
-<form class="row g-2 mb-3 no-print"><div class="col-md-9"><input name="q" value="{{ q }}" class="form-control" placeholder="بحث في السجل"></div><div class="col-auto"><button class="btn btn-outline-secondary">بحث</button></div><div class="col-auto"><button type="button" onclick="window.print()" class="btn btn-outline-primary">طباعة</button></div></form>
-<div class="lab-wrap"><table class="table table-bordered table-sm align-middle mb-0"><thead><tr><th>#</th><th>التاريخ</th><th>عنوان / موضوع</th><th>التفاصيل</th><th>ملاحظات</th>{% if can_delete %}<th class="no-print">إجراء</th>{% endif %}</tr></thead><tbody>{% for entry in records %}<tr><td>{{ forloop.counter }}</td><td>{{ entry.entry_date|date:"Y-m-d" }}</td><td>{{ entry.title }}</td><td>{{ entry.details|default:"—" }}</td><td>{{ entry.notes|default:"—" }}</td>{% if can_delete %}<td class="no-print"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td>{% endif %}</tr>{% empty %}<tr><td colspan="6">لا توجد بيانات.</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}
+{% extends 'school/base.html' %}
+{% block title %}{{ register_title }}{% endblock %}
+{% block page_heading %}{{ register_title }}{% endblock %}
+{% block content %}
+<style>
+.lab{direction:rtl}.entry-form{border:1px solid #e2e8f0;border-radius:16px;background:#fff;padding:20px;margin-bottom:20px}.notebook-entry{background:#fff;border:1px solid #64748b;margin-bottom:18px;break-inside:avoid}.notebook-entry table{width:100%;border-collapse:collapse;table-layout:fixed}.notebook-entry th,.notebook-entry td{border:1px solid #64748b;padding:8px;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere}.notebook-entry th{background:#f1f5f9;text-align:center}.notebook-entry .label{width:16%;font-weight:700;background:#f8fafc}.notebook-entry .tophead td{text-align:center;font-weight:700;width:33.33%;background:#f8fafc}.notebook-entry .section-head{text-align:center;font-weight:800;background:#eef2f7}.blank-area{min-height:45px}.lab-wrap{overflow:auto}
+@media print{.no-print,.sidebar,.topbar,.navbar,.page-header{display:none!important}body{background:#fff!important}.main-content,.content,.container,.container-fluid{margin:0!important;padding:0!important;width:100%!important;max-width:none!important}.notebook-entry{margin-bottom:8mm;border-radius:0;page-break-inside:avoid}.notebook-entry th,.notebook-entry .label,.notebook-entry .section-head{background:#f5f5f5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+<div class="lab">
+<div class="d-flex justify-content-between align-items-start gap-2 mb-3 no-print"><div><h2 class="h4 fw-bold">{{ register_title }}</h2><p class="text-muted">{% if register_type == 'computer' %}دفتر مختبر الحاسوب وفق النموذج المرفق.{% else %}سجل مستقل لتوثيق أعمال المختبر.{% endif %}</p></div><a href="{% url 'registers_home' %}" class="btn btn-outline-secondary">كل السجلات</a></div>
+{% if can_add %}<form method="post" class="entry-form no-print">{% csrf_token %}
+{% if register_type == 'computer' %}
+<h3 class="h5 fw-bold mb-3">إضافة حصة إلى سجل مختبر الحاسوب</h3>
+<div class="row g-3">
+<div class="col-md-3"><label class="form-label">التاريخ *</label><input class="form-control" type="date" name="entry_date" required></div>
+<div class="col-md-3"><label class="form-label">اليوم</label><input class="form-control" name="day" placeholder="الأحد"></div>
+<div class="col-md-3"><label class="form-label">الصف</label><input class="form-control" name="grade"></div>
+<div class="col-md-3"><label class="form-label">المعلم</label><input class="form-control" name="teacher_name"></div>
+<div class="col-12"><label class="form-label">عنوان الحصة *</label><input class="form-control" name="session_title" required></div>
+<div class="col-md-6"><label class="form-label">الأهداف والأنشطة</label><textarea class="form-control" name="objectives_activities" rows="4"></textarea></div>
+<div class="col-md-6"><label class="form-label">البرامج المستخدمة</label><textarea class="form-control" name="programs_used" rows="4"></textarea></div>
+<div class="col-md-4"><label class="form-label">ملاحظات</label><textarea class="form-control" name="notes" rows="2"></textarea></div>
+<div class="col-md-4"><label class="form-label">ملاحظات مشرف المختبر</label><textarea class="form-control" name="lab_supervisor_notes" rows="2"></textarea></div>
+<div class="col-md-4"><label class="form-label">ملاحظات المدير</label><textarea class="form-control" name="director_notes" rows="2"></textarea></div>
+</div>
+{% else %}
+<div class="row g-3"><div class="col-md-3"><label class="form-label">التاريخ</label><input class="form-control" type="date" name="entry_date" required></div><div class="col-md-9"><label class="form-label">عنوان / موضوع *</label><input class="form-control" name="title" required></div><div class="col-12"><label class="form-label">التفاصيل</label><textarea class="form-control" name="details" rows="3"></textarea></div><div class="col-12"><label class="form-label">ملاحظات</label><textarea class="form-control" name="notes" rows="2"></textarea></div></div>
+{% endif %}
+<button class="btn btn-primary mt-3">حفظ السجل</button></form>{% endif %}
+<form class="row g-2 mb-3 no-print"><div class="col-md-9"><input name="q" value="{{ q }}" class="form-control" placeholder="بحث في السجل"></div><div class="col-auto"><button class="btn btn-outline-secondary">بحث</button></div><div class="col-auto"><button type="button" onclick="window.print()" class="btn btn-outline-primary"><i class="bi bi-printer"></i> طباعة</button></div></form>
+{% if register_type == 'computer' %}
+{% for entry in records %}<article class="notebook-entry"><table>
+<tr class="tophead"><td>اليوم<br>{{ entry.day|default:" " }}</td><td>التاريخ<br>{{ entry.entry_date|date:"Y-m-d" }}</td><td>الصف<br>{{ entry.grade|default:" " }}</td></tr>
+<tr><td colspan="3" class="section-head">عنوان الحصة</td></tr><tr><td colspan="3">{{ entry.session_title|default:entry.title|default:" " }}</td></tr>
+<tr><th colspan="2">الأهداف والأنشطة</th><th>البرامج المستخدمة</th></tr><tr><td colspan="2" class="blank-area">{{ entry.objectives_activities|default:entry.details|default:" " }}</td><td class="blank-area">{{ entry.programs_used|default:" " }}</td></tr>
+<tr><td class="label">المعلم</td><td colspan="2">{{ entry.teacher_name|default:" " }}</td></tr>
+<tr><td class="label">ملاحظات</td><td colspan="2" class="blank-area">{{ entry.notes|default:" " }}</td></tr>
+<tr><td class="label">مشرف المختبر</td><td colspan="2" class="blank-area">{{ entry.lab_supervisor_notes|default:" " }}</td></tr>
+<tr><td class="label">ملاحظات المدير</td><td colspan="2" class="blank-area">{{ entry.director_notes|default:" " }}</td></tr>
+</table>{% if can_delete %}<div class="p-2 no-print text-start"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف السجل</button></form></div>{% endif %}</article>{% empty %}<div class="alert alert-light border">لا توجد حصص مسجلة حتى الآن.</div>{% endfor %}
+{% else %}
+<div class="lab-wrap"><table class="table table-bordered table-sm align-middle mb-0"><thead><tr><th>#</th><th>التاريخ</th><th>عنوان / موضوع</th><th>التفاصيل</th><th>ملاحظات</th>{% if can_delete %}<th class="no-print">إجراء</th>{% endif %}</tr></thead><tbody>{% for entry in records %}<tr><td>{{ forloop.counter }}</td><td>{{ entry.entry_date|date:"Y-m-d" }}</td><td>{{ entry.title }}</td><td>{{ entry.details|default:"—" }}</td><td>{{ entry.notes|default:"—" }}</td>{% if can_delete %}<td class="no-print"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td>{% endif %}</tr>{% empty %}<tr><td colspan="6">لا توجد بيانات.</td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+</div>
+{% endblock %}
