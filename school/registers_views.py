@@ -87,7 +87,23 @@ def lab_register(request,register_type):
         else:
             if not title: messages.error(request,"يرجى إدخال عنوان البيان.")
             else:
-                LabRegisterEntry.objects.create(register_type=register_type,entry_date=entry_date,title=title,details=(request.POST.get("details") or "").strip(),notes=(request.POST.get("notes") or "").strip(),created_by=request.user)
+                session_title=(request.POST.get("session_title") or title).strip()
+                programs_used=(request.POST.get("programs_used") or "").strip()
+                objectives_activities=(request.POST.get("objectives_activities") or request.POST.get("details") or "").strip()
+                teacher_name=(request.POST.get("teacher_name") or "").strip()
+                notes=(request.POST.get("notes") or "").strip()
+                lab_supervisor_notes=(request.POST.get("lab_supervisor_notes") or "").strip()
+                director_notes=(request.POST.get("director_notes") or "").strip()
+                LabRegisterEntry.objects.create(
+                    register_type=register_type, entry_date=entry_date,
+                    day=(request.POST.get("day") or "").strip(),
+                    grade=(request.POST.get("grade") or "").strip(),
+                    title=title, session_title=session_title,
+                    programs_used=programs_used, objectives_activities=objectives_activities,
+                    teacher_name=teacher_name, details=(request.POST.get("details") or objectives_activities).strip(),
+                    notes=notes, lab_supervisor_notes=lab_supervisor_notes,
+                    director_notes=director_notes, created_by=request.user
+                )
                 messages.success(request,"تم حفظ البيان.")
                 return redirect("lab_register",register_type=register_type)
     return render(request,"school/lab_register.html",{"records":records,"q":q,"register_type":register_type,"register_title":"سجل مختبر العلوم" if register_type=="science" else "سجل مختبر الحاسوب","can_add":can(request.user,"add"),"can_delete":can(request.user,"delete")})
