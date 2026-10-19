@@ -108,14 +108,17 @@ def sort_by_student_name(items):
         x.student_id or 0,
     ))
 
-MODULE_KEYS = ['registers', 'students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant', 'health_committee']
+MODULE_KEYS = ['registers', 'library_register', 'science_lab_register', 'computer_lab_register', 'students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant', 'health_committee']
 ACTION_KEYS = [
     'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
     'complete', 'send', 'review', 'monitor', 'generate', 'manage_constraints',
     'manage_settings', 'whatsapp', 'accounts', 'links',
 ]
 MODULE_LABELS = {
-    'registers': 'السجلات المدرسية',
+    'registers': 'السجلات المدرسية (القسم العام)',
+    'library_register': 'سجل المكتبة',
+    'science_lab_register': 'سجل مختبر العلوم',
+    'computer_lab_register': 'سجل مختبر الحاسوب',
     'students': 'الطلاب',
     'teachers': 'المعلمون',
     'social_committee': 'اللجنة الاجتماعية',
