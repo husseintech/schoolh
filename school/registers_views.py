@@ -76,10 +76,10 @@ def lab_register(request,register_type):
     if not can(request.user,"view"): return deny(request)
     records=LabRegisterEntry.objects.filter(register_type=register_type)
     q=(request.GET.get("q") or "").strip()
-    if q: records=records.filter(Q(title__icontains=q)|Q(details__icontains=q)|Q(notes__icontains=q))
+    if q: records=records.filter(Q(title__icontains=q)|Q(session_title__icontains=q)|Q(grade__icontains=q)|Q(teacher_name__icontains=q)|Q(programs_used__icontains=q)|Q(objectives_activities__icontains=q)|Q(details__icontains=q)|Q(notes__icontains=q))
     if request.method=="POST":
         if not can(request.user,"add"): return deny(request)
-        title=(request.POST.get("title") or "").strip()
+        title=(request.POST.get("title") or request.POST.get("session_title") or "").strip()
         try:
             entry_date=date.fromisoformat(request.POST.get("entry_date") or timezone.localdate().isoformat())
             if entry_date>timezone.localdate(): raise ValueError
