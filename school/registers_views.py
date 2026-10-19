@@ -7,7 +7,10 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from .models import LabRegisterEntry, LibraryLoan, has_perm
 
-def can(user, action): return has_perm(user, "registers", action)
+def can(user, action, module="registers"): return has_perm(user, module, action)
+
+def register_module(register_type):
+    return "science_lab_register" if register_type == "science" else "computer_lab_register"
 def deny(request):
     messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
     return redirect("dashboard")
@@ -15,13 +18,14 @@ def cutoff(): return timezone.localdate() - timedelta(days=15)
 
 @login_required
 def registers_home(request):
-    if not can(request.user,"view"): return deny(request)
+    if not any(can(request.user, "view", module) for module in ("library_register", "science_lab_register", "computer_lab_register")):
+        return deny(request)
     loans=LibraryLoan.objects.all()
-    return render(request,"school/registers_home.html",{"active_loans":loans.filter(returned_date__isnull=True).count(),"returned_loans":loans.filter(returned_date__isnull=False).count(),"overdue_loans":loans.filter(returned_date__isnull=True,loan_date__lt=cutoff()).count(),"science_count":LabRegisterEntry.objects.filter(register_type="science").count(),"computer_count":LabRegisterEntry.objects.filter(register_type="computer").count()})
+    return render(request,"school/registers_home.html",{"active_loans":loans.filter(returned_date__isnull=True).count(),"returned_loans":loans.filter(returned_date__isnull=False).count(),"overdue_loans":loans.filter(returned_date__isnull=True,loan_date__lt=cutoff()).count(),"science_count":LabRegisterEntry.objects.filter(register_type="science").count(),"computer_count":LabRegisterEntry.objects.filter(register_type="computer").count(), "can_library":can(request.user,"view","library_register"), "can_science":can(request.user,"view","science_lab_register"), "can_computer":can(request.user,"view","computer_lab_register")})
 
 @login_required
 def library_register(request):
-    if not can(request.user,"view"): return deny(request)
+    if not can(request.user,"view","library_register"): return deny(request)
     q=(request.GET.get("q") or "").strip()
     loans=LibraryLoan.objects.all()
     if q: loans=loans.filter(Q(borrower_name__icontains=q)|Q(book_title__icontains=q)|Q(classification_number__icontains=q))
@@ -30,7 +34,7 @@ def library_register(request):
     returned=loans.filter(returned_date__isnull=False).order_by("-returned_date","borrower_name")
     overdue=active.filter(loan_date__lt=cutoff())
     if request.method=="POST":
-        if not can(request.user,"add"): return deny(request)
+        if not can(request.user,"add","library_register"): return deny(request)
         borrower=(request.POST.get("borrower_name") or "").strip()
         title=(request.POST.get("book_title") or "").strip()
         try:
@@ -49,7 +53,7 @@ def library_register(request):
 @login_required
 @require_POST
 def library_return(request,loan_id):
-    if not can(request.user,"edit"): return deny(request)
+    if not can(request.user,"edit","library_register"): return deny(request)
     loan=get_object_or_404(LibraryLoan,pk=loan_id)
     if loan.returned_date is None:
         try:
@@ -65,7 +69,7 @@ def library_return(request,loan_id):
 @login_required
 @require_POST
 def library_delete(request,loan_id):
-    if not can(request.user,"delete"): return deny(request)
+    if not can(request.user,"delete","library_register"): return deny(request)
     get_object_or_404(LibraryLoan,pk=loan_id).delete()
     messages.success(request,"تم حذف سجل الإعارة.")
     return redirect("library_register")
@@ -73,12 +77,13 @@ def library_delete(request,loan_id):
 @login_required
 def lab_register(request,register_type):
     if register_type not in ("science","computer"): return redirect("registers_home")
-    if not can(request.user,"view"): return deny(request)
+    module = register_module(register_type)
+    if not can(request.user,"view",module): return deny(request)
     records=LabRegisterEntry.objects.filter(register_type=register_type)
     q=(request.GET.get("q") or "").strip()
     if q: records=records.filter(Q(title__icontains=q)|Q(session_title__icontains=q)|Q(grade__icontains=q)|Q(teacher_name__icontains=q)|Q(programs_used__icontains=q)|Q(objectives_activities__icontains=q)|Q(details__icontains=q)|Q(notes__icontains=q))
     if request.method=="POST":
-        if not can(request.user,"add"): return deny(request)
+        if not can(request.user,"add",module): return deny(request)
         title=(request.POST.get("title") or request.POST.get("session_title") or "").strip()
         try:
             entry_date=date.fromisoformat(request.POST.get("entry_date") or timezone.localdate().isoformat())
@@ -106,20 +111,20 @@ def lab_register(request,register_type):
                 )
                 messages.success(request,"تم حفظ البيان.")
                 return redirect("lab_register",register_type=register_type)
-    return render(request,"school/lab_register.html",{"records":records,"q":q,"register_type":register_type,"register_title":"سجل مختبر العلوم" if register_type=="science" else "سجل مختبر الحاسوب","can_add":can(request.user,"add"),"can_delete":can(request.user,"delete")})
+    return render(request,"school/lab_register.html",{"records":records,"q":q,"register_type":register_type,"register_title":"سجل مختبر العلوم" if register_type=="science" else "سجل مختبر الحاسوب","can_add":can(request.user,"add",module),"can_delete":can(request.user,"delete",module)})
 
 @login_required
 @require_POST
 def lab_register_delete(request,entry_id):
-    if not can(request.user,"delete"): return deny(request)
     entry=get_object_or_404(LabRegisterEntry,pk=entry_id)
+    if not can(request.user,"delete",register_module(entry.register_type)): return deny(request)
     kind=entry.register_type; entry.delete()
     messages.success(request,"تم حذف البيان.")
     return redirect("lab_register",register_type=kind)
 
 @login_required
 def library_report(request,report_type):
-    if not can(request.user,"print"): return deny(request)
+    if not can(request.user,"print","library_register"): return deny(request)
     today=timezone.localdate(); loans=LibraryLoan.objects.all()
     titles={"active":"تقرير الكتب المعارة","returned":"تقرير الكتب المعادة","overdue":"تقرير الكتب المتأخرة"}
     if report_type=="active": loans=loans.filter(returned_date__isnull=True)
