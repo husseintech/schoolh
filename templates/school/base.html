@@ -1058,23 +1058,31 @@
         </div>
         {% endif %}
 
-        {% if user.profile.role == 'admin' or 'registers_view' in user_perms %}
+        {% if user.profile.role == 'admin' or 'library_register_view' in user_perms or 'science_lab_register_view' in user_perms or 'computer_lab_register_view' in user_perms %}
         <button class="nav-section nav-toggle" type="button" data-target="collapse-registers" aria-expanded="{% if 'registers' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
             <span class="nav-section-label"><span class="section-icon"><i class="bi bi-journals"></i></span><span>السجلات المدرسية</span></span><i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-collapse {% if 'registers' in request.resolver_match.url_name %}show{% endif %}" id="collapse-registers">
+            {% if user.profile.role == 'admin' or 'library_register_view' in user_perms or 'science_lab_register_view' in user_perms or 'computer_lab_register_view' in user_perms %}
             <a href="{% url 'registers_home' %}" class="nav-link {% if request.resolver_match.url_name == 'registers_home' %}active{% endif %}">
                 <i class="bi bi-grid"></i> جميع السجلات
             </a>
+            {% endif %}
+            {% if user.profile.role == 'admin' or 'library_register_view' in user_perms %}
             <a href="{% url 'library_register' %}" class="nav-link {% if request.resolver_match.url_name == 'library_register' or request.resolver_match.url_name == 'library_report' %}active{% endif %}">
                 <i class="bi bi-book-half"></i> سجل المكتبة
             </a>
+            {% endif %}
+            {% if user.profile.role == 'admin' or 'science_lab_register_view' in user_perms %}
             <a href="{% url 'lab_register' 'science' %}" class="nav-link {% if request.resolver_match.url_name == 'lab_register' and request.resolver_match.kwargs.register_type == 'science' %}active{% endif %}">
                 <i class="bi bi-flask"></i> سجل مختبر العلوم
             </a>
+            {% endif %}
+            {% if user.profile.role == 'admin' or 'computer_lab_register_view' in user_perms %}
             <a href="{% url 'lab_register' 'computer' %}" class="nav-link {% if request.resolver_match.url_name == 'lab_register' and request.resolver_match.kwargs.register_type == 'computer' %}active{% endif %}">
                 <i class="bi bi-pc-display"></i> سجل مختبر الحاسوب
             </a>
+            {% endif %}
         </div>
         {% endif %}
 
