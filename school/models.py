@@ -111,7 +111,8 @@ DEFAULT_PERMISSIONS = {
         'no_objection': ['view', 'add'],
     },
     'secretary': {
-        'registers': ['view', 'add', 'edit', 'print'],        'students': ['view', 'add', 'edit', 'import', 'export'],
+        'registers': ['view', 'add', 'edit', 'print'],
+        'students': ['view', 'add', 'edit', 'import', 'export'],
         'teachers': ['view'],
         'classes': ['view'],
         'subjects': ['view'],
