@@ -389,7 +389,7 @@
                     {% if user.profile.role == 'admin' %}<a class="module-tile" href="{% url 'student_assistant_admin' %}"><i class="bi bi-robot"></i><span>مساعد الطلاب</span></a>{% endif %}
                     <a class="module-tile" href="{% url 'supervisor_visit_list' %}"><i class="bi bi-person-video3"></i><span>الزيارات</span></a>
                     <a class="module-tile" href="{% url 'backup_data' %}"><i class="bi bi-database-fill-gear"></i><span>أدوات البيانات</span></a>
-                    {% if 'registers_view' in user_perms %}<a class="module-tile" href="{% url 'registers_home' %}"><i class="bi bi-journals"></i><span>السجلات المدرسية</span></a>{% endif %}
+                    {% if user.profile.role == 'admin' or 'registers_view' in user_perms %}<a class="module-tile" href="{% url 'registers_home' %}"><i class="bi bi-journals"></i><span>السجلات المدرسية</span></a>{% endif %}
                 </div>
                 {% if user.profile.role == 'admin' %}
                 <div class="text-center mt-3"><a class="maintenance-link" href="{% url 'reset_data' %}"><i class="bi bi-gear"></i> صيانة النظام وبداية العام</a></div>
