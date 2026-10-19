@@ -5,12 +5,20 @@ from . import student_assistant_views
 from . import curriculum_assistant_views
 from . import social_committee_views
 from . import attendance_followup
+from . import registers_views
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('registers/', registers_views.registers_home, name='registers_home'),
+    path('registers/library/', registers_views.library_register, name='library_register'),
+    path('registers/library/<int:loan_id>/return/', registers_views.library_return, name='library_return'),
+    path('registers/library/<int:loan_id>/delete/', registers_views.library_delete, name='library_delete'),
+    path('registers/library/report/<str:report_type>/', registers_views.library_report, name='library_report'),
+    path('registers/lab/<str:register_type>/', registers_views.lab_register, name='lab_register'),
+    path('registers/lab/entry/<int:entry_id>/delete/', registers_views.lab_register_delete, name='lab_register_delete'),
     path('health-committee/', views.health_committee_dashboard, name='health_committee_dashboard'),
     path('health-committee/forms/', views.health_committee_official_forms, name='health_committee_official_forms'),
     path('health-committee/forms/<slug:form_key>/add/', views.health_committee_official_form_add, name='health_committee_official_form_add'),
