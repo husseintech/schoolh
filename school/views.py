@@ -3823,6 +3823,23 @@ def visit_program_update(request, entry_id):
 
 @login_required
 def visit_program_report(request):
+    """Print the complete visit-program schedule, including entries without notes."""
+    if not has_perm(request.user, 'visit_program', 'view'):
+        messages.error(request, 'ليس لديك صلاحية')
+        return redirect('dashboard')
+    entries = VisitProgram.objects.select_related('teacher').order_by('-visit_date', 'teacher__full_name')
+    scoped_teacher = current_teacher_scope(request.user)
+    if scoped_teacher:
+        entries = entries.filter(teacher=scoped_teacher)
+    return render(request, 'school/visit_program_report.html', {
+        'entries': entries,
+        'info': SchoolInfo.objects.first(),
+        'all_program': True,
+    })
+
+
+@login_required
+def visit_program_visited_report(request):
     """Report teachers as visited only when a non-empty note exists in VisitProgram."""
     if not has_perm(request.user, 'visit_program', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
@@ -3835,7 +3852,6 @@ def visit_program_report(request):
     if scoped_teacher:
         source_entries = source_entries.filter(teacher=scoped_teacher)
 
-    # One report row per teacher: the latest entry with a real note determines display.
     rows = []
     seen_teacher_ids = set()
     for entry in source_entries:
@@ -3853,10 +3869,9 @@ def visit_program_report(request):
             'files': files,
         })
 
-    info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
         'entries': rows,
-        'info': info,
+        'info': SchoolInfo.objects.first(),
         'missing_only': False,
     })
 
@@ -3874,17 +3889,14 @@ def visit_program_missing_notes_report(request):
         teachers = teachers.filter(pk=scoped_teacher.pk)
 
     noted_teacher_ids = set()
-    for entry in VisitProgram.objects.select_related('teacher').only(
-        'teacher_id', 'notes'
-    ):
+    for entry in VisitProgram.objects.only('teacher_id', 'notes'):
         if (entry.notes or '').strip():
             noted_teacher_ids.add(entry.teacher_id)
 
     rows = [{'teacher': teacher} for teacher in teachers if teacher.pk not in noted_teacher_ids]
-    info = SchoolInfo.objects.first()
     return render(request, 'school/visit_program_report.html', {
         'entries': rows,
-        'info': info,
+        'info': SchoolInfo.objects.first(),
         'missing_only': True,
     })
 
