@@ -1,7 +1,7 @@
 {% extends 'school/base.html' %}
 {% load static %}
 {% block title %}{% if all_program %}تقرير برنامج الزيارات{% elif missing_only %}تقرير المعلمين الذين لم تتم زيارتهم{% else %}تقرير المعلمين الذين تمت زيارتهم{% endif %}{% endblock %}
-{% block page_heading %}{% if missing_only %}تقرير المعلمين الذين لم تتم زيارتهم{% else %}تقرير المعلمين الذين تمت زيارتهم{% endif %}{% endblock %}
+{% block page_heading %}{% if all_program %}تقرير برنامج الزيارات{% elif missing_only %}تقرير المعلمين الذين لم تتم زيارتهم{% else %}تقرير المعلمين الذين تمت زيارتهم{% endif %}{% endblock %}
 {% block content %}
 {% include 'school/includes/report_premium_styles.html' %}
 <div class="report-page">
