@@ -232,6 +232,7 @@ urlpatterns = [
     path('visit-program/<int:entry_id>/delete/', views.visit_program_delete, name='visit_program_delete'),
     path('visit-program/<int:entry_id>/update/', views.visit_program_update, name='visit_program_update'),
     path('visit-program/report/', views.visit_program_report, name='visit_program_report'),
+    path('visit-program/report/visited/', views.visit_program_visited_report, name='visit_program_visited_report'),
     path('visit-program/report/missing-notes/', views.visit_program_missing_notes_report, name='visit_program_missing_notes_report'),
 
     # Notifications
