@@ -71,7 +71,6 @@
 <tr><td class="label">ملاحظات المدير</td><td colspan="2" class="blank-area">{{ entry.director_notes|default:" " }}</td></tr>
 </table>{% if can_delete %}<div class="p-2 no-print text-start"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف السجل</button></form></div>{% endif %}</article>{% empty %}<div class="alert alert-light border">لا توجد حصص مسجلة حتى الآن.</div>{% endfor %}
 {% else %}
-{% else %}
 <div class="science-screen">
 <div class="lab-wrap"><table class="table table-bordered table-sm align-middle mb-0"><thead><tr><th>#</th><th>التاريخ</th><th>رقم النشاط</th><th>الصف/الشعبة</th><th>عنوان التجربة/النشاط</th>{% if can_delete %}<th class="no-print">إجراء</th>{% endif %}</tr></thead><tbody>{% for entry in records %}<tr><td>{{ forloop.counter }}</td><td>{{ entry.entry_date|date:"Y-m-d" }}</td><td>{{ entry.activity_number|default:"—" }}</td><td>{{ entry.grade|default:"—" }} / {{ entry.section|default:"—" }}</td><td>{{ entry.title }}</td>{% if can_delete %}<td class="no-print"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td>{% endif %}</tr>{% empty %}<tr><td colspan="6">لا توجد بيانات.</td></tr>{% endfor %}</tbody></table></div>
 </div>
