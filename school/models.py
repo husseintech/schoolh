@@ -1493,6 +1493,26 @@ class HealthCommitteeOfficialForm(models.Model):
 
 
 
+class HealthCommitteeDriveFile(models.Model):
+    """Google Drive files attached to a specific saved official health committee form."""
+    form_entry = models.ForeignKey(HealthCommitteeOfficialForm, on_delete=models.CASCADE, related_name='drive_files', verbose_name='سجل اللجنة الصحية')
+    file_name = models.CharField('اسم الملف', max_length=300)
+    mime_type = models.CharField('نوع الملف', max_length=150, blank=True)
+    file_size = models.PositiveBigIntegerField('حجم الملف', null=True, blank=True)
+    google_drive_file_id = models.CharField('معرّف ملف Google Drive', max_length=200, unique=True)
+    google_drive_url = models.URLField('رابط Google Drive', max_length=1000, blank=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='health_committee_drive_files')
+    created_at = models.DateTimeField('تاريخ الرفع', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'ملف اللجنة الصحية'
+        verbose_name_plural = 'ملفات اللجنة الصحية'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.file_name
+
+
 class VisitProgramDriveFile(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True, related_name='visit_program_drive_files', verbose_name='المعلم المرتبط')
     file_name = models.CharField('اسم الملف', max_length=300)
