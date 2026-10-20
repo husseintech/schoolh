@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import LabRegisterEntry, LibraryLoan, has_perm
+from .models import Class, LabRegisterEntry, LibraryLoan, has_perm
 
 def can(user, action, module="registers"): return has_perm(user, module, action)
 
@@ -81,7 +81,8 @@ def lab_register(request,register_type):
     if not can(request.user,"view",module): return deny(request)
     records=LabRegisterEntry.objects.filter(register_type=register_type)
     q=(request.GET.get("q") or "").strip()
-    if q: records=records.filter(Q(title__icontains=q)|Q(session_title__icontains=q)|Q(grade__icontains=q)|Q(teacher_name__icontains=q)|Q(programs_used__icontains=q)|Q(objectives_activities__icontains=q)|Q(details__icontains=q)|Q(notes__icontains=q))
+    classes=Class.objects.all().order_by("name")
+    if q: records=records.filter(Q(title__icontains=q)|Q(session_title__icontains=q)|Q(grade__icontains=q)|Q(teacher_name__icontains=q)|Q(programs_used__icontains=q)|Q(objectives_activities__icontains=q)|Q(details__icontains=q)|Q(notes__icontains=q)|Q(activity_number__icontains=q)|Q(unit_lesson__icontains=q)|Q(learning_outcomes__icontains=q)|Q(tools_materials__icontains=q)|Q(actual_observations__icontains=q))
     if request.method=="POST":
         if not can(request.user,"add",module): return deny(request)
         title=(request.POST.get("title") or request.POST.get("session_title") or "").strip()
@@ -99,6 +100,32 @@ def lab_register(request,register_type):
                 notes=(request.POST.get("notes") or "").strip()
                 lab_supervisor_notes=(request.POST.get("lab_supervisor_notes") or "").strip()
                 director_notes=(request.POST.get("director_notes") or "").strip()
+                extra={}
+                if register_type=="science":
+                    raw_count=(request.POST.get("student_count") or "").strip()
+                    try:
+                        student_count=int(raw_count) if raw_count else None
+                        if student_count is not None and student_count < 0: raise ValueError
+                    except ValueError:
+                        messages.error(request,"عدد الطلبة غير صحيح.")
+                        return redirect("lab_register",register_type=register_type)
+                    steps="\n".join(f"{n}) {(request.POST.get('step_'+str(n)) or '').strip()}" for n in (1,2,3) if (request.POST.get('step_'+str(n)) or '').strip())
+                    extra={
+                        "activity_number":(request.POST.get("activity_number") or "").strip(),
+                        "semester":(request.POST.get("semester") or "").strip(),
+                        "section":(request.POST.get("section") or "").strip(),
+                        "student_count":student_count,
+                        "unit_lesson":(request.POST.get("unit_lesson") or "").strip(),
+                        "learning_outcomes":(request.POST.get("learning_outcomes") or "").strip(),
+                        "tools_materials":(request.POST.get("tools_materials") or "").strip(),
+                        "safety_procedures":(request.POST.get("safety_procedures") or "").strip(),
+                        "implementation_steps":steps,
+                        "actual_observations":(request.POST.get("actual_observations") or "").strip(),
+                        "results_conclusion":(request.POST.get("results_conclusion") or "").strip(),
+                        "assessment":(request.POST.get("assessment") or "").strip(),
+                        "incidents_actions":(request.POST.get("incidents_actions") or "").strip(),
+                        "followup_activity":(request.POST.get("followup_activity") or "").strip(),
+                    }
                 LabRegisterEntry.objects.create(
                     register_type=register_type, entry_date=entry_date,
                     day=(request.POST.get("day") or "").strip(),
@@ -107,11 +134,11 @@ def lab_register(request,register_type):
                     programs_used=programs_used, objectives_activities=objectives_activities,
                     teacher_name=teacher_name, details=(request.POST.get("details") or objectives_activities).strip(),
                     notes=notes, lab_supervisor_notes=lab_supervisor_notes,
-                    director_notes=director_notes, created_by=request.user
+                    director_notes=director_notes, created_by=request.user, **extra
                 )
                 messages.success(request,"تم حفظ البيان.")
                 return redirect("lab_register",register_type=register_type)
-    return render(request,"school/lab_register.html",{"records":records,"q":q,"register_type":register_type,"register_title":"سجل مختبر العلوم" if register_type=="science" else "سجل مختبر الحاسوب","can_add":can(request.user,"add",module),"can_delete":can(request.user,"delete",module)})
+    return render(request,"school/lab_register.html",{"records":records,"q":q,"register_type":register_type,"register_title":"سجل مختبر العلوم" if register_type=="science" else "سجل مختبر الحاسوب","can_add":can(request.user,"add",module),"can_delete":can(request.user,"delete",module),"classes":classes,"today":timezone.localdate()})
 
 @login_required
 @require_POST
