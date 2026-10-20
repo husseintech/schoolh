@@ -1,39 +1,27 @@
 {% extends 'school/base.html' %}
-{% block title %}سجلات {{ form_item.title }}{% endblock %}
-{% block page_heading %}سجلات {{ form_item.title }}{% endblock %}
+{% block title %}{{ form_item.title }}{% endblock %}
+{% block page_heading %}{{ form_item.title }}{% endblock %}
 {% block content %}
 <style>
-.hcr-wrap{direction:rtl;color:#1f2937}.hcr-head{background:linear-gradient(120deg,#102a43,#0f766e);color:#fff;padding:22px;border-radius:16px;margin-bottom:18px}.hcr-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.hcr-btn{display:inline-block;text-decoration:none;border-radius:9px;padding:9px 13px;font-weight:750;border:1px solid #d6e0e5;color:#234653;background:#fff}.hcr-btn.primary{background:#0f766e;color:#fff;border-color:#0f766e}.hcr-entry{border:1px solid #dbe4e8;border-radius:13px;padding:16px;margin-bottom:14px;background:#fff;break-inside:avoid}.hcr-entry-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e5e7eb;padding-bottom:9px;margin-bottom:12px}.hcr-data{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.hcr-field{padding:9px;background:#f8fafc;border:1px solid #edf1f4;border-radius:8px;overflow-wrap:anywhere}.hcr-field b{display:block;color:#475569;font-size:.82rem;margin-bottom:4px}.hcr-empty{padding:28px;text-align:center;border:1px dashed #94a3b8;border-radius:14px;background:#f8fafc}.hcr-notes{white-space:pre-wrap;margin-top:12px}@media(max-width:650px){.hcr-data{grid-template-columns:1fr}}@media print{.hcr-tools,.sidebar,.topbar,.navbar,.btn{display:none!important}.hcr-head{background:#fff!important;color:#000!important;border:1px solid #777;border-radius:0}.hcr-entry{border:1px solid #777;border-radius:0;box-shadow:none}.hcr-field{background:#fff;border:1px solid #bbb;border-radius:0}.hcr-empty{border:1px solid #777;background:#fff}.hcr-wrap{color:#000}}
+.hcr-wrap{direction:rtl;color:#111;max-width:1100px;margin:auto}.hcr-head{text-align:center;padding:12px 0 14px;border-bottom:2px solid #111;margin-bottom:14px}.hcr-official{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center;gap:12px;font-size:12px}.hcr-official .en{direction:ltr}.hcr-eagle{font-size:38px}.hcr-title{font-size:19px;font-weight:800;margin-top:14px}.hcr-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.hcr-btn{display:inline-block;text-decoration:none;border-radius:7px;padding:8px 12px;font-weight:750;border:1px solid #d6e0e5;color:#234653;background:#fff}.hcr-btn.primary{background:#0f766e;color:#fff}.hcr-entry{border:1px solid #9ca3af;padding:18px;margin-bottom:18px;background:#fff;break-inside:avoid}.hcr-entry-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid #888;padding-bottom:8px;margin-bottom:12px}.hcr-data{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hcr-field{padding:8px;border-bottom:1px dotted #555;overflow-wrap:anywhere;white-space:pre-line}.hcr-field b{display:block;font-size:.85rem;margin-bottom:5px}.hcr-wide{grid-column:1/-1}.hcr-signatures{display:flex;justify-content:space-between;gap:30px;margin-top:45px;text-align:center}.hcr-signatures div{width:45%;min-height:60px}.hcr-empty{padding:28px;text-align:center;border:1px dashed #777}.hcr-data .full{grid-column:1/-1}@media(max-width:650px){.hcr-data{grid-template-columns:1fr}.hcr-wide{grid-column:auto}.hcr-official{grid-template-columns:1fr}.hcr-eagle{display:none}}@page{size:A4 portrait;margin:14mm}@media print{.hcr-tools,.sidebar,.topbar,.navbar,.btn{display:none!important}.hcr-wrap{max-width:none}.hcr-head{border-radius:0;padding:0 0 8px}.hcr-entry{border:0;padding:0;margin-bottom:0}.hcr-entry:not(:last-child){page-break-after:always}.hcr-data{gap:8px}.hcr-field{padding:5px 2px}.hcr-title{font-size:17px}.hcr-signatures{margin-top:35px}.hcr-empty{border:1px solid #777}}
 </style>
 <div class="hcr-wrap">
 <section class="hcr-head">
-<div>ملف اللجنة الصحية — صفحة المصدر {{ form_item.page }}</div>
-<h2 class="h4 fw-bold mt-2 mb-2">{{ form_item.title }}</h2>
-<div>عدد السجلات المحفوظة: {{ total_records }}</div>
+<div class="hcr-official"><div class="en"><strong>State of Palestine</strong><br>Ministry of Education &amp; Higher Education<br>General Directorate of School Health</div><div class="hcr-eagle">🦅</div><div><strong>دولة فلسطين</strong><br>وزارة التربية والتعليم العالي<br>الإدارة العامة للصحة المدرسية</div></div>
+<div class="hcr-title">{{ form_item.title }}</div><div>عدد السجلات المحفوظة: {{ total_records }}</div>
 </section>
-<div class="hcr-tools">
-{% if can_add %}<a class="hcr-btn primary" href="{% url 'health_committee_official_form_add' form_item.key %}">+ إدخال سجل جديد</a>{% endif %}
-{% if can_print %}<button class="hcr-btn" type="button" onclick="window.print()">طباعة التقرير</button>{% endif %}
-<a class="hcr-btn" href="{% url 'health_committee_official_forms' %}?form={{ form_item.key }}">العودة إلى النماذج</a>
-</div>
+<div class="hcr-tools">{% if can_add %}<a class="hcr-btn primary" href="{% url 'health_committee_official_form_add' form_item.key %}">+ إدخال سجل جديد</a>{% endif %}{% if can_print %}<button class="hcr-btn" type="button" onclick="window.print()">طباعة التقرير</button>{% endif %}<a class="hcr-btn" href="{% url 'health_committee_official_forms' %}?form={{ form_item.key }}">العودة إلى النماذج</a></div>
 {% for entry in entries %}
 <article class="hcr-entry">
 <header class="hcr-entry-head"><strong>{{ form_item.title }}</strong><span>التاريخ: {{ entry.entry_date|date:"Y/m/d"|default:"غير محدد" }} · رقم السجل {{ forloop.counter }}</span></header>
 <div class="hcr-data">
-{% for key,value in entry.data.items %}
-<div class="hcr-field"><b>{{ key }}</b>{{ value|default:"—" }}</div>
-{% empty %}
-<div class="hcr-field">لا توجد تفاصيل مسجلة لهذا الإدخال.</div>
+{% for key,value in entry.display_data.items %}
+{% if value and key != "ملاحظات" %}<div class="hcr-field {% if key == 'محاور النقاش' or key == 'التوصيات' or key == 'أعضاء الهيئة الإدارية والتدريسية' or key == 'أعضاء الطلبة' or key == 'أعضاء المجتمع المحلي' or key == 'أهداف الاجتماع' or key == 'الحضور' %}full{% endif %}"><b>{{ key }}</b>{{ value|linebreaksbr }}</div>{% endif %}
 {% endfor %}
+{% if entry.notes %}<div class="hcr-field full"><b>ملاحظات إضافية</b>{{ entry.notes|linebreaksbr }}</div>{% endif %}
 </div>
-{% if entry.notes %}<div class="hcr-notes"><b>ملاحظات إضافية:</b> {{ entry.notes }}</div>{% endif %}
+{% if form_item.key == 'committee-minutes' %}<div class="hcr-signatures"><div>توقيع مقرر اللجنة الصحية والأعضاء<br><br>........................................</div><div>توقيع مدير المدرسة وختم المدرسة<br><br>........................................</div></div>{% endif %}
 </article>
-{% empty %}
-<div class="hcr-empty">
-<h3 class="h5 fw-bold">لا توجد سجلات محفوظة لهذا النموذج حتى الآن</h3>
-<p class="mb-3">هذه شاشة السجلات الخاصة بنموذج «{{ form_item.title }}». يمكنك إضافة أول سجل من الزر أعلاه، وستظهر السجلات هنا بعد حفظها.</p>
-{% if can_add %}<a class="hcr-btn primary" href="{% url 'health_committee_official_form_add' form_item.key %}">إدخال أول سجل</a>{% endif %}
-</div>
-{% endfor %}
+{% empty %}<div class="hcr-empty"><h3>لا توجد سجلات محفوظة لهذا النموذج حتى الآن</h3><p>يمكنك إضافة أول سجل من الزر أعلاه، وستظهر السجلات هنا بعد الحفظ.</p>{% if can_add %}<a class="hcr-btn primary" href="{% url 'health_committee_official_form_add' form_item.key %}">إدخال أول سجل</a>{% endif %}</div>{% endfor %}
 </div>
 {% endblock %}
