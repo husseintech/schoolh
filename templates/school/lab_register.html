@@ -2,6 +2,18 @@
 {% block title %}{{ register_title }}{% endblock %}
 {% block page_heading %}{{ register_title }}{% endblock %}
 {% block content %}
+{% if register_type == 'science' %}
+<style>
+.science-form label{font-weight:700}.science-form textarea{min-height:68px}
+.science-print{display:none;direction:rtl;color:#111;font-size:12px;line-height:1.45}
+.science-print h3{text-align:center;font-size:15px;margin:0 0 7px;font-weight:700;color:#164e8a}
+.science-print .meta{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+.science-print .line{border-bottom:1px dotted #222;min-height:22px;margin-bottom:1px;display:flex;align-items:end;gap:5px}
+.science-print .line b{white-space:nowrap;font-weight:600}.science-print .line span{flex:1;min-height:17px;white-space:pre-wrap;overflow-wrap:anywhere}
+@page{size:A4 portrait;margin:12mm}
+@media print {.science-print{display:block!important}.science-screen,.no-print,.sidebar,.topbar,.navbar,.page-header{display:none!important}body{background:#fff!important}.science-print article{page-break-after:always;break-after:page}.science-print article:last-child{page-break-after:auto;break-after:auto}}
+</style>
+{% endif %}
 <style>
 .lab{direction:rtl}.entry-form{border:1px solid #e2e8f0;border-radius:16px;background:#fff;padding:20px;margin-bottom:20px}.notebook-entry{background:#fff;border:1px solid #64748b;margin-bottom:18px;break-inside:avoid}.notebook-entry table{width:100%;border-collapse:collapse;table-layout:fixed}.notebook-entry th,.notebook-entry td{border:1px solid #64748b;padding:8px;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere}.notebook-entry th{background:#f1f5f9;text-align:center}.notebook-entry .label{width:16%;font-weight:700;background:#f8fafc}.notebook-entry .tophead td{text-align:center;font-weight:700;width:33.33%;background:#f8fafc}.notebook-entry .section-head{text-align:center;font-weight:800;background:#eef2f7}.blank-area{min-height:45px}.lab-wrap{overflow:auto}
 @media print{.no-print,.sidebar,.topbar,.navbar,.page-header{display:none!important}body{background:#fff!important}.main-content,.content,.container,.container-fluid{margin:0!important;padding:0!important;width:100%!important;max-width:none!important}.notebook-entry{margin-bottom:8mm;border-radius:0;page-break-inside:avoid}.notebook-entry th,.notebook-entry .label,.notebook-entry .section-head{background:#f5f5f5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
@@ -24,7 +36,27 @@
 <div class="col-md-4"><label class="form-label">ملاحظات المدير</label><textarea class="form-control" name="director_notes" rows="2"></textarea></div>
 </div>
 {% else %}
-<div class="row g-3"><div class="col-md-3"><label class="form-label">التاريخ</label><input class="form-control" type="date" name="entry_date" required></div><div class="col-md-9"><label class="form-label">عنوان / موضوع *</label><input class="form-control" name="title" required></div><div class="col-12"><label class="form-label">التفاصيل</label><textarea class="form-control" name="details" rows="3"></textarea></div><div class="col-12"><label class="form-label">ملاحظات</label><textarea class="form-control" name="notes" rows="2"></textarea></div></div>
+<div class="science-form"><div class="row g-3">
+<div class="col-md-3"><label class="form-label">رقم النشاط</label><input class="form-control" name="activity_number"></div>
+<div class="col-md-3"><label class="form-label">التاريخ *</label><input class="form-control" type="date" name="entry_date" value="{{ today|date:'Y-m-d' }}" required></div>
+<div class="col-md-3"><label class="form-label">الفصل الدراسي</label><input class="form-control" name="semester" placeholder="الأول / الثاني"></div>
+<div class="col-md-3"><label class="form-label">الصف</label><select class="form-select" name="grade"><option value="">اختر الصف</option>{% for school_class in classes %}<option value="{{ school_class.name }}">{{ school_class.name }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><label class="form-label">الشعبة</label><input class="form-control" name="section"></div>
+<div class="col-md-3"><label class="form-label">عدد الطلبة</label><input class="form-control" type="number" min="0" name="student_count"></div>
+<div class="col-md-6"><label class="form-label">الوحدة والدرس</label><textarea class="form-control" name="unit_lesson" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label">عنوان التجربة/النشاط *</label><input class="form-control" name="title" required></div>
+<div class="col-12"><label class="form-label">نتاجات التعلم/الأهداف</label><textarea class="form-control" name="learning_outcomes" rows="2"></textarea></div>
+<div class="col-md-6"><label class="form-label">الأدوات والمواد المستخدمة</label><textarea class="form-control" name="tools_materials" rows="2"></textarea></div>
+<div class="col-md-6"><label class="form-label">إجراءات السلامة قبل التنفيذ</label><textarea class="form-control" name="safety_procedures" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label">خطوات التنفيذ</label><div class="row g-2"><div class="col-md-4"><textarea class="form-control" name="step_1" rows="2" placeholder="1. الخطوة الأولى"></textarea></div><div class="col-md-4"><textarea class="form-control" name="step_2" rows="2" placeholder="2. الخطوة الثانية"></textarea></div><div class="col-md-4"><textarea class="form-control" name="step_3" rows="2" placeholder="3. الخطوة الثالثة"></textarea></div></div></div>
+<div class="col-12"><label class="form-label">الملاحظات والبيانات الفعلية</label><textarea class="form-control" name="actual_observations" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label">النتائج والاستنتاج</label><textarea class="form-control" name="results_conclusion" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label">مدى تحقق الأهداف/تقويم الطلبة</label><textarea class="form-control" name="assessment" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label">الصعوبات أو الحوادث والإجراء المتخذ (إن وجد)</label><textarea class="form-control" name="incidents_actions" rows="2"></textarea></div>
+<div class="col-12"><label class="form-label">المتابعة/النشاط العلاجي أو الإثرائي</label><textarea class="form-control" name="followup_activity" rows="2"></textarea></div>
+<div class="col-md-6"><label class="form-label">اسم المعلم وتوقيعه</label><input class="form-control" name="teacher_name"></div>
+<div class="col-md-6"><label class="form-label">توقيع المسؤول/المشرف</label><input class="form-control" name="lab_supervisor_notes"></div>
+</div></div>
 {% endif %}
 <button class="btn btn-primary mt-3">حفظ السجل</button></form>{% endif %}
 <form class="row g-2 mb-3 no-print"><div class="col-md-9"><input name="q" value="{{ q }}" class="form-control" placeholder="بحث في السجل"></div><div class="col-auto"><button class="btn btn-outline-secondary">بحث</button></div><div class="col-auto"><button type="button" onclick="window.print()" class="btn btn-outline-primary"><i class="bi bi-printer"></i> طباعة</button></div></form>
@@ -39,7 +71,28 @@
 <tr><td class="label">ملاحظات المدير</td><td colspan="2" class="blank-area">{{ entry.director_notes|default:" " }}</td></tr>
 </table>{% if can_delete %}<div class="p-2 no-print text-start"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف السجل</button></form></div>{% endif %}</article>{% empty %}<div class="alert alert-light border">لا توجد حصص مسجلة حتى الآن.</div>{% endfor %}
 {% else %}
-<div class="lab-wrap"><table class="table table-bordered table-sm align-middle mb-0"><thead><tr><th>#</th><th>التاريخ</th><th>عنوان / موضوع</th><th>التفاصيل</th><th>ملاحظات</th>{% if can_delete %}<th class="no-print">إجراء</th>{% endif %}</tr></thead><tbody>{% for entry in records %}<tr><td>{{ forloop.counter }}</td><td>{{ entry.entry_date|date:"Y-m-d" }}</td><td>{{ entry.title }}</td><td>{{ entry.details|default:"—" }}</td><td>{{ entry.notes|default:"—" }}</td>{% if can_delete %}<td class="no-print"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td>{% endif %}</tr>{% empty %}<tr><td colspan="6">لا توجد بيانات.</td></tr>{% endfor %}</tbody></table></div>
+{% else %}
+<div class="science-screen">
+<div class="lab-wrap"><table class="table table-bordered table-sm align-middle mb-0"><thead><tr><th>#</th><th>التاريخ</th><th>رقم النشاط</th><th>الصف/الشعبة</th><th>عنوان التجربة/النشاط</th>{% if can_delete %}<th class="no-print">إجراء</th>{% endif %}</tr></thead><tbody>{% for entry in records %}<tr><td>{{ forloop.counter }}</td><td>{{ entry.entry_date|date:"Y-m-d" }}</td><td>{{ entry.activity_number|default:"—" }}</td><td>{{ entry.grade|default:"—" }} / {{ entry.section|default:"—" }}</td><td>{{ entry.title }}</td>{% if can_delete %}<td class="no-print"><form method="post" action="{% url 'lab_register_delete' entry.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td>{% endif %}</tr>{% empty %}<tr><td colspan="6">لا توجد بيانات.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="science-print">{% for entry in records %}<article>
+<h3>ثامناً: نموذج توثيق تجربة/نشاط عملي</h3>
+<div class="meta"><span>رقم النشاط: {{ entry.activity_number|default:" " }}</span><span>التاريخ: {{ entry.entry_date|date:"Y-m-d" }}</span><span>الفصل: {{ entry.semester|default:" " }}</span></div>
+<div class="meta"><span>الصف: {{ entry.grade|default:" " }} / الشعبة: {{ entry.section|default:" " }}</span><span>عدد الطلبة: {{ entry.student_count|default:" " }}</span></div>
+<div class="line"><b>الوحدة والدرس:</b><span>{{ entry.unit_lesson }}</span></div>
+<div class="line"><b>عنوان التجربة/النشاط:</b><span>{{ entry.title }}</span></div>
+<div class="line"><b>نتاجات التعلم/الأهداف:</b><span>{{ entry.learning_outcomes }}</span></div>
+<div class="line"><b>الأدوات والمواد المستخدمة:</b><span>{{ entry.tools_materials }}</span></div>
+<div class="line"><b>إجراءات السلامة قبل التنفيذ:</b><span>{{ entry.safety_procedures }}</span></div>
+<div class="line"><b>خطوات التنفيذ:</b><span>{{ entry.implementation_steps|default:" " }}</span></div>
+<div class="line"><b>الملاحظات والبيانات الفعلية:</b><span>{{ entry.actual_observations }}</span></div>
+<div class="line"><b>النتائج والاستنتاج:</b><span>{{ entry.results_conclusion }}</span></div>
+<div class="line"><b>مدى تحقق الأهداف/تقويم الطلبة:</b><span>{{ entry.assessment }}</span></div>
+<div class="line"><b>الصعوبات أو الحوادث والإجراء المتخذ (إن وجد):</b><span>{{ entry.incidents_actions }}</span></div>
+<div class="line"><b>المتابعة/النشاط العلاجي أو الإثرائي:</b><span>{{ entry.followup_activity }}</span></div>
+<div class="meta" style="margin-top:10px"><span>اسم المعلم وتوقيعه: {{ entry.teacher_name|default:" " }}</span><span>توقيع المسؤول/المشرف: {{ entry.lab_supervisor_notes|default:" " }}</span></div>
+</article>{% empty %}<p>لا توجد بيانات للطباعة.</p>{% endfor %}</div>
+{% endif %}
 {% endif %}
 </div>
 {% endblock %}
