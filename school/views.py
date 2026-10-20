@@ -6331,6 +6331,12 @@ def health_committee_official_form_records(request, form_key):
         if item['key'] == 'committee-minutes':
             for index, label in ((0, 'اليوم والتاريخ'), (1, 'الزمان'), (2, 'الحضور'), (3, 'أهداف الاجتماع'), (6, 'توقيع مقرر اللجنة الصحية والأعضاء'), (7, 'توقيع مدير المدرسة وختمها')):
                 normalized[label] = normalized.get(item['fields'][index], '')
+        if item['key'] == 'guardian-notice':
+            try:
+                notice_students = json.loads(normalized.get('اسم الطالب/الطالبة', '') or '[]')
+            except (TypeError, ValueError):
+                notice_students = []
+            entry.notice_students = notice_students if isinstance(notice_students, list) else []
         entry.display_data = normalized
     return render(request, 'school/health_committee_official_form_records.html', {
         'form_item': item, 'entries': entries, 'total_records': len(entries),
