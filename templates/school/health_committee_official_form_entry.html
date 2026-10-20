@@ -42,7 +42,7 @@
   <div class="hce-field hce-wide" style="overflow-x:auto"><table class="table table-bordered" id="facilitiesTable"><thead><tr><th>المرفق</th><th class="facility-day">اليوم 1</th><th class="facility-day">اليوم 2</th><th class="facility-day">اليوم 3</th><th class="facility-day">اليوم 4</th><th class="facility-day">اليوم 5</th></tr></thead><tbody>
   {% for field in form_item.fields %}{% if forloop.counter0 > 0 and field != 'ملاحظات' %}<tr><th>{{ field }}</th>{% for n in "12345" %}<td><textarea class="facility-value" data-field="{{ forloop.parentloop.counter0 }}" rows="2" placeholder="الحالة / الملاحظة"></textarea></td>{% endfor %}</tr>{% endif %}{% endfor %}
   </tbody></table></div>
-  {% for field in form_item.fields %}{% if forloop.counter0 > 0 %}<input type="hidden" name="field_{{ forloop.counter0 }}" id="facilityData{{ forloop.counter0 }}">{% endif %}{% endfor %}
+  {% for field in form_item.fields %}{% if forloop.counter0 > 0 and forloop.counter0 < 14 %}<input type="hidden" name="field_{{ forloop.counter0 }}" id="facilityData{{ forloop.counter0 }}">{% endif %}{% endfor %}<div class="hce-field hce-wide"><label>ملاحظات إضافية</label><textarea name="field_14"></textarea></div>
 {% elif form_item.key == 'guardian-notice' %}
   <div class="hce-grid">
     <div class="hce-field"><label>اسم ولي الأمر</label><input name="field_0" required></div>
