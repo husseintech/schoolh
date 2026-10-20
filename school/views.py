@@ -6298,6 +6298,24 @@ def health_committee_official_forms(request):
     })
 
 @login_required
+def health_committee_official_form_records(request, form_key):
+    from .models import HealthCommitteeOfficialForm
+    if not has_perm(request.user, 'health_committee', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لعرض سجلات اللجنة الصحية')
+        return redirect('dashboard')
+    item = next((form for form in HEALTH_COMMITTEE_FORM_CATALOG if form['key'] == form_key), None)
+    if item is None:
+        messages.error(request, 'النموذج المطلوب غير موجود')
+        return redirect('health_committee_official_forms')
+    entries = HealthCommitteeOfficialForm.objects.filter(form_key=item['key']).select_related('created_by').order_by('-entry_date', '-created_at')
+    return render(request, 'school/health_committee_official_form_records.html', {
+        'form_item': item, 'entries': entries, 'total_records': entries.count(),
+        'can_add': has_perm(request.user, 'health_committee', 'add'),
+        'can_print': has_perm(request.user, 'health_committee', 'print') or has_perm(request.user, 'health_committee', 'view'),
+    })
+
+
+@login_required
 def health_committee_official_form_add(request, form_key):
     from .models import HealthCommitteeOfficialForm
     from django.utils.dateparse import parse_date
@@ -6319,7 +6337,7 @@ def health_committee_official_form_add(request, form_key):
         )
         log_action(request.user, 'إضافة نموذج اللجنة الصحية الرسمي', item['title'])
         messages.success(request, 'تم حفظ النموذج بنجاح.')
-        return redirect('health_committee_official_forms')
+        return redirect('health_committee_official_form_records', form_key=item['key'])
     return render(request, 'school/health_committee_official_form_entry.html', {
         'form_item': item, 'today': timezone.localdate().isoformat()
     })
