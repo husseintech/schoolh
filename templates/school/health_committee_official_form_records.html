@@ -20,8 +20,10 @@
 <article class="hcr-entry">
 <header class="hcr-entry-head"><strong>{{ form_item.title }}</strong><span>التاريخ: {{ entry.entry_date|date:"Y/m/d"|default:"غير محدد" }} · رقم السجل {{ forloop.counter }}</span></header>
 <div class="hcr-data">
-{% for field in form_item.fields %}
-<div class="hcr-field"><b>{{ field }}</b>{{ entry.data|get_item:field|default:"—" }}</div>
+{% for key,value in entry.data.items %}
+<div class="hcr-field"><b>{{ key }}</b>{{ value|default:"—" }}</div>
+{% empty %}
+<div class="hcr-field">لا توجد تفاصيل مسجلة لهذا الإدخال.</div>
 {% endfor %}
 </div>
 {% if entry.notes %}<div class="hcr-notes"><b>ملاحظات إضافية:</b> {{ entry.notes }}</div>{% endif %}
