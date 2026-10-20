@@ -6312,7 +6312,7 @@ def health_committee_official_form_records(request, form_key):
     import json
     for entry in entries:
         normalized = dict(entry.data or {})
-        json_fields = {'committee-formation': {'أعضاء الهيئة الإدارية والتدريسية': 'field_3', 'أعضاء الطلبة': 'field_4', 'أعضاء المجتمع المحلي': 'field_5'}, 'committee-minutes': {'محاور النقاش': 'field_4', 'التوصيات': 'field_5'}}.get(item['key'], {})
+        json_fields = {'committee-formation': {'أعضاء الهيئة الإدارية والتدريسية': 'أعضاء الهيئة الإدارية والتدريسية', 'أعضاء الطلبة': 'أعضاء الطلبة', 'أعضاء المجتمع المحلي': 'أعضاء المجتمع المحلي'}, 'committee-minutes': {'محاور النقاش': 'محاور النقاش', 'التوصيات': 'التوصيات'}}.get(item['key'], {})
         for label, key in json_fields.items():
             raw = normalized.get(key, '')
             try:
@@ -6330,7 +6330,7 @@ def health_committee_official_form_records(request, form_key):
                 normalized[label] = '\\n'.join(lines) if lines else '—'
         if item['key'] == 'committee-minutes':
             for index, label in ((0, 'اليوم والتاريخ'), (1, 'الزمان'), (2, 'الحضور'), (3, 'أهداف الاجتماع'), (6, 'توقيع مقرر اللجنة الصحية والأعضاء'), (7, 'توقيع مدير المدرسة وختمها')):
-                normalized[label] = normalized.get(f'field_{index}', '')
+                normalized[label] = normalized.get(item['fields'][index], '')
         entry.display_data = normalized
     return render(request, 'school/health_committee_official_form_records.html', {
         'form_item': item, 'entries': entries, 'total_records': len(entries),
