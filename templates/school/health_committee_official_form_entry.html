@@ -37,6 +37,18 @@
     <div id="communityRows"></div><button class="btn btn-outline-primary member-controls" type="button" onclick="addCommunity()">+ إضافة عضو من المجتمع المحلي</button><input type="hidden" name="field_5" id="communityData">
   </section>
   <div class="hce-field hce-wide"><label>ملاحظات</label><textarea name="field_6"></textarea></div>
+{% elif form_item.key == 'canteen-followup' %}
+  <section class="member-panel"><h3>الصفحة الأولى — بيانات الزيارة والتفقد الصحي</h3>
+    <div class="hce-grid">
+    {% for field in form_item.fields %}{% if forloop.counter0 < 6 %}<div class="hce-field"><label>{{ field }}</label>{% if forloop.counter0 == 0 %}<input type="date" name="field_0" value="{{ today }}">{% else %}<input name="field_{{ forloop.counter0 }}">{% endif %}</div>{% endif %}{% endfor %}
+    </div>
+    <h4 class="mt-3">أولًا: التحقق من الاشتراطات الصحية</h4>
+    <div class="hce-grid">{% for field in form_item.fields %}{% if forloop.counter0 >= 6 and forloop.counter0 <= 11 %}<div class="hce-field"><label>{{ field }}</label><select name="field_{{ forloop.counter0 }}"><option value="">اختر الحالة</option><option value="نعم">نعم</option><option value="لا">لا</option><option value="يحتاج إلى متابعة">يحتاج إلى متابعة</option></select></div>{% endif %}{% endfor %}</div>
+  </section>
+  <section class="member-panel"><h3>الصفحة الثانية — استكمال متابعة المقصف المدرسي</h3>
+    <div class="hce-grid">{% for field in form_item.fields %}{% if forloop.counter0 >= 12 and forloop.counter0 <= 13 %}<div class="hce-field"><label>{{ field }}</label><select name="field_{{ forloop.counter0 }}"><option value="">اختر الحالة</option><option value="نعم">نعم</option><option value="لا">لا</option><option value="يحتاج إلى متابعة">يحتاج إلى متابعة</option></select></div>{% endif %}{% endfor %}
+    <div class="hce-field hce-wide"><label>ملاحظات</label><textarea name="field_14"></textarea></div></div>
+  </section>
 {% elif form_item.key == 'facilities-followup' %}
   <div class="hce-field"><label>تاريخ بداية الأسبوع</label><input type="date" id="facilitiesStart" name="field_0" value="{{ today }}"></div>
   <p class="help">جدول أفقي لمتابعة مرافق المدرسة خلال أيام الأسبوع؛ تُحتسب التواريخ تلقائيًا بدءًا من التاريخ المحدد.</p>
