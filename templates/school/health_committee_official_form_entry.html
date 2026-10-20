@@ -1,10 +1,125 @@
 {% extends 'school/base.html' %}
-{% block title %}إدخال نموذج اللجنة الصحية{% endblock %}
-{% block page_heading %}إدخال نموذج اللجنة الصحية{% endblock %}
+{% load static %}
+{% block title %}{{ form_item.title }}{% endblock %}
+{% block page_heading %}{{ form_item.title }}{% endblock %}
 {% block content %}
 <style>
-.hce-wrap{direction:rtl;max-width:900px;margin:auto}.hce-head{background:linear-gradient(120deg,#102a43,#0f766e);color:#fff;border-radius:17px;padding:20px;margin-bottom:16px}.hce-sheet{background:#fff;border:1px solid #dce5e9;border-radius:15px;padding:22px}.hce-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.hce-field label{font-weight:800;font-size:.84rem;display:block;margin-bottom:6px;color:#334155}.hce-field input,.hce-field textarea{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;background:white}.hce-field textarea{min-height:85px}.hce-wide{grid-column:1/-1}.hce-actions{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}@media(max-width:600px){.hce-grid{grid-template-columns:1fr}.hce-wide{grid-column:auto}}@media print{.hce-actions,.sidebar,.topbar{display:none!important}.hce-head{background:white;color:black;border:1px solid #888}.hce-sheet{border:0;padding:0}}
+.hce-wrap{direction:rtl;max-width:1100px;margin:auto;color:#17212b}.hce-head{background:#fff;color:#111;border-bottom:2px solid #111;padding:14px 10px;margin-bottom:18px;text-align:center}.hce-official{display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;gap:10px;font-size:13px}.hce-official .en{direction:ltr;text-align:center}.hce-eagle{font-size:42px;font-weight:bold}.hce-official h3{font-size:15px;margin:4px 0}.hce-title{font-size:19px;font-weight:800;margin:18px 0 0}.hce-sheet{background:#fff;border:1px solid #d1d5db;padding:24px}.hce-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.hce-field label{font-weight:800;display:block;margin-bottom:6px}.hce-field input,.hce-field textarea,.hce-field select{width:100%;border:1px solid #aab4bd;border-radius:5px;padding:9px;background:white}.hce-field textarea{min-height:75px}.hce-wide{grid-column:1/-1}.hce-actions{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}.member-panel{border:1px solid #b8c3cc;padding:14px;margin:14px 0}.member-row{display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:8px;align-items:center;margin:8px 0}.picked{padding:6px 10px;border-bottom:1px dotted #777}.help{font-size:12px;color:#52606d}.minutes-lines textarea{min-height:92px}.hce-signatures{display:flex;justify-content:space-between;gap:35px;margin-top:45px}.hce-signatures div{width:45%;text-align:center;min-height:65px}@media(max-width:700px){.hce-grid{grid-template-columns:1fr}.hce-wide{grid-column:auto}.member-row{grid-template-columns:1fr}.hce-official{grid-template-columns:1fr}.hce-eagle{display:none}}@page{size:A4 {% if form_item.key == 'facilities-followup' %}landscape{% else %}portrait{% endif %};margin:14mm}@media print{body{background:#fff!important}.hce-wrap{max-width:none}.hce-actions,.sidebar,.topbar,nav,.member-controls,.help,.no-print{display:none!important}.hce-head{border-bottom:1px solid #000;border-radius:0;padding:0 0 10px;margin-bottom:12px}.hce-sheet{border:0;padding:0}.hce-field input,.hce-field textarea,.hce-field select{border:0;border-bottom:1px dotted #555;border-radius:0;padding:4px;resize:none;box-shadow:none}.hce-field textarea{min-height:55px}.member-panel{border:0;padding:0}.member-row{border-bottom:1px dotted #777;padding:4px 0}.member-row button{display:none}.hce-signatures{margin-top:32px}.hce-field label{font-size:12px}.hce-title{font-size:17px}}
 </style>
-<div class="hce-wrap"><section class="hce-head"><div class="small">ملف اللجنة الصحية — صفحة المصدر {{ form_item.page }}</div><h2 class="h4 fw-bold mt-2 mb-1">{{ form_item.title }}</h2><div class="small">املأ الحقول المتاحة واحفظ السجل؛ يمكنك طباعة الصفحة قبل الحفظ أو بعده.</div></section>
-<form method="post" class="hce-sheet">{% csrf_token %}<div class="hce-grid"><div class="hce-field"><label for="entry_date">التاريخ</label><input id="entry_date" type="date" name="entry_date" value="{{ today }}"></div>{% for field in form_item.fields %}<div class="hce-field {% if forloop.counter > 3 %}hce-wide{% endif %}"><label for="field_{{ forloop.counter0 }}">{{ field }}</label><textarea id="field_{{ forloop.counter0 }}" name="field_{{ forloop.counter0 }}" rows="2"></textarea></div>{% endfor %}<div class="hce-field hce-wide"><label for="notes">ملاحظات إضافية</label><textarea id="notes" name="notes"></textarea></div></div><div class="hce-actions"><button class="btn btn-success" type="submit">حفظ النموذج</button><button class="btn btn-outline-secondary" type="button" onclick="window.print()">طباعة النموذج</button><a class="btn btn-outline-dark" href="{% url 'health_committee_official_forms' %}">العودة للفهرس</a></div></form></div>
+<div class="hce-wrap">
+<section class="hce-head">
+  <div class="hce-official">
+    <div class="en"><strong>State of Palestine</strong><br>Ministry of Education &amp; Higher Education<br>General Directorate of School Health</div>
+    <div class="hce-eagle"><img src="{% static 'images/palestine_logo.png' %}" alt="شعار دولة فلسطين" style="max-width:78px;max-height:78px;object-fit:contain"></div>
+    <div><strong>دولة فلسطين</strong><br><h3>وزارة التربية والتعليم العالي</h3><h3>الإدارة العامة للصحة المدرسية</h3></div>
+  </div>
+  <div class="hce-title">{{ form_item.title }}</div>
+</section>
+<form method="post" class="hce-sheet" id="healthForm">{% csrf_token %}
+{% if form_item.key == 'committee-formation' %}
+  <div class="hce-grid">
+    <div class="hce-field"><label>السنة الدراسية</label><input name="field_0" placeholder="مثال: 2026/2027" required></div>
+    <div class="hce-field"><label>اسم المدرسة</label><input name="field_1" value="{{ school_name|default:'' }}" required></div>
+    <div class="hce-field hce-wide"><label>تاريخ الاجتماع</label><input type="date" name="field_2" value="{{ today }}"></div>
+  </div>
+  <section class="member-panel">
+    <h3>أعضاء الهيئة الإدارية والتدريسية (5–6 أعضاء)</h3><p class="help">اختر المعلم أو الإداري، ثم حدّد الصفة والمهام. يمكن إضافة عدة أعضاء.</p>
+    <div class="member-controls"><div class="member-row"><select id="staffChoice"><option value="">اختر معلمًا أو إداريًا</option>{% for t in teachers %}<option value="teacher:{{ t.id }}" data-name="{{ t.full_name|escape }}">{{ t.full_name }} — معلم</option>{% endfor %}{% for u in administrative_users %}<option value="admin:{{ u.id }}" data-name="{{ u.get_full_name|default:u.username|escape }}">{{ u.get_full_name|default:u.username }} — إداري</option>{% endfor %}</select><select id="staffRole"><option>معلم</option><option>مدير</option><option>نائب مدير</option><option>سكرتير</option><option>مرشد تربوي</option><option>مسؤول كشافة</option><option>إداري</option></select><input id="staffTask" placeholder="المهام الموكلة إليه"><button type="button" class="btn btn-outline-primary" onclick="addStaff()">إضافة</button></div></div>
+    <div id="staffPicked"></div><input type="hidden" name="field_3" id="staffData">
+  </section>
+  <section class="member-panel">
+    <h3>أعضاء الطلبة (10–16 طالبًا)</h3><p class="help">اكتب جزءًا من اسم الطالب للبحث، ثم اختره. يمكن اختيار عدة طلاب.</p>
+    <div class="member-controls"><div class="member-row"><input id="studentSearch" list="studentNames" placeholder="ابحث باسم الطالب..." autocomplete="off"><datalist id="studentNames">{% for s in students %}<option value="{{ s.full_name|escape }} — {{ s.student_class.name|default:'بدون صف'|escape }}" data-id="{{ s.id }}"></option>{% endfor %}</datalist><select id="studentClass"><option value="">الصف والشعبة</option>{% for cl in classes %}<option value="{{ cl.name|escape }}">{{ cl.name }}</option>{% endfor %}</select><input id="studentTask" placeholder="المهام الموكلة إليه"><button type="button" class="btn btn-outline-primary" onclick="addStudent()">اختيار الطالب</button></div></div>
+    <div id="studentPicked"></div><input type="hidden" name="field_4" id="studentData">
+  </section>
+  <section class="member-panel">
+    <h3>أعضاء المجتمع المحلي (2–4 أعضاء)</h3>
+    <div id="communityRows"></div><button class="btn btn-outline-primary member-controls" type="button" onclick="addCommunity()">+ إضافة عضو من المجتمع المحلي</button><input type="hidden" name="field_5" id="communityData">
+  </section>
+  <div class="hce-field hce-wide"><label>ملاحظات</label><textarea name="field_6"></textarea></div>
+{% elif form_item.key == 'safety-equipment' %}
+  <div class="hce-grid">
+    <div class="hce-field"><label>تاريخ التفقد</label><input type="date" name="field_0" value="{{ today }}"></div>
+    <div class="hce-field hce-wide"><label>طفايات الحريق: غاز الهالون</label><textarea name="field_1" placeholder="العدد، الحالة، الموقع، وملاحظات التفقد"></textarea></div>
+    <div class="hce-field hce-wide"><label>طفايات الحريق: ثاني أكسيد الكربون CO2</label><textarea name="field_2" placeholder="العدد، الحالة، الموقع، وملاحظات التفقد"></textarea></div>
+    <div class="hce-field hce-wide"><label>طفايات الحريق: بودرة</label><textarea name="field_3" placeholder="العدد، الحالة، الموقع، وملاحظات التفقد"></textarea></div>
+    <div class="hce-field hce-wide"><label>عدد الطفايات وحالتها ومكانها</label><textarea name="field_4"></textarea></div>
+    <div class="hce-field"><label>وجود ممر مشاة أمام المدرسة</label><select name="field_5"><option value="">اختر</option><option value="نعم">نعم</option><option value="لا">لا</option></select></div>
+    <div class="hce-field"><label>وجود إشارات أمام المدرسة</label><select name="field_6"><option value="">اختر</option><option value="نعم">نعم</option><option value="لا">لا</option></select></div>
+    <div class="hce-field hce-wide"><label>ملاحظات</label><textarea name="field_7"></textarea></div>
+  </div>
+{% elif form_item.key == 'educational-meetings' or form_item.key == 'health-activities' %}
+  <div class="hce-grid">
+  {% for field in form_item.fields %}
+    <div class="hce-field {% if forloop.counter0 > 2 %}hce-wide{% endif %}">
+      <label>{{ field }}</label>
+      {% if forloop.counter0 == 0 %}<input type="date" name="field_0" value="{{ today }}">
+      {% elif field == 'ملاحظات' %}<textarea name="field_{{ forloop.counter0 }}"></textarea>
+      {% else %}<input name="field_{{ forloop.counter0 }}" placeholder="{{ field }}">{% endif %}
+    </div>
+  {% endfor %}
+  </div>
+{% elif form_item.key == 'canteen-followup' %}
+  <section class="member-panel"><h3>الصفحة الأولى — بيانات الزيارة والتفقد الصحي</h3>
+    <div class="hce-grid">
+    {% for field in form_item.fields %}{% if forloop.counter0 < 6 %}<div class="hce-field"><label>{{ field }}</label>{% if forloop.counter0 == 0 %}<input type="date" name="field_0" value="{{ today }}">{% else %}<input name="field_{{ forloop.counter0 }}">{% endif %}</div>{% endif %}{% endfor %}
+    </div>
+    <h4 class="mt-3">أولًا: التحقق من الاشتراطات الصحية</h4>
+    <div class="hce-grid">{% for field in form_item.fields %}{% if forloop.counter0 >= 6 and forloop.counter0 <= 11 %}<div class="hce-field"><label>{{ field }}</label><select name="field_{{ forloop.counter0 }}"><option value="">اختر الحالة</option><option value="نعم">نعم</option><option value="لا">لا</option><option value="يحتاج إلى متابعة">يحتاج إلى متابعة</option></select></div>{% endif %}{% endfor %}</div>
+  </section>
+  <section class="member-panel"><h3>الصفحة الثانية — استكمال متابعة المقصف المدرسي</h3>
+    <div class="hce-grid">{% for field in form_item.fields %}{% if forloop.counter0 >= 12 and forloop.counter0 <= 13 %}<div class="hce-field"><label>{{ field }}</label><select name="field_{{ forloop.counter0 }}"><option value="">اختر الحالة</option><option value="نعم">نعم</option><option value="لا">لا</option><option value="يحتاج إلى متابعة">يحتاج إلى متابعة</option></select></div>{% endif %}{% endfor %}
+    <div class="hce-field hce-wide"><label>ملاحظات</label><textarea name="field_14"></textarea></div></div>
+  </section>
+{% elif form_item.key == 'facilities-followup' %}
+  <div class="hce-field"><label>تاريخ بداية الأسبوع</label><input type="date" id="facilitiesStart" name="field_0" value="{{ today }}"></div>
+  <p class="help">جدول أفقي لمتابعة مرافق المدرسة خلال أيام الأسبوع؛ تُحتسب التواريخ تلقائيًا بدءًا من التاريخ المحدد.</p>
+  <div class="hce-field hce-wide" style="overflow-x:auto"><table class="table table-bordered" id="facilitiesTable"><thead><tr><th>المرفق</th><th class="facility-day">اليوم 1</th><th class="facility-day">اليوم 2</th><th class="facility-day">اليوم 3</th><th class="facility-day">اليوم 4</th><th class="facility-day">اليوم 5</th></tr></thead><tbody>
+  {% for field in form_item.fields %}{% if forloop.counter0 > 0 and field != 'ملاحظات' %}<tr><th>{{ field }}</th>{% for n in "12345" %}<td><textarea class="facility-value" data-field="{{ forloop.parentloop.counter0 }}" rows="2" placeholder="الحالة / الملاحظة"></textarea></td>{% endfor %}</tr>{% endif %}{% endfor %}
+  </tbody></table></div>
+  {% for field in form_item.fields %}{% if forloop.counter0 > 0 and forloop.counter0 < 14 %}<input type="hidden" name="field_{{ forloop.counter0 }}" id="facilityData{{ forloop.counter0 }}">{% endif %}{% endfor %}<div class="hce-field hce-wide"><label>ملاحظات إضافية</label><textarea name="field_14"></textarea></div>
+{% elif form_item.key == 'guardian-notice' %}
+  <div class="hce-grid">
+    <div class="hce-field"><label>اسم ولي الأمر</label><input name="field_0" required></div>
+    <div class="hce-field hce-wide"><label>اختيار الطلاب (يمكن اختيار عدة طلاب)</label><div class="member-controls member-row"><input id="noticeStudentSearch" list="noticeStudentNames" placeholder="اكتب اسم الطالب للبحث"><datalist id="noticeStudentNames">{% for s in students %}<option value="{{ s.full_name|escape }} — {{ s.student_class.name|default:'بدون صف'|escape }}" data-id="{{ s.id }}"></option>{% endfor %}</datalist><button type="button" class="btn btn-outline-primary" onclick="addNoticeStudent()">إضافة الطالب</button></div><div id="noticeStudentsPicked"></div><input type="hidden" name="field_1" id="noticeStudentsData"><p class="help">يمكن طباعة الإشعارات بثلاثة إشعارات في الصفحة الواحدة.</p></div>
+    <div class="hce-field hce-wide"><label>نتيجة الكشف الطبي الدوري</label><textarea name="field_2"></textarea></div>
+    <div class="hce-field hce-wide"><label>التوصيات والمتابعة المطلوبة</label><textarea name="field_3"></textarea></div>
+    <div class="hce-field"><label>التاريخ</label><input type="date" name="field_4" value="{{ today }}"></div>
+    <div class="hce-field"><label>الاسم والتوقيع</label><input name="field_5"></div>
+    <div class="hce-field hce-wide"><label>ملاحظات</label><textarea name="field_6"></textarea></div>
+  </div>
+{% elif form_item.key == 'committee-minutes' %}
+  <div class="hce-grid">
+    <div class="hce-field"><label>اليوم والتاريخ</label><input type="date" name="field_0" value="{{ today }}"></div>
+    <div class="hce-field"><label>الزمان</label><input name="field_1" placeholder="الساعة ..."></div>
+    <div class="hce-field hce-wide"><label>الحضور</label><textarea name="field_2" placeholder="أسماء الحضور من أعضاء اللجنة"></textarea></div>
+    <div class="hce-field hce-wide"><label>أهداف الاجتماع</label><textarea name="field_3"></textarea></div>
+    <div class="hce-field hce-wide minutes-lines"><label>محاور النقاش (1–5)</label>{% for n in "12345" %}<div class="hce-field"><label>{{ forloop.counter }}.</label><textarea name="discussion_{{ forloop.counter0 }}" rows="2"></textarea></div>{% endfor %}<input type="hidden" name="field_4" id="discussionData"></div>
+    <div class="hce-field hce-wide minutes-lines"><label>التوصيات (1–5)</label>{% for n in "12345" %}<div class="hce-field"><label>{{ forloop.counter }}.</label><textarea name="recommendation_{{ forloop.counter0 }}" rows="2"></textarea></div>{% endfor %}<input type="hidden" name="field_5" id="recommendationData"></div>
+    <div class="hce-field hce-wide"><label>توقيع مقرر اللجنة الصحية والأعضاء</label><textarea name="field_6" placeholder="الأسماء والتوقيعات"></textarea></div>
+    <div class="hce-field hce-wide"><label>توقيع مدير المدرسة وختمها</label><textarea name="field_7" placeholder="يترك للتوقيع والختم"></textarea></div>
+  </div>
+  <div class="hce-signatures"><div>توقيع مقرر اللجنة الصحية والأعضاء<br><br>........................................</div><div>توقيع مدير المدرسة وختم المدرسة<br><br>........................................</div></div>
+{% else %}
+  <div class="hce-grid"><div class="hce-field"><label>التاريخ</label><input id="entry_date" type="date" name="entry_date" value="{{ today }}"></div>
+  {% for field in form_item.fields %}<div class="hce-field {% if forloop.counter > 3 %}hce-wide{% endif %}"><label for="field_{{ forloop.counter0 }}">{{ field }}</label><textarea id="field_{{ forloop.counter0 }}" name="field_{{ forloop.counter0 }}" rows="2"></textarea></div>{% endfor %}
+  <div class="hce-field hce-wide"><label>ملاحظات إضافية</label><textarea name="notes"></textarea></div></div>
+{% endif %}
+<div class="hce-actions"><button class="btn btn-success" type="submit">حفظ النموذج</button><button class="btn btn-outline-secondary" type="button" onclick="window.print()">طباعة النموذج</button><a class="btn btn-outline-dark" href="{% url 'health_committee_official_forms' %}">العودة للفهرس</a></div>
+</form>
+</div>
+<script>
+(function(){
+const form=document.getElementById('healthForm');
+const staff=[],students=[],community=[],noticeStudents=[];
+window.addStaff=function(){const sel=document.getElementById('staffChoice');if(!sel.value)return;const opt=sel.options[sel.selectedIndex];if(staff.some(x=>x.key===sel.value))return;staff.push({key:sel.value,name:opt.dataset.name||opt.text,role:document.getElementById('staffRole').value,task:document.getElementById('staffTask').value});render('staffPicked',staff,'staffData');sel.value='';document.getElementById('staffTask').value='';};
+window.addStudent=function(){const input=document.getElementById('studentSearch');const value=input.value.trim();if(!value)return;const option=Array.from(document.querySelectorAll('#studentNames option')).find(o=>o.value===value);if(!option){alert('اختر اسمًا من قائمة الطلاب بعد البحث.');return;}const id=option.dataset.id;if(students.some(x=>x.id===id))return;students.push({id,name:value.split(' — ')[0],className:document.getElementById('studentClass').value||value.split(' — ').slice(1).join(' — '),task:document.getElementById('studentTask').value});render('studentPicked',students,'studentData');input.value='';document.getElementById('studentTask').value='';};
+window.addCommunity=function(){community.push({name:'',profession:'',phone:'',task:'',notes:''});renderCommunity();};
+window.addNoticeStudent=function(){const input=document.getElementById('noticeStudentSearch');if(!input)return;const value=input.value.trim();const options=Array.from(document.querySelectorAll('#noticeStudentNames option'));const option=options.find(o=>o.value===value);if(!option){alert('اختر اسم طالب من القائمة بعد البحث.');return;}const id=option.dataset.id;if(noticeStudents.some(x=>x.id===id))return;noticeStudents.push({id,name:value.split(' — ')[0],className:value.split(' — ').slice(1).join(' — ')});renderNoticeStudents();input.value='';};
+function renderNoticeStudents(){const root=document.getElementById('noticeStudentsPicked');if(!root)return;root.innerHTML='';noticeStudents.forEach((x,i)=>{const row=document.createElement('div');row.className='picked';row.textContent=(i+1)+'. '+x.name+' — '+x.className;const b=document.createElement('button');b.type='button';b.className='btn btn-sm btn-outline-danger member-controls';b.textContent='حذف';b.onclick=()=>{noticeStudents.splice(i,1);renderNoticeStudents()};row.appendChild(b);root.appendChild(row)});document.getElementById('noticeStudentsData').value=JSON.stringify(noticeStudents);}
+function render(id,list,hidden){const root=document.getElementById(id);root.innerHTML='';list.forEach((x,i)=>{const row=document.createElement('div');row.className='picked';row.textContent=(i+1)+'. '+x.name+' — '+(x.role||x.className||'')+' — '+(x.task||'');const b=document.createElement('button');b.type='button';b.className='btn btn-sm btn-outline-danger member-controls';b.textContent='حذف';b.onclick=()=>{list.splice(i,1);render(id,list,hidden)};row.appendChild(b);root.appendChild(row)});document.getElementById(hidden).value=JSON.stringify(list);}
+function renderCommunity(){const root=document.getElementById('communityRows');root.innerHTML='';community.forEach((x,i)=>{const row=document.createElement('div');row.className='member-row';['name','profession','phone','task'].forEach((key,j)=>{const inp=document.createElement('input');inp.placeholder=['الاسم','المهنة/مكان العمل','الهاتف','المهام الموكلة'][j];inp.value=x[key]||'';inp.oninput=()=>{x[key]=inp.value;document.getElementById('communityData').value=JSON.stringify(community)};row.appendChild(inp)});const b=document.createElement('button');b.type='button';b.className='btn btn-outline-danger member-controls';b.textContent='حذف';b.onclick=()=>{community.splice(i,1);renderCommunity()};row.appendChild(b);root.appendChild(row)});document.getElementById('communityData').value=JSON.stringify(community);}
+const facilitiesStart=document.getElementById('facilitiesStart');if(facilitiesStart){const days=Array.from(document.querySelectorAll('#facilitiesTable thead th.facility-day'));function updateDates(){if(!facilitiesStart.value)return;const base=new Date(facilitiesStart.value+'T12:00:00');days.forEach((th,i)=>{const d=new Date(base);d.setDate(base.getDate()+i);th.textContent=d.toLocaleDateString('ar',{weekday:'short',day:'2-digit',month:'2-digit'});});}facilitiesStart.addEventListener('change',updateDates);updateDates();if(form){form.addEventListener('submit',function(){const rows=Array.from(document.querySelectorAll('#facilitiesTable tbody tr'));rows.forEach(row=>{const idx=row.querySelector('.facility-value')?.dataset.field;if(!idx)return;const vals=Array.from(row.querySelectorAll('.facility-value')).map(x=>x.value);const target=document.getElementById('facilityData'+idx);if(target)target.value=JSON.stringify(vals);});});}}if(form){form.addEventListener('submit',function(e){const staffInput=document.getElementById('staffData'),studentInput=document.getElementById('studentData'),communityInput=document.getElementById('communityData'),noticeInput=document.getElementById('noticeStudentsData');if(staffInput){const count=(id)=>{try{return JSON.parse(document.getElementById(id).value||'[]').length}catch(_){return 0}};if(count('staffData')<5||count('staffData')>6){alert('يرجى اختيار 5 إلى 6 أعضاء من الهيئة الإدارية والتدريسية.');e.preventDefault();return;}if(count('studentData')<10||count('studentData')>16){alert('يرجى اختيار 10 إلى 16 طالبًا.');e.preventDefault();return;}if(count('communityData')<2||count('communityData')>4){alert('يرجى إضافة 2 إلى 4 أعضاء من المجتمع المحلي.');e.preventDefault();return;}}if(noticeInput){try{if(JSON.parse(noticeInput.value||'[]').length<1){alert('يرجى اختيار طالب واحد على الأقل.');e.preventDefault();return;}}catch(_){alert('يرجى اختيار طالب واحد على الأقل.');e.preventDefault();return;}}});form.addEventListener('submit',function(){const d=document.getElementById('discussionData');if(d){d.value=JSON.stringify(Array.from(form.querySelectorAll('[name^="discussion_"]')).map(x=>x.value));document.getElementById('recommendationData').value=JSON.stringify(Array.from(form.querySelectorAll('[name^="recommendation_"]')).map(x=>x.value));}});}
+})();
+</script>
 {% endblock %}

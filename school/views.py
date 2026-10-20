@@ -751,7 +751,6 @@ def student_absence_report(request):
         'rows': rows,
         'total': len(rows),
         'today': date.today(),
-        'scoped_teacher': scoped_teacher,
     })
 
 
@@ -6261,9 +6260,11 @@ def health_committee_record_delete(request, record_id):
 
 # Official health committee forms transcribed as a catalog from the supplied 25-page source file.
 HEALTH_COMMITTEE_FORM_CATALOG = [
-    {'key':'committee-formation','title':'نموذج تشكيل اللجنة الصحية المدرسية','page':2,'fields':['السنة الدراسية','اسم المدرسة','تاريخ الاجتماع','أعضاء الهيئة الإدارية والتدريسية: الاسم والصفة','أعضاء الطلبة: الاسم والصف والشعبة','المهام الموكلة','ملاحظات']},
-    {'key':'committee-minutes','title':'محاور اللجنة الصحية وتوقيعات الأعضاء','page':3,'fields':['محاور الاجتماع','توقيعات أعضاء اللجنة','ملاحظات']},
+    {'key':'committee-formation','title':'تشكيل اللجنة الصحية المدرسية','page':2,'fields':['السنة الدراسية','اسم المدرسة','تاريخ الاجتماع','أعضاء الهيئة الإدارية والتدريسية','أعضاء الطلبة','أعضاء المجتمع المحلي','ملاحظات']},
+    {'key':'committee-minutes','title':'محضر اجتماع اللجنة الصحية','page':3,'fields':['اليوم والتاريخ','الزمان','الحضور','أهداف الاجتماع','محاور النقاش','التوصيات','توقيع مقرر اللجنة الصحية والأعضاء','توقيع مدير المدرسة وختمها']},
     {'key':'safety-equipment','title':'نموذج تفقد أدوات السلامة العامة','page':7,'fields':['تاريخ التفقد','طفايات الحريق: غاز الهالون','طفايات الحريق: ثاني أكسيد الكربون CO2','طفايات الحريق: بودرة','عدد الطفايات وحالتها ومكانها','وجود ممر مشاة أمام المدرسة (نعم/لا)','وجود إشارات أمام المدرسة (نعم/لا)','ملاحظات']},
+    {'key':'facilities-followup','title':'نموذج متابعة مرافق المدرسة','page':6,'fields':['تاريخ المتابعة','ساحة المدرسة','حماية المدرسة','المختبر','الوحدة الصحية/الطلاب','ممرات المدرسة','المطبخ','المكتبة','مخازن الحاسوب','مخزن اللوازم','غرفة المعلمين','غرفة المدير','الوحدة الصحية/المعلمين','الغرف الدراسية','ملاحظات']},
+    {'key':'educational-meetings','title':'نموذج رصد اللقاءات التثقيفية','page':9,'fields':['اليوم والتاريخ','موضوع اللقاء','الجهة المنفذة','الحضور من الطلبة','الحضور من المعلمين','ملاحظات']},
     {'key':'canteen-followup','title':'نموذج متابعة المقصف المدرسي','page':8,'fields':['التاريخ','رقم الزيارة','رقم الهاتف','عدد الطلبة','أدنى صف','أعلى صف','اللباس الصحي للعاملين','استخدام الكفوف عند تحضير الطعام','اتباع العادات الصحية السليمة','تخزين وبيع المواد الغذائية بطريقة صحية','وجود مواد خطرة أو ممنوعة أو منتهية الصلاحية','بيع الكولا أو المشروبات الغازية/الأغذية غير المطابقة','نظافة أرضية وجدران المقصف','تنظيف الأدوات مباشرة بعد الاستخدام','ملاحظات']},
     {'key':'health-survey','title':'المسح الصحي للعام الدراسي','page':11,'fields':['العام الدراسي','بيانات المسح الصحي كما في النموذج','ملاحظات']},
     {'key':'emergency-diseases','title':'نموذج رصد الأمراض الطارئة والمعدية على الطالب','page':12,'fields':['اسم الطالب','الصف','السنة الدراسية','المرض/الحالة الطارئة أو المعدية','تاريخ الرصد','الإجراء والمتابعة','ملاحظات']},
@@ -6272,7 +6273,7 @@ HEALTH_COMMITTEE_FORM_CATALOG = [
     {'key':'injury-summary','title':'تقرير الإصابات المدرسية الشهري','page':16,'fields':['الشهر','المديرية','نوع الإصابة','عدد الإصابات لكل صف','عدد الحالات التي تلقت إسعافات أولية في المدرسة','عدد الحالات المحولة إلى مستشفى/مركز صحي','عدد الحالات التي عولجت بالتأمين الصحي','ملاحظات']},
     {'key':'injury-detail','title':'سجل تفاصيل الإصابات المدرسية','page':17,'fields':['اليوم والتاريخ','اسم الطالب','العمر','الصف','مكان الإصابة','موقع الإصابة','نوع الإصابة','عدد أيام التغيب عن المدرسة','وضع الطالب','ملاحظات']},
     {'key':'guardian-notice','title':'نموذج إشعار ولي الأمر حول الوضع الصحي والفحوصات','page':18,'fields':['اسم ولي الأمر','اسم الطالب/الطالبة','نتيجة الكشف الطبي الدوري','التوصيات والمتابعة المطلوبة','التاريخ','الاسم والتوقيع','ملاحظات']},
-    {'key':'health-activities','title':'سجل الأنشطة الصحية المدرسية','page':20,'fields':['اليوم والتاريخ','نوع النشاط','الجهة المنفذة','عدد المشاركين من الطلبة','عدد المشاركين من المعلمين','الهدف من النشاط','ملاحظات']},
+    {'key':'health-activities','title':'نموذج رصد الأنشطة الصحية','page':20,'fields':['اليوم والتاريخ','نوع النشاط','الجهة المنفذة','عدد المشاركين من الطلبة','عدد المشاركين من المعلمين','الهدف من النشاط','ملاحظات']},
     {'key':'gifted-students','title':'رصد الطلبة الموهوبين بالمدرسة','page':21,'fields':['اسم الطالب','الصف والشعبة','نوع الموهبة: الرسم أو الأعمال الفنية أو المسرح أو الأناشيد','النشاط/المساهمة','ملاحظات']},
     {'key':'health-occasions','title':'تواريخ المناسبات الصحية العالمية والإقليمية','page':22,'fields':['اسم المناسبة الصحية','التاريخ','ملاحظات']},
     {'key':'health-occasions-cont','title':'استكمال جدول المناسبات الصحية','page':23,'fields':['اسم المناسبة الصحية','التاريخ','ملاحظات']},
@@ -6298,6 +6299,56 @@ def health_committee_official_forms(request):
     })
 
 @login_required
+def health_committee_official_form_records(request, form_key):
+    from .models import HealthCommitteeOfficialForm
+    if not has_perm(request.user, 'health_committee', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لعرض سجلات اللجنة الصحية')
+        return redirect('dashboard')
+    item = next((form for form in HEALTH_COMMITTEE_FORM_CATALOG if form['key'] == form_key), None)
+    if item is None:
+        messages.error(request, 'النموذج المطلوب غير موجود')
+        return redirect('health_committee_official_forms')
+    entries = list(HealthCommitteeOfficialForm.objects.filter(form_key=item['key']).select_related('created_by').prefetch_related('drive_files').order_by('-entry_date', '-created_at'))
+    import json
+    for entry in entries:
+        normalized = dict(entry.data or {})
+        json_fields = {'committee-formation': {'أعضاء الهيئة الإدارية والتدريسية': 'أعضاء الهيئة الإدارية والتدريسية', 'أعضاء الطلبة': 'أعضاء الطلبة', 'أعضاء المجتمع المحلي': 'أعضاء المجتمع المحلي'}, 'committee-minutes': {'محاور النقاش': 'محاور النقاش', 'التوصيات': 'التوصيات'}}.get(item['key'], {})
+        if item['key'] == 'facilities-followup':
+            json_fields = {label: label for label in item['fields'][1:-1]}
+        for label, key in json_fields.items():
+            raw = normalized.get(key, '')
+            try:
+                parsed = json.loads(raw) if raw else []
+            except (TypeError, ValueError):
+                parsed = []
+            if isinstance(parsed, list):
+                lines = []
+                for index, member in enumerate(parsed, 1):
+                    if isinstance(member, dict):
+                        parts = [str(member.get(k, '')).strip() for k in ('name', 'role', 'className', 'profession', 'phone', 'task', 'notes') if member.get(k)]
+                        lines.append(f'{index}. ' + ' — '.join(parts))
+                    elif str(member).strip():
+                        lines.append(f'{index}. {member}')
+                normalized[label] = '\n'.join(lines) if lines else '—'
+        if item['key'] == 'committee-minutes':
+            for index, label in ((0, 'اليوم والتاريخ'), (1, 'الزمان'), (2, 'الحضور'), (3, 'أهداف الاجتماع'), (6, 'توقيع مقرر اللجنة الصحية والأعضاء'), (7, 'توقيع مدير المدرسة وختمها')):
+                normalized[label] = normalized.get(item['fields'][index], '')
+        if item['key'] == 'guardian-notice':
+            try:
+                notice_students = json.loads(normalized.get('اسم الطالب/الطالبة', '') or '[]')
+            except (TypeError, ValueError):
+                notice_students = []
+            entry.notice_students = notice_students if isinstance(notice_students, list) else []
+            entry.notice_fields = {'parent': normalized.get('اسم ولي الأمر', ''), 'result': normalized.get('نتيجة الكشف الطبي الدوري', ''), 'recommendations': normalized.get('التوصيات والمتابعة المطلوبة', ''), 'signer': normalized.get('الاسم والتوقيع', '')}
+        entry.display_data = normalized
+    return render(request, 'school/health_committee_official_form_records.html', {
+        'form_item': item, 'entries': entries, 'total_records': len(entries),
+        'can_add': has_perm(request.user, 'health_committee', 'add'),
+        'can_print': has_perm(request.user, 'health_committee', 'print') or has_perm(request.user, 'health_committee', 'view'),
+    })
+
+
+@login_required
 def health_committee_official_form_add(request, form_key):
     from .models import HealthCommitteeOfficialForm
     from django.utils.dateparse import parse_date
@@ -6311,7 +6362,12 @@ def health_committee_official_form_add(request, form_key):
         return redirect('health_committee_official_forms')
     if request.method == 'POST':
         data = {field: request.POST.get('field_' + str(index), '').strip() for index, field in enumerate(item['fields'])}
-        entry_date = parse_date(request.POST.get('entry_date', '')) or timezone.localdate()
+        date_value = request.POST.get('entry_date', '').strip()
+        if not date_value:
+            date_field_index = {'committee-formation': 2, 'committee-minutes': 0, 'facilities-followup': 0, 'educational-meetings': 0, 'health-activities': 0, 'safety-equipment': 0, 'canteen-followup': 0, 'guardian-notice': 4}.get(item['key'], None)
+            if date_field_index is not None:
+                date_value = request.POST.get('field_' + str(date_field_index), '').strip()
+        entry_date = parse_date(date_value) or timezone.localdate()
         notes = request.POST.get('notes', '').strip()
         HealthCommitteeOfficialForm.objects.create(
             form_key=item['key'], form_title=item['title'], source_page=item['page'],
@@ -6319,10 +6375,81 @@ def health_committee_official_form_add(request, form_key):
         )
         log_action(request.user, 'إضافة نموذج اللجنة الصحية الرسمي', item['title'])
         messages.success(request, 'تم حفظ النموذج بنجاح.')
-        return redirect('health_committee_official_forms')
+        return redirect('health_committee_official_form_records', form_key=item['key'])
+    from .models import Teacher, Student, Profile, Class
+    teachers = Teacher.objects.select_related('user').order_by('full_name')
+    students = Student.objects.select_related('student_class').order_by('display_order', 'full_name')
+    administrative_users = User.objects.filter(profile__role__in=['admin', 'vice_principal', 'secretary']).order_by('first_name', 'last_name', 'username')
+    classes = Class.objects.order_by('name')
+    school_info = SchoolInfo.objects.first()
     return render(request, 'school/health_committee_official_form_entry.html', {
-        'form_item': item, 'today': timezone.localdate().isoformat()
+        'form_item': item, 'today': timezone.localdate().isoformat(),
+        'teachers': teachers, 'students': students, 'classes': classes,
+        'administrative_users': administrative_users,
+        'school_name': school_info.name_ar if school_info else '',
     })
+
+
+
+@login_required
+def health_committee_official_form_file_upload(request, entry_id):
+    from pathlib import Path
+    import mimetypes
+    from .models import HealthCommitteeOfficialForm, HealthCommitteeDriveFile
+    from open_learning.google_drive import GoogleDriveAuthError, GoogleDriveService
+    if request.method != 'POST' or not has_perm(request.user, 'health_committee', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لرفع الملفات.')
+        return redirect('health_committee_official_forms')
+    entry = get_object_or_404(HealthCommitteeOfficialForm, pk=entry_id)
+    uploaded = request.FILES.get('file')
+    if not uploaded:
+        messages.error(request, 'اختر ملفًا قبل الرفع.')
+        return redirect('health_committee_official_form_records', form_key=entry.form_key)
+    allowed = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'}
+    if Path(uploaded.name).suffix.lower() not in allowed or uploaded.size > 10 * 1024 * 1024:
+        messages.error(request, 'نوع الملف غير مدعوم أو يتجاوز حجمه 10 ميغابايت.')
+        return redirect('health_committee_official_form_records', form_key=entry.form_key)
+    service = GoogleDriveService()
+    if not service.is_connected():
+        messages.error(request, 'Google Drive غير متصل. اربطه من إعدادات التخزين في قسم التعلم المفتوح أولًا.')
+        return redirect('health_committee_official_form_records', form_key=entry.form_key)
+    try:
+        mime_type = uploaded.content_type or mimetypes.guess_type(uploaded.name)[0] or 'application/octet-stream'
+        result = service.upload_to_folder_path(Path(uploaded.name).name, uploaded.read(), mime_type, ['ملف اللجنة الصحية', entry.form_title])
+        HealthCommitteeDriveFile.objects.create(
+            form_entry=entry, file_name=result.get('name') or Path(uploaded.name).name,
+            mime_type=result.get('mimeType') or mime_type,
+            file_size=int(result.get('size') or uploaded.size or 0) or None,
+            google_drive_file_id=result['id'], google_drive_url=result.get('webViewLink', ''),
+            uploaded_by=request.user,
+        )
+        messages.success(request, 'تم رفع الملف إلى Google Drive وربطه بالسجل.')
+    except GoogleDriveAuthError:
+        messages.error(request, 'انتهى اتصال Google Drive. أعد ربط الحساب ثم حاول مجددًا.')
+    except Exception:
+        messages.error(request, 'تعذّر رفع الملف إلى Google Drive؛ لم يُسجل الملف في الأرشيف.')
+    return redirect('health_committee_official_form_records', form_key=entry.form_key)
+
+
+@login_required
+def health_committee_official_form_file_open(request, file_id):
+    from .models import HealthCommitteeDriveFile
+    from open_learning.google_drive import GoogleDriveService
+    from django.utils.encoding import escape_uri_path
+    if not has_perm(request.user, 'health_committee', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لفتح ملفات اللجنة الصحية.')
+        return redirect('dashboard')
+    record = get_object_or_404(HealthCommitteeDriveFile, pk=file_id)
+    try:
+        content, mime_type, drive_name = GoogleDriveService().download_file(record.google_drive_file_id)
+    except Exception:
+        messages.error(request, 'تعذّر فتح الملف من Google Drive.')
+        return redirect('health_committee_official_form_records', form_key=record.form_entry.form_key)
+    disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+    response = HttpResponse(content, content_type=mime_type or record.mime_type or 'application/octet-stream')
+    response['Content-Disposition'] = f"{disposition}; filename*=UTF-8''{escape_uri_path(record.file_name or drive_name)}"
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 def service_worker(request):
