@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load static %}
 {% block title %}{{ form_item.title }}{% endblock %}
 {% block page_heading %}{{ form_item.title }}{% endblock %}
 {% block content %}
@@ -7,7 +8,7 @@
 </style>
 <div class="hcr-wrap">
 <section class="hcr-head">
-<div class="hcr-official"><div class="en"><strong>State of Palestine</strong><br>Ministry of Education &amp; Higher Education<br>General Directorate of School Health</div><div class="hcr-eagle">🦅</div><div><strong>دولة فلسطين</strong><br>وزارة التربية والتعليم العالي<br>الإدارة العامة للصحة المدرسية</div></div>
+<div class="hcr-official"><div class="en"><strong>State of Palestine</strong><br>Ministry of Education &amp; Higher Education<br>General Directorate of School Health</div><div class="hcr-eagle"><img src="{% static 'images/palestine_logo.png' %}" alt="شعار دولة فلسطين" style="max-width:72px;max-height:72px;object-fit:contain"></div><div><strong>دولة فلسطين</strong><br>وزارة التربية والتعليم العالي<br>الإدارة العامة للصحة المدرسية</div></div>
 <div class="hcr-title">{{ form_item.title }}</div><div>عدد السجلات المحفوظة: {{ total_records }}</div>
 </section>
 <div class="hcr-tools">{% if can_add %}<a class="hcr-btn primary" href="{% url 'health_committee_official_form_add' form_item.key %}">+ إدخال سجل جديد</a>{% endif %}{% if can_print %}<button class="hcr-btn" type="button" onclick="window.print()">طباعة التقرير</button>{% endif %}<a class="hcr-btn" href="{% url 'health_committee_official_forms' %}?form={{ form_item.key }}">العودة إلى النماذج</a></div>
