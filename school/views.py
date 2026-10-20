@@ -6362,7 +6362,12 @@ def health_committee_official_form_add(request, form_key):
         return redirect('health_committee_official_forms')
     if request.method == 'POST':
         data = {field: request.POST.get('field_' + str(index), '').strip() for index, field in enumerate(item['fields'])}
-        entry_date = parse_date(request.POST.get('entry_date', '')) or timezone.localdate()
+        date_value = request.POST.get('entry_date', '').strip()
+        if not date_value:
+            date_field_index = {'committee-formation': 2, 'committee-minutes': 0, 'facilities-followup': 0, 'educational-meetings': 0, 'health-activities': 0, 'safety-equipment': 0, 'canteen-followup': 0, 'guardian-notice': 4}.get(item['key'], None)
+            if date_field_index is not None:
+                date_value = request.POST.get('field_' + str(date_field_index), '').strip()
+        entry_date = parse_date(date_value) or timezone.localdate()
         notes = request.POST.get('notes', '').strip()
         HealthCommitteeOfficialForm.objects.create(
             form_key=item['key'], form_title=item['title'], source_page=item['page'],
