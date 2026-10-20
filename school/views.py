@@ -6308,9 +6308,32 @@ def health_committee_official_form_records(request, form_key):
     if item is None:
         messages.error(request, 'النموذج المطلوب غير موجود')
         return redirect('health_committee_official_forms')
-    entries = HealthCommitteeOfficialForm.objects.filter(form_key=item['key']).select_related('created_by').order_by('-entry_date', '-created_at')
+    entries = list(HealthCommitteeOfficialForm.objects.filter(form_key=item['key']).select_related('created_by').order_by('-entry_date', '-created_at'))
+    import json
+    for entry in entries:
+        normalized = dict(entry.data or {})
+        json_fields = {'committee-formation': {'أعضاء الهيئة الإدارية والتدريسية': 'field_3', 'أعضاء الطلبة': 'field_4', 'أعضاء المجتمع المحلي': 'field_5'}, 'committee-minutes': {'محاور النقاش': 'field_4', 'التوصيات': 'field_5'}}.get(item['key'], {})
+        for label, key in json_fields.items():
+            raw = normalized.get(key, '')
+            try:
+                parsed = json.loads(raw) if raw else []
+            except (TypeError, ValueError):
+                parsed = []
+            if isinstance(parsed, list):
+                lines = []
+                for index, member in enumerate(parsed, 1):
+                    if isinstance(member, dict):
+                        parts = [str(member.get(k, '')).strip() for k in ('name', 'role', 'className', 'profession', 'phone', 'task', 'notes') if member.get(k)]
+                        lines.append(f'{index}. ' + ' — '.join(parts))
+                    elif str(member).strip():
+                        lines.append(f'{index}. {member}')
+                normalized[label] = '\\n'.join(lines) if lines else '—'
+        if item['key'] == 'committee-minutes':
+            for index, label in ((0, 'اليوم والتاريخ'), (1, 'الزمان'), (2, 'الحضور'), (3, 'أهداف الاجتماع'), (6, 'توقيع مقرر اللجنة الصحية والأعضاء'), (7, 'توقيع مدير المدرسة وختمها')):
+                normalized[label] = normalized.get(f'field_{index}', '')
+        entry.display_data = normalized
     return render(request, 'school/health_committee_official_form_records.html', {
-        'form_item': item, 'entries': entries, 'total_records': entries.count(),
+        'form_item': item, 'entries': entries, 'total_records': len(entries),
         'can_add': has_perm(request.user, 'health_committee', 'add'),
         'can_print': has_perm(request.user, 'health_committee', 'print') or has_perm(request.user, 'health_committee', 'view'),
     })
