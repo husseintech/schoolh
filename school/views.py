@@ -6346,8 +6346,12 @@ def health_committee_official_form_records(request, form_key):
         entry.display_data = normalized
     from .models import HealthCommitteePlanFile
     plan_file = HealthCommitteePlanFile.objects.filter(form_key=item['key']).first() if item['key'] == 'committee-minutes' else None
+    survey_data = None
+    if item['key'] == 'health-survey' and has_perm(request.user, 'survey', 'view'):
+        survey_data = build_survey_stats_data()
     return render(request, 'school/health_committee_official_form_records.html', {
         'form_item': item, 'entries': entries, 'total_records': len(entries),
+        'survey_data': survey_data,
         'plan_file': plan_file,
         'can_add': has_perm(request.user, 'health_committee', 'add'),
         'can_print': has_perm(request.user, 'health_committee', 'print') or has_perm(request.user, 'health_committee', 'view'),
