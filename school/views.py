@@ -6337,6 +6337,7 @@ def health_committee_official_form_records(request, form_key):
             except (TypeError, ValueError):
                 notice_students = []
             entry.notice_students = notice_students if isinstance(notice_students, list) else []
+            entry.notice_fields = {'parent': normalized.get('اسم ولي الأمر', ''), 'result': normalized.get('نتيجة الكشف الطبي الدوري', ''), 'recommendations': normalized.get('التوصيات والمتابعة المطلوبة', ''), 'signer': normalized.get('الاسم والتوقيع', '')}
         entry.display_data = normalized
     return render(request, 'school/health_committee_official_form_records.html', {
         'form_item': item, 'entries': entries, 'total_records': len(entries),
