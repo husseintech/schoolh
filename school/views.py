@@ -6318,9 +6318,9 @@ def health_committee_official_form_records(request, form_key):
         for label, key in json_fields.items():
             raw = normalized.get(key, '')
             try:
-                parsed = json.loads(raw) if raw else []
+                parsed = json.loads(raw) if raw else None
             except (TypeError, ValueError):
-                parsed = []
+                parsed = None
             if isinstance(parsed, list):
                 lines = []
                 for index, member in enumerate(parsed, 1):
@@ -6330,6 +6330,9 @@ def health_committee_official_form_records(request, form_key):
                     elif str(member).strip():
                         lines.append(f'{index}. {member}')
                 normalized[label] = '\n'.join(lines) if lines else '—'
+            elif raw:
+                # New minutes records use one free-text paragraph; preserve it verbatim.
+                normalized[label] = raw
         if item['key'] == 'committee-minutes':
             for index, label in ((0, 'اليوم والتاريخ'), (1, 'الزمان'), (2, 'الحضور'), (3, 'أهداف الاجتماع'), (6, 'توقيع مقرر اللجنة الصحية والأعضاء'), (7, 'توقيع مدير المدرسة وختمها')):
                 normalized[label] = normalized.get(item['fields'][index], '')
