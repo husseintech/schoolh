@@ -23,7 +23,7 @@
 <p>التوصيات والمتابعة المطلوبة: {{ entry.notice_fields.recommendations|default:"........................................................" }}</p>
 <p class="notice-sign">الاسم والتوقيع: {{ entry.notice_fields.signer|default:"........................................" }}</p>
 </article>
-{% if forloop.counter|divisibleby:3 %}<div class="notice-page-break"></div>{% endif %}
+{% if forloop.counter|divisibleby:3 %}{% if not forloop.last %}<div class="notice-page-break"></div>{% endif %}{% endif %}
 {% endfor %}
 {% else %}
 <article class="hcr-entry">
