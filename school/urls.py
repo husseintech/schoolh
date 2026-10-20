@@ -21,6 +21,7 @@ urlpatterns = [
     path('registers/lab/entry/<int:entry_id>/delete/', registers_views.lab_register_delete, name='lab_register_delete'),
     path('health-committee/', views.health_committee_dashboard, name='health_committee_dashboard'),
     path('health-committee/forms/', views.health_committee_official_forms, name='health_committee_official_forms'),
+    path('health-committee/forms/<slug:form_key>/records/', views.health_committee_official_form_records, name='health_committee_official_form_records'),
     path('health-committee/forms/<slug:form_key>/add/', views.health_committee_official_form_add, name='health_committee_official_form_add'),
     path('health-committee/add/', views.health_committee_record_add, name='health_committee_record_add'),
     path('health-committee/<int:record_id>/edit/', views.health_committee_record_edit, name='health_committee_record_edit'),
