@@ -6383,6 +6383,68 @@ def health_committee_official_form_add(request, form_key):
     })
 
 
+
+@login_required
+def health_committee_official_form_file_upload(request, entry_id):
+    from pathlib import Path
+    import mimetypes
+    from .models import HealthCommitteeOfficialForm, HealthCommitteeDriveFile
+    from open_learning.google_drive import GoogleDriveAuthError, GoogleDriveService
+    if request.method != 'POST' or not has_perm(request.user, 'health_committee', 'add'):
+        messages.error(request, 'ليس لديك صلاحية لرفع الملفات.')
+        return redirect('health_committee_official_forms')
+    entry = get_object_or_404(HealthCommitteeOfficialForm, pk=entry_id)
+    uploaded = request.FILES.get('file')
+    if not uploaded:
+        messages.error(request, 'اختر ملفًا قبل الرفع.')
+        return redirect('health_committee_official_form_records', form_key=entry.form_key)
+    allowed = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'}
+    if Path(uploaded.name).suffix.lower() not in allowed or uploaded.size > 10 * 1024 * 1024:
+        messages.error(request, 'نوع الملف غير مدعوم أو يتجاوز حجمه 10 ميغابايت.')
+        return redirect('health_committee_official_form_records', form_key=entry.form_key)
+    service = GoogleDriveService()
+    if not service.is_connected():
+        messages.error(request, 'Google Drive غير متصل. اربطه من إعدادات التخزين في قسم التعلم المفتوح أولًا.')
+        return redirect('health_committee_official_form_records', form_key=entry.form_key)
+    try:
+        mime_type = uploaded.content_type or mimetypes.guess_type(uploaded.name)[0] or 'application/octet-stream'
+        result = service.upload_to_folder_path(Path(uploaded.name).name, uploaded.read(), mime_type, ['ملف اللجنة الصحية', entry.form_title])
+        HealthCommitteeDriveFile.objects.create(
+            form_entry=entry, file_name=result.get('name') or Path(uploaded.name).name,
+            mime_type=result.get('mimeType') or mime_type,
+            file_size=int(result.get('size') or uploaded.size or 0) or None,
+            google_drive_file_id=result['id'], google_drive_url=result.get('webViewLink', ''),
+            uploaded_by=request.user,
+        )
+        messages.success(request, 'تم رفع الملف إلى Google Drive وربطه بالسجل.')
+    except GoogleDriveAuthError:
+        messages.error(request, 'انتهى اتصال Google Drive. أعد ربط الحساب ثم حاول مجددًا.')
+    except Exception:
+        messages.error(request, 'تعذّر رفع الملف إلى Google Drive؛ لم يُسجل الملف في الأرشيف.')
+    return redirect('health_committee_official_form_records', form_key=entry.form_key)
+
+
+@login_required
+def health_committee_official_form_file_open(request, file_id):
+    from .models import HealthCommitteeDriveFile
+    from open_learning.google_drive import GoogleDriveService
+    from django.utils.encoding import escape_uri_path
+    if not has_perm(request.user, 'health_committee', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لفتح ملفات اللجنة الصحية.')
+        return redirect('dashboard')
+    record = get_object_or_404(HealthCommitteeDriveFile, pk=file_id)
+    try:
+        content, mime_type, drive_name = GoogleDriveService().download_file(record.google_drive_file_id)
+    except Exception:
+        messages.error(request, 'تعذّر فتح الملف من Google Drive.')
+        return redirect('health_committee_official_form_records', form_key=record.form_entry.form_key)
+    disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+    response = HttpResponse(content, content_type=mime_type or record.mime_type or 'application/octet-stream')
+    response['Content-Disposition'] = f"{disposition}; filename*=UTF-8''{escape_uri_path(record.file_name or drive_name)}"
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
 def service_worker(request):
     """Serve the site's remaining service worker without Web Push handlers."""
     response = render(request, 'school/sw.js', content_type='application/javascript')
