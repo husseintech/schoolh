@@ -6376,10 +6376,12 @@ def health_committee_official_form_add(request, form_key):
     students = Student.objects.select_related('student_class').order_by('display_order', 'full_name')
     administrative_users = User.objects.filter(profile__role__in=['admin', 'vice_principal', 'secretary']).order_by('first_name', 'last_name', 'username')
     classes = Class.objects.order_by('name')
+    school_info = SchoolInfo.objects.first()
     return render(request, 'school/health_committee_official_form_entry.html', {
         'form_item': item, 'today': timezone.localdate().isoformat(),
         'teachers': teachers, 'students': students, 'classes': classes,
         'administrative_users': administrative_users,
+        'school_name': school_info.name_ar if school_info else '',
     })
 
 
