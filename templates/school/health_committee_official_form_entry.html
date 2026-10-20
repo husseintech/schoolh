@@ -1,4 +1,5 @@
 {% extends 'school/base.html' %}
+{% load static %}
 {% block title %}{{ form_item.title }}{% endblock %}
 {% block page_heading %}{{ form_item.title }}{% endblock %}
 {% block content %}
@@ -9,7 +10,7 @@
 <section class="hce-head">
   <div class="hce-official">
     <div class="en"><strong>State of Palestine</strong><br>Ministry of Education &amp; Higher Education<br>General Directorate of School Health</div>
-    <div class="hce-eagle" aria-label="شعار دولة فلسطين">🦅</div>
+    <div class="hce-eagle"><img src="{% static 'images/palestine_logo.png' %}" alt="شعار دولة فلسطين" style="max-width:78px;max-height:78px;object-fit:contain"></div>
     <div><strong>دولة فلسطين</strong><br><h3>وزارة التربية والتعليم العالي</h3><h3>الإدارة العامة للصحة المدرسية</h3></div>
   </div>
   <div class="hce-title">{{ form_item.title }}</div>
