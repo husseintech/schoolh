@@ -6313,6 +6313,8 @@ def health_committee_official_form_records(request, form_key):
     for entry in entries:
         normalized = dict(entry.data or {})
         json_fields = {'committee-formation': {'أعضاء الهيئة الإدارية والتدريسية': 'أعضاء الهيئة الإدارية والتدريسية', 'أعضاء الطلبة': 'أعضاء الطلبة', 'أعضاء المجتمع المحلي': 'أعضاء المجتمع المحلي'}, 'committee-minutes': {'محاور النقاش': 'محاور النقاش', 'التوصيات': 'التوصيات'}}.get(item['key'], {})
+        if item['key'] == 'facilities-followup':
+            json_fields = {label: label for label in item['fields'][1:-1]}
         for label, key in json_fields.items():
             raw = normalized.get(key, '')
             try:
