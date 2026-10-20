@@ -6327,7 +6327,7 @@ def health_committee_official_form_records(request, form_key):
                         lines.append(f'{index}. ' + ' — '.join(parts))
                     elif str(member).strip():
                         lines.append(f'{index}. {member}')
-                normalized[label] = '\\n'.join(lines) if lines else '—'
+                normalized[label] = '\n'.join(lines) if lines else '—'
         if item['key'] == 'committee-minutes':
             for index, label in ((0, 'اليوم والتاريخ'), (1, 'الزمان'), (2, 'الحضور'), (3, 'أهداف الاجتماع'), (6, 'توقيع مقرر اللجنة الصحية والأعضاء'), (7, 'توقيع مدير المدرسة وختمها')):
                 normalized[label] = normalized.get(item['fields'][index], '')
