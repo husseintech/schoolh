@@ -6308,7 +6308,7 @@ def health_committee_official_form_records(request, form_key):
     if item is None:
         messages.error(request, 'النموذج المطلوب غير موجود')
         return redirect('health_committee_official_forms')
-    entries = list(HealthCommitteeOfficialForm.objects.filter(form_key=item['key']).select_related('created_by').order_by('-entry_date', '-created_at'))
+    entries = list(HealthCommitteeOfficialForm.objects.filter(form_key=item['key']).select_related('created_by').prefetch_related('drive_files').order_by('-entry_date', '-created_at'))
     import json
     for entry in entries:
         normalized = dict(entry.data or {})
