@@ -6260,8 +6260,8 @@ def health_committee_record_delete(request, record_id):
 
 # Official health committee forms transcribed as a catalog from the supplied 25-page source file.
 HEALTH_COMMITTEE_FORM_CATALOG = [
-    {'key':'committee-formation','title':'نموذج تشكيل اللجنة الصحية المدرسية','page':2,'fields':['السنة الدراسية','اسم المدرسة','تاريخ الاجتماع','أعضاء الهيئة الإدارية والتدريسية: الاسم والصفة','أعضاء الطلبة: الاسم والصف والشعبة','المهام الموكلة','ملاحظات']},
-    {'key':'committee-minutes','title':'محاور اللجنة الصحية وتوقيعات الأعضاء','page':3,'fields':['محاور الاجتماع','توقيعات أعضاء اللجنة','ملاحظات']},
+    {'key':'committee-formation','title':'تشكيل اللجنة الصحية المدرسية','page':2,'fields':['السنة الدراسية','اسم المدرسة','تاريخ الاجتماع','أعضاء الهيئة الإدارية والتدريسية','أعضاء الطلبة','أعضاء المجتمع المحلي','ملاحظات']},
+    {'key':'committee-minutes','title':'محضر اجتماع اللجنة الصحية','page':3,'fields':['اليوم والتاريخ','الزمان','الحضور','أهداف الاجتماع','محاور النقاش','التوصيات','توقيع مقرر اللجنة الصحية والأعضاء','توقيع مدير المدرسة وختمها']},
     {'key':'safety-equipment','title':'نموذج تفقد أدوات السلامة العامة','page':7,'fields':['تاريخ التفقد','طفايات الحريق: غاز الهالون','طفايات الحريق: ثاني أكسيد الكربون CO2','طفايات الحريق: بودرة','عدد الطفايات وحالتها ومكانها','وجود ممر مشاة أمام المدرسة (نعم/لا)','وجود إشارات أمام المدرسة (نعم/لا)','ملاحظات']},
     {'key':'facilities-followup','title':'نموذج متابعة مرافق المدرسة','page':6,'fields':['تاريخ المتابعة','ساحة المدرسة','حماية المدرسة','المختبر','الوحدة الصحية/الطلاب','ممرات المدرسة','المطبخ','المكتبة','مخازن الحاسوب','مخزن اللوازم','غرفة المعلمين','غرفة المدير','الوحدة الصحية/المعلمين','الغرف الدراسية','ملاحظات']},
     {'key':'educational-meetings','title':'نموذج رصد اللقاءات التثقيفية','page':9,'fields':['اليوم والتاريخ','موضوع اللقاء','الجهة المنفذة','الحضور من الطلبة','الحضور من المعلمين','ملاحظات']},
@@ -6339,8 +6339,15 @@ def health_committee_official_form_add(request, form_key):
         log_action(request.user, 'إضافة نموذج اللجنة الصحية الرسمي', item['title'])
         messages.success(request, 'تم حفظ النموذج بنجاح.')
         return redirect('health_committee_official_form_records', form_key=item['key'])
+    from .models import Teacher, Student, Profile, Class
+    teachers = Teacher.objects.select_related('user').order_by('full_name')
+    students = Student.objects.select_related('student_class').order_by('display_order', 'full_name')
+    administrative_users = User.objects.filter(profile__role__in=['admin', 'vice_principal', 'secretary']).order_by('first_name', 'last_name', 'username')
+    classes = Class.objects.order_by('name')
     return render(request, 'school/health_committee_official_form_entry.html', {
-        'form_item': item, 'today': timezone.localdate().isoformat()
+        'form_item': item, 'today': timezone.localdate().isoformat(),
+        'teachers': teachers, 'students': students, 'classes': classes,
+        'administrative_users': administrative_users,
     })
 
 
