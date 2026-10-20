@@ -17,11 +17,11 @@
 <article class="notice-card">
 <h3>إشعار ولي الأمر حول الوضع الصحي والفحوصات</h3>
 <p>التاريخ: {{ entry.entry_date|date:"Y/m/d" }}</p>
-<p>السيد/ة ولي أمر الطالب: <strong>{{ entry.display_data.اسم ولي الأمر }}</strong></p>
+<p>السيد/ة ولي أمر الطالب: <strong>{{ entry.notice_fields.parent }}</strong></p>
 <p>اسم الطالب/الطالبة: <strong>{{ student.name }}</strong> — الصف: {{ student.className }}</p>
-<p>نتيجة الكشف الطبي الدوري: {{ entry.display_data.نتيجة الكشف الطبي الدوري|default:"........................................................" }}</p>
-<p>التوصيات والمتابعة المطلوبة: {{ entry.display_data.التوصيات والمتابعة المطلوبة|default:"........................................................" }}</p>
-<p class="notice-sign">الاسم والتوقيع: {{ entry.display_data.الاسم والتوقيع|default:"........................................" }}</p>
+<p>نتيجة الكشف الطبي الدوري: {{ entry.notice_fields.result|default:"........................................................" }}</p>
+<p>التوصيات والمتابعة المطلوبة: {{ entry.notice_fields.recommendations|default:"........................................................" }}</p>
+<p class="notice-sign">الاسم والتوقيع: {{ entry.notice_fields.signer|default:"........................................" }}</p>
 </article>
 {% if forloop.counter|divisibleby:3 %}<div class="notice-page-break"></div>{% endif %}
 {% endfor %}
