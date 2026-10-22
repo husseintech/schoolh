@@ -101,7 +101,7 @@
 </div>
 <section class="sheet theme-{{ bg|default:'1' }}"><article class="certificate"><span class="top-accent"></span><span class="corner tr"></span><span class="corner tl"></span><span class="corner br"></span><span class="corner bl"></span>
 <header class="school-header"><div class="logo-box">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div><div class="school-intro"><div class="school-name">{% if info %}{{ info.name_ar }}{% else %}مدرسة المنصور الأساسية{% endif %}</div><div class="school-motto">بالعلم نبني الأجيال... وبالقيم نصنع المستقبل</div><div class="school-rule"></div></div><div class="logo-box"></div></header>
-<main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro">تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة</div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong>{{ cert.class_name }}</strong>، تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</div><div class="year-line">العام الدراسي: {{ cert.cert_year }}</div></main>
+<main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro">تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة</div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></div><div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div></main>
 <footer class="certificate-footer"><div class="signature principal"><div class="signature-role">مدير المدرسة</div><div class="signature-name">{{ cert.principal_name|default:'حسين حمامده' }}</div></div><div class="signature guardian"><div class="signature-role">مربي الصف</div><div class="signature-name">{{ cert.guardian_name }}</div></div></footer></article></section>
 <script>
 (function(){
@@ -126,9 +126,9 @@
   setText('.school-name',$('schoolNameInput').value);
   setText('.school-motto',$('mottoInput').value);
   setText('.intro',$('introInput').value);
-  setText('.reason', $('reasonInput').value);
+  setText('.reason-copy', $('reasonInput').value);
   setText('.certificate-title',$('titleInput').value);
-  document.querySelectorAll('.year-line').forEach(el=>{const dynamic=el.dataset.original||el.textContent;el.dataset.original=dynamic;el.textContent=$('yearInput').value?$('yearInput').value+' '+dynamic.replace(/^العام الدراسي:?\s*/,'').replace(/^{{\s*cert\.cert_year\s*}}/,'') : '';});
+  setText('.year-label',$('yearInput').value);
   setText('.signature.principal .signature-role',$('principalRoleInput').value);
   setText('.signature.guardian .signature-role',$('guardianRoleInput').value);
   document.querySelectorAll('.signature.principal .signature-name').forEach(el=>{if(!el.dataset.original)el.dataset.original=el.textContent;el.textContent=$('principalInput').value||el.dataset.original;});
