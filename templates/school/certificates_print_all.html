@@ -199,6 +199,46 @@
 .sheet .school-header,.sheet .certificate-body,.sheet .certificate-footer{z-index:3!important}
 @media print{.sheet .frame-background{display:block!important;visibility:visible!important}}
 
+
+/* Print layout correction from live preview: compact content block and a readable school-year footer */
+.sheet .certificate{position:relative!important;display:block!important;overflow:hidden!important}
+.sheet .certificate-body{
+ position:absolute!important;
+ top:34mm!important;left:10mm!important;right:10mm!important;bottom:36mm!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:center!important;
+ padding:22mm 8mm 0!important;margin:0!important;min-height:0!important;flex:none!important;text-align:center!important;z-index:3!important
+}
+.sheet .title-line{top:17mm!important}
+.sheet .intro{margin:0 0 2mm!important;line-height:1.55!important}
+.sheet .student-name{margin:1mm 0 2mm!important;padding-bottom:1.5mm!important;line-height:1.25!important}
+.sheet .reason{margin:0!important;line-height:1.55!important}
+.sheet .year-line{
+ position:absolute!important;left:50%!important;bottom:2mm!important;top:auto!important;transform:translateX(-50%)!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ gap:.5mm!important;margin:0!important;padding:0 4mm!important;background:#fff!important;
+ color:#17324d!important;font-family:Arial,"Noto Naskh Arabic",serif!important;font-size:9.5pt!important;line-height:1.25!important;
+ white-space:nowrap!important;z-index:8!important;min-width:35mm!important
+}
+.sheet .year-label{font-size:9pt!important;font-weight:600!important}
+.sheet .year-value{display:block!important;font-size:10pt!important;font-weight:700!important;direction:ltr!important}
+.sheet .certificate-footer{
+ position:absolute!important;left:8mm!important;right:8mm!important;bottom:5mm!important;
+ min-height:22mm!important;height:22mm!important;padding:0 8mm 2mm!important;
+ display:grid!important;grid-template-columns:1fr 1fr!important;gap:38mm!important;align-items:end!important;z-index:6!important
+}
+.sheet .signature{max-width:76mm!important}
+.sheet .signature-name{min-height:7mm!important;padding-bottom:1mm!important}
+.sheet .school-header .logo-box:last-child img{
+ width:var(--logo-size,29mm)!important;height:var(--logo-size,29mm)!important;
+ max-width:var(--logo-size,29mm)!important;max-height:var(--logo-size,29mm)!important;
+ object-fit:contain!important;background:transparent!important
+}
+@media print{
+ .sheet .certificate-body{top:34mm!important;bottom:36mm!important;padding-top:22mm!important}
+ .sheet .year-line{bottom:2mm!important;background:#fff!important}
+ .sheet .certificate-footer{bottom:5mm!important}
+}
+
 </style>
 </head>
 <body>
