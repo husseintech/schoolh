@@ -306,6 +306,24 @@
 .sheet .certificate-body{top:var(--content-top,24mm)!important}
 @media print{#certificateEditor{display:none!important}}
 
+
+/* Final override: editor variables must win over all fixed layout declarations above */
+.sheet .certificate .certificate-title{font-size:var(--title-size,31pt)!important}
+.sheet .certificate .student-name{font-size:var(--name-size,32pt)!important}
+.sheet .certificate .intro,
+.sheet .certificate .intro-copy,
+.sheet .certificate .reason,
+.sheet .certificate .reason-copy,
+.sheet .certificate .student-class{font-size:var(--body-size,14pt)!important}
+.sheet .certificate .signature-role,
+.sheet .certificate .signature-name{font-size:var(--sign-size,14pt)!important}
+.sheet .certificate .school-header .logo-box:last-child img{width:var(--logo-size,29mm)!important;height:var(--logo-size,29mm)!important;max-width:var(--logo-size,29mm)!important;max-height:var(--logo-size,29mm)!important}
+.sheet .certificate .certificate-body{top:var(--content-top,24mm)!important}
+.sheet .certificate .title-line{margin-bottom:var(--title-gap,5mm)!important}
+.sheet .certificate .intro{margin-bottom:var(--intro-gap,2mm)!important}
+.sheet .certificate .student-name{margin-bottom:var(--name-gap,3mm)!important}
+#certificateEditor input[type=range]{cursor:pointer;touch-action:pan-y}
+
 </style>
 </head>
 <body>
