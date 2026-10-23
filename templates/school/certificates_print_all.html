@@ -69,6 +69,33 @@
 @media(max-width:800px){.editor-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.editor-grid .wide{grid-column:span 2}}
 @media print{#certificateEditor{display:none!important}.sheet{page-break-after:always}.sheet:last-of-type{page-break-after:auto}}
 
+
+.design-art{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.design-art .art{position:absolute;inset:0;width:100%;height:100%;display:none}
+.theme-1 .art-1,.theme-2 .art-2,.theme-3 .art-3,.theme-4 .art-4{display:block}
+.certificate:before,.certificate:after{z-index:1}
+.school-header,.certificate-body,.certificate-footer{z-index:2}
+.school-header{grid-template-columns:35mm 1fr 42mm;min-height:30mm}
+.school-header .logo-box:first-child{visibility:hidden}
+.school-header .logo-box:last-child{visibility:visible;justify-self:end;display:flex;flex-direction:column;gap:1mm;width:37mm;height:auto}
+.school-header .logo-box:last-child:after{content:"{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية'|escapejs }}{% else %}مدرسة المنصور الأساسية{% endif %}";font-family:Arial,sans-serif;font-size:8.5pt;font-weight:700;color:var(--ink);text-align:center;white-space:normal}
+.school-header .logo-box img{width:27mm;height:27mm;object-fit:contain}
+.certificate-title{font-family:"Diwani","Amiri","Noto Naskh Arabic",serif;font-size:34pt!important;color:#b57918!important;text-shadow:0 .3mm .2mm #f6e4b3;letter-spacing:0}
+.title-line:before,.title-line:after{width:24mm;height:.35mm;background:#c58b2b}
+.student-name{font-size:34pt!important;color:#0e2d53!important;border-bottom:0!important;padding-bottom:0!important;margin:1mm 0 2mm!important}
+.student-name:after{content:"";display:block;width:58mm;height:.4mm;margin:1mm auto 0;background:linear-gradient(90deg,transparent,#bd8427,transparent)}
+.intro{font-size:13pt!important;line-height:1.6!important;color:#0e2d53!important}
+.reason{font-size:13pt!important;line-height:1.65!important;color:#0e2d53!important}
+.certificate-footer{min-height:24mm!important;padding:0 8mm 1mm!important;gap:12mm!important}
+.signature-role{font-size:11pt!important;color:#0e2d53!important}
+.signature-name{font-size:13pt!important;color:#0e2d53!important;border-bottom:.3mm solid #d49a2e!important}
+.year-line{position:absolute;left:50%;bottom:1mm;transform:translateX(-50%);z-index:3;text-align:center;white-space:nowrap;color:#0e2d53!important;font-size:10pt!important}
+.certificate-body{padding-bottom:9mm!important}
+@media print{
+ .design-art{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .school-header .logo-box:last-child:after{font-size:8pt}
+}
+
 </style>
 </head>
 <body>
@@ -128,9 +155,63 @@
   <div class="editor-actions"><button class="tool-button print-button" type="button" id="printBtn">🖨 طباعة</button><button class="tool-button back-button" type="button" id="resetBtn">استعادة الإعدادات</button><span class="editor-note">التعديلات تظهر فورًا وتُطبّق على جميع الشهادات في هذه الصفحة.</span></div>
 </div>
 {% for cert in certs %}
-<section class="sheet theme-{{ bg|default:'1' }}"><article class="certificate"><span class="top-accent"></span><span class="corner tr"></span><span class="corner tl"></span><span class="corner br"></span><span class="corner bl"></span>
-<header class="school-header"><div class="logo-box">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div><div class="school-intro"></div><div class="logo-box"></div></header>
-<main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro"><strong class="school-name-inline">{% if info %}{{ info.name_ar|default:"مدرسة المنصور الأساسية" }}{% else %}مدرسة المنصور الأساسية{% endif %}</strong> <span class="intro-copy">تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة</span></div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></div><div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div></main>
+<section class="sheet theme-{{ bg|default:'1' }}"><article class="certificate"><div class="design-art" aria-hidden="true">
+  <svg class="art art-1" viewBox="0 0 1200 820" preserveAspectRatio="none">
+    <path d="M0 0 H260 L0 185 Z" fill="#0c3157"/>
+    <path d="M0 0 H190 L0 135 Z" fill="#174a78"/>
+    <path d="M0 0 H250 L0 175 L0 150 L210 0 Z" fill="#e6b64f"/>
+    <path d="M0 0 H210 L0 155" fill="none" stroke="#fff1c5" stroke-width="3"/>
+    <path d="M1200 820 H940 L1200 635 Z" fill="#0c3157"/>
+    <path d="M1200 820 H1010 L1200 685 Z" fill="#174a78"/>
+    <path d="M1200 820 H950 L1200 645 L1200 675 L990 820 Z" fill="#e6b64f"/>
+    <path d="M1200 820 H990 L1200 665" fill="none" stroke="#fff1c5" stroke-width="3"/>
+  </svg>
+  <svg class="art art-2" viewBox="0 0 1200 820" preserveAspectRatio="none">
+    <path d="M0 0 H520 C360 30 260 95 0 150 Z" fill="#153d68"/>
+    <path d="M0 0 H450 C300 35 200 80 0 120 Z" fill="#315d83"/>
+    <path d="M0 40 C170 120 280 35 480 0" fill="none" stroke="#e6b64f" stroke-width="13"/>
+    <path d="M1200 820 H680 C850 790 980 725 1200 670 Z" fill="#153d68"/>
+    <path d="M1200 820 H750 C920 785 1030 745 1200 705 Z" fill="#315d83"/>
+    <path d="M1200 780 C1030 700 930 790 720 820" fill="none" stroke="#e6b64f" stroke-width="13"/>
+    <g fill="#dce8f1" stroke="#b9cddd" stroke-width="2" opacity=".72">
+      <path d="M35 180 Q10 130 55 105 Q85 145 35 180Z"/><path d="M45 215 Q85 160 125 190 Q95 230 45 215Z"/>
+      <path d="M28 275 Q5 230 48 215 Q75 250 28 275Z"/><path d="M42 310 Q85 260 120 290 Q85 325 42 310Z"/>
+      <path d="M1165 520 Q1120 475 1160 445 Q1190 475 1165 520Z"/><path d="M1150 560 Q1100 525 1075 555 Q1110 590 1150 560Z"/>
+      <path d="M1180 610 Q1150 570 1185 550 Q1205 580 1180 610Z"/>
+    </g>
+    <g fill="none" stroke="#d7e4ef" stroke-width="2" opacity=".8"><path d="M22 95 Q100 180 45 350"/><path d="M1170 430 Q1100 520 1160 650"/></g>
+  </svg>
+  <svg class="art art-3" viewBox="0 0 1200 820" preserveAspectRatio="none">
+    <g stroke="#e4ad3d" stroke-width="3" fill="none">
+      <path d="M0 0 H210 V24 H24 V210 H0Z"/><path d="M1200 820 H990 V796 H1176 V610 H1200Z"/>
+      <path d="M0 0 L180 180 M20 0 L200 180 M0 20 L180 200"/>
+    </g>
+    <g transform="translate(65 70)" fill="#123c66" stroke="#e9b84c" stroke-width="5">
+      <path d="M0 -55 L14 -18 L50 -35 L34 0 L68 15 L30 28 L35 65 L0 42 L-30 65 L-28 28 L-65 15 L-32 0 L-48 -35 L-14 -18Z"/>
+      <circle r="18" fill="#e9b84c"/><circle r="7" fill="#123c66"/>
+    </g>
+    <g transform="translate(1125 745)" fill="#123c66" stroke="#e9b84c" stroke-width="5">
+      <path d="M0 -55 L14 -18 L50 -35 L34 0 L68 15 L30 28 L35 65 L0 42 L-30 65 L-28 28 L-65 15 L-32 0 L-48 -35 L-14 -18Z"/>
+      <circle r="18" fill="#e9b84c"/><circle r="7" fill="#123c66"/>
+    </g>
+    <g fill="none" stroke="#e9b84c" stroke-width="2" opacity=".55">
+      <path d="M0 260 Q110 200 145 310 T220 390"/><path d="M1200 500 Q1090 440 1055 550 T980 630"/>
+      <path d="M0 300 Q100 245 135 350 T205 430"/><path d="M1200 540 Q1100 485 1065 590 T995 670"/>
+    </g>
+  </svg>
+  <svg class="art art-4" viewBox="0 0 1200 820" preserveAspectRatio="none">
+    <g fill="none" stroke="#e6b64f" stroke-width="2" opacity=".9">
+      <path d="M0 0 C180 45 160 110 0 210"/><path d="M0 0 C210 55 190 125 0 240"/><path d="M0 0 C240 65 220 145 0 270"/><path d="M0 0 C270 75 250 165 0 300"/>
+      <path d="M1200 820 C1020 775 1040 710 1200 610"/><path d="M1200 820 C990 765 1010 695 1200 580"/><path d="M1200 820 C960 755 980 675 1200 550"/><path d="M1200 820 C930 745 950 655 1200 520"/>
+    </g>
+    <path d="M0 0 H210 L0 145 Z" fill="#123b65"/><path d="M0 0 H160 L0 110 Z" fill="#2d5b82"/>
+    <path d="M0 0 H225 L0 160" fill="none" stroke="#e6b64f" stroke-width="10"/>
+    <path d="M1200 820 H990 L1200 675 Z" fill="#123b65"/><path d="M1200 820 H1040 L1200 710 Z" fill="#2d5b82"/>
+    <path d="M1200 820 H975 L1200 660" fill="none" stroke="#e6b64f" stroke-width="10"/>
+  </svg>
+</div><span class="top-accent"></span><span class="corner tr"></span><span class="corner tl"></span><span class="corner br"></span><span class="corner bl"></span>
+<header class="school-header"><div class="logo-box">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div><div class="school-intro"></div><div class="logo-box" data-school-name="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية' }}{% else %}مدرسة المنصور الأساسية{% endif %}">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div></header>
+<main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro"><span class="intro-copy">تتقدم إدارة {% if info %}{{ info.name_ar|default:"مدرسة المنصور الأساسية" }}{% else %}مدرسة المنصور الأساسية{% endif %} بخالص الشكر والتقدير إلى الطالب/ة</span></div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></div><div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div></main>
 <footer class="certificate-footer"><div class="signature principal"><div class="signature-role">مدير المدرسة</div><div class="signature-name">{{ cert.principal_name|default:'حسين حمامده' }}</div></div><div class="signature guardian"><div class="signature-role">مربي الصف</div><div class="signature-name">{{ cert.guardian_name }}</div></div></footer></article></section>
 {% empty %}<section class="sheet"><p style="margin:auto;font-size:20pt">لا توجد شهادات للطباعة</p></section>{% endfor %}
 <script>
@@ -153,7 +234,7 @@
    s.style.setProperty('--logo-size',$('logoSize').value+'mm');
   });
   ['titleSize','nameSize','bodySize','signSize','logoSize'].forEach(id=>$(id+'Out').textContent=$(id).value);
-  setText('.school-name-inline',$('schoolNameInput').value);
+  document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' بخالص الشكر والتقدير إلى الطالب/ة';});document.querySelectorAll('.school-header .logo-box:last-child').forEach(el=>{el.setAttribute('data-school-name',$('schoolNameInput').value);});
   
   setText('.intro-copy',$('introInput').value);
   setText('.reason-copy', $('reasonInput').value);
