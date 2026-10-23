@@ -190,6 +190,15 @@
  .sheet .certificate-body{padding-top:31mm!important}
 }
 
+
+/* Render frame artwork as an actual image so it is included in browser printing */
+.sheet .certificate{background:#fff!important}
+.sheet .frame-background{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:fill!important;z-index:0!important;display:block!important;pointer-events:none!important}
+.sheet .design-art{display:none!important}
+.sheet .certificate:before,.sheet .certificate:after,.sheet .corner,.sheet .top-accent{display:none!important}
+.sheet .school-header,.sheet .certificate-body,.sheet .certificate-footer{z-index:3!important}
+@media print{.sheet .frame-background{display:block!important;visibility:visible!important}}
+
 </style>
 </head>
 <body>
@@ -248,7 +257,7 @@
   </div>
   <div class="editor-actions"><button class="tool-button print-button" type="button" id="printBtn">🖨 طباعة</button><button class="tool-button back-button" type="button" id="resetBtn">استعادة الإعدادات</button><span class="editor-note">التعديلات تظهر فورًا وتُطبّق على جميع الشهادات في هذه الصفحة.</span></div>
 </div>
-<section class="sheet theme-{{ bg|default:'1' }}"><article class="certificate"><div class="design-art" aria-hidden="true">
+<section class="sheet theme-{{ bg|default:'1' }}"><article class="certificate"><img class="frame-background" src="/static/school/img/certificate-frames/frame1_navy_gold.svg" alt="" aria-hidden="true"><div class="design-art" aria-hidden="true">
   <svg class="art art-1" viewBox="0 0 1200 820" preserveAspectRatio="none">
     <path d="M0 0 H260 L0 185 Z" fill="#0c3157"/>
     <path d="M0 0 H190 L0 135 Z" fill="#174a78"/>
@@ -317,6 +326,7 @@
  function apply(){
   const theme=$('designSelect').value, frame=$('frameSelect').value;
   sheets().forEach(s=>{
+   const frame=s.querySelector('.frame-background'); if(frame){frame.src='/static/school/img/certificate-frames/'+({'1':'frame1_navy_gold.svg','2':'frame2_ribbon.svg','3':'frame3_geometric.svg','4':'frame4_botanical_gold.svg'}[theme]||'frame1_navy_gold.svg');}
    s.className=s.className.replace(/\btheme-\d+\b/g,'').replace(/\bframe-(double|thin|corners|none)\b/g,'').trim();
    s.classList.add('theme-'+theme,'frame-'+frame);
    s.style.setProperty('--title-size',$('titleSize').value+'pt');
