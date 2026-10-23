@@ -7,6 +7,36 @@
 <style>
 @page{size:A4 landscape;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#eef1f4;color:var(--ink)}:root{--ink:#17324d;--accent:#b1842b;--accent2:#e7cc82;--paper:#fff;--student-font:"Amiri","Noto Naskh Arabic","Traditional Arabic",serif}body{font-family:"Amiri","Noto Naskh Arabic","Traditional Arabic","Times New Roman",serif}.toolbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;padding:12px;margin:12px auto;width:min(1200px,calc(100% - 24px));background:#fff;border:1px solid #dbe2e8;border-radius:12px;box-shadow:0 5px 18px rgba(23,50,77,.08);font-family:Arial,sans-serif}.control{display:flex;flex-direction:column;gap:5px}.control label{font-size:12px;font-weight:bold;color:#3b5065}.control select{min-width:140px;padding:9px 11px;border:1px solid #cad4df;border-radius:8px;background:#fff;color:#17324d;font-size:13px}.tool-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;padding:11px 17px;font-size:13px;font-weight:bold;cursor:pointer}.print-button{background:#145da0;color:#fff}.back-button{background:#eef2f6;color:#243c54}.sheet{width:297mm;height:210mm;margin:0 auto 16px;padding:7mm;background:#fff;position:relative;overflow:hidden;page-break-after:always;break-after:page}.sheet:last-of-type{page-break-after:auto;break-after:auto}.certificate{width:100%;height:100%;position:relative;padding:7mm 13mm 6mm;background:var(--paper);display:flex;flex-direction:column;overflow:hidden}.certificate:before{content:"";position:absolute;inset:2mm;border:.75mm solid var(--accent);pointer-events:none}.certificate:after{content:"";position:absolute;inset:4.3mm;border:.25mm solid var(--accent2);pointer-events:none}.top-accent{position:absolute;top:0;left:0;right:0;height:2mm;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),var(--accent),transparent);opacity:.8}.corner{position:absolute;z-index:1;width:20mm;height:20mm;pointer-events:none;opacity:.75}.corner:before,.corner:after{content:"";position:absolute;border-color:var(--accent);border-style:solid}.corner:before{width:10mm;height:10mm;border-width:0}.corner:after{width:5mm;height:5mm;border-width:.45mm;transform:rotate(45deg)}.corner.tr{top:3mm;right:3mm}.corner.tr:before{top:0;right:0;border-top-width:1mm;border-right-width:1mm}.corner.tr:after{top:5mm;right:5mm}.corner.tl{top:3mm;left:3mm}.corner.tl:before{top:0;left:0;border-top-width:1mm;border-left-width:1mm}.corner.tl:after{top:5mm;left:5mm}.corner.br{bottom:3mm;right:3mm}.corner.br:before{bottom:0;right:0;border-bottom-width:1mm;border-right-width:1mm}.corner.br:after{bottom:5mm;right:5mm}.corner.bl{bottom:3mm;left:3mm}.corner.bl:before{bottom:0;left:0;border-bottom-width:1mm;border-left-width:1mm}.corner.bl:after{bottom:5mm;left:5mm}.school-header{position:relative;z-index:2;min-height:29mm;display:grid;grid-template-columns:34mm 1fr 34mm;align-items:center;gap:4mm}.logo-box{width:29mm;height:29mm;display:flex;justify-content:center;align-items:center}.logo-box img{display:block;max-width:29mm;max-height:29mm;object-fit:contain}.school-intro{text-align:center}.school-name{font-size:19pt;font-weight:800;color:var(--ink)}.school-motto{margin-top:1mm;font-size:10.5pt;color:#647383}.school-rule{width:58mm;height:1mm;margin:2mm auto 0;background:linear-gradient(90deg,transparent,var(--accent),transparent);position:relative}.school-rule:after{content:"✦";position:absolute;top:-2.3mm;left:50%;transform:translateX(-50%);color:var(--accent);background:#fff;padding:0 2mm;font-size:11pt}.certificate-body{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;position:relative;z-index:2;padding:0 7mm 1mm}.title-line{display:flex;align-items:center;justify-content:center;gap:5mm;margin:0 0 4mm;color:var(--accent)}.title-line:before,.title-line:after{content:"";width:24mm;height:.35mm;background:linear-gradient(90deg,transparent,var(--accent))}.title-line:after{transform:scaleX(-1)}.certificate-title{font-size:31pt;font-weight:800;line-height:1.2;color:var(--accent);letter-spacing:.2mm;white-space:nowrap}.intro{font-size:15pt;line-height:1.7;color:#344b60;margin-top:1mm}.student-name{font-family:var(--student-font);font-size:32pt;font-weight:800;line-height:1.35;color:var(--ink);margin:2mm 0 3mm;max-width:235mm;padding:0 12mm 2mm;border-bottom:.45mm solid var(--accent);overflow-wrap:anywhere}.reason{max-width:230mm;font-size:14pt;line-height:1.8;color:#4c5c6c}.reason strong{color:var(--ink)}.year-line{margin-top:2mm;font-size:10pt;color:#687989}.certificate-footer{position:relative;z-index:2;min-height:25mm;display:grid;direction:ltr;grid-template-columns:1fr 1fr;align-items:end;gap:20mm;padding:0 12mm 2mm}.signature{text-align:center;min-width:0;direction:rtl}.signature-role{color:#43576a;font-size:11pt;margin-bottom:1.5mm}.signature-name{min-height:8mm;font-size:14pt;font-weight:800;color:var(--ink);border-bottom:.35mm solid var(--accent2);padding:0 3mm 1.5mm;overflow-wrap:anywhere}.signature.principal{grid-column:1}.signature.guardian{grid-column:2}.theme-1{--ink:#17324d;--accent:#b1842b;--accent2:#e7cc82;--paper:#fff}.theme-2{--ink:#173b62;--accent:#2e6394;--accent2:#b7d0e5;--paper:#fff}.theme-3{--ink:#24453b;--accent:#4c8269;--accent2:#bfd7c8;--paper:#fff}.theme-4{--ink:#3d4653;--accent:#8e9aa6;--accent2:#d2d9df;--paper:#fff}@media print{html,body{margin:0!important;padding:0!important;background:#fff!important}.toolbar{display:none!important}.sheet{margin:0!important;padding:0!important;width:297mm;height:210mm}.certificate{width:297mm;height:210mm;padding:9mm 16mm 7mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}.certificate:before,.certificate:after{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 
+
+/* Four visual certificate designs requested: white paper, subtle ornaments */
+.theme-1 .certificate:before{border:.8mm solid #b1842b}
+.theme-1 .certificate:after{inset:4.3mm;border:.25mm solid #e7cc82}
+.theme-1 .corner:after{border-radius:0;transform:rotate(45deg)}
+.theme-1 .title-line:before,.theme-1 .title-line:after{height:.45mm}
+.theme-2 .certificate:before{border:.45mm solid #2e6394}
+.theme-2 .certificate:after{inset:4mm;border:.25mm dashed #b7d0e5}
+.theme-2 .corner:before{width:13mm;height:13mm}
+.theme-2 .corner:after{width:6mm;height:6mm;border-color:#2e6394;transform:rotate(45deg);border-radius:50%}
+.theme-2 .top-accent{height:1mm;opacity:.55}
+.theme-2 .title-line:before,.theme-2 .title-line:after{height:.3mm}
+.theme-3 .certificate:before{inset:2.5mm;border:.6mm double #4c8269}
+.theme-3 .certificate:after{inset:5mm;border:.2mm solid #bfd7c8}
+.theme-3 .corner:before{width:12mm;height:12mm;border-color:#4c8269}
+.theme-3 .corner:after{width:6mm;height:6mm;border-color:#4c8269;transform:rotate(45deg)}
+.theme-3 .top-accent{height:.8mm}
+.theme-4 .certificate:before{inset:2mm;border:.5mm solid #8e9aa6}
+.theme-4 .certificate:after{inset:4.8mm;border:.2mm solid #d2d9df}
+.theme-4 .corner:before{width:8mm;height:8mm;border-color:#8e9aa6}
+.theme-4 .corner:after{width:4mm;height:4mm;border-color:#8e9aa6;transform:rotate(45deg)}
+.theme-4 .top-accent{height:.6mm;opacity:.5}
+.school-header{min-height:24mm}
+.school-header .school-intro{display:none}
+.school-header .logo-box:first-child{justify-self:start}
+.school-header .logo-box:last-child{visibility:hidden}
+.school-name-inline{font-size:1em;color:var(--ink);font-weight:800}
+.intro{max-width:245mm}
+@media print{.school-header .logo-box:last-child{visibility:hidden}}
+
 /* Live certificate editor */
 .toolbar{display:block!important;position:relative;top:auto;width:min(1250px,calc(100% - 24px));padding:16px;margin:14px auto 18px}
 .editor-heading{font-size:18px;font-weight:800;color:#17324d;margin-bottom:12px}
@@ -46,7 +76,7 @@
   <div class="editor-heading">محرر شهادة التقدير — معاينة مباشرة</div>
   <div class="editor-grid">
     <label>التصميم
-      <select id="designSelect"><option value="1">ذهبي وكحلي ناعم</option><option value="2">أزرق ملكي</option><option value="3">أخضر هادئ</option><option value="4">فضي بسيط</option><option value="5">ذهبي بزوايا مزخرفة</option><option value="6">وردي هادئ</option></select>
+      <select id="designSelect"><option value="1">التصميم الأول — ذهبي وكحلي</option><option value="2">التصميم الثاني — زخارف زرقاء</option><option value="3">التصميم الثالث — أخضر هادئ</option><option value="4">التصميم الرابع — فضي أنيق</option></select>
     </label>
     <label>نوع الإطار
       <select id="frameSelect"><option value="double">إطار مزدوج</option><option value="thin">إطار رفيع</option><option value="corners">زوايا فقط</option><option value="none">بدون إطار</option></select>
@@ -75,7 +105,7 @@
     <label class="wide">العبارة أسفل اسم المدرسة
       <input id="mottoInput" type="text" value="بالعلم نبني الأجيال... وبالقيم نصنع المستقبل">
     </label>
-    <label class="wide">مقدمة الشهادة
+    <label class="wide">النص بعد اسم المدرسة
       <input id="introInput" type="text" value="تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة">
     </label>
     <label class="wide">نص التكريم
@@ -101,8 +131,8 @@
 </div>
 {% for cert in certs %}
 <section class="sheet theme-{{ bg|default:'1' }}"><article class="certificate"><span class="top-accent"></span><span class="corner tr"></span><span class="corner tl"></span><span class="corner br"></span><span class="corner bl"></span>
-<header class="school-header"><div class="logo-box">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div><div class="school-intro"><div class="school-name">{% if info %}{{ info.name_ar }}{% else %}مدرسة المنصور الأساسية{% endif %}</div><div class="school-motto">بالعلم نبني الأجيال... وبالقيم نصنع المستقبل</div><div class="school-rule"></div></div><div class="logo-box"></div></header>
-<main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro">تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة</div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></div><div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div></main>
+<header class="school-header"><div class="logo-box">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div><div class="school-intro"></div><div class="logo-box"></div></header>
+<main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro"><strong class="school-name-inline">{% if info %}{{ info.name_ar|default:"مدرسة المنصور الأساسية" }}{% else %}مدرسة المنصور الأساسية{% endif %}</strong> <span class="intro-copy">تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة</span></div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></div><div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div></main>
 <footer class="certificate-footer"><div class="signature principal"><div class="signature-role">مدير المدرسة</div><div class="signature-name">{{ cert.principal_name|default:'حسين حمامده' }}</div></div><div class="signature guardian"><div class="signature-role">مربي الصف</div><div class="signature-name">{{ cert.guardian_name }}</div></div></footer></article></section>
 {% empty %}<section class="sheet"><p style="margin:auto;font-size:20pt">لا توجد شهادات للطباعة</p></section>{% endfor %}
 <script>
@@ -126,8 +156,8 @@
   });
   ['titleSize','nameSize','bodySize','signSize','logoSize'].forEach(id=>$(id+'Out').textContent=$(id).value);
   setText('.school-name',$('schoolNameInput').value);
-  setText('.school-motto',$('mottoInput').value);
-  setText('.intro',$('introInput').value);
+  
+  setText('.intro-copy',$('introInput').value);
   setText('.reason-copy', $('reasonInput').value);
   setText('.certificate-title',$('titleInput').value);
   setText('.year-label',$('yearInput').value);
