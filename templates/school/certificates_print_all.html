@@ -149,6 +149,17 @@
  .certificate-body{padding-top:31mm!important}
 }
 
+
+/* Make every editor slider drive the actual printed typography (override fixed reference sizes). */
+#certificateEditor{display:block!important;visibility:visible!important;opacity:1!important}
+#certificateEditor .editor-grid{display:grid!important}
+#certificateEditor input[type=range]{display:block!important;visibility:visible!important}
+.sheet .certificate-title{font-size:var(--title-size,31pt)!important}
+.sheet .student-name{font-size:var(--name-size,32pt)!important}
+.sheet .intro,.sheet .reason,.sheet .intro-copy,.sheet .reason-copy{font-size:var(--body-size,14pt)!important}
+.sheet .signature-role,.sheet .signature-name{font-size:var(--sign-size,14pt)!important}
+.sheet .school-header .logo-box:last-child img{width:var(--logo-size,29mm)!important;height:var(--logo-size,29mm)!important;max-width:var(--logo-size,29mm)!important;max-height:var(--logo-size,29mm)!important}
+
 </style>
 </head>
 <body>
