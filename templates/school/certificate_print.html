@@ -463,11 +463,11 @@
  const defaults={};
  controls.forEach(id=>{if($(id))defaults[id]=$(id).value;});
  function apply(){
-  const theme=$('designSelect').value, frame=$('frameSelect').value;
+  const theme=$('designSelect').value, frameChoice=$('frameSelect').value;
   sheets().forEach(s=>{
-   const frame=s.querySelector('.frame-background'); if(frame){frame.src='/static/school/img/certificate-frames/'+({'1':'frame1_navy_gold.svg','2':'frame2_ribbon.svg','3':'frame3_geometric.svg','4':'frame4_botanical_gold.svg'}[theme]||'frame1_navy_gold.svg');}
+   const frameImage=s.querySelector('.frame-background'); if(frameImage){frameImage.src='/static/school/img/certificate-frames/'+({'1':'frame1_navy_gold.svg','2':'frame2_ribbon.svg','3':'frame3_geometric.svg','4':'frame4_botanical_gold.svg'}[theme]||'frame1_navy_gold.svg');}
    s.className=s.className.replace(/\btheme-\d+\b/g,'').replace(/\bframe-(double|thin|corners|none)\b/g,'').trim();
-   s.classList.add('theme-'+theme,'frame-'+frame);
+   s.classList.add('theme-'+theme,'frame-'+frameChoice);
    s.style.setProperty('--title-size',$('titleSize').value+'pt');
    s.style.setProperty('--name-size',$('nameSize').value+'pt');
    s.style.setProperty('--body-size',$('bodySize').value+'pt');
@@ -477,6 +477,29 @@
    s.style.setProperty('--intro-gap',$('introGap').value+'mm');
    s.style.setProperty('--name-gap',$('nameGap').value+'mm');
    s.style.setProperty('--content-top',$('contentTop').value+'mm');
+
+   /* Apply values directly to each rendered certificate, not only CSS variables */
+   const titleEl=s.querySelector('.certificate-title');
+   const nameEl=s.querySelector('.student-name');
+   const introEl=s.querySelector('.intro');
+   const reasonEl=s.querySelector('.reason');
+   const roleEls=s.querySelectorAll('.signature-role');
+   const sigNameEls=s.querySelectorAll('.signature-name');
+   const logoEl=s.querySelector('.school-header .logo-box:last-child img');
+   const titleLine=s.querySelector('.title-line');
+   const bodyEl=s.querySelector('.certificate-body');
+   if(titleEl) titleEl.style.setProperty('font-size',$('titleSize').value+'pt','important');
+   if(nameEl) nameEl.style.setProperty('font-size',$('nameSize').value+'pt','important');
+   if(introEl) introEl.style.setProperty('font-size',$('bodySize').value+'pt','important');
+   if(reasonEl) reasonEl.style.setProperty('font-size',$('bodySize').value+'pt','important');
+   roleEls.forEach(el=>el.style.setProperty('font-size',$('signSize').value+'pt','important'));
+   sigNameEls.forEach(el=>el.style.setProperty('font-size',$('signSize').value+'pt','important'));
+   if(logoEl){logoEl.style.setProperty('width',$('logoSize').value+'mm','important');logoEl.style.setProperty('height',$('logoSize').value+'mm','important');logoEl.style.setProperty('max-width',$('logoSize').value+'mm','important');logoEl.style.setProperty('max-height',$('logoSize').value+'mm','important');}
+   if(titleLine) titleLine.style.setProperty('margin-bottom',$('titleGap').value+'mm','important');
+   if(introEl) introEl.style.setProperty('margin-bottom',$('introGap').value+'mm','important');
+   if(nameEl) nameEl.style.setProperty('margin-bottom',$('nameGap').value+'mm','important');
+   if(bodyEl) bodyEl.style.setProperty('top',$('contentTop').value+'mm','important');
+
   });
   ['titleSize','nameSize','bodySize','signSize','logoSize','titleGap','introGap','nameGap','contentTop'].forEach(id=>$(id+'Out').textContent=$(id).value);
   document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' '+$('introInput').value;});document.querySelectorAll('.school-header .logo-box:last-child').forEach(el=>{el.setAttribute('data-school-name',$('schoolNameInput').value);});
