@@ -78,7 +78,7 @@
 .school-header{grid-template-columns:35mm 1fr 42mm;min-height:30mm}
 .school-header .logo-box:first-child{visibility:hidden}
 .school-header .logo-box:last-child{visibility:visible;justify-self:end;display:flex;flex-direction:column;gap:1mm;width:37mm;height:auto}
-.school-header .logo-box:last-child:after{content:"{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية'|escapejs }}{% else %}مدرسة المنصور الأساسية{% endif %}";font-family:Arial,sans-serif;font-size:8.5pt;font-weight:700;color:var(--ink);text-align:center;white-space:normal}
+.school-header .logo-box:last-child:after{content:attr(data-school-name);font-family:Arial,sans-serif;font-size:8.5pt;font-weight:700;color:var(--ink);text-align:center;white-space:normal}
 .school-header .logo-box img{width:27mm;height:27mm;object-fit:contain}
 .certificate-title{font-family:"Diwani","Amiri","Noto Naskh Arabic",serif;font-size:34pt!important;color:#b57918!important;text-shadow:0 .3mm .2mm #f6e4b3;letter-spacing:0}
 .title-line:before,.title-line:after{width:24mm;height:.35mm;background:#c58b2b}
