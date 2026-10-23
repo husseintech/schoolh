@@ -239,6 +239,44 @@
  .sheet .certificate-footer{bottom:5mm!important}
 }
 
+
+/* Repair overlap visible in print preview: keep title, intro and student text in normal flow */
+.sheet .certificate-body{
+ position:absolute!important;top:24mm!important;left:10mm!important;right:10mm!important;bottom:35mm!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:center!important;
+ padding:0 8mm!important;margin:0!important;min-height:0!important;flex:none!important;text-align:center!important;z-index:3!important
+}
+.sheet .title-line{
+ position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;gap:5mm!important;
+ margin:0 0 5mm!important;flex:0 0 auto!important
+}
+.sheet .certificate-title{display:block!important;position:static!important;line-height:1.2!important;margin:0!important}
+.sheet .intro{position:static!important;margin:0 0 2mm!important;line-height:1.6!important;max-width:250mm!important}
+.sheet .student-name{position:static!important;margin:1mm 0 3mm!important;padding-bottom:2mm!important;line-height:1.3!important;max-width:245mm!important}
+.sheet .reason{position:static!important;margin:0!important;line-height:1.65!important;max-width:245mm!important}
+.sheet .year-line{
+ position:absolute!important;left:50%!important;bottom:4mm!important;top:auto!important;transform:translateX(-50%)!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ gap:.5mm!important;margin:0!important;padding:0 3mm!important;background:#fff!important;
+ color:#17324d!important;font-family:Arial,"Noto Naskh Arabic",serif!important;font-size:9.5pt!important;line-height:1.25!important;
+ white-space:nowrap!important;z-index:8!important;min-width:35mm!important
+}
+.sheet .year-label{font-size:9pt!important;font-weight:600!important}
+.sheet .year-value{display:block!important;font-size:10pt!important;font-weight:700!important;direction:ltr!important}
+.sheet .certificate-footer{
+ position:absolute!important;left:8mm!important;right:8mm!important;bottom:5mm!important;
+ min-height:22mm!important;height:22mm!important;padding:0 8mm 2mm!important;
+ display:grid!important;grid-template-columns:1fr 1fr!important;gap:48mm!important;align-items:end!important;z-index:6!important
+}
+.sheet .signature{max-width:70mm!important}
+@media print{
+ .sheet .certificate-body{top:24mm!important;bottom:35mm!important;padding:0 8mm!important}
+ .sheet .title-line{position:relative!important;top:auto!important;margin-bottom:5mm!important}
+ .sheet .year-line{bottom:4mm!important}
+ .sheet .certificate-footer{bottom:5mm!important}
+}
+
 </style>
 </head>
 <body>
