@@ -160,6 +160,36 @@
 .sheet .signature-role,.sheet .signature-name{font-size:var(--sign-size,14pt)!important}
 .sheet .school-header .logo-box:last-child img{width:var(--logo-size,29mm)!important;height:var(--logo-size,29mm)!important;max-width:var(--logo-size,29mm)!important;max-height:var(--logo-size,29mm)!important}
 
+
+/* Use the supplied certificate frame artwork as real print backgrounds */
+.design-art{display:none!important}
+.sheet.theme-1 .certificate{background:#fff url('/static/school/img/certificate-frames/frame1_navy_gold.jpg') center/100% 100% no-repeat!important}
+.sheet.theme-2 .certificate{background:#fff url('/static/school/img/certificate-frames/frame2_ribbon.jpg') center/100% 100% no-repeat!important}
+.sheet.theme-3 .certificate{background:#fff url('/static/school/img/certificate-frames/frame3_geometric.jpg') center/100% 100% no-repeat!important}
+.sheet.theme-4 .certificate{background:#fff url('/static/school/img/certificate-frames/frame4_botanical_gold.jpg') center/100% 100% no-repeat!important}
+.sheet .certificate:before,.sheet .certificate:after,.sheet .corner,.sheet .top-accent{display:none!important}
+.sheet .school-header{position:absolute!important;top:6mm!important;right:8mm!important;left:8mm!important;width:auto!important;height:35mm!important;min-height:35mm!important;display:block!important;z-index:8!important}
+.sheet .school-header .logo-box:first-child,.sheet .school-header .school-intro{display:none!important}
+.sheet .school-header .logo-box:last-child{position:absolute!important;top:0!important;right:0!important;display:flex!important;visibility:visible!important;width:35mm!important;height:auto!important;min-height:0!important;align-items:center!important;justify-content:flex-start!important;flex-direction:column!important;gap:1mm!important;background:transparent!important}
+.sheet .school-header .logo-box:last-child img{display:block!important;width:var(--logo-size,29mm)!important;height:var(--logo-size,29mm)!important;max-width:var(--logo-size,29mm)!important;max-height:var(--logo-size,29mm)!important;object-fit:contain!important;background:transparent!important}
+.sheet .school-header .logo-box:last-child span{display:none!important}
+.sheet .school-header .logo-box:last-child:after{content:attr(data-school-name)!important;display:block!important;width:100%!important;font-family:Arial,sans-serif!important;font-size:8pt!important;font-weight:700!important;color:#0e2d53!important;text-align:center!important;line-height:1.15!important;white-space:normal!important}
+.sheet .title-line{position:absolute!important;top:17mm!important;left:0!important;right:0!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5mm!important;margin:0!important;z-index:7!important}
+.sheet .certificate-title{font-size:var(--title-size,31pt)!important;line-height:1.15!important;color:#bd801b!important;margin:0!important}
+.sheet .certificate-body{position:static!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;padding:31mm 10mm 14mm!important;flex:1!important;z-index:3!important}
+.sheet .student-name{font-size:var(--name-size,32pt)!important;color:#0e2d53!important;border-bottom:0!important;margin:1mm 0 2mm!important}
+.sheet .intro,.sheet .reason,.sheet .intro-copy,.sheet .reason-copy{font-size:var(--body-size,14pt)!important;color:#0e2d53!important}
+.sheet .signature-role,.sheet .signature-name{font-size:var(--sign-size,14pt)!important;color:#0e2d53!important}
+.sheet .certificate-footer{position:relative!important;z-index:4!important;min-height:22mm!important;padding:0 8mm 1mm!important;gap:12mm!important}
+.sheet .year-line{position:absolute!important;left:50%!important;bottom:1mm!important;transform:translateX(-50%)!important;z-index:5!important;text-align:center!important;white-space:nowrap!important;color:#0e2d53!important;font-size:10pt!important}
+@media print{
+ .design-art{display:none!important}
+ .sheet .certificate{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+ .sheet .school-header{top:6mm!important}
+ .sheet .title-line{top:17mm!important}
+ .sheet .certificate-body{padding-top:31mm!important}
+}
+
 </style>
 </head>
 <body>
@@ -167,7 +197,7 @@
   <div class="editor-heading">محرر شهادة التقدير — معاينة مباشرة</div>
   <div class="editor-grid">
     <label>التصميم
-      <select id="designSelect"><option value="1">التصميم الأول — ذهبي وكحلي</option><option value="2">التصميم الثاني — زخارف زرقاء</option><option value="3">التصميم الثالث — أخضر هادئ</option><option value="4">التصميم الرابع — فضي أنيق</option></select>
+      <select id="designSelect"><option value="1">التصميم الأول — كحلي وذهبي</option><option value="2">التصميم الثاني — شريط ذهبي وكحلي</option><option value="3">التصميم الثالث — هندسي إسلامي</option><option value="4">التصميم الرابع — إطار ذهبي وأوراق</option></select>
     </label>
     <label>نوع الإطار
       <select id="frameSelect"><option value="double">إطار مزدوج</option><option value="thin">إطار رفيع</option><option value="corners">زوايا فقط</option><option value="none">بدون إطار</option></select>
@@ -195,7 +225,7 @@
     </label>
 
     <label class="wide">النص بعد اسم المدرسة
-      <input id="introInput" type="text" value="تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة">
+      <input id="introInput" type="text" value="بخالص الشكر والتقدير إلى الطالب/ة">
     </label>
     <label class="wide">نص التكريم
       <textarea id="reasonInput" rows="2">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</textarea>
@@ -274,7 +304,7 @@
     <path d="M1200 820 H975 L1200 660" fill="none" stroke="#e6b64f" stroke-width="10"/>
   </svg>
 </div><span class="top-accent"></span><span class="corner tr"></span><span class="corner tl"></span><span class="corner br"></span><span class="corner bl"></span>
-<header class="school-header"><div class="logo-box">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div><div class="school-intro"></div><div class="logo-box" data-school-name="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية' }}{% else %}مدرسة المنصور الأساسية{% endif %}">{% if info and info.school_logo %}<img src="{{ info.school_logo }}" alt="شعار المدرسة">{% else %}<span style="font-size:9pt;color:#8894a0">شعار المدرسة</span>{% endif %}</div></header>
+<header class="school-header"><div class="logo-box"></div><div class="school-intro"></div><div class="logo-box" data-school-name="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية' }}{% else %}مدرسة المنصور الأساسية{% endif %}"><img src="/static/school/img/certificate-frames/school_logo_transparent.webp" alt="شعار مدرسة المنصور الأساسية"></div></header>
 <main class="certificate-body"><div class="title-line"><h1 class="certificate-title">شهادة تقدير</h1></div><div class="intro"><span class="intro-copy">تتقدم إدارة {% if info %}{{ info.name_ar|default:"مدرسة المنصور الأساسية" }}{% else %}مدرسة المنصور الأساسية{% endif %} بخالص الشكر والتقدير إلى الطالب/ة</span></div><div class="student-name">{{ cert.student_name }}</div><div class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></div><div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div></main>
 <footer class="certificate-footer"><div class="signature principal"><div class="signature-role">مدير المدرسة</div><div class="signature-name">{{ cert.principal_name|default:'حسين حمامده' }}</div></div><div class="signature guardian"><div class="signature-role">مربي الصف</div><div class="signature-name">{{ cert.guardian_name }}</div></div></footer></article></section>
 {% empty %}<section class="sheet"><p style="margin:auto;font-size:20pt">لا توجد شهادات للطباعة</p></section>{% endfor %}
@@ -298,9 +328,9 @@
    s.style.setProperty('--logo-size',$('logoSize').value+'mm');
   });
   ['titleSize','nameSize','bodySize','signSize','logoSize'].forEach(id=>$(id+'Out').textContent=$(id).value);
-  document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' بخالص الشكر والتقدير إلى الطالب/ة';});document.querySelectorAll('.school-header .logo-box:last-child').forEach(el=>{el.setAttribute('data-school-name',$('schoolNameInput').value);});
+  document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' '+$('introInput').value;});document.querySelectorAll('.school-header .logo-box:last-child').forEach(el=>{el.setAttribute('data-school-name',$('schoolNameInput').value);});
   
-  setText('.intro-copy',$('introInput').value);
+  document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' '+$('introInput').value;});
   setText('.reason-copy', $('reasonInput').value);
   setText('.certificate-title',$('titleInput').value);
   setText('.year-label',$('yearInput').value);
