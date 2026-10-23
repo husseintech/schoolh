@@ -118,6 +118,37 @@
  .certificate-body{padding-top:26mm!important}
 }
 
+
+/* Final reference layout: white certificate, title centered near the top, school mark upper-right */
+.certificate{background:#fff!important;isolation:isolate!important}
+.design-art{z-index:0!important}
+.design-art .art{z-index:0!important}
+.certificate:before{z-index:1!important;pointer-events:none}
+.certificate:after{z-index:1!important;pointer-events:none}
+.school-header{position:absolute!important;top:5mm!important;right:8mm!important;left:8mm!important;width:auto!important;height:34mm!important;min-height:34mm!important;display:block!important;z-index:5!important;pointer-events:none}
+.school-header .logo-box:first-child,.school-header .school-intro{display:none!important}
+.school-header .logo-box:last-child{position:absolute!important;top:0!important;right:0!important;display:flex!important;visibility:visible!important;width:34mm!important;height:auto!important;min-height:0!important;align-items:center!important;justify-content:flex-start!important;flex-direction:column!important;gap:1mm!important;background:transparent!important}
+.school-header .logo-box:last-child img{display:block!important;width:25mm!important;height:25mm!important;max-width:25mm!important;max-height:25mm!important;object-fit:contain!important;background:transparent!important;mix-blend-mode:multiply}
+.school-header .logo-box:last-child span{display:none!important}
+.school-header .logo-box:last-child:after{content:attr(data-school-name)!important;display:block!important;width:100%!important;margin-top:.5mm!important;font-family:Arial,sans-serif!important;font-size:8pt!important;font-weight:700!important;color:#0e2d53!important;text-align:center!important;line-height:1.15!important;white-space:normal!important}
+.title-line{position:absolute!important;top:17mm!important;left:0!important;right:0!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5mm!important;margin:0!important;z-index:6!important}
+.certificate-title{font-family:"Diwani","Amiri","Noto Naskh Arabic",serif!important;font-size:35pt!important;font-weight:700!important;line-height:1.15!important;color:#bd801b!important;text-shadow:none!important;letter-spacing:0!important}
+.title-line:before,.title-line:after{content:"";display:block;width:22mm!important;height:.35mm!important;background:linear-gradient(90deg,transparent,#c68a2c)!important}
+.title-line:after{transform:scaleX(-1)!important}
+.certificate-body{position:static!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;padding:31mm 8mm 13mm!important;flex:1!important;z-index:3!important}
+.intro{margin-top:2mm!important;font-size:13pt!important;color:#0e2d53!important}
+.student-name{font-size:35pt!important;color:#0e2d53!important;margin:1mm 0 2mm!important}
+.reason{font-size:13pt!important;line-height:1.65!important;color:#0e2d53!important}
+.certificate-footer{position:relative!important;z-index:4!important;min-height:22mm!important;padding:0 8mm 1mm!important;gap:12mm!important}
+.signature-role,.signature-name{color:#0e2d53!important}
+.year-line{position:absolute!important;left:50%!important;bottom:1mm!important;transform:translateX(-50%)!important;z-index:5!important;text-align:center!important;white-space:nowrap!important;color:#0e2d53!important;font-size:10pt!important}
+@media print{
+ .design-art,.design-art .art{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+ .school-header{top:5mm!important}
+ .title-line{top:17mm!important}
+ .certificate-body{padding-top:31mm!important}
+}
+
 </style>
 </head>
 <body>
