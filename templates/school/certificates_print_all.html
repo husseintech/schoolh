@@ -102,9 +102,7 @@
     <label class="wide">اسم المدرسة
       <input id="schoolNameInput" type="text" value="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية'|escapejs }}{% else %}مدرسة المنصور الأساسية{% endif %}">
     </label>
-    <label class="wide">العبارة أسفل اسم المدرسة
-      <input id="mottoInput" type="text" value="بالعلم نبني الأجيال... وبالقيم نصنع المستقبل">
-    </label>
+
     <label class="wide">النص بعد اسم المدرسة
       <input id="introInput" type="text" value="تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة">
     </label>
@@ -140,7 +138,7 @@
  const $=id=>document.getElementById(id);
  const sheets=()=>Array.from(document.querySelectorAll('.sheet'));
  const setText=(selector,value)=>document.querySelectorAll(selector).forEach(el=>el.textContent=value);
- const controls=['designSelect','frameSelect','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize','schoolNameInput','mottoInput','introInput','reasonInput','titleInput','yearInput','principalInput','principalRoleInput','guardianRoleInput'];
+ const controls=['designSelect','frameSelect','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize','schoolNameInput','introInput','reasonInput','titleInput','yearInput','principalInput','principalRoleInput','guardianRoleInput'];
  const defaults={};
  controls.forEach(id=>{if($(id))defaults[id]=$(id).value;});
  function apply(){
@@ -155,7 +153,7 @@
    s.style.setProperty('--logo-size',$('logoSize').value+'mm');
   });
   ['titleSize','nameSize','bodySize','signSize','logoSize'].forEach(id=>$(id+'Out').textContent=$(id).value);
-  setText('.school-name',$('schoolNameInput').value);
+  setText('.school-name-inline',$('schoolNameInput').value);
   
   setText('.intro-copy',$('introInput').value);
   setText('.reason-copy', $('reasonInput').value);
