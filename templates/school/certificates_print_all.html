@@ -293,6 +293,19 @@
  .sheet .school-header .logo-box:last-child{visibility:visible!important;display:flex!important}
 }
 
+
+/* Reliable live typography and spacing controls */
+#certificateEditor .editor-grid input[type=range]{width:100%;display:block;visibility:visible;accent-color:#bd8427}
+.sheet .certificate-title{font-size:var(--title-size,31pt)!important}
+.sheet .student-name{font-size:var(--name-size,32pt)!important}
+.sheet .intro,.sheet .intro-copy,.sheet .reason,.sheet .reason-copy{font-size:var(--body-size,14pt)!important}
+.sheet .signature-role,.sheet .signature-name{font-size:var(--sign-size,14pt)!important}
+.sheet .title-line{margin-bottom:var(--title-gap,5mm)!important}
+.sheet .intro{margin-bottom:var(--intro-gap,2mm)!important}
+.sheet .student-name{margin-bottom:var(--name-gap,3mm)!important}
+.sheet .certificate-body{top:var(--content-top,24mm)!important}
+@media print{#certificateEditor{display:none!important}}
+
 </style>
 </head>
 <body>
@@ -323,6 +336,20 @@
     <label>حجم الشعار <output id="logoSizeOut">29</output> mm
       <input id="logoSize" type="range" min="18" max="42" value="29">
     </label>
+
+    <label>المسافة بعد العنوان <output id="titleGapOut">5</output> مم
+      <input id="titleGap" type="range" min="0" max="18" value="5">
+    </label>
+    <label>المسافة بعد المقدمة <output id="introGapOut">2</output> مم
+      <input id="introGap" type="range" min="0" max="14" value="2">
+    </label>
+    <label>المسافة بعد اسم الطالب <output id="nameGapOut">3</output> مم
+      <input id="nameGap" type="range" min="0" max="16" value="3">
+    </label>
+    <label>موضع كتلة النص من الأعلى <output id="contentTopOut">24</output> مم
+      <input id="contentTop" type="range" min="18" max="48" value="24">
+    </label>
+
     <label class="wide">اسم المدرسة
       <input id="schoolNameInput" type="text" value="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية'|escapejs }}{% else %}مدرسة المنصور الأساسية{% endif %}">
     </label>
@@ -416,7 +443,7 @@
  const $=id=>document.getElementById(id);
  const sheets=()=>Array.from(document.querySelectorAll('.sheet'));
  const setText=(selector,value)=>document.querySelectorAll(selector).forEach(el=>el.textContent=value);
- const controls=['designSelect','frameSelect','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize','schoolNameInput','introInput','reasonInput','titleInput','yearInput','principalInput','principalRoleInput','guardianRoleInput'];
+ const controls=['designSelect','frameSelect','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize','titleGap','introGap','nameGap','contentTop','schoolNameInput','introInput','reasonInput','titleInput','yearInput','principalInput','principalRoleInput','guardianRoleInput'];
  const defaults={};
  controls.forEach(id=>{if($(id))defaults[id]=$(id).value;});
  function apply(){
@@ -430,8 +457,12 @@
    s.style.setProperty('--body-size',$('bodySize').value+'pt');
    s.style.setProperty('--sign-size',$('signSize').value+'pt');
    s.style.setProperty('--logo-size',$('logoSize').value+'mm');
+   s.style.setProperty('--title-gap',$('titleGap').value+'mm');
+   s.style.setProperty('--intro-gap',$('introGap').value+'mm');
+   s.style.setProperty('--name-gap',$('nameGap').value+'mm');
+   s.style.setProperty('--content-top',$('contentTop').value+'mm');
   });
-  ['titleSize','nameSize','bodySize','signSize','logoSize'].forEach(id=>$(id+'Out').textContent=$(id).value);
+  ['titleSize','nameSize','bodySize','signSize','logoSize','titleGap','introGap','nameGap','contentTop'].forEach(id=>$(id+'Out').textContent=$(id).value);
   document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' '+$('introInput').value;});document.querySelectorAll('.school-header .logo-box:last-child').forEach(el=>{el.setAttribute('data-school-name',$('schoolNameInput').value);});
   
   document.querySelectorAll('.intro-copy').forEach(el=>{el.textContent='تتقدم إدارة '+$('schoolNameInput').value+' '+$('introInput').value;});
