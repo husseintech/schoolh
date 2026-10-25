@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import connection, transaction
+from django.db.models import F
 from django.db.models import Count, Max, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -765,6 +766,13 @@ def add_student(request):
         form = StudentForm(request.POST)
         if form.is_valid():
             student = form.save()
+            # Allocate a position after the last student in the whole roster.
+            # This keeps the existing global order stable while allowing manual
+            # ordering within each class below.
+            last_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
+            if student.display_order <= last_order:
+                student.display_order = last_order + 1
+                student.save(update_fields=['display_order'])
             username = form.cleaned_data['username']
             password = form.cleaned_data.get('password')
             if not password:
@@ -775,6 +783,72 @@ def add_student(request):
     else:
         form = StudentForm()
     return render(request, 'school/add_student.html', {'form': form})
+
+
+@login_required
+def reorder_students_manually(request):
+    """Save a teacher/admin-selected order for one class, without changing student records."""
+    if request.method != 'POST':
+        return redirect('student_list')
+    user = request.user
+    role = getattr(getattr(user, 'profile', None), 'role', '')
+    if role not in ('admin', 'teacher') or not has_perm(user, 'students', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لترتيب الطلاب')
+        return redirect('dashboard')
+
+    try:
+        class_id = int(request.POST.get('class_id') or '')
+    except (TypeError, ValueError):
+        messages.error(request, 'اختر الصف والشعبة أولاً')
+        return redirect('student_list')
+
+    if role == 'admin':
+        class_obj = get_object_or_404(Class, pk=class_id)
+    else:
+        teacher = getattr(user, 'teacher_profile', None)
+        if not teacher or not teacher.classes.filter(pk=class_id).exists():
+            messages.error(request, 'يمكنك ترتيب طلاب الصفوف المخصصة لك فقط')
+            return redirect('student_list')
+        class_obj = get_object_or_404(Class, pk=class_id)
+
+    raw_ids = request.POST.getlist('student_ids')
+    current_students = list(
+        Student.objects.filter(student_class=class_obj).order_by('display_order', 'full_name', 'pk')
+    )
+    expected_ids = [student.pk for student in current_students]
+    try:
+        submitted_ids = [int(value) for value in raw_ids]
+    except (TypeError, ValueError):
+        submitted_ids = []
+
+    if not expected_ids or len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != set(expected_ids):
+        messages.error(request, 'تعذر حفظ الترتيب لأن القائمة تغيّرت أو لم تُرسل كاملة. حدّث الصفحة وحاول مجددًا.')
+        return redirect('student_list')
+
+    # A manual order is authoritative within the selected class. The roster's
+    # other students keep their relative ordering; assign a unique full-roster
+    # sequence so the existing display_order sorting remains deterministic.
+    class_ids = set(expected_ids)
+    global_ids = list(
+        Student.objects.order_by('display_order', 'full_name', 'pk').values_list('pk', flat=True)
+    )
+    positions = [i for i, student_id in enumerate(global_ids) if student_id in class_ids]
+    reordered_ids = list(global_ids)
+    for index, student_id in zip(positions, submitted_ids):
+        reordered_ids[index] = student_id
+
+    with transaction.atomic():
+        # Move all values to a temporary range first to avoid collisions during
+        # the update, then write a clean sequential ordering.
+        max_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
+        offset = max_order + len(reordered_ids) + 100
+        Student.objects.update(display_order=F('display_order') + offset)
+        for position, student_id in enumerate(reordered_ids, start=1):
+            Student.objects.filter(pk=student_id).update(display_order=position)
+
+    log_action(user, 'ترتيب الطلاب يدويًا', f'الصف: {class_obj.name} - عدد الطلاب: {len(submitted_ids)}')
+    messages.success(request, f'تم حفظ الترتيب اليدوي لطلاب {class_obj.name} بنجاح.')
+    return redirect('student_list')
 
 
 @login_required
