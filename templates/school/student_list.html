@@ -11,6 +11,15 @@
 .operations-card{border:0;border-radius:19px;box-shadow:0 8px 25px rgba(27,51,75,.07)}.operations-title{font-weight:850;color:var(--student-ink)}.operation-btn{border:1px solid #e1e8ef;background:#fff;border-radius:13px;padding:10px 13px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#334a61;font-weight:700;font-size:.85rem;transition:.18s ease}.operation-btn:hover{border-color:#adc7df;background:#f7fbff;color:#174b78;transform:translateY(-1px)}.operation-btn.primary{background:#167b69;border-color:#167b69;color:#fff}.operation-btn i{font-size:1rem}
 .students-card{border:0;border-radius:20px;overflow:hidden;box-shadow:0 9px 28px rgba(27,51,75,.07)}.students-card .card-header{background:#fff;border-bottom:1px solid #edf1f5;padding:17px 20px}.students-toolbar{background:#f6f9fc;border:1px solid #e4ebf2;border-radius:15px;padding:13px}.students-table{margin-bottom:0}.students-table thead th{white-space:nowrap;background:#edf3f8;color:#50647a;border:0;padding:12px 11px;font-size:.78rem}.students-table tbody td{padding:13px 11px;border-color:#edf1f5;vertical-align:middle}.students-table tbody tr:hover{background:#f8fbfd}
 .student-identity{display:flex;align-items:center;gap:10px;min-width:205px}.student-avatar{width:39px;height:39px;border-radius:12px;background:linear-gradient(135deg,#dbeafa,#dff5ee);color:#185776;display:grid;place-items:center;font-weight:850;flex:0 0 39px}.student-name{font-weight:800;color:#214d70;text-decoration:none}.student-name:hover{text-decoration:underline}.student-username{display:block;color:#8996a5;font-size:.72rem;margin-top:2px}.class-badge{background:#e8f5fa;color:#16718b;border:1px solid #cae8f1;border-radius:999px;padding:6px 9px}.row-actions .btn{border-radius:9px!important;margin:1px}.result-count{font-size:.76rem;color:#65758a;background:#f1f5f8;border-radius:999px;padding:6px 10px}.modal-guide{background:#f7fafc;border:1px solid #e3eaf0;border-radius:12px;padding:13px;font-size:.86rem;color:#556779}
+/* Keep the manual-order dialog usable even with long class rosters. */
+#manualStudentOrderModal .modal-dialog{height:calc(100% - 1rem);max-height:calc(100% - 1rem);margin:.5rem auto}
+#manualStudentOrderModal .modal-content{max-height:100%;overflow:hidden}
+#manualStudentOrderModal #manualStudentOrderForm{display:flex;flex-direction:column;min-height:0;max-height:100%}
+#manualStudentOrderModal .modal-body{overflow-y:auto;overscroll-behavior:contain;min-height:0}
+#manualStudentOrderModal .manual-order-list-wrap{max-height:calc(100vh - 330px);min-height:140px;overflow-y:auto;overflow-x:hidden;border-radius:.5rem;overscroll-behavior:contain;scrollbar-gutter:stable}
+#manualStudentOrderModal #manualOrderList .list-group-item{scroll-margin-block:8px}
+#manualStudentOrderModal .modal-footer{flex-shrink:0;background:#fff;border-top:1px solid #e9edf2}
+@media(max-width:575.98px){#manualStudentOrderModal .modal-dialog{height:calc(100% - .5rem);max-height:calc(100% - .5rem);margin:.25rem auto}#manualStudentOrderModal .manual-order-list-wrap{max-height:calc(100vh - 365px);min-height:120px}}
 @media(max-width:991.98px){.students-table thead{display:none}.students-table,.students-table tbody,.students-table tr,.students-table td{display:block;width:100%}.students-table tbody{display:grid;gap:12px}.students-table tbody tr{border:1px solid #e4eaf0;border-radius:16px;padding:8px 13px;background:#fff}.students-table tbody td{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px dashed #e6ebf0;padding:9px 0;text-align:left}.students-table tbody td:before{content:attr(data-label);font-weight:750;color:#718095;font-size:.74rem;text-align:right}.students-table tbody td.student-main{justify-content:flex-start}.students-table tbody td.student-main:before{display:none}.students-table tbody td:last-child{border:0}.student-identity{width:100%}.students-table .desktop-index{display:none}.row-actions{width:100%;display:flex;flex-wrap:wrap;justify-content:flex-end}.students-table tbody tr[data-empty-row] td:before{display:none}}
 @media(max-width:575.98px){.students-hero{padding:22px}.hero-icon{width:49px;height:49px;border-radius:15px}.students-hero h2{font-size:1.2rem}.operation-btn{flex:1 1 calc(50% - 6px);justify-content:center}.students-card .card-body{padding:12px}.metric-card{padding:12px}}
 </style>
@@ -47,7 +56,7 @@
             {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
           </select>
           <div id="manualOrderMessage" class="small text-muted mb-2">اختر الصف لعرض الأسماء.</div>
-          <ol id="manualOrderList" class="list-group list-group-numbered" aria-label="قائمة ترتيب الطلاب"></ol>
+          <div class="manual-order-list-wrap"><ol id="manualOrderList" class="list-group list-group-numbered" aria-label="قائمة ترتيب الطلاب"></ol></div>
           <div id="manualOrderHiddenInputs"></div>
         </div>
         <div class="modal-footer">
