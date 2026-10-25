@@ -26,7 +26,38 @@
 </div>
 
 {% if user.profile.role == 'admin' %}
-<div class="card operations-card mb-3"><div class="card-body p-3"><div class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3"><div><div class="operations-title"><i class="bi bi-grid-fill text-primary ms-1"></i>إجراءات الطلاب</div><small class="text-muted">كل أدوات الإدارة في شريط واحد</small></div><div class="d-flex flex-wrap gap-2"><a href="{% url 'add_student' %}" class="operation-btn primary"><i class="bi bi-person-plus-fill"></i>إضافة طالب</a><button class="operation-btn" data-bs-toggle="modal" data-bs-target="#importStudentsModal"><i class="bi bi-file-earmark-arrow-up text-primary"></i>استيراد طلاب</button><button class="operation-btn" data-bs-toggle="modal" data-bs-target="#checkIdsModal"><i class="bi bi-person-check text-warning"></i>فحص الطلاب غير الموجودين</button><button class="operation-btn" data-bs-toggle="modal" data-bs-target="#reorderStudentsModal"><i class="bi bi-sort-numeric-down text-success"></i>ترتيب الطلاب من Excel</button><a href="{% url 'download_student_template' %}" class="operation-btn"><i class="bi bi-file-earmark-spreadsheet"></i>نموذج الاستيراد</a><a href="{% url 'export_students' %}" class="operation-btn"><i class="bi bi-download"></i>تصدير القائمة</a></div></div></div></div>
+<div class="card operations-card mb-3"><div class="card-body p-3"><div class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3"><div><div class="operations-title"><i class="bi bi-grid-fill text-primary ms-1"></i>إجراءات الطلاب</div><small class="text-muted">كل أدوات الإدارة في شريط واحد</small></div><div class="d-flex flex-wrap gap-2"><a href="{% url 'add_student' %}" class="operation-btn primary"><i class="bi bi-person-plus-fill"></i>إضافة طالب</a><button class="operation-btn" data-bs-toggle="modal" data-bs-target="#importStudentsModal"><i class="bi bi-file-earmark-arrow-up text-primary"></i>استيراد طلاب</button><button class="operation-btn" data-bs-toggle="modal" data-bs-target="#checkIdsModal"><i class="bi bi-person-check text-warning"></i>فحص الطلاب غير الموجودين</button><button class="operation-btn" data-bs-toggle="modal" data-bs-target="#reorderStudentsModal"><i class="bi bi-sort-numeric-down text-success"></i>ترتيب الطلاب من Excel</button><button class="operation-btn" type="button" data-bs-toggle="modal" data-bs-target="#manualStudentOrderModal"><i class="bi bi-arrows-move text-primary"></i>الترتيب اليدوي</button><a href="{% url 'download_student_template' %}" class="operation-btn"><i class="bi bi-file-earmark-spreadsheet"></i>نموذج الاستيراد</a><a href="{% url 'export_students' %}" class="operation-btn"><i class="bi bi-download"></i>تصدير القائمة</a></div></div></div></div>
+{% endif %}
+
+{% if user.profile.role == 'admin' or user.profile.role == 'teacher' %}
+<div class="modal fade" id="manualStudentOrderModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 rounded-4">
+      <form method="post" action="{% url 'reorder_students_manually' %}" id="manualStudentOrderForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-arrows-move text-primary ms-2"></i>الترتيب اليدوي للطلاب</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 small mb-3">اختر الصف، ثم اسحب الاسم إلى مكانه أو استخدم السهمين. التغيير يقتصر على ترتيب العرض ولا يعدّل بيانات الطالب أو سجلاته.</div>
+          <label class="form-label fw-bold" for="manualOrderClass">الصف والشعبة</label>
+          <select class="form-select mb-3" id="manualOrderClass" name="class_id" required>
+            <option value="">اختر الصف والشعبة</option>
+            {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+          </select>
+          <div id="manualOrderMessage" class="small text-muted mb-2">اختر الصف لعرض الأسماء.</div>
+          <ol id="manualOrderList" class="list-group list-group-numbered" aria-label="قائمة ترتيب الطلاب"></ol>
+          <div id="manualOrderHiddenInputs"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary" id="saveManualStudentOrder" disabled><i class="bi bi-check2-circle ms-1"></i>حفظ الترتيب</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endif %}
 
 <div class="card students-card">
@@ -80,7 +111,71 @@
 <script>
 (function(){var form=document.getElementById('studentSyncForm');if(!form)return;var fileInput=document.getElementById('checkIdsFile');var panel=document.getElementById('studentSyncProgress');var bar=document.getElementById('studentSyncProgressBar');var percent=document.getElementById('studentSyncProgressPercent');var title=document.getElementById('studentSyncProgressTitle');var message=document.getElementById('studentSyncProgressMessage');var submit=document.getElementById('studentSyncSubmit');var cancel=document.getElementById('studentSyncCancel');var progressRole=panel.querySelector('[role="progressbar"]');var busy=false;function mark(id,html,muted){var el=document.getElementById(id);if(el){el.classList.toggle('text-muted',!!muted);el.innerHTML=html;}}function setProgress(value,label,detail,indeterminate){var n=Math.max(0,Math.min(100,Math.round(value)));bar.style.width=n+'%';percent.textContent=indeterminate?'…':n+'%';title.textContent=label;message.textContent=detail;bar.classList.toggle('progress-bar-indeterminate',!!indeterminate);bar.classList.toggle('progress-bar-striped',!!indeterminate||n<100);bar.classList.toggle('progress-bar-animated',!!indeterminate||n<100);if(progressRole)progressRole.setAttribute('aria-valuenow',String(n));}fileInput.addEventListener('change',function(){if(fileInput.files&&fileInput.files[0]){var file=fileInput.files[0];message.textContent='الملف المحدد: '+file.name+' ('+(file.size/1024/1024).toFixed(2)+' MB). اضغط بدء المزامنة لعرض التقدم.';}});form.addEventListener('submit',function(e){if(busy)return;if(!fileInput.files||!fileInput.files.length)return;e.preventDefault();var data=new FormData(form);busy=true;panel.hidden=false;submit.disabled=true;cancel.disabled=true;fileInput.disabled=true;setProgress(0,'جاري رفع ملف Excel','يتم إرسال الملف إلى المنصة…',false);mark('studentSyncStageUpload','<i class="bi bi-arrow-up-circle-fill text-primary ms-1"></i> رفع ملف Excel',false);mark('studentSyncStageProcess','<i class="bi bi-circle ms-1"></i> فحص البيانات وإضافة الطلاب وتحديث الصفوف',true);mark('studentSyncStageDone','<i class="bi bi-circle ms-1"></i> عرض النتيجة',true);var xhr=new XMLHttpRequest();xhr.open('POST',form.action,true);xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');xhr.upload.addEventListener('progress',function(ev){if(ev.lengthComputable){var p=Math.round(ev.loaded/ev.total*100);setProgress(p,'جاري رفع ملف Excel','تم رفع '+p+'% من الملف ('+(ev.loaded/1024/1024).toFixed(2)+' من '+(ev.total/1024/1024).toFixed(2)+' MB).',false);if(p>=100){mark('studentSyncStageUpload','<i class="bi bi-check-circle-fill text-success ms-1"></i> اكتمل رفع ملف Excel',false);setProgress(100,'اكتمل رفع الملف','تم إرسال الملف. يجري الآن فحص البيانات ومزامنة السجلات؛ قد تستغرق هذه المرحلة وقتًا حسب عدد الطلاب.',true);mark('studentSyncStageProcess','<i class="bi bi-arrow-repeat text-primary ms-1"></i> فحص البيانات وإضافة الطلاب وتحديث الصفوف — جارٍ العمل',false);}}});xhr.addEventListener('load',function(){if(xhr.status>=200&&xhr.status<400&&xhr.responseText){mark('studentSyncStageProcess','<i class="bi bi-check-circle-fill text-success ms-1"></i> انتهى الفحص والمعالجة',false);mark('studentSyncStageDone','<i class="bi bi-check-circle-fill text-success ms-1"></i> عرض النتيجة',false);setProgress(100,'اكتملت المعالجة','جاري عرض تقرير المزامنة…',false);document.open();document.write(xhr.responseText);document.close();}else{busy=false;fileInput.disabled=false;submit.disabled=false;cancel.disabled=false;setProgress(0,'تعذر إكمال الطلب','تعذر الاتصال بالخادم (رمز '+xhr.status+'). لم تُغلق النافذة؛ حاول مرة أخرى.',false);bar.classList.remove('progress-bar-animated');}});xhr.addEventListener('error',function(){busy=false;fileInput.disabled=false;submit.disabled=false;cancel.disabled=false;setProgress(0,'انقطع الاتصال','لم نتمكن من تأكيد نتيجة العملية بسبب انقطاع الاتصال. قبل إعادة المحاولة، تحقق من صفحة الطلاب لتجنب تكرار الطلب.',false);bar.classList.remove('progress-bar-animated');});xhr.addEventListener('abort',function(){busy=false;fileInput.disabled=false;submit.disabled=false;cancel.disabled=false;setProgress(0,'تم إيقاف الاتصال','توقف الاتصال قبل استلام النتيجة. تحقق من صفحة الطلاب قبل إعادة المحاولة.',false);bar.classList.remove('progress-bar-animated');});xhr.send(data);});})();
 function filterStudents(){var classFilter=(document.getElementById('classFilter')?.value||'').toLowerCase();var searchInput=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();var visible=0;document.querySelectorAll('#studentsTable tbody tr:not([data-empty-row])').forEach(function(row){var classMatch=!classFilter||(row.getAttribute('data-class')||'').toLowerCase()===classFilter;var textMatch=!searchInput||row.textContent.toLowerCase().includes(searchInput);var show=classMatch&&textMatch;row.style.display=show?'':'none';if(show){visible++;}});var counter=document.getElementById('visibleStudentsCount');if(counter){counter.textContent=visible;}document.getElementById('noFilterResults')?.classList.toggle('d-none',visible!==0||!!document.querySelector('#studentsTable tbody tr[data-empty-row]'));}
+
 function resetStudentFilters(){var classFilter=document.getElementById('classFilter');var searchInput=document.getElementById('searchInput');if(classFilter){classFilter.value='';}if(searchInput){searchInput.value='';searchInput.focus();}filterStudents();}
+(function(){
+  var modal=document.getElementById('manualStudentOrderModal');
+  if(!modal)return;
+  var classSelect=document.getElementById('manualOrderClass');
+  var list=document.getElementById('manualOrderList');
+  var message=document.getElementById('manualOrderMessage');
+  var save=document.getElementById('saveManualStudentOrder');
+  var hidden=document.getElementById('manualOrderHiddenInputs');
+  var csrf=modal.querySelector('[name="csrfmiddlewaretoken"]').value;
+  var loadedClass='';
+  var dragSource=null;
+  function rowsForClass(className){
+    return Array.from(document.querySelectorAll('#studentsTable tbody tr[data-class]')).filter(function(row){
+      return (row.getAttribute('data-class')||'')===className && row.querySelector('.student-name');
+    }).map(function(row){
+      var link=row.querySelector('.student-name');
+      var id=(link.getAttribute('href')||'').match(/students\/(\d+)\/detail\//);
+      if(!id){var report=(row.querySelector('a[href*="/students/"]')||{}).getAttribute('href')||'';id=report.match(/students\/(\d+)\//);}
+      return id?{id:id[1],name:link.textContent.trim()}:null;
+    }).filter(Boolean);
+  }
+  function render(items){
+    list.innerHTML='';
+    items.forEach(function(item,index){
+      var li=document.createElement('li');
+      li.className='list-group-item d-flex align-items-center gap-2';
+      li.dataset.id=item.id;
+      li.draggable=true;
+      li.style.cursor='grab';
+      var grip=document.createElement('span');grip.className='text-muted';grip.innerHTML='<i class="bi bi-grip-vertical"></i>';grip.setAttribute('aria-hidden','true');
+      var name=document.createElement('span');name.className='flex-grow-1 fw-semibold';name.textContent=item.name;
+      var controls=document.createElement('div');controls.className='btn-group btn-group-sm';
+      var up=document.createElement('button');up.type='button';up.className='btn btn-outline-secondary';up.innerHTML='<i class="bi bi-arrow-up"></i>';up.title='نقل إلى الأعلى';up.setAttribute('aria-label','نقل '+item.name+' إلى الأعلى');up.disabled=index===0;
+      up.addEventListener('click',function(){move(index,index-1);});
+      var down=document.createElement('button');down.type='button';down.className='btn btn-outline-secondary';down.innerHTML='<i class="bi bi-arrow-down"></i>';down.title='نقل إلى الأسفل';down.setAttribute('aria-label','نقل '+item.name+' إلى الأسفل');down.disabled=index===items.length-1;
+      down.addEventListener('click',function(){move(index,index+1);});
+      controls.append(up,down);li.append(grip,name,controls);list.appendChild(li);
+    });
+    save.disabled=items.length===0;
+    hidden.innerHTML='';
+    items.forEach(function(item){var input=document.createElement('input');input.type='hidden';input.name='student_ids';input.value=item.id;hidden.appendChild(input);});
+    message.textContent=items.length?'عدد الطلاب: '+items.length+' — يمكنك السحب أو استخدام الأسهم ثم الحفظ.':'لا يوجد طلاب في هذا الصف.';
+  }
+  function currentItems(){return Array.from(list.querySelectorAll('li[data-id]')).map(function(li){return {id:li.dataset.id,name:li.querySelector('.flex-grow-1').textContent};});}
+  function move(from,to){var items=currentItems();if(to<0||to>=items.length)return;var item=items.splice(from,1)[0];items.splice(to,0,item);render(items);}
+  list.addEventListener('dragstart',function(e){var li=e.target.closest('li[data-id]');if(!li)return;dragSource=li.dataset.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragSource);});
+  list.addEventListener('dragover',function(e){if(e.target.closest('li[data-id]')){e.preventDefault();e.dataTransfer.dropEffect='move';}});
+  list.addEventListener('drop',function(e){var target=e.target.closest('li[data-id]');if(!target||!dragSource)return;e.preventDefault();var items=currentItems();var from=items.findIndex(function(x){return x.id===dragSource;});var to=items.findIndex(function(x){return x.id===target.dataset.id;});dragSource=null;if(from<0||to<0||from===to)return;var item=items.splice(from,1)[0];items.splice(to,0,item);render(items);});
+  list.addEventListener('dragend',function(){dragSource=null;});
+  classSelect.addEventListener('change',function(){
+    loadedClass=classSelect.value;list.innerHTML='';hidden.innerHTML='';save.disabled=true;
+    if(!loadedClass){message.textContent='اختر الصف لعرض الأسماء.';return;}
+    var option=classSelect.options[classSelect.selectedIndex];
+    var items=rowsForClass(option.text);
+    render(items);
+  });
+  modal.querySelector('form').addEventListener('submit',function(e){
+    if(!list.querySelector('li[data-id]')){e.preventDefault();return;}
+    if(!confirm('هل تريد حفظ الترتيب الجديد لطلاب الصف المحدد؟'))e.preventDefault();
+  });
+  modal.addEventListener('shown.bs.modal',function(){if(classSelect.value)classSelect.dispatchEvent(new Event('change'));});
+})();
+
 </script>
 </div>
 {% endblock %}
