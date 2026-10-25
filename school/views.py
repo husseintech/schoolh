@@ -791,11 +791,11 @@ def reorder_students_manually(request):
     if request.method != 'POST':
         return redirect('student_list')
     user = request.user
-    if not has_perm(user, 'students', 'view'):
+    role = getattr(getattr(user, 'profile', None), 'role', '')
+    if role not in ('admin', 'teacher') or not has_perm(user, 'students', 'view'):
         messages.error(request, 'ليس لديك صلاحية لترتيب الطلاب')
         return redirect('dashboard')
 
-    role = getattr(getattr(user, 'profile', None), 'role', '')
     try:
         class_id = int(request.POST.get('class_id') or '')
     except (TypeError, ValueError):
@@ -804,15 +804,12 @@ def reorder_students_manually(request):
 
     if role == 'admin':
         class_obj = get_object_or_404(Class, pk=class_id)
-    elif role == 'teacher':
+    else:
         teacher = getattr(user, 'teacher_profile', None)
         if not teacher or not teacher.classes.filter(pk=class_id).exists():
             messages.error(request, 'يمكنك ترتيب طلاب الصفوف المخصصة لك فقط')
             return redirect('student_list')
         class_obj = get_object_or_404(Class, pk=class_id)
-    else:
-        messages.error(request, 'هذه الميزة متاحة للإدارة والمعلمين فقط')
-        return redirect('dashboard')
 
     raw_ids = request.POST.getlist('student_ids')
     current_students = list(
@@ -828,16 +825,21 @@ def reorder_students_manually(request):
         messages.error(request, 'تعذر حفظ الترتيب لأن القائمة تغيّرت أو لم تُرسل كاملة. حدّث الصفحة وحاول مجددًا.')
         return redirect('student_list')
 
-    # Keep the selected class in its existing positions in the full roster,
-    # so the new order does not disrupt the relative position of other classes.
+    # A manual order is authoritative within the selected class. The roster's
+    # other students keep their relative ordering; assign a unique full-roster
+    # sequence so the existing display_order sorting remains deterministic.
     class_ids = set(expected_ids)
-    global_ids = list(Student.objects.order_by('display_order', 'full_name', 'pk').values_list('pk', flat=True))
+    global_ids = list(
+        Student.objects.order_by('display_order', 'full_name', 'pk').values_list('pk', flat=True)
+    )
     positions = [i for i, student_id in enumerate(global_ids) if student_id in class_ids]
     reordered_ids = list(global_ids)
     for index, student_id in zip(positions, submitted_ids):
         reordered_ids[index] = student_id
 
     with transaction.atomic():
+        # Move all values to a temporary range first to avoid collisions during
+        # the update, then write a clean sequential ordering.
         max_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
         offset = max_order + len(reordered_ids) + 100
         Student.objects.update(display_order=F('display_order') + offset)
