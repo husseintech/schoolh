@@ -765,6 +765,14 @@ def add_student(request):
         form = StudentForm(request.POST)
         if form.is_valid():
             student = form.save()
+            # Append a newly created student after the last student in the same class.
+            # This preserves all existing manually/Excel-defined order values.
+            last_order = Student.objects.filter(
+                student_class=student.student_class
+            ).exclude(pk=student.pk).aggregate(last=Max('display_order'))['last'] or 0
+            if student.display_order <= 0 or student.display_order <= last_order:
+                student.display_order = last_order + 1
+                student.save(update_fields=['display_order'])
             username = form.cleaned_data['username']
             password = form.cleaned_data.get('password')
             if not password:
@@ -775,6 +783,56 @@ def add_student(request):
     else:
         form = StudentForm()
     return render(request, 'school/add_student.html', {'form': form})
+
+
+@login_required
+def reorder_students_manually(request):
+    """Save a teacher/admin-selected order for one class, without changing student records."""
+    if request.method != 'POST':
+        return redirect('student_list')
+    user = request.user
+    if not has_perm(user, 'students', 'view'):
+        messages.error(request, 'ليس لديك صلاحية لترتيب الطلاب')
+        return redirect('dashboard')
+
+    role = getattr(getattr(user, 'profile', None), 'role', '')
+    requested_class = (request.POST.get('class_id') or '').strip()
+    try:
+        class_id = int(requested_class)
+    except (TypeError, ValueError):
+        messages.error(request, 'اختر الصف والشعبة أولاً')
+        return redirect('student_list')
+
+    if role == 'admin':
+        class_obj = get_object_or_404(Class, pk=class_id)
+    elif role == 'teacher':
+        teacher = getattr(user, 'teacher_profile', None)
+        if not teacher or not teacher.classes.filter(pk=class_id).exists():
+            messages.error(request, 'يمكنك ترتيب طلاب الصفوف المخصصة لك فقط')
+            return redirect('student_list')
+        class_obj = get_object_or_404(Class, pk=class_id)
+    else:
+        messages.error(request, 'هذه الميزة متاحة للإدارة والمعلمين فقط')
+        return redirect('dashboard')
+
+    raw_ids = request.POST.getlist('student_ids')
+    expected_ids = list(Student.objects.filter(student_class=class_obj).values_list('pk', flat=True))
+    try:
+        submitted_ids = [int(value) for value in raw_ids]
+    except (TypeError, ValueError):
+        submitted_ids = []
+    if not expected_ids or len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != set(expected_ids):
+        messages.error(request, 'تعذر حفظ الترتيب لأن القائمة تغيّرت أو لم تُرسل كاملة. حدّث الصفحة وحاول مجددًا.')
+        return redirect('student_list')
+
+    with transaction.atomic():
+        # Use unique sequential positions within the selected class.
+        for position, student_id in enumerate(submitted_ids, start=1):
+            Student.objects.filter(pk=student_id, student_class=class_obj).update(display_order=position)
+
+    log_action(user, 'ترتيب الطلاب يدويًا', f'الصف: {class_obj.name} - عدد الطلاب: {len(submitted_ids)}')
+    messages.success(request, f'تم حفظ الترتيب اليدوي لطلاب {class_obj.name} بنجاح.')
+    return redirect('student_list')
 
 
 @login_required
