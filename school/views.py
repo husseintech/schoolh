@@ -796,9 +796,8 @@ def reorder_students_manually(request):
         return redirect('dashboard')
 
     role = getattr(getattr(user, 'profile', None), 'role', '')
-    requested_class = (request.POST.get('class_id') or '').strip()
     try:
-        class_id = int(requested_class)
+        class_id = int(request.POST.get('class_id') or '')
     except (TypeError, ValueError):
         messages.error(request, 'اختر الصف والشعبة أولاً')
         return redirect('student_list')
@@ -813,7 +812,9 @@ def reorder_students_manually(request):
         class_obj = get_object_or_404(Class, pk=class_id)
     else:
         messages.error(request, 'هذه الميزة متاحة للإدارة والمعلمين فقط')
-        return redirect('dashb    raw_ids = request.POST.getlist('student_ids')
+        return redirect('dashboard')
+
+    raw_ids = request.POST.getlist('student_ids')
     current_students = list(
         Student.objects.filter(student_class=class_obj).order_by('display_order', 'full_name', 'pk')
     )
@@ -822,33 +823,26 @@ def reorder_students_manually(request):
         submitted_ids = [int(value) for value in raw_ids]
     except (TypeError, ValueError):
         submitted_ids = []
+
     if not expected_ids or len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != set(expected_ids):
         messages.error(request, 'تعذر حفظ الترتيب لأن القائمة تغيّرت أو لم تُرسل كاملة. حدّث الصفحة وحاول مجددًا.')
         return redirect('student_list')
 
-    # Preserve ordering across the whole roster: place the selected class in the
-    # same contiguous range it occupied, while honoring the new order.
-    current_class_ids = set(expected_ids)
-    global_students = list(Student.objects.order_by('display_order', 'full_name', 'pk').values_list('pk', flat=True))
-    positions = [index for index, student_id in enumerate(global_students) if student_id in current_class_ids]
-    if not positions:
-        messages.error(request, 'لم يتم العثور على مواضع طلاب هذا الصف.')
-        return redirect('student_list')
-
-    reordered_global = list(global_students)
-    ordered_iter = iter(submitted_ids)
-    for index in positions:
-        reordered_global[index] = next(ordered_iter)
+    # Keep the selected class in its existing positions in the full roster,
+    # so the new order does not disrupt the relative position of other classes.
+    class_ids = set(expected_ids)
+    global_ids = list(Student.objects.order_by('display_order', 'full_name', 'pk').values_list('pk', flat=True))
+    positions = [i for i, student_id in enumerate(global_ids) if student_id in class_ids]
+    reordered_ids = list(global_ids)
+    for index, student_id in zip(positions, submitted_ids):
+        reordered_ids[index] = student_id
 
     with transaction.atomic():
-        # Temporary offset avoids collisions while assigning the final sequence.
         max_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
-        offset = max_order + len(reordered_global) + 100
+        offset = max_order + len(reordered_ids) + 100
         Student.objects.update(display_order=F('display_order') + offset)
-        for position, student_id in enumerate(reordered_global, start=1):
+        for position, student_id in enumerate(reordered_ids, start=1):
             Student.objects.filter(pk=student_id).update(display_order=position)
-
-ition)
 
     log_action(user, 'ترتيب الطلاب يدويًا', f'الصف: {class_obj.name} - عدد الطلاب: {len(submitted_ids)}')
     messages.success(request, f'تم حفظ الترتيب اليدوي لطلاب {class_obj.name} بنجاح.')
