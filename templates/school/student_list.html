@@ -75,7 +75,7 @@
         <thead><tr><th>#</th><th>الاسم الكامل</th><th>اسم المستخدم</th><th>رقم الهوية</th><th>الصف</th><th>ولي الأمر</th><th>الإجراءات</th></tr></thead>
         <tbody>
         {% for student in students %}
-          <tr data-class="{{ student.student_class.name|default:'' }}"><td class="desktop-index">{{ forloop.counter }}</td><td class="student-main"><div class="student-identity"><div class="student-avatar">{{ student.full_name|slice:":1" }}</div><div><a class="student-name" href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a><span class="student-username" dir="ltr">@{{ student.user.username }}</span></div>{% if student.parent_phone %}<a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" rel="noopener" class="text-success me-auto" title="مراسلة ولي الأمر عبر واتساب"><i class="bi bi-whatsapp"></i></a>{% endif %}</div></td><td data-label="اسم المستخدم"><small dir="ltr">{{ student.user.username }}</small></td><td data-label="رقم الهوية"><span dir="ltr">{{ student.student_id }}</span></td><td data-label="الصف والشعبة"><span class="badge class-badge">{{ student.student_class.name|default:"غير محدد" }}</span></td><td data-label="ولي الأمر">{{ student.parent_name|default:"-" }}</td><td data-label="الإجراءات"><div class="btn-group btn-group-sm row-actions">
+          <tr data-class="{{ student.student_class.name|default:'' }}" data-class-id="{{ student.student_class_id|default:'' }}" data-student-id="{{ student.id }}"><td class="desktop-index">{{ forloop.counter }}</td><td class="student-main"><div class="student-identity"><div class="student-avatar">{{ student.full_name|slice:":1" }}</div><div><a class="student-name" href="{% url 'student_detail' student.id %}">{{ student.full_name }}</a><span class="student-username" dir="ltr">@{{ student.user.username }}</span></div>{% if student.parent_phone %}<a href="https://web.whatsapp.com/send?phone={{ student.parent_phone }}" target="_blank" rel="noopener" class="text-success me-auto" title="مراسلة ولي الأمر عبر واتساب"><i class="bi bi-whatsapp"></i></a>{% endif %}</div></td><td data-label="اسم المستخدم"><small dir="ltr">{{ student.user.username }}</small></td><td data-label="رقم الهوية"><span dir="ltr">{{ student.student_id }}</span></td><td data-label="الصف والشعبة"><span class="badge class-badge">{{ student.student_class.name|default:"غير محدد" }}</span></td><td data-label="ولي الأمر">{{ student.parent_name|default:"-" }}</td><td data-label="الإجراءات"><div class="btn-group btn-group-sm row-actions">
             <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-info" title="عرض"><i class="bi bi-eye"></i></a><a href="{% url 'student_report' student.id %}" class="btn btn-outline-success" title="تقرير"><i class="bi bi-file-text"></i></a><a href="{% url 'add_note_with_student' student.id %}" class="btn btn-outline-warning" title="إضافة ملاحظة"><i class="bi bi-sticky"></i></a>{% if 'leaves_add' in user_perms %}<a href="{% url 'add_leave_with_student' student.id %}" class="btn btn-outline-info" title="إذن مغادرة"><i class="bi bi-box-arrow-right"></i></a>{% endif %}
             {% if user.profile.role == 'admin' %}<a href="{% url 'edit_student' student.id %}" class="btn btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a><a href="{% url 'reset_student_password' student.id %}" class="btn btn-outline-secondary" title="كلمة المرور"><i class="bi bi-key"></i></a><a href="{% url 'delete_student' student.id %}" class="btn btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></a>{% endif %}
           </div></td></tr>
@@ -124,15 +124,12 @@ function resetStudentFilters(){var classFilter=document.getElementById('classFil
   var csrf=modal.querySelector('[name="csrfmiddlewaretoken"]').value;
   var loadedClass='';
   var dragSource=null;
-  function rowsForClass(className){
-    return Array.from(document.querySelectorAll('#studentsTable tbody tr[data-class]')).filter(function(row){
-      return (row.getAttribute('data-class')||'')===className && row.querySelector('.student-name');
+  function rowsForClass(classId){
+    return Array.from(document.querySelectorAll('#studentsTable tbody tr[data-student-id]')).filter(function(row){
+      return row.getAttribute('data-class-id')===String(classId) && row.querySelector('.student-name');
     }).map(function(row){
-      var link=row.querySelector('.student-name');
-      var id=(link.getAttribute('href')||'').match(/students\/(\d+)\/detail\//);
-      if(!id){var report=(row.querySelector('a[href*="/students/"]')||{}).getAttribute('href')||'';id=report.match(/students\/(\d+)\//);}
-      return id?{id:id[1],name:link.textContent.trim()}:null;
-    }).filter(Boolean);
+      return {id:row.getAttribute('data-student-id'),name:row.querySelector('.student-name').textContent.trim()};
+    }).filter(function(item){return !!item.id;});
   }
   function render(items){
     list.innerHTML='';
@@ -165,8 +162,7 @@ function resetStudentFilters(){var classFilter=document.getElementById('classFil
   classSelect.addEventListener('change',function(){
     loadedClass=classSelect.value;list.innerHTML='';hidden.innerHTML='';save.disabled=true;
     if(!loadedClass){message.textContent='اختر الصف لعرض الأسماء.';return;}
-    var option=classSelect.options[classSelect.selectedIndex];
-    var items=rowsForClass(option.text);
+    var items=rowsForClass(loadedClass);
     render(items);
   });
   modal.querySelector('form').addEventListener('submit',function(e){
