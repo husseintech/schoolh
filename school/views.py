@@ -9,7 +9,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db import connection, transaction, models
+from django.db import connection, transaction
+from django.db.models import F
 from django.db.models import Count, Max, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -843,7 +844,7 @@ def reorder_students_manually(request):
         # Temporary offset avoids collisions while assigning the final sequence.
         max_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
         offset = max_order + len(reordered_global) + 100
-        Student.objects.update(display_order=models.F('display_order') + offset)
+        Student.objects.update(display_order=F('display_order') + offset)
         for position, student_id in enumerate(reordered_global, start=1):
             Student.objects.filter(pk=student_id).update(display_order=position)
 
