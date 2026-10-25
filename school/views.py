@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db import connection, transaction
+from django.db import connection, transaction, models
 from django.db.models import Count, Max, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -812,10 +812,11 @@ def reorder_students_manually(request):
         class_obj = get_object_or_404(Class, pk=class_id)
     else:
         messages.error(request, 'هذه الميزة متاحة للإدارة والمعلمين فقط')
-        return redirect('dashboard')
-
-    raw_ids = request.POST.getlist('student_ids')
-    expected_ids = list(Student.objects.filter(student_class=class_obj).values_list('pk', flat=True))
+        return redirect('dashb    raw_ids = request.POST.getlist('student_ids')
+    current_students = list(
+        Student.objects.filter(student_class=class_obj).order_by('display_order', 'full_name', 'pk')
+    )
+    expected_ids = [student.pk for student in current_students]
     try:
         submitted_ids = [int(value) for value in raw_ids]
     except (TypeError, ValueError):
@@ -824,10 +825,29 @@ def reorder_students_manually(request):
         messages.error(request, 'تعذر حفظ الترتيب لأن القائمة تغيّرت أو لم تُرسل كاملة. حدّث الصفحة وحاول مجددًا.')
         return redirect('student_list')
 
+    # Preserve ordering across the whole roster: place the selected class in the
+    # same contiguous range it occupied, while honoring the new order.
+    current_class_ids = set(expected_ids)
+    global_students = list(Student.objects.order_by('display_order', 'full_name', 'pk').values_list('pk', flat=True))
+    positions = [index for index, student_id in enumerate(global_students) if student_id in current_class_ids]
+    if not positions:
+        messages.error(request, 'لم يتم العثور على مواضع طلاب هذا الصف.')
+        return redirect('student_list')
+
+    reordered_global = list(global_students)
+    ordered_iter = iter(submitted_ids)
+    for index in positions:
+        reordered_global[index] = next(ordered_iter)
+
     with transaction.atomic():
-        # Use unique sequential positions within the selected class.
-        for position, student_id in enumerate(submitted_ids, start=1):
-            Student.objects.filter(pk=student_id, student_class=class_obj).update(display_order=position)
+        # Temporary offset avoids collisions while assigning the final sequence.
+        max_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
+        offset = max_order + len(reordered_global) + 100
+        Student.objects.update(display_order=models.F('display_order') + offset)
+        for position, student_id in enumerate(reordered_global, start=1):
+            Student.objects.filter(pk=student_id).update(display_order=position)
+
+ition)
 
     log_action(user, 'ترتيب الطلاب يدويًا', f'الصف: {class_obj.name} - عدد الطلاب: {len(submitted_ids)}')
     messages.success(request, f'تم حفظ الترتيب اليدوي لطلاب {class_obj.name} بنجاح.')
