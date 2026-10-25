@@ -765,12 +765,11 @@ def add_student(request):
         form = StudentForm(request.POST)
         if form.is_valid():
             student = form.save()
-            # Append a newly created student after the last student in the same class.
-            # This preserves all existing manually/Excel-defined order values.
-            last_order = Student.objects.filter(
-                student_class=student.student_class
-            ).exclude(pk=student.pk).aggregate(last=Max('display_order'))['last'] or 0
-            if student.display_order <= 0 or student.display_order <= last_order:
+            # Allocate a position after the last student in the whole roster.
+            # This keeps the existing global order stable while allowing manual
+            # ordering within each class below.
+            last_order = Student.objects.aggregate(last=Max('display_order'))['last'] or 0
+            if student.display_order <= last_order:
                 student.display_order = last_order + 1
                 student.save(update_fields=['display_order'])
             username = form.cleaned_data['username']
