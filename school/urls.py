@@ -16,6 +16,7 @@ urlpatterns = [
     path('exams/write/', exam_writer_views.exam_writer, name='exam_writer'),
     path('exams/fonts/upload/', exam_writer_views.exam_font_upload, name='exam_font_upload'),
     path('exams/write/<int:paper_id>/edit/', exam_writer_views.exam_writer_edit, name='exam_writer_edit'),
+    path('exams/write/<int:paper_id>/delete/', exam_writer_views.exam_paper_delete, name='exam_paper_delete'),
     path('exams/write/<int:paper_id>/print/', exam_writer_views.exam_paper_print, name='exam_paper_print'),
     path('registers/', registers_views.registers_home, name='registers_home'),
     path('registers/library/', registers_views.library_register, name='library_register'),

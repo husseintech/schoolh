@@ -1643,6 +1643,7 @@ class ExamPaper(models.Model):
     classes = models.ManyToManyField(Class, related_name="exam_papers", verbose_name="الصفوف والشعب")
     duration_minutes = models.PositiveSmallIntegerField("مدة الاختبار بالدقائق", default=40, validators=[MinValueValidator(1)])
     exam_type = models.CharField("نوع الاختبار", max_length=100, blank=True)
+    exam_direction = models.CharField("اتجاه الاختبار", max_length=3, choices=(("rtl", "من اليمين لليسار"), ("ltr", "من اليسار لليمين")), default="rtl")
     questions = models.JSONField("الأسئلة", default=list, blank=True)
     font_name = models.CharField("نوع الخط", max_length=80, default="Traditional Arabic")
     font_size = models.PositiveSmallIntegerField("حجم الخط", default=16)
