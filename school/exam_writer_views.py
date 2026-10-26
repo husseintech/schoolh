@@ -221,11 +221,14 @@ def exam_paper_print(request, paper_id):
     if _role(request.user) != "admin" and paper.teacher.user_id != request.user.id:
         return HttpResponseForbidden("ليس لديك صلاحية الوصول إلى هذا الاختبار.")
     school_info = SchoolInfo.objects.first()
+    subject_label = (getattr(paper.subject, "name", "") or "").strip().lower()
+    is_english_subject = ("english" in subject_label) or ("إنجليزي" in subject_label) or ("انجليزي" in subject_label) or ("الإنجليزية" in subject_label) or ("الانجليزية" in subject_label)
     response = render(request, "school/exam_paper_print.html", {
         "paper": paper,
         "school_info": school_info,
         "word_export": request.GET.get("format") == "word",
         "exam_fonts": ExamFont.objects.all(),
+        "is_english_subject": is_english_subject,
     })
     if request.GET.get("format") == "word":
         response["Content-Type"] = "application/msword; charset=utf-8"
@@ -256,4 +259,20 @@ def exam_font_upload(request):
         messages.error(request, "يوجد خط بهذا الاسم بالفعل. اختر اسمًا آخر.")
         return redirect("exam_writer")
     messages.success(request, "تم رفع الخط وحفظه في مكتبة خطوط الاختبارات.")
+    return redirect("exam_writer")
+
+
+@login_required
+def exam_paper_delete(request, paper_id):
+    if request.method != "POST":
+        return redirect("exam_writer")
+    paper = get_object_or_404(ExamPaper.objects.select_related("teacher"), pk=paper_id)
+    if _role(request.user) != "admin" and paper.teacher.user_id != request.user.id:
+        return HttpResponseForbidden("ليس لديك صلاحية حذف هذا الاختبار.")
+    teacher_id = paper.teacher_id
+    paper_name = paper.exam_name
+    paper.delete()
+    messages.success(request, f"تم حذف الاختبار «{paper_name}».")
+    if _role(request.user) == "admin":
+        return redirect(f"{reverse('exam_writer')}?teacher_id={teacher_id}")
     return redirect("exam_writer")
