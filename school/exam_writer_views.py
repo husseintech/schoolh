@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -7,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import escape
 
-from .models import Class, ExamPaper, SchoolInfo, Subject, Teacher, TeacherScheduleEntry
+from .models import Class, ExamFont, ExamPaper, SchoolInfo, Subject, Teacher, TeacherScheduleEntry
 
 
 def _role(user):
@@ -57,6 +58,7 @@ def exam_writer(request):
         return redirect("dashboard")
 
     teachers = Teacher.objects.order_by("full_name") if role == "admin" else []
+    exam_fonts = ExamFont.objects.all()
     selected_classes = _teacher_classes(teacher) if teacher else Class.objects.none()
     selected_subjects = _teacher_subjects(teacher) if teacher else Subject.objects.none()
     school_info = SchoolInfo.objects.first()
@@ -183,6 +185,7 @@ def exam_writer(request):
         "papers": papers[:50],
         "editing": editing,
         "editing_class_ids": set(editing.classes.values_list("id", flat=True)) if editing else set(),
+        "exam_fonts": exam_fonts,
     })
 
 
@@ -211,3 +214,29 @@ def exam_paper_print(request, paper_id):
         response["Content-Type"] = "application/msword; charset=utf-8"
         response["Content-Disposition"] = 'attachment; filename="school-exam.doc"'
     return response
+
+
+@login_required
+def exam_font_upload(request):
+    if request.method != "POST":
+        return redirect("exam_writer")
+    if _role(request.user) != "admin":
+        return HttpResponseForbidden("رفع الخطوط متاح للإدارة فقط.")
+    uploaded = request.FILES.get("font_file")
+    name = request.POST.get("font_display_name", "").strip()[:100]
+    if not uploaded or not name:
+        messages.error(request, "أدخل اسم الخط واختر ملفًا لرفعه.")
+        return redirect("exam_writer")
+    ext = os.path.splitext(uploaded.name)[1].lower()
+    if ext not in (".ttf", ".otf", ".woff", ".woff2"):
+        messages.error(request, "صيغة الخط غير مدعومة. استخدم TTF أو OTF أو WOFF أو WOFF2.")
+        return redirect("exam_writer")
+    if uploaded.size > 5 * 1024 * 1024:
+        messages.error(request, "حجم ملف الخط يجب ألا يتجاوز 5 ميغابايت.")
+        return redirect("exam_writer")
+    font, created = ExamFont.objects.get_or_create(name=name, defaults={"file": uploaded, "uploaded_by": request.user})
+    if not created:
+        messages.error(request, "يوجد خط بهذا الاسم بالفعل. اختر اسمًا آخر.")
+        return redirect("exam_writer")
+    messages.success(request, "تم رفع الخط وحفظه في مكتبة خطوط الاختبارات.")
+    return redirect("exam_writer")
