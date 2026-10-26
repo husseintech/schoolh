@@ -78,7 +78,7 @@ def exam_writer(request):
             exam_type = request.POST.get("exam_type_custom", "").strip()[:100] or "اختبار مخصص"
         duration_raw = request.POST.get("duration", "40")
         font_name = request.POST.get("font_name", "Traditional Arabic")[:80]
-        font_size_raw = request.POST.get("font_size", "16")
+        font_size_raw = request.POST.get("font_size", "16")\n        header_font_size_raw = request.POST.get("header_font_size", "9")\n        header_font_weight_raw = request.POST.get("header_font_weight", "400")
         class_ids = request.POST.getlist("class_ids")
         questions_raw = request.POST.get("questions_json", "[]")
 
@@ -130,7 +130,7 @@ def exam_writer(request):
                 "display_number": display_number,
                 "choices": [str(x)[:1000] for x in choices[:6]],
                 "left": str(question.get("left", ""))[:5000],
-                "right": str(question.get("right", ""))[:5000],
+                "right": str(question.get("right", ""))[:5000],\n                "image": str(question.get("image", ""))[:2200000] if str(question.get("image", "")).startswith("data:image/") else "",\n                "imagePosition": question.get("imagePosition", "right") if question.get("imagePosition") in ("right", "left", "center") else "right",\n                "table": [[str(cell)[:500] for cell in row[:10]] for row in question.get("table", [])[:20] if isinstance(row, list)] if isinstance(question.get("table", []), list) else [],
             })
 
         paper_id = request.POST.get("paper_id", "")
@@ -145,7 +145,7 @@ def exam_writer(request):
         paper.exam_type = exam_type
         paper.questions = safe_questions
         paper.font_name = font_name
-        paper.font_size = max(10, min(24, font_size))
+        paper.font_size = max(10, min(24, font_size))\n        paper.header_font_size = max(7, min(14, header_font_size))\n        paper.header_font_weight = header_font_weight if header_font_weight in (300, 400, 600, 700, 900) else 400
         paper.save()
         paper.classes.set(valid_class_ids)
         messages.success(request, "تم حفظ الاختبار. يمكنك معاينته وطباعته أو تصديره إلى Word.")
