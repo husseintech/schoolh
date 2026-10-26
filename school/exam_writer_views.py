@@ -155,6 +155,7 @@ def exam_writer(request):
         "school_info": school_info,
         "papers": papers[:50],
         "editing": editing,
+        "editing_class_ids": set(editing.classes.values_list("id", flat=True)) if editing else set(),
     })
 
 
