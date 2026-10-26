@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import escape
 
-from .models import Class, ExamFont, ExamPaper, SchoolInfo, Subject, Teacher, TeacherScheduleEntry
+from .models import Class, ExamFont, ExamPaper, SchoolInfo, Subject, Teacher, TeacherScheduleEntry, has_perm
 
 
 def _role(user):
@@ -52,6 +52,10 @@ def exam_writer(request):
         messages.error(request, "أداة كتابة الاختبارات متاحة للمعلمين والإدارة فقط.")
         return redirect("dashboard")
 
+    if not has_perm(request.user, "exam_writer", "view"):
+        messages.error(request, "ليس لديك صلاحية للوصول إلى أداة كتابة الاختبارات.")
+        return redirect("dashboard")
+
     teacher = _teacher_for_request(request)
     if role == "teacher" and teacher is None:
         messages.error(request, "لا يوجد ملف معلم مرتبط بحسابك. يرجى مراجعة الإدارة.")
@@ -64,6 +68,11 @@ def exam_writer(request):
     school_info = SchoolInfo.objects.first()
 
     if request.method == "POST":
+        requested_paper_id = request.POST.get("paper_id", "")
+        required_action = "edit" if requested_paper_id.isdigit() else "add"
+        if not has_perm(request.user, "exam_writer", required_action):
+            messages.error(request, "ليس لديك صلاحية لحفظ أو تعديل الاختبارات.")
+            return redirect("exam_writer")
         if role == "admin":
             teacher_id = request.POST.get("teacher_id", "")
             teacher = Teacher.objects.filter(pk=teacher_id).first() if teacher_id.isdigit() else None
@@ -234,6 +243,8 @@ def exam_writer(request):
 
 @login_required
 def exam_writer_edit(request, paper_id):
+    if not has_perm(request.user, "exam_writer", "edit"):
+        return HttpResponseForbidden("ليس لديك صلاحية تعديل الاختبارات.")
     paper = get_object_or_404(ExamPaper.objects.select_related("teacher", "subject").prefetch_related("classes"), pk=paper_id)
     if _role(request.user) != "admin" and paper.teacher.user_id != request.user.id:
         return HttpResponseForbidden("ليس لديك صلاحية الوصول إلى هذا الاختبار.")
@@ -244,6 +255,8 @@ def exam_writer_edit(request, paper_id):
 
 @login_required
 def exam_paper_print(request, paper_id):
+    if not has_perm(request.user, "exam_writer", "print"):
+        return HttpResponseForbidden("ليس لديك صلاحية طباعة الاختبارات.")
     paper = get_object_or_404(ExamPaper.objects.select_related("teacher", "subject").prefetch_related("classes"), pk=paper_id)
     if _role(request.user) != "admin" and paper.teacher.user_id != request.user.id:
         return HttpResponseForbidden("ليس لديك صلاحية الوصول إلى هذا الاختبار.")
@@ -290,6 +303,8 @@ def exam_font_upload(request):
 
 @login_required
 def exam_paper_delete(request, paper_id):
+    if not has_perm(request.user, "exam_writer", "delete"):
+        return HttpResponseForbidden("ليس لديك صلاحية حذف الاختبارات.")
     if request.method != "POST":
         return redirect("exam_writer")
     paper = get_object_or_404(ExamPaper.objects.select_related("teacher"), pk=paper_id)
