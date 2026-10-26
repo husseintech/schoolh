@@ -181,6 +181,5 @@ def exam_paper_print(request, paper_id):
     })
     if request.GET.get("format") == "word":
         response["Content-Type"] = "application/msword; charset=utf-8"
-        response["Content-Disposition"] = 'attachment; filename="school-exam.doc'
-        response["Content-Disposition"] += 'x"'
+        response["Content-Disposition"] = 'attachment; filename="school-exam.doc"'
     return response
