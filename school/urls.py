@@ -6,12 +6,16 @@ from . import curriculum_assistant_views
 from . import social_committee_views
 from . import attendance_followup
 from . import registers_views
+from . import exam_writer_views
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('exams/write/', exam_writer_views.exam_writer, name='exam_writer'),
+    path('exams/write/<int:paper_id>/edit/', exam_writer_views.exam_writer_edit, name='exam_writer_edit'),
+    path('exams/write/<int:paper_id>/print/', exam_writer_views.exam_paper_print, name='exam_paper_print'),
     path('registers/', registers_views.registers_home, name='registers_home'),
     path('registers/library/', registers_views.library_register, name='library_register'),
     path('registers/library/<int:loan_id>/return/', registers_views.library_return, name='library_return'),
