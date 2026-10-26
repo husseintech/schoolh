@@ -74,6 +74,8 @@ def exam_writer(request):
         title = request.POST.get("exam_name", "").strip()
         subject_id = request.POST.get("subject_id", "")
         exam_type = request.POST.get("exam_type", "").strip()[:100]
+        if exam_type == "اختبار مخصص":
+            exam_type = request.POST.get("exam_type_custom", "").strip()[:100] or "اختبار مخصص"
         duration_raw = request.POST.get("duration", "40")
         font_name = request.POST.get("font_name", "Traditional Arabic")[:80]
         font_size_raw = request.POST.get("font_size", "16")
