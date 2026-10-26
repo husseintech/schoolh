@@ -116,11 +116,25 @@ def exam_writer(request):
             choices = question.get("choices", [])
             if not isinstance(choices, list):
                 choices = []
+            number = str(question.get("number", len(safe_questions) + 1)).strip()[:20] or str(len(safe_questions) + 1)
+            relation = "sub" if question.get("relation") == "sub" and safe_questions else "main"
+            if relation == "sub":
+                parent_number = str(safe_questions[-1].get("number", len(safe_questions)))[:20]
+                prior_branches = sum(1 for item in safe_questions if item.get("relation") == "sub" and item.get("parent_number") == parent_number)
+                branch_label = ["أ", "ب", "ج", "د", "هـ", "و", "ز", "ح", "ط", "ي"][min(prior_branches, 9)]
+                display_number = f"{parent_number} / {branch_label}"
+            else:
+                parent_number = ""
+                display_number = number
             safe_questions.append({
                 "type": kind,
                 "text": text,
                 "marks": marks,
                 "lines": lines,
+                "number": number,
+                "relation": relation,
+                "parent_number": parent_number,
+                "display_number": display_number,
                 "choices": [str(x)[:1000] for x in choices[:6]],
                 "left": str(question.get("left", ""))[:5000],
                 "right": str(question.get("right", ""))[:5000],
