@@ -209,6 +209,7 @@ def exam_paper_print(request, paper_id):
         "paper": paper,
         "school_info": school_info,
         "word_export": request.GET.get("format") == "word",
+        "exam_fonts": ExamFont.objects.all(),
     })
     if request.GET.get("format") == "word":
         response["Content-Type"] = "application/msword; charset=utf-8"
