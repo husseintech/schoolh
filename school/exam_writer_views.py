@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -7,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import escape
 
-from .models import Class, ExamPaper, SchoolInfo, Subject, Teacher, TeacherScheduleEntry
+from .models import Class, ExamFont, ExamPaper, SchoolInfo, Subject, Teacher, TeacherScheduleEntry
 
 
 def _role(user):
@@ -57,6 +58,7 @@ def exam_writer(request):
         return redirect("dashboard")
 
     teachers = Teacher.objects.order_by("full_name") if role == "admin" else []
+    exam_fonts = ExamFont.objects.all()
     selected_classes = _teacher_classes(teacher) if teacher else Class.objects.none()
     selected_subjects = _teacher_subjects(teacher) if teacher else Subject.objects.none()
     school_info = SchoolInfo.objects.first()
@@ -79,6 +81,15 @@ def exam_writer(request):
         duration_raw = request.POST.get("duration", "40")
         font_name = request.POST.get("font_name", "Traditional Arabic")[:80]
         font_size_raw = request.POST.get("font_size", "16")
+        header_font_size_raw = request.POST.get("header_font_size", "9")
+        header_font_weight_raw = request.POST.get("header_font_weight", "400")
+        header_font_family = request.POST.get("header_font_family", "Traditional Arabic")[:80]
+        header_text_align = request.POST.get("header_text_align", "center")
+        header_line_height_raw = request.POST.get("header_line_height", "1.3")
+        header_letter_spacing_raw = request.POST.get("header_letter_spacing", "0")
+        header_padding_raw = request.POST.get("header_padding", "0")
+        header_left_offset_raw = request.POST.get("header_left_offset", "0")
+        header_right_offset_raw = request.POST.get("header_right_offset", "0")
         class_ids = request.POST.getlist("class_ids")
         questions_raw = request.POST.get("questions_json", "[]")
 
@@ -131,6 +142,22 @@ def exam_writer(request):
                 "choices": [str(x)[:1000] for x in choices[:6]],
                 "left": str(question.get("left", ""))[:5000],
                 "right": str(question.get("right", ""))[:5000],
+                "images": [
+                    {
+                        "src": str(image.get("src", ""))[:2200000],
+                        "width": max(10, min(90, int(image.get("width", 40) or 40))),
+                        "x": max(-2000, min(2000, int(image.get("x", 0) or 0))),
+                        "y": max(-2000, min(2000, int(image.get("y", 0) or 0))),
+                    }
+                    for image in question.get("images", [])[:10]
+                    if isinstance(image, dict) and str(image.get("src", "")).startswith("data:image/")
+                ] if isinstance(question.get("images", []), list) else (
+                    [{"src": str(question.get("image", ""))[:2200000],
+                      "width": max(10, min(90, int(question.get("imageWidth", 40) or 40))),
+                      "x": 0, "y": 0}]
+                    if str(question.get("image", "")).startswith("data:image/") else []
+                ),
+                "table": [[str(cell)[:500] for cell in row[:10]] for row in question.get("table", [])[:20] if isinstance(row, list)] if isinstance(question.get("table", []), list) else [],
             })
 
         paper_id = request.POST.get("paper_id", "")
@@ -146,6 +173,15 @@ def exam_writer(request):
         paper.questions = safe_questions
         paper.font_name = font_name
         paper.font_size = max(10, min(24, font_size))
+        paper.header_font_size = max(7, min(14, header_font_size))
+        paper.header_font_weight = header_font_weight if header_font_weight in (300, 400, 600, 700, 900) else 400
+        paper.header_font_family = header_font_family
+        paper.header_text_align = header_text_align if header_text_align in ("left", "center", "right") else "center"
+        paper.header_line_height = max(1, min(2, header_line_height))
+        paper.header_letter_spacing = max(0, min(3, header_letter_spacing))
+        paper.header_padding = max(0, min(16, header_padding))
+        paper.header_left_offset = max(-150, min(150, int(header_left_offset_raw or 0)))
+        paper.header_right_offset = max(-150, min(150, int(header_right_offset_raw or 0)))
         paper.save()
         paper.classes.set(valid_class_ids)
         messages.success(request, "تم حفظ الاختبار. يمكنك معاينته وطباعته أو تصديره إلى Word.")
@@ -165,6 +201,7 @@ def exam_writer(request):
         "papers": papers[:50],
         "editing": editing,
         "editing_class_ids": set(editing.classes.values_list("id", flat=True)) if editing else set(),
+        "exam_fonts": exam_fonts,
     })
 
 
@@ -188,8 +225,35 @@ def exam_paper_print(request, paper_id):
         "paper": paper,
         "school_info": school_info,
         "word_export": request.GET.get("format") == "word",
+        "exam_fonts": ExamFont.objects.all(),
     })
     if request.GET.get("format") == "word":
         response["Content-Type"] = "application/msword; charset=utf-8"
         response["Content-Disposition"] = 'attachment; filename="school-exam.doc"'
     return response
+
+
+@login_required
+def exam_font_upload(request):
+    if request.method != "POST":
+        return redirect("exam_writer")
+    if _role(request.user) != "admin":
+        return HttpResponseForbidden("رفع الخطوط متاح للإدارة فقط.")
+    uploaded = request.FILES.get("font_file")
+    name = request.POST.get("font_display_name", "").strip()[:100]
+    if not uploaded or not name:
+        messages.error(request, "أدخل اسم الخط واختر ملفًا لرفعه.")
+        return redirect("exam_writer")
+    ext = os.path.splitext(uploaded.name)[1].lower()
+    if ext not in (".ttf", ".otf", ".woff", ".woff2"):
+        messages.error(request, "صيغة الخط غير مدعومة. استخدم TTF أو OTF أو WOFF أو WOFF2.")
+        return redirect("exam_writer")
+    if uploaded.size > 5 * 1024 * 1024:
+        messages.error(request, "حجم ملف الخط يجب ألا يتجاوز 5 ميغابايت.")
+        return redirect("exam_writer")
+    font, created = ExamFont.objects.get_or_create(name=name, defaults={"file": uploaded, "uploaded_by": request.user})
+    if not created:
+        messages.error(request, "يوجد خط بهذا الاسم بالفعل. اختر اسمًا آخر.")
+        return redirect("exam_writer")
+    messages.success(request, "تم رفع الخط وحفظه في مكتبة خطوط الاختبارات.")
+    return redirect("exam_writer")

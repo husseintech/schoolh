@@ -1646,6 +1646,15 @@ class ExamPaper(models.Model):
     questions = models.JSONField("الأسئلة", default=list, blank=True)
     font_name = models.CharField("نوع الخط", max_length=80, default="Traditional Arabic")
     font_size = models.PositiveSmallIntegerField("حجم الخط", default=16)
+    header_font_size = models.FloatField("حجم خط الترويسة", default=9)
+    header_font_weight = models.PositiveSmallIntegerField("سماكة خط الترويسة", default=400)
+    header_font_family = models.CharField("خط الترويسة", max_length=80, default="Traditional Arabic")
+    header_text_align = models.CharField("محاذاة الترويسة", max_length=10, default="center")
+    header_line_height = models.FloatField("ارتفاع سطر الترويسة", default=1.3)
+    header_letter_spacing = models.FloatField("تباعد حروف الترويسة", default=0)
+    header_padding = models.FloatField("المسافة الداخلية للترويسة", default=0)
+    header_left_offset = models.SmallIntegerField("إزاحة القسم الأيسر للترويسة", default=0)
+    header_right_offset = models.SmallIntegerField("إزاحة القسم الأيمن للترويسة", default=0)
     created_at = models.DateTimeField("تاريخ الإنشاء", auto_now_add=True)
     updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
 
@@ -1656,3 +1665,19 @@ class ExamPaper(models.Model):
 
     def __str__(self):
         return f"{self.exam_name} - {self.teacher.full_name}"
+
+
+class ExamFont(models.Model):
+    """Reusable font uploaded for exam documents."""
+    name = models.CharField("اسم الخط", max_length=100, unique=True)
+    file = models.FileField("ملف الخط", upload_to="exam_fonts/")
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="uploaded_exam_fonts")
+    created_at = models.DateTimeField("تاريخ الرفع", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "خط الاختبارات"
+        verbose_name_plural = "خطوط الاختبارات"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
