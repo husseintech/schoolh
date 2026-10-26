@@ -76,6 +76,9 @@ def exam_writer(request):
         title = request.POST.get("exam_name", "").strip()
         subject_id = request.POST.get("subject_id", "")
         exam_type = request.POST.get("exam_type", "").strip()[:100]
+        exam_direction = request.POST.get("exam_direction", "rtl")
+        if exam_direction not in ("rtl", "ltr"):
+            exam_direction = "rtl"
         if exam_type == "اختبار مخصص":
             exam_type = request.POST.get("exam_type_custom", "").strip()[:100] or "اختبار مخصص"
         duration_raw = request.POST.get("duration", "40")
@@ -170,6 +173,7 @@ def exam_writer(request):
         paper.subject = subject
         paper.duration_minutes = duration
         paper.exam_type = exam_type
+        paper.exam_direction = exam_direction
         paper.questions = safe_questions
         paper.font_name = font_name
         paper.font_size = max(10, min(24, font_size))
@@ -221,8 +225,7 @@ def exam_paper_print(request, paper_id):
     if _role(request.user) != "admin" and paper.teacher.user_id != request.user.id:
         return HttpResponseForbidden("ليس لديك صلاحية الوصول إلى هذا الاختبار.")
     school_info = SchoolInfo.objects.first()
-    subject_label = (getattr(paper.subject, "name", "") or "").strip().lower()
-    is_english_subject = ("english" in subject_label) or ("إنجليزي" in subject_label) or ("انجليزي" in subject_label) or ("الإنجليزية" in subject_label) or ("الانجليزية" in subject_label)
+    is_english_subject = paper.exam_direction == "ltr"
     response = render(request, "school/exam_paper_print.html", {
         "paper": paper,
         "school_info": school_info,
