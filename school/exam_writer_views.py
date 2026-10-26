@@ -119,7 +119,8 @@ def exam_writer(request):
             number = str(question.get("number", len(safe_questions) + 1)).strip()[:20] or str(len(safe_questions) + 1)
             relation = "sub" if question.get("relation") == "sub" and safe_questions else "main"
             if relation == "sub":
-                parent_number = str(safe_questions[-1].get("number", len(safe_questions)))[:20]
+                parent = next((item for item in reversed(safe_questions) if item.get("relation") != "sub"), safe_questions[-1])
+                parent_number = str(parent.get("number", len(safe_questions)))[:20]
                 prior_branches = sum(1 for item in safe_questions if item.get("relation") == "sub" and item.get("parent_number") == parent_number)
                 branch_label = ["أ", "ب", "ج", "د", "هـ", "و", "ز", "ح", "ط", "ي"][min(prior_branches, 9)]
                 display_number = f"{parent_number} / {branch_label}"
