@@ -104,6 +104,29 @@ def exam_writer(request):
             messages.error(request, "تعذر قراءة بعض بيانات الاختبار. راجع المدة والأسئلة ثم حاول مجددًا.")
             return redirect("exam_writer")
 
+        # Parse optional typography settings defensively; malformed values must not
+        # turn a normal save into a server error.
+        try:
+            header_font_size = float(header_font_size_raw)
+        except (TypeError, ValueError):
+            header_font_size = 9
+        try:
+            header_font_weight = int(header_font_weight_raw)
+        except (TypeError, ValueError):
+            header_font_weight = 400
+        try:
+            header_line_height = float(header_line_height_raw)
+        except (TypeError, ValueError):
+            header_line_height = 1.3
+        try:
+            header_letter_spacing = float(header_letter_spacing_raw)
+        except (TypeError, ValueError):
+            header_letter_spacing = 0
+        try:
+            header_padding = float(header_padding_raw)
+        except (TypeError, ValueError):
+            header_padding = 0
+
         valid_class_ids = set(selected_classes.filter(pk__in=class_ids).values_list("id", flat=True))
         subject = selected_subjects.filter(pk=subject_id).first()
         if not title or not subject or not valid_class_ids or duration < 1 or duration > 600:
