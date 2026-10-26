@@ -88,6 +88,8 @@ def exam_writer(request):
         header_line_height_raw = request.POST.get("header_line_height", "1.3")
         header_letter_spacing_raw = request.POST.get("header_letter_spacing", "0")
         header_padding_raw = request.POST.get("header_padding", "0")
+        header_left_offset_raw = request.POST.get("header_left_offset", "0")
+        header_right_offset_raw = request.POST.get("header_right_offset", "0")
         class_ids = request.POST.getlist("class_ids")
         questions_raw = request.POST.get("questions_json", "[]")
 
@@ -178,6 +180,8 @@ def exam_writer(request):
         paper.header_line_height = max(1, min(2, header_line_height))
         paper.header_letter_spacing = max(0, min(3, header_letter_spacing))
         paper.header_padding = max(0, min(16, header_padding))
+        paper.header_left_offset = max(-150, min(150, int(header_left_offset_raw or 0)))
+        paper.header_right_offset = max(-150, min(150, int(header_right_offset_raw or 0)))
         paper.save()
         paper.classes.set(valid_class_ids)
         messages.success(request, "تم حفظ الاختبار. يمكنك معاينته وطباعته أو تصديره إلى Word.")
