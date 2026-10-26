@@ -15,10 +15,9 @@
 <header class="header">
 <div><div>دولة فلسطين</div><div>وزارة التربية والتعليم العالي</div><div>مديرية التربية والتعليم - يطا</div><div class="school-name">{{ school_info.name_ar|default:"اسم المدرسة" }}</div></div>
 <div>{% if school_info.ministry_logo %}<img src="{{ school_info.ministry_logo }}" alt="شعار الوزارة">{% elif school_info.school_logo %}<img src="{{ school_info.school_logo }}" alt="شعار المدرسة">{% endif %}</div>
-<div><div>المبحث: {{ paper.subject.name }}</div><div>المدة: {{ paper.duration_minutes }} دقيقة</div><div>{{ paper.exam_type }}</div></div>
+<div><div>المبحث: {{ paper.subject.name }}</div><div>المدة: {{ paper.duration_minutes }} دقيقة</div><div>اسم الاختبار: {{ paper.exam_name }}</div></div>
 </header>
 <hr class="rule">
-<div class="exam-title">{{ paper.exam_name }}</div>
 {% for q in paper.questions %}
 <section class="question">
 <div class="qtext"><strong>{{ forloop.counter }}. {{ q.text }}</strong>
