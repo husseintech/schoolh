@@ -1648,6 +1648,11 @@ class ExamPaper(models.Model):
     font_size = models.PositiveSmallIntegerField("حجم الخط", default=16)
     header_font_size = models.FloatField("حجم خط الترويسة", default=9)
     header_font_weight = models.PositiveSmallIntegerField("سماكة خط الترويسة", default=400)
+    header_font_family = models.CharField("خط الترويسة", max_length=80, default="Traditional Arabic")
+    header_text_align = models.CharField("محاذاة الترويسة", max_length=10, default="center")
+    header_line_height = models.FloatField("ارتفاع سطر الترويسة", default=1.3)
+    header_letter_spacing = models.FloatField("تباعد حروف الترويسة", default=0)
+    header_padding = models.FloatField("المسافة الداخلية للترويسة", default=0)
     created_at = models.DateTimeField("تاريخ الإنشاء", auto_now_add=True)
     updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
 
