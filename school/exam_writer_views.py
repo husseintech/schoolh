@@ -140,9 +140,21 @@ def exam_writer(request):
                 "choices": [str(x)[:1000] for x in choices[:6]],
                 "left": str(question.get("left", ""))[:5000],
                 "right": str(question.get("right", ""))[:5000],
-                "image": str(question.get("image", ""))[:2200000] if str(question.get("image", "")).startswith("data:image/") else "",
-                "imageWidth": max(10, min(90, int(question.get("imageWidth", 40) or 40))),
-                "imagePosition": question.get("imagePosition", "right") if question.get("imagePosition") in ("right", "left", "center") else "right",
+                "images": [
+                    {
+                        "src": str(image.get("src", ""))[:2200000],
+                        "width": max(10, min(90, int(image.get("width", 40) or 40))),
+                        "x": max(-2000, min(2000, int(image.get("x", 0) or 0))),
+                        "y": max(-2000, min(2000, int(image.get("y", 0) or 0))),
+                    }
+                    for image in question.get("images", [])[:10]
+                    if isinstance(image, dict) and str(image.get("src", "")).startswith("data:image/")
+                ] if isinstance(question.get("images", []), list) else (
+                    [{"src": str(question.get("image", ""))[:2200000],
+                      "width": max(10, min(90, int(question.get("imageWidth", 40) or 40))),
+                      "x": 0, "y": 0}]
+                    if str(question.get("image", "")).startswith("data:image/") else []
+                ),
                 "table": [[str(cell)[:500] for cell in row[:10]] for row in question.get("table", [])[:20] if isinstance(row, list)] if isinstance(question.get("table", []), list) else [],
             })
 
