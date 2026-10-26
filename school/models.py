@@ -1653,6 +1653,8 @@ class ExamPaper(models.Model):
     header_line_height = models.FloatField("ارتفاع سطر الترويسة", default=1.3)
     header_letter_spacing = models.FloatField("تباعد حروف الترويسة", default=0)
     header_padding = models.FloatField("المسافة الداخلية للترويسة", default=0)
+    header_left_offset = models.SmallIntegerField("إزاحة القسم الأيسر للترويسة", default=0)
+    header_right_offset = models.SmallIntegerField("إزاحة القسم الأيمن للترويسة", default=0)
     created_at = models.DateTimeField("تاريخ الإنشاء", auto_now_add=True)
     updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
 
