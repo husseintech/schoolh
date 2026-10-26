@@ -1632,3 +1632,27 @@ class LabRegisterEntry(models.Model):
         ordering = ["-entry_date", "-created_at"]
     def __str__(self):
         return f"{self.get_register_type_display()} — {self.title}"
+
+
+class ExamPaper(models.Model):
+    """Teacher-authored printable exam paper."""
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="exam_papers", verbose_name="المعلم")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_exam_papers", verbose_name="أنشئ بواسطة")
+    exam_name = models.CharField("اسم الاختبار", max_length=200)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name="exam_papers", verbose_name="المبحث")
+    classes = models.ManyToManyField(Class, related_name="exam_papers", verbose_name="الصفوف والشعب")
+    duration_minutes = models.PositiveSmallIntegerField("مدة الاختبار بالدقائق", default=40, validators=[MinValueValidator(1)])
+    exam_type = models.CharField("نوع الاختبار", max_length=100, blank=True)
+    questions = models.JSONField("الأسئلة", default=list, blank=True)
+    font_name = models.CharField("نوع الخط", max_length=80, default="Traditional Arabic")
+    font_size = models.PositiveSmallIntegerField("حجم الخط", default=16)
+    created_at = models.DateTimeField("تاريخ الإنشاء", auto_now_add=True)
+    updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
+
+    class Meta:
+        verbose_name = "اختبار مكتوب"
+        verbose_name_plural = "الاختبارات المكتوبة"
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.exam_name} - {self.teacher.full_name}"
