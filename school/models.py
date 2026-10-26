@@ -56,6 +56,7 @@ DEFAULT_PERMISSIONS = {
         'science_lab_register': ['view', 'add', 'edit', 'delete', 'print'],
         'computer_lab_register': ['view', 'add', 'edit', 'delete', 'print'],
         'health_committee': ['view', 'add', 'edit', 'delete', 'print', 'monitor'],
+        'exam_writer': ['view', 'add', 'edit', 'delete', 'print'],
         'students': ['view', 'add', 'edit', 'delete', 'import', 'export'],
         'teachers': ['view', 'add', 'edit', 'delete', 'notes'],
         'classes': ['view', 'add', 'delete'],
@@ -166,6 +167,7 @@ DEFAULT_PERMISSIONS = {
         'survey': ['add'],
         'reciprocal_visits': ['view'],
         'open_learning': ['view', 'add', 'edit', 'delete'],
+        'exam_writer': ['view', 'add', 'edit', 'delete', 'print'],
         'curriculum_assistant': ['view', 'add', 'delete', 'monitor'],
     },
     'warden': {
