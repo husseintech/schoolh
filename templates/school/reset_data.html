@@ -21,7 +21,7 @@
                         <input type="hidden" name="action" value="flush_related">
                         <input type="hidden" name="key" value="{{ key }}">
                         <input type="hidden" name="confirm" value="YES">
-                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> تفريغ</button>
+                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> {% if c.key == 'exam_writer' %}حذف عام{% else %}تفريغ{% endif %}</button>
                     </form>
                     {% endfor %}
                 </div>
