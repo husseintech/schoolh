@@ -16,7 +16,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
 from dotenv import set_key
-from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup, VisitProgramDriveFile
+from .models import Profile, Student, Note, Teacher, TeacherNote, Announcement, Agenda, StudentLeave, StudentLevel, ExamAnalysis, Message, Class, Subject, UserPermission, DEFAULT_PERMISSIONS, has_perm, can_view, LessonLink, StudentLateness, SchoolInfo, Meeting, SupervisorVisit, Notification, InspectionVisit, VisitProgram, Nomination, Certificate, StudentAbsence, TeacherScheduleEntry, LoginCounter, LoginEvent, StudentSurvey, WhatsAppGroup, IncomingLetter, OutgoingLetter, TeacherFollowup, ReciprocalVisit, NoObjection, AuditLog, StudentWarning, GuardianSummons, StudentAssistantLog, SocialCommitteePayment, SocialCommitteeExpense, Warden, WardenFollowup, VisitProgramDriveFile, ExamPaper
 from .models import CurriculumConversation
 from .forms import (StudentForm, NoteForm, StudentEditForm, TeacherForm, TeacherEditForm,
     TeacherNoteForm, AnnouncementForm, AgendaForm, AgendaCompleteForm,
@@ -109,7 +109,7 @@ def sort_by_student_name(items):
         x.student_id or 0,
     ))
 
-MODULE_KEYS = ['registers', 'library_register', 'science_lab_register', 'computer_lab_register', 'students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant', 'health_committee']
+MODULE_KEYS = ['registers', 'library_register', 'science_lab_register', 'computer_lab_register', 'students', 'teachers', 'social_committee', 'classes', 'subjects', 'announcements', 'agenda', 'leaves', 'levels', 'exams', 'messages', 'reports', 'settings', 'notes', 'discipline', 'lateness', 'meetings', 'supervisor_visits', 'inspection_visits', 'visit_program', 'absence', 'schedule', 'survey', 'certificates', 'guardians', 'nominations', 'incoming', 'outgoing', 'teacher_followup', 'reciprocal_visits', 'no_objection', 'wardens', 'open_learning', 'school_radio', 'curriculum_assistant', 'health_committee', 'exam_writer']
 ACTION_KEYS = [
     'view', 'add', 'edit', 'delete', 'import', 'export', 'print', 'notes',
     'complete', 'send', 'review', 'monitor', 'generate', 'manage_constraints',
@@ -156,6 +156,7 @@ MODULE_LABELS = {
     'school_radio': 'ملف الإذاعة المدرسية',
     'curriculum_assistant': 'إدارة مساعد المنهاج',
     'health_committee': 'اللجنة الصحية المدرسية',
+    'exam_writer': 'كتابة الاختبارات',
 }
 ACTION_LABELS = {
     'view': 'عرض',
@@ -5516,6 +5517,7 @@ def get_clearable_tables():
     return [
         *CLEARABLE_TABLES,
         ('school_radio', 'ملف الإذاعة المدرسية وصورها', SchoolRadioEntry, []),
+        ('exam_writer', 'الاختبارات المكتوبة والأسئلة المحفوظة', ExamPaper, []),
     ]
 
 DEPENDENT_MODELS = {
@@ -5550,6 +5552,13 @@ def reset_data(request):
                             SocialCommitteeExpense.objects.all().delete()
                             log_action(request.user, 'تفريغ بيانات', f'اللجنة الاجتماعية: {payment_count} مدفوعات، {expense_count} مشتريات')
                         messages.success(request, 'تم تفريغ مدفوعات ومشتريات اللجنة الاجتماعية')
+                        return redirect('reset_data')
+                    if key == 'exam_writer':
+                        with transaction.atomic():
+                            paper_count = ExamPaper.objects.count()
+                            ExamPaper.objects.all().delete()
+                            log_action(request.user, 'حذف عام للاختبارات المكتوبة', f'حذف {paper_count} اختبارًا محفوظًا')
+                        messages.success(request, f'تم حذف جميع الاختبارات المكتوبة ({paper_count} اختبار).')
                         return redirect('reset_data')
                     if key == 'school_radio':
                         from open_learning.radio_maintenance import (
