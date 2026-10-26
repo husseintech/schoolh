@@ -1663,3 +1663,19 @@ class ExamPaper(models.Model):
 
     def __str__(self):
         return f"{self.exam_name} - {self.teacher.full_name}"
+
+
+class ExamFont(models.Model):
+    """Reusable font uploaded for exam documents."""
+    name = models.CharField("اسم الخط", max_length=100, unique=True)
+    file = models.FileField("ملف الخط", upload_to="exam_fonts/")
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="uploaded_exam_fonts")
+    created_at = models.DateTimeField("تاريخ الرفع", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "خط الاختبارات"
+        verbose_name_plural = "خطوط الاختبارات"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
