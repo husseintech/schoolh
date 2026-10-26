@@ -15,13 +15,13 @@
 <header class="header">
 <div><div>دولة فلسطين</div><div>وزارة التربية والتعليم العالي</div><div>مديرية التربية والتعليم - يطا</div><div class="school-name">{{ school_info.name_ar|default:"اسم المدرسة" }}</div></div>
 <div>{% if school_info.ministry_logo %}<img src="{{ school_info.ministry_logo }}" alt="شعار الوزارة">{% elif school_info.school_logo %}<img src="{{ school_info.school_logo }}" alt="شعار المدرسة">{% endif %}</div>
-<div><div>المبحث: {{ paper.subject.name }}</div><div>المدة: {{ paper.duration_minutes }} دقيقة</div><div>اسم الاختبار: {{ paper.exam_name }}</div></div>
+<div><div>المبحث: {{ paper.subject.name }}</div><div>المدة: {{ paper.duration_minutes }} دقيقة</div><div>اسم الاختبار: {{ paper.exam_name }}</div><div>الصف: {% for c in paper.classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}</div></div>
 </header>
 <hr class="rule">
-<div class="student-line"><span>الاسم: ....................................................</span><span>الصف: {% for c in paper.classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}</span></div>
+<div class="student-line"><span>الاسم: ....................................................</span></div>
 {% for q in paper.questions %}
 <section class="question">
-<div class="qtext"><strong>{{ forloop.counter }}. {{ q.text }}</strong>
+<div class="qtext"><strong>{{ q.display_number|default:forloop.counter }}. {{ q.text }}</strong>
 {% if q.type == "مقالي" %}<div class="answer-lines">{% for n in "12345678901234567890"|make_list %}{% if forloop.counter <= q.lines %}<div></div>{% endif %}{% endfor %}</div>{% endif %}
 {% if q.type == "اختيار من متعدد" %}<div class="choices">{% for choice in q.choices %}<div>{{ forloop.counter|add:"0" }}. {{ choice }}</div>{% endfor %}</div>{% endif %}
 {% if q.type == "توصيل" %}<div class="match"><div>{{ q.left }}</div><div>{{ q.right }}</div></div>{% endif %}
