@@ -1645,7 +1645,9 @@ class ExamPaper(models.Model):
     exam_type = models.CharField("نوع الاختبار", max_length=100, blank=True)
     questions = models.JSONField("الأسئلة", default=list, blank=True)
     font_name = models.CharField("نوع الخط", max_length=80, default="Traditional Arabic")
-    font_size = models.PositiveSmallIntegerField("حجم الخط", default=16)\n    header_font_size = models.FloatField("حجم خط الترويسة", default=9)\n    header_font_weight = models.PositiveSmallIntegerField("سماكة خط الترويسة", default=400)
+    font_size = models.PositiveSmallIntegerField("حجم الخط", default=16)
+    header_font_size = models.FloatField("حجم خط الترويسة", default=9)
+    header_font_weight = models.PositiveSmallIntegerField("سماكة خط الترويسة", default=400)
     created_at = models.DateTimeField("تاريخ الإنشاء", auto_now_add=True)
     updated_at = models.DateTimeField("آخر تعديل", auto_now=True)
 
