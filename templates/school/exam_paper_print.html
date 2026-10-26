@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ paper.exam_name }}</title>
+<style>
+@page{size:A4 portrait;margin:12mm}
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#111;font-family:"{{ paper.font_name|default:'Traditional Arabic' }}",Arial,sans-serif;font-size:{{ paper.font_size|default:16 }}pt;line-height:1.45}.toolbar{max-width:210mm;margin:12px auto;display:flex;gap:8px;justify-content:center}.toolbar a,.toolbar button{padding:9px 15px;border:1px solid #b9c6d5;border-radius:8px;background:white;color:#123;text-decoration:none;font-size:14px;cursor:pointer}.paper{width:186mm;min-height:273mm;margin:0 auto 18px;background:white;padding:0;color:#111}.header{display:grid;grid-template-columns:1fr 18mm 1fr;align-items:center;gap:2mm;text-align:center;font-size:var(--header-font-size,9pt);line-height:var(--header-line-height,1.3);letter-spacing:var(--header-letter-spacing,0);padding:var(--header-padding,0)}.header img{max-width:17mm;max-height:17mm;object-fit:contain;margin:auto}.school-name{font-weight:bold}.rule{border:0;border-top:1px solid #111;margin:.5mm 0}.student-line{display:flex;justify-content:space-between;gap:2mm;flex-wrap:wrap;font-size:9pt;margin-bottom:0;line-height:1.1}.exam-title{text-align:center;font-size:.95em;font-weight:bold;margin:2mm 0}.question{display:grid;grid-template-columns:minmax(0,1fr) 22mm;gap:2mm;padding:.35mm 0;border-bottom:1px solid #999;break-inside:avoid;page-break-inside:avoid}.qtext{white-space:pre-wrap;overflow-wrap:anywhere}.marks{text-align:left;font-size:.85em;font-weight:bold;white-space:nowrap}.choices{display:grid;grid-template-columns:1fr 1fr;gap:1mm 4mm;margin-top:1mm}.match{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-top:1mm;white-space:pre-wrap}.answer-lines{margin-top:0}.answer-lines div{height:5mm;border-bottom:1px solid #c5c5c5}.end{text-align:center;font-weight:bold;margin:5mm 0}.signature{text-align:left;margin-top:6mm}.no-split{break-inside:avoid;page-break-inside:avoid}@media print{body{background:white}.toolbar{display:none}.paper{width:auto;min-height:0;margin:0}.question{break-inside:avoid;page-break-inside:avoid}}
+</style>
+</head>
+<body>
+{% if not word_export %}<div class="toolbar"><button onclick="window.print()">طباعة / حفظ PDF</button><a href="?format=word">تنزيل نسخة Word</a></div>{% endif %}
+<main class="paper" dir="rtl">
+{% if not word_export %}<details class="toolbar" style="display:block;text-align:right"><summary style="cursor:pointer">إعدادات الترويسة</summary><div style="display:flex;gap:12px;flex-wrap:wrap;padding:10px;background:#fff;border:1px solid #ccd;border-radius:8px"><label>حجم الخط <input id="header-size" type="range" min="7" max="14" step="0.5" value="9"></label><label>تباعد الأسطر <input id="header-line" type="range" min="1" max="2" step="0.05" value="1.3"></label><label>تباعد الحروف <input id="header-letter" type="range" min="0" max="2" step="0.1" value="0"></label><label>المسافة الداخلية <input id="header-pad" type="range" min="0" max="8" step="1" value="0"></label></div></details><script>(function(){const r=document.documentElement;const m=[["header-size","--header-font-size",v=>v+"pt"],["header-line","--header-line-height",v=>v],["header-letter","--header-letter-spacing",v=>v+"px"],["header-pad","--header-padding",v=>v+"px"]];m.forEach(([id,key,fmt])=>{const e=document.getElementById(id);if(e)e.addEventListener("input",()=>r.style.setProperty(key,fmt(e.value)));});})();</script>{% endif %}
+<header class="header">
+<div><div>دولة فلسطين</div><div>وزارة التربية والتعليم العالي</div><div>مديرية التربية والتعليم - يطا</div><div class="school-name">{{ school_info.name_ar|default:"اسم المدرسة" }}</div></div>
+<div>{% if school_info.ministry_logo %}<img src="{{ school_info.ministry_logo }}" alt="شعار الوزارة">{% elif school_info.school_logo %}<img src="{{ school_info.school_logo }}" alt="شعار المدرسة">{% endif %}</div>
+<div><div>المبحث: {{ paper.subject.name }}</div><div>المدة: {{ paper.duration_minutes }} دقيقة</div><div>اسم الاختبار: {{ paper.exam_name }}</div><div>الصف: {% for c in paper.classes.all %}{{ c.name }}{% if not forloop.last %}، {% endif %}{% endfor %}</div></div>
+</header>
+<hr class="rule">
+<div class="student-line"><span>الاسم: ....................................................</span></div>
+{% for q in paper.questions %}
+<section class="question">
+<div class="qtext"><strong>{{ q.display_number|default:forloop.counter }}. {{ q.text }}</strong>
+{% if q.type == "مقالي" %}<div class="answer-lines">{% for n in "12345678901234567890"|make_list %}{% if forloop.counter <= q.lines %}<div></div>{% endif %}{% endfor %}</div>{% endif %}
+{% if q.type == "اختيار من متعدد" %}<div class="choices">{% for choice in q.choices %}<div>{{ forloop.counter|add:"0" }}. {{ choice }}</div>{% endfor %}</div>{% endif %}
+{% if q.type == "توصيل" %}<div class="match"><div>{{ q.left }}</div><div>{{ q.right }}</div></div>{% endif %}
+
+</div><div class="marks">({{ q.marks }} علامات)</div>
+</section>
+{% endfor %}
+<hr class="rule"><div class="end">كل التوفيق لكم</div>
+<div class="signature">معلم المادة<br><strong>{{ paper.teacher.full_name }}</strong></div>
+</main>
+</body></html>
