@@ -81,6 +81,11 @@ def exam_writer(request):
         font_size_raw = request.POST.get("font_size", "16")
         header_font_size_raw = request.POST.get("header_font_size", "9")
         header_font_weight_raw = request.POST.get("header_font_weight", "400")
+        header_font_family = request.POST.get("header_font_family", "Traditional Arabic")[:80]
+        header_text_align = request.POST.get("header_text_align", "center")
+        header_line_height_raw = request.POST.get("header_line_height", "1.3")
+        header_letter_spacing_raw = request.POST.get("header_letter_spacing", "0")
+        header_padding_raw = request.POST.get("header_padding", "0")
         class_ids = request.POST.getlist("class_ids")
         questions_raw = request.POST.get("questions_json", "[]")
 
@@ -134,6 +139,7 @@ def exam_writer(request):
                 "left": str(question.get("left", ""))[:5000],
                 "right": str(question.get("right", ""))[:5000],
                 "image": str(question.get("image", ""))[:2200000] if str(question.get("image", "")).startswith("data:image/") else "",
+                "imageWidth": max(10, min(90, int(question.get("imageWidth", 40) or 40))),
                 "imagePosition": question.get("imagePosition", "right") if question.get("imagePosition") in ("right", "left", "center") else "right",
                 "table": [[str(cell)[:500] for cell in row[:10]] for row in question.get("table", [])[:20] if isinstance(row, list)] if isinstance(question.get("table", []), list) else [],
             })
@@ -153,6 +159,11 @@ def exam_writer(request):
         paper.font_size = max(10, min(24, font_size))
         paper.header_font_size = max(7, min(14, header_font_size))
         paper.header_font_weight = header_font_weight if header_font_weight in (300, 400, 600, 700, 900) else 400
+        paper.header_font_family = header_font_family
+        paper.header_text_align = header_text_align if header_text_align in ("left", "center", "right") else "center"
+        paper.header_line_height = max(1, min(2, header_line_height))
+        paper.header_letter_spacing = max(0, min(3, header_letter_spacing))
+        paper.header_padding = max(0, min(16, header_padding))
         paper.save()
         paper.classes.set(valid_class_ids)
         messages.success(request, "تم حفظ الاختبار. يمكنك معاينته وطباعته أو تصديره إلى Word.")
