@@ -8,7 +8,6 @@ from . import attendance_followup
 from . import registers_views
 from . import exam_writer_views
 from . import lateness_reports
-from . import kindergarten_visit_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -237,10 +236,6 @@ urlpatterns = [
     path('inspection-visits/', views.inspection_visit_list, name='inspection_visit_list'),
     path('inspection-visits/<int:visit_id>/report/', views.inspection_visit_report, name='inspection_visit_report'),
     path('inspection-visits/all-report/', views.inspection_visits_all_report, name='inspection_visits_all_report'),
-
-    # Kindergarten visit report (isolated from standard teacher visits)
-    path('visit-program/kindergarten/<int:teacher_id>/', kindergarten_visit_views.kindergarten_visit_form, name='kindergarten_visit_form'),
-    path('visit-program/kindergarten/<int:teacher_id>/<int:report_id>/', kindergarten_visit_views.kindergarten_visit_edit, name='kindergarten_visit_edit'),
 
     # Visit Program
     path('visit-program/<int:entry_id>/', views.visit_program_entry, name='visit_program_entry'),
