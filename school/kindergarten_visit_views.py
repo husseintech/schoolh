@@ -40,7 +40,10 @@ def kindergarten_visit_form(request, teacher_id, report_id=None):
         if school_info:
             report.school_name = school_info.name_ar
         for field in fields:
-            setattr(report, field, request.POST.get(field, '').strip())
+            value = request.POST.get(field, '').strip()
+            if field in ('whole_group_count', 'small_group_count'):
+                value = int(value) if value.isdigit() else None
+            setattr(report, field, value)
         report.save()
         for uploaded in request.FILES.getlist('attachments'):
             if uploaded.size > 10 * 1024 * 1024:
