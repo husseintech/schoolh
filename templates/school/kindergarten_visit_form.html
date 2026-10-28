@@ -18,9 +18,22 @@
       </header>
       <h2>نموذج تقرير زيارة مدير المدرسة لمربية رياض الأطفال</h2>
       <div class="identity">
-        <label>المدرسة <input name="school_name" value="{{ report.school_name|default:'' }}" class="print-line"></label>
+        <label>المدرسة <input value="{% if school_info %}{{ school_info.name_ar }}{% else %}{{ report.school_name|default:'' }}{% endif %}" readonly></label>
         <label>اسم المربية <input value="{{ teacher.full_name }}" readonly></label>
-        <label>مؤهلاتها العلمية والمسلكية <input name="qualifications" value="{{ report.qualifications|default:'' }}"></label>
+        <label>المؤهل العلمي
+          <select name="scientific_qualification"><option value="">-- اختر المؤهل العلمي --</option>{% for choice in "دبلوم,بكالوريوس,ماجستير,دكتوراه"|cut:" "|make_list %}{% endfor %}
+          <option value="دبلوم" {% if report.scientific_qualification == 'دبلوم' %}selected{% endif %}>دبلوم</option>
+          <option value="بكالوريوس" {% if report.scientific_qualification == 'بكالوريوس' %}selected{% endif %}>بكالوريوس</option>
+          <option value="ماجستير" {% if report.scientific_qualification == 'ماجستير' %}selected{% endif %}>ماجستير</option>
+          <option value="دكتوراه" {% if report.scientific_qualification == 'دكتوراه' %}selected{% endif %}>دكتوراه</option></select>
+        </label>
+        <label>المؤهل المسلكي
+          <select name="professional_qualification"><option value="">-- اختر المؤهل المسلكي --</option>
+          <option value="دبلوم تأهيل تربوي" {% if report.professional_qualification == 'دبلوم تأهيل تربوي' %}selected{% endif %}>دبلوم تأهيل تربوي</option>
+          <option value="تأهيل رياض أطفال" {% if report.professional_qualification == 'تأهيل رياض أطفال' %}selected{% endif %}>تأهيل رياض أطفال</option>
+          <option value="دورات تربوية" {% if report.professional_qualification == 'دورات تربوية' %}selected{% endif %}>دورات تربوية</option>
+          <option value="أخرى" {% if report.professional_qualification == 'أخرى' %}selected{% endif %}>أخرى</option></select>
+        </label>
         <label>سنوات الخبرة <input name="experience_years" value="{{ report.experience_years|default:'' }}"></label>
         <label>التحضير اليومي <textarea name="daily_preparation" rows="2">{{ report.daily_preparation|default:'' }}</textarea></label>
         <label>تاريخ الزيارة <input type="date" name="visit_date" value="{% if report %}{{ report.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"></label>
@@ -39,7 +52,9 @@
         </label>
         <label>تفاعل الأطفال <textarea name="children_interaction" rows="2">{{ report.children_interaction|default:'' }}</textarea></label>
         <label>مراعاة الفروق الفردية <textarea name="individual_differences" rows="2">{{ report.individual_differences|default:'' }}</textarea></label>
-        <label>العمل ضمن مجموعات <textarea name="group_work" rows="2">{{ report.group_work|default:'' }}</textarea></label>
+        <label>العمل ضمن مجموعات - ملاحظات <textarea name="group_work" rows="2">{{ report.group_work|default:'' }}</textarea></label>
+        <label>عدد المجموعة الكلية <input type="number" min="0" name="whole_group_count" value="{{ report.whole_group_count|default_if_none:'' }}"></label>
+        <label>عدد المجموعة المصغرة <input type="number" min="0" name="small_group_count" value="{{ report.small_group_count|default_if_none:'' }}"></label>
         <label>مدى تحقق الأهداف <textarea name="goals_achieved" rows="2">{{ report.goals_achieved|default:'' }}</textarea></label>
         <label>نقاط مميزة لدى المربية <textarea name="strengths" rows="3">{{ report.strengths|default:'' }}</textarea></label>
         <label>ملاحظات لتطوير عمل المربية <textarea name="improvement_notes" rows="3">{{ report.improvement_notes|default:'' }}</textarea></label>
