@@ -1,0 +1,74 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}تقرير زيارة مربية رياض الأطفال{% endblock %}
+{% block page_heading %}تقرير زيارة مربية رياض الأطفال{% endblock %}
+{% block content %}
+<div class="container-fluid" dir="rtl">
+  <div class="d-flex gap-2 flex-wrap mb-3 no-print">
+    <button class="btn btn-primary" type="button" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button>
+    <a class="btn btn-outline-secondary" href="{% url 'visit_program_list' %}">العودة لبرنامج الزيارات</a>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="kindergarten-form">
+    {% csrf_token %}
+    <section class="paper">
+      <header class="letterhead">
+        <div>دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم العالي / يطا</div>
+        <img src="{% static 'images/palestine_logo.png' %}" alt="شعار فلسطين">
+        <div dir="ltr">State of Palestine<br>Ministry Of Education &amp; Higher Education<br>Directorate Of High Education / Yatta</div>
+      </header>
+      <h2>نموذج تقرير زيارة مدير المدرسة لمربية رياض الأطفال</h2>
+      <div class="identity">
+        <label>المدرسة <input name="school_name" value="{{ report.school_name|default:'' }}" class="print-line"></label>
+        <label>اسم المربية <input value="{{ teacher.full_name }}" readonly></label>
+        <label>مؤهلاتها العلمية والمسلكية <input name="qualifications" value="{{ report.qualifications|default:'' }}"></label>
+        <label>سنوات الخبرة <input name="experience_years" value="{{ report.experience_years|default:'' }}"></label>
+        <label>التحضير اليومي <textarea name="daily_preparation" rows="2">{{ report.daily_preparation|default:'' }}</textarea></label>
+        <label>تاريخ الزيارة <input type="date" name="visit_date" value="{% if report %}{{ report.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"></label>
+        <label>النشاط <textarea name="activity" rows="2">{{ report.activity|default:'' }}</textarea></label>
+        <div class="time-row"><label>مدة النشاط من الساعة <input name="activity_start" value="{{ report.activity_start|default:'' }}"></label><label>إلى الساعة <input name="activity_end" value="{{ report.activity_end|default:'' }}"></label></div>
+      </div>
+      <h3>فعاليات النشاط</h3>
+      <div class="report-fields">
+        <label>التهيئة للنشاط <textarea name="preparation" rows="2">{{ report.preparation|default:'' }}</textarea></label>
+        <label>وضوح الأهداف <textarea name="objectives" rows="2">{{ report.objectives|default:'' }}</textarea></label>
+        <label>الوسائل التعليمية المساندة للنشاط <textarea name="teaching_aids" rows="2">{{ report.teaching_aids|default:'' }}</textarea></label>
+        <label>كفاية هذه الوسائل ومناسبتها للموضوع <textarea name="aids_adequacy" rows="2">{{ report.aids_adequacy|default:'' }}</textarea></label>
+        <label>الأسلوب المتبع <textarea name="method" rows="2">{{ report.method|default:'' }}</textarea></label>
+        <label>نمط التعليم
+          <select name="teaching_style"><option value="">-- اختر --</option><option value="التعليم التقليدي" {% if report.teaching_style == 'التعليم التقليدي' %}selected{% endif %}>التعليم التقليدي</option><option value="تعليم نشط" {% if report.teaching_style == 'تعليم نشط' %}selected{% endif %}>تعليم نشط</option><option value="المزج بين الأسلوبين" {% if report.teaching_style == 'المزج بين الأسلوبين' %}selected{% endif %}>المزج بين الأسلوبين</option></select>
+        </label>
+        <label>تفاعل الأطفال <textarea name="children_interaction" rows="2">{{ report.children_interaction|default:'' }}</textarea></label>
+        <label>مراعاة الفروق الفردية <textarea name="individual_differences" rows="2">{{ report.individual_differences|default:'' }}</textarea></label>
+        <label>العمل ضمن مجموعات <textarea name="group_work" rows="2">{{ report.group_work|default:'' }}</textarea></label>
+        <label>مدى تحقق الأهداف <textarea name="goals_achieved" rows="2">{{ report.goals_achieved|default:'' }}</textarea></label>
+        <label>نقاط مميزة لدى المربية <textarea name="strengths" rows="3">{{ report.strengths|default:'' }}</textarea></label>
+        <label>ملاحظات لتطوير عمل المربية <textarea name="improvement_notes" rows="3">{{ report.improvement_notes|default:'' }}</textarea></label>
+      </div>
+      <div class="signatures">
+        <label>توقيع المربية <input name="teacher_signature" value="{{ report.teacher_signature|default:'' }}"></label>
+        <label>توقيع مدير المدرسة <input name="principal_signature" value="{{ report.principal_signature|default:'' }}"></label>
+        <label>التاريخ <input value="{% if report %}{{ report.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" readonly></label>
+      </div>
+      <footer>قسم التعليم العام: ج.ع/ح.ع — هواتف المديرية: 02-2273772، 02-2273755 — المدير: 02-2273776 — فاكس: 02-2273778</footer>
+    </section>
+    <section class="card mt-3 no-print">
+      <div class="card-body">
+        <label class="form-label fw-bold">إرفاق ملفات بالتقرير</label>
+        <input class="form-control" type="file" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png">
+        <div class="form-text">يمكن اختيار أكثر من ملف؛ الحد الأقصى 10 ميغابايت لكل ملف.</div>
+        {% if report.attachments.all %}
+        <h6 class="mt-3">المرفقات المحفوظة</h6>
+        <ul>{% for item in report.attachments.all %}<li><a href="{{ item.file.url }}" target="_blank" rel="noopener">{{ item.original_name|default:item.file.name }}</a></li>{% endfor %}</ul>
+        {% endif %}
+        <button class="btn btn-success mt-3" type="submit"><i class="bi bi-save"></i> حفظ التقرير والمرفقات</button>
+      </div>
+    </section>
+  </form>
+  {% if reports %}
+  <div class="card mt-4 no-print"><div class="card-header">التقارير السابقة للمربية</div><div class="card-body"><ul class="mb-0">{% for item in reports %}<li><a href="{% url 'kindergarten_visit_edit' teacher.id item.id %}">تقرير بتاريخ {{ item.visit_date|date:'Y-m-d' }}</a></li>{% endfor %}</ul></div></div>
+  {% endif %}
+</div>
+<style>
+.kindergarten-form{font-family:Arial,Tahoma,sans-serif;color:#111}.paper{background:#fff;border:1px solid #bbb;padding:22px;max-width:1000px;margin:auto}.letterhead{display:grid;grid-template-columns:1fr 90px 1fr;gap:12px;align-items:center;text-align:center;font-weight:bold;font-size:13px;line-height:1.8;border-bottom:3px solid #333;padding-bottom:12px}.letterhead img{width:75px;max-height:85px;object-fit:contain}.paper h2{text-align:center;font-size:21px;text-decoration:underline;margin:20px 0}.paper h3{font-size:17px;border-bottom:1px solid #777;padding-bottom:6px}.identity,.report-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.kindergarten-form label{display:flex;flex-direction:column;gap:5px;font-weight:600}.kindergarten-form input,.kindergarten-form textarea,.kindergarten-form select{width:100%;border:0;border-bottom:1px dotted #555;border-radius:0;padding:6px;background:transparent;font:inherit;font-weight:normal}.kindergarten-form input[readonly]{font-weight:bold}.time-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.report-fields{margin-top:12px}.report-fields label,.identity label{break-inside:avoid}.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-top:24px}.paper footer{border-top:3px solid #743b3b;margin-top:24px;padding-top:8px;text-align:center;font-size:11px}@media(max-width:650px){.paper{padding:12px}.letterhead{grid-template-columns:1fr;text-align:center}.letterhead img{margin:auto}.identity,.report-fields,.signatures,.time-row{grid-template-columns:1fr}}@media print{@page{size:A4 portrait;margin:10mm}body{background:#fff!important}.no-print,nav,aside,.navbar,.footer{display:none!important}.paper{max-width:none;border:0;padding:0;margin:0}.letterhead{grid-template-columns:1fr 70px 1fr;font-size:10px}.letterhead img{width:60px}.paper h2{font-size:17px;margin:12px 0}.paper h3{font-size:13px}.identity,.report-fields{gap:7px}.kindergarten-form input,.kindergarten-form textarea,.kindergarten-form select{font-size:10px;padding:3px;resize:none}.kindergarten-form textarea{overflow:visible;min-height:22px}.paper footer{font-size:8px;margin-top:15px}.signatures{margin-top:15px;gap:8px}.paper{break-inside:auto}}
+</style>
+{% endblock %}

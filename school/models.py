@@ -1684,3 +1684,49 @@ class ExamFont(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class KindergartenVisitReport(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='kindergarten_visit_reports', verbose_name='المربية')
+    visit_date = models.DateField('تاريخ الزيارة', default=timezone.localdate)
+    school_name = models.CharField('اسم المدرسة', max_length=200, blank=True)
+    qualifications = models.TextField('المؤهلات العلمية والمسلكية', blank=True)
+    experience_years = models.TextField('سنوات الخبرة', blank=True)
+    daily_preparation = models.TextField('التحضير اليومي', blank=True)
+    activity = models.TextField('النشاط', blank=True)
+    activity_start = models.CharField('بداية النشاط', max_length=30, blank=True)
+    activity_end = models.CharField('نهاية النشاط', max_length=30, blank=True)
+    preparation = models.TextField('التهيئة للنشاط', blank=True)
+    objectives = models.TextField('وضوح الأهداف', blank=True)
+    teaching_aids = models.TextField('الوسائل التعليمية المساندة', blank=True)
+    aids_adequacy = models.TextField('كفاية الوسائل ومناسبتها', blank=True)
+    method = models.TextField('الأسلوب المتبع', blank=True)
+    teaching_style = models.CharField('نمط التعليم', max_length=30, blank=True)
+    children_interaction = models.TextField('تفاعل الأطفال', blank=True)
+    individual_differences = models.TextField('مراعاة الفروق الفردية', blank=True)
+    group_work = models.TextField('العمل ضمن مجموعات', blank=True)
+    goals_achieved = models.TextField('مدى تحقق الأهداف', blank=True)
+    strengths = models.TextField('نقاط مميزة لدى المربية', blank=True)
+    improvement_notes = models.TextField('ملاحظات لتطوير عمل المربية', blank=True)
+    principal_signature = models.CharField('توقيع مدير المدرسة', max_length=200, blank=True)
+    teacher_signature = models.CharField('توقيع المربية', max_length=200, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'تقرير زيارة مربية رياض الأطفال'
+        verbose_name_plural = 'تقارير زيارات مربيات رياض الأطفال'
+        ordering = ['-visit_date', '-created_at']
+
+
+class KindergartenVisitAttachment(models.Model):
+    report = models.ForeignKey(KindergartenVisitReport, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField('الملف المرفق', upload_to='kindergarten_visit_reports/%Y/%m/')
+    original_name = models.CharField('اسم الملف', max_length=255, blank=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'مرفق تقرير زيارة تمهيدي'
+        verbose_name_plural = 'مرفقات تقارير زيارات تمهيدي'
