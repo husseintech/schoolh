@@ -15,16 +15,10 @@ def database_health(request):
             cursor.execute("SELECT 1")
             database_value = cursor.fetchone()
     except DatabaseError:
-        return JsonResponse(
-            {"status": "error", "database": "unreachable"},
-            status=503,
-        )
+        return JsonResponse({"status": "error", "database": "unreachable"}, status=503)
 
     if database_value != (1,):
-        return JsonResponse(
-            {"status": "error", "database": "unexpected_response"},
-            status=503,
-        )
+        return JsonResponse({"status": "error", "database": "unexpected_response"}, status=503)
 
     return JsonResponse({"status": "ok", "database": "reachable"})
 
@@ -32,7 +26,7 @@ def database_health(request):
 @require_GET
 @never_cache
 def kindergarten_schema_health(request):
-    """Read-only check of required columns using the live app DB connection."""
+    """Read-only diagnostic of the kindergarten report table across visible schemas."""
     table_name = "school_kindergartenvisitreport"
     required_columns = (
         "scientific_qualification",
@@ -44,31 +38,64 @@ def kindergarten_schema_health(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
+                "SELECT current_database(), current_schema(), current_schemas(false)"
+            )
+            database_name, current_schema, search_path_schemas = cursor.fetchone()
+
+            cursor.execute(
                 """
-                SELECT column_name
+                SELECT table_schema, column_name
                 FROM information_schema.columns
                 WHERE table_name = %s
-                  AND table_schema = ANY(current_schemas(false))
+                ORDER BY table_schema, ordinal_position
                 """,
                 [table_name],
             )
-            columns = {row[0] for row in cursor.fetchall()}
+            rows = cursor.fetchall()
     except DatabaseError:
         return JsonResponse(
-            {"status": "error", "table": table_name, "schema_check": "failed"},
+            {"status": "error", "schema_check": "failed"},
             status=503,
         )
 
-    table_exists = bool(columns)
-    missing_columns = [name for name in required_columns if name not in columns]
-    status = "ok" if table_exists and not missing_columns else "error"
+    columns_by_schema = {}
+    for schema_name, column_name in rows:
+        columns_by_schema.setdefault(schema_name, set()).add(column_name)
+
+    visible_schemas = list(search_path_schemas or [])
+    visible_table_schemas = {
+        schema: columns_by_schema[schema]
+        for schema in visible_schemas
+        if schema in columns_by_schema
+    }
+    visible_columns = set()
+    for schema_columns in visible_table_schemas.values():
+        visible_columns.update(schema_columns)
+
+    missing_columns = [name for name in required_columns if name not in visible_columns]
+    table_visible = bool(visible_table_schemas)
+    status = "ok" if table_visible and not missing_columns else "error"
 
     return JsonResponse(
         {
             "status": status,
-            "table_exists": table_exists,
-            "required_columns": {name: name in columns for name in required_columns},
-            "missing_columns": missing_columns,
+            "database": database_name,
+            "current_schema": current_schema,
+            "search_path_schemas": visible_schemas,
+            "table_visible_in_search_path": table_visible,
+            "table_schemas_found": {
+                schema: {
+                    "column_count": len(schema_columns),
+                    "required_columns": {
+                        name: name in schema_columns for name in required_columns
+                    },
+                    "missing_columns": [
+                        name for name in required_columns if name not in schema_columns
+                    ],
+                }
+                for schema, schema_columns in columns_by_schema.items()
+            },
+            "missing_columns_in_search_path": missing_columns,
         },
         status=200 if status == "ok" else 503,
     )
