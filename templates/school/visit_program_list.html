@@ -141,9 +141,15 @@
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                                 <strong>{{ e.teacher.full_name }}</strong>
                                 {% if 'inspection_visits_view' in user_perms and 'inspection_visits_add' in user_perms %}
+                                {% if e.is_kindergarten_teacher %}
+                                <a href="{% url 'kindergarten_visit_form' e.teacher_id %}" class="btn btn-primary btn-sm text-nowrap">
+                                    <i class="bi bi-clipboard2-plus"></i> تسجيل زيارة التمهيدي
+                                </a>
+                                {% else %}
                                 <a href="{% url 'inspection_visit_list' %}?teacher_id={{ e.teacher_id }}&amp;program_id={{ e.id }}#new-inspection-visit" class="btn btn-primary btn-sm text-nowrap">
                                     <i class="bi bi-clipboard2-plus"></i> تسجيل الزيارة
                                 </a>
+                                {% endif %}
                                 <a href="{% url 'visit_program_files' %}?teacher_id={{ e.teacher_id }}" class="btn btn-outline-success btn-sm text-nowrap" title="رفع ملف إلى Google Drive" aria-label="رفع ملف إلى Google Drive">
                                     <i class="bi bi-cloud-arrow-up"></i> رفع ملف
                                 </a>
