@@ -7,6 +7,7 @@ from . import social_committee_views
 from . import attendance_followup
 from . import registers_views
 from . import exam_writer_views
+from . import lateness_reports
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -215,6 +216,7 @@ urlpatterns = [
     # Student Lateness
     path('lateness/', views.lateness_list, name='lateness_list'),
     path('lateness/report/', views.lateness_report, name='lateness_report'),
+    path('lateness/summary-report/', lateness_reports.lateness_summary_report, name='lateness_summary_report'),
     path('lateness/student/<int:student_id>/', views.student_lateness_detail, name='student_lateness_detail'),
 
     # School Info
