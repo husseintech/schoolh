@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('school', '0063_visit_program_drivefile_teacher'),
+        ('school', '0065_teacherfollowupregistersettings'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
