@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Teacher, KindergartenVisitReport, KindergartenVisitAttachment, has_perm
+from .models import Teacher, SchoolInfo, KindergartenVisitReport, KindergartenVisitAttachment, has_perm
 
 
 def _is_kindergarten_teacher(teacher):
@@ -25,10 +25,10 @@ def kindergarten_visit_form(request, teacher_id, report_id=None):
         return redirect('visit_program_list')
     report = get_object_or_404(KindergartenVisitReport, pk=report_id, teacher=teacher) if report_id else None
     fields = [
-        'school_name', 'qualifications', 'experience_years', 'daily_preparation', 'activity',
+        'scientific_qualification', 'professional_qualification', 'experience_years', 'daily_preparation', 'activity',
         'activity_start', 'activity_end', 'preparation', 'objectives',
         'teaching_aids', 'aids_adequacy', 'method', 'teaching_style',
-        'children_interaction', 'individual_differences', 'group_work',
+        'children_interaction', 'individual_differences', 'group_work', 'whole_group_count', 'small_group_count',
         'goals_achieved', 'strengths', 'improvement_notes',
         'principal_signature', 'teacher_signature',
     ]
@@ -36,6 +36,9 @@ def kindergarten_visit_form(request, teacher_id, report_id=None):
         if report is None:
             report = KindergartenVisitReport(teacher=teacher, created_by=request.user)
         report.visit_date = request.POST.get('visit_date') or timezone.localdate()
+        school_info = SchoolInfo.objects.first()
+        if school_info:
+            report.school_name = school_info.name_ar
         for field in fields:
             setattr(report, field, request.POST.get(field, '').strip())
         report.save()
@@ -50,9 +53,10 @@ def kindergarten_visit_form(request, teacher_id, report_id=None):
         messages.success(request, 'تم حفظ تقرير زيارة التمهيدي.')
         return redirect('kindergarten_visit_edit', teacher_id=teacher.pk, report_id=report.pk)
     reports = KindergartenVisitReport.objects.filter(teacher=teacher).prefetch_related('attachments')
+    school_info = SchoolInfo.objects.first()
     return render(request, 'school/kindergarten_visit_form.html', {
         'teacher': teacher, 'report': report, 'reports': reports,
-        'today': timezone.localdate(),
+        'today': timezone.localdate(), 'school_info': school_info,
     })
 
 
