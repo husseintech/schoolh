@@ -4,7 +4,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from school.academic_report_views import academic_achievement_report
-from school.health_views import database_health, database_heartbeat, kindergarten_schema_health
+from school.health_views import database_health, database_heartbeat
 from school.note_actions import delete_note
 from school.ad_studio_views import school_ad_studio
 from school.ai_ad_views import generate_ad_background
@@ -15,7 +15,6 @@ from school.facebook_ad_views import (
 urlpatterns = [
     path('health/database/', database_health, name='database_health'),
     path('health/database-heartbeat/', database_heartbeat, name='database_heartbeat'),
-    path('health/kindergarten-schema/', kindergarten_schema_health, name='kindergarten_schema_health'),
     path('admin/', admin.site.urls),
     path('administration/academic-achievement/', academic_achievement_report, name='academic_achievement_report'),
     path('administration/teacher-records/', include('school.teacher_records_urls')),
