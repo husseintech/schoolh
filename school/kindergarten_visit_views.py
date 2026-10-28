@@ -57,8 +57,10 @@ def kindergarten_visit_form(request, teacher_id, report_id=None):
         return redirect('kindergarten_visit_edit', teacher_id=teacher.pk, report_id=report.pk)
     reports = KindergartenVisitReport.objects.filter(teacher=teacher).prefetch_related('attachments')
     school_info = SchoolInfo.objects.first()
+    attachments = report.attachments.all() if report and report.pk else []
     return render(request, 'school/kindergarten_visit_form.html', {
         'teacher': teacher, 'report': report, 'reports': reports,
+        'attachments': attachments,
         'today': timezone.localdate(), 'school_info': school_info,
     })
 

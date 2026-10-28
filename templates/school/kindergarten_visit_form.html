@@ -71,9 +71,9 @@
         <label class="form-label fw-bold">إرفاق ملفات بالتقرير</label>
         <input class="form-control" type="file" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png">
         <div class="form-text">يمكن اختيار أكثر من ملف؛ الحد الأقصى 10 ميغابايت لكل ملف.</div>
-        {% if report.attachments.all %}
+        {% if attachments %}
         <h6 class="mt-3">المرفقات المحفوظة</h6>
-        <ul>{% for item in report.attachments.all %}<li><a href="{{ item.file.url }}" target="_blank" rel="noopener">{{ item.original_name|default:item.file.name }}</a></li>{% endfor %}</ul>
+        <ul>{% for item in attachments %}<li><a href="{{ item.file.url }}" target="_blank" rel="noopener">{{ item.original_name|default:item.file.name }}</a></li>{% endfor %}</ul>
         {% endif %}
         <button class="btn btn-success mt-3" type="submit"><i class="bi bi-save"></i> حفظ التقرير والمرفقات</button>
       </div>
