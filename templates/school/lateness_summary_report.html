@@ -6,11 +6,21 @@
 .lateness-report-card{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:22px;background:#fff}
 .lateness-report-card .card-header{font-weight:800;background:#f3f6fa;color:#26384b}
 .report-kpi{display:inline-block;padding:7px 12px;border-radius:9px;background:#eef3f8;font-weight:800;margin:4px 0 12px}
-@media print{.no-print{display:none!important}.lateness-report-card{break-inside:avoid;border:1px solid #999}.table{font-size:11px}h4{margin-top:12px}}
+@media print{
+    .no-print{display:none!important}
+    .lateness-report-card{break-inside:avoid;border:1px solid #999}
+    .table{font-size:11px}
+    h4{margin-top:12px}
+    body.print-frequent #all-lateness-report{display:none!important}
+    body.print-all-lateness #frequent-lateness-report{display:none!important}
+}
 </style>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 no-print">
     <div class="text-muted">ملخص عدد مرات التأخر لكل طالب، مع قائمة مستقلة لمن تجاوزوا ثلاث مرات.</div>
-    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقريرين</button>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" onclick="printLatenessReport('all')" class="btn btn-outline-primary"><i class="bi bi-printer"></i> طباعة الملخص العام</button>
+        <button type="button" onclick="printLatenessReport('frequent')" class="btn btn-danger"><i class="bi bi-printer-fill"></i> طباعة تقرير أكثر من 3 مرات</button>
+    </div>
 </div>
 <div class="card mb-3 no-print">
     <div class="card-body">
@@ -35,7 +45,7 @@
     <p>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %}{% else %}كامل السنة{% endif %}</p>
 </div>
 
-<section class="lateness-report-card">
+<section id="all-lateness-report" class="lateness-report-card">
     <div class="card-header p-3 d-flex justify-content-between flex-wrap gap-2">
         <span><i class="bi bi-clock-history"></i> التقرير الأول: ملخص الطلاب المتأخرين</span>
         <span>عدد الطلاب: {{ students_with_lateness|length }}</span>
@@ -57,10 +67,12 @@
     </div>
 </section>
 
-<section class="lateness-report-card">
-    <div class="card-header p-3 d-flex justify-content-between flex-wrap gap-2">
+<section id="frequent-lateness-report" class="lateness-report-card">
+    <div class="card-header p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="bi bi-exclamation-triangle-fill"></i> التقرير الثاني: الطلاب المتأخرون أكثر من ثلاث مرات</span>
-        <span>عدد الطلاب: {{ frequent_students|length }}</span>
+        <span class="no-print">عدد الطلاب: {{ frequent_students|length }}</span>
+        <span class="d-none d-print-inline">عدد الطلاب: {{ frequent_students|length }}</span>
+        <button type="button" onclick="printLatenessReport('frequent')" class="btn btn-danger btn-sm no-print"><i class="bi bi-printer-fill"></i> طباعة هذا التقرير فقط</button>
     </div>
     <div class="card-body">
         <div class="report-kpi">يشمل الطلاب المسجل عليهم 4 حالات تأخر فأكثر</div>
@@ -78,4 +90,14 @@
         </div>
     </div>
 </section>
+<script>
+function printLatenessReport(kind) {
+    document.body.classList.remove('print-frequent', 'print-all-lateness');
+    document.body.classList.add(kind === 'frequent' ? 'print-frequent' : 'print-all-lateness');
+    window.print();
+}
+window.addEventListener('afterprint', function () {
+    document.body.classList.remove('print-frequent', 'print-all-lateness');
+});
+</script>
 {% endblock %}
