@@ -21,7 +21,7 @@
         <label>المدرسة <input value="{% if school_info %}{{ school_info.name_ar }}{% else %}{{ report.school_name|default:'' }}{% endif %}" readonly></label>
         <label>اسم المربية <input value="{{ teacher.full_name }}" readonly></label>
         <label>المؤهل العلمي
-          <select name="scientific_qualification"><option value="">-- اختر المؤهل العلمي --</option>{% for choice in "دبلوم,بكالوريوس,ماجستير,دكتوراه"|cut:" "|make_list %}{% endfor %}
+          <select name="scientific_qualification"><option value="">-- اختر المؤهل العلمي --</option>
           <option value="دبلوم" {% if report.scientific_qualification == 'دبلوم' %}selected{% endif %}>دبلوم</option>
           <option value="بكالوريوس" {% if report.scientific_qualification == 'بكالوريوس' %}selected{% endif %}>بكالوريوس</option>
           <option value="ماجستير" {% if report.scientific_qualification == 'ماجستير' %}selected{% endif %}>ماجستير</option>
