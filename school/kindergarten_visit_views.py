@@ -25,7 +25,7 @@ def kindergarten_visit_form(request, teacher_id, report_id=None):
         return redirect('visit_program_list')
     report = get_object_or_404(KindergartenVisitReport, pk=report_id, teacher=teacher) if report_id else None
     fields = [
-        'qualifications', 'experience_years', 'daily_preparation', 'activity',
+        'school_name', 'qualifications', 'experience_years', 'daily_preparation', 'activity',
         'activity_start', 'activity_end', 'preparation', 'objectives',
         'teaching_aids', 'aids_adequacy', 'method', 'teaching_style',
         'children_interaction', 'individual_differences', 'group_work',
