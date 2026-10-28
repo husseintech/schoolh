@@ -5,7 +5,7 @@
 <style>
 .lateness-report-card{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:22px;background:#fff}
 .lateness-report-card .card-header{font-weight:800;background:#f3f6fa;color:#26384b}
-.report-kpi{display:inline-block;padding:7px 12px;border-radius:9px;background:#eef3f8;font-weight:800;margin:4px 0 12px}
+.report-kpi{display:inline-block;padding:7px 12px;border-radius:9px;background:#eef3f8;font-weight:800;margin:4px 0 12px}\n.frequent-highlight{border:2px solid #dc3545;box-shadow:0 3px 12px rgba(220,53,69,.08)}\n.frequent-highlight .card-header{background:#fff0f1;color:#8b1e2d}
 @media print{
     .no-print{display:none!important}
     .lateness-report-card{break-inside:avoid;border:1px solid #999}
@@ -45,29 +45,7 @@
     <p>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %}{% else %}كامل السنة{% endif %}</p>
 </div>
 
-<section id="all-lateness-report" class="lateness-report-card">
-    <div class="card-header p-3 d-flex justify-content-between flex-wrap gap-2">
-        <span><i class="bi bi-clock-history"></i> التقرير الأول: ملخص الطلاب المتأخرين</span>
-        <span>عدد الطلاب: {{ students_with_lateness|length }}</span>
-    </div>
-    <div class="card-body">
-        <div class="report-kpi">إجمالي الطلاب الذين سُجّل عليهم تأخر: {{ students_with_lateness|length }}</div>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped align-middle">
-                <thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>عدد مرات التأخر</th></tr></thead>
-                <tbody>
-                {% for student in students_with_lateness %}
-                    <tr><td>{{ forloop.counter }}</td><td>{{ student.full_name }}</td><td>{{ student.student_class.name|default:"-" }}</td><td>{{ student.student_id }}</td><td class="text-center fw-bold">{{ student.lateness_count }}</td></tr>
-                {% empty %}
-                    <tr><td colspan="5" class="text-center text-muted py-4">لا توجد حالات تأخر مسجلة في الفترة المحددة.</td></tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-
-<section id="frequent-lateness-report" class="lateness-report-card">
+<section id="frequent-lateness-report" class="lateness-report-card frequent-highlight">
     <div class="card-header p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="bi bi-exclamation-triangle-fill"></i> التقرير الثاني: الطلاب المتأخرون أكثر من ثلاث مرات</span>
         <span class="no-print">عدد الطلاب: {{ frequent_students|length }}</span>
@@ -90,14 +68,65 @@
         </div>
     </div>
 </section>
+
+<section id="all-lateness-report" class="lateness-report-card">
+    <div class="card-header p-3 d-flex justify-content-between flex-wrap gap-2">
+        <span><i class="bi bi-clock-history"></i> التقرير الأول: ملخص الطلاب المتأخرين</span>
+        <span>عدد الطلاب: {{ students_with_lateness|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="report-kpi">إجمالي الطلاب الذين سُجّل عليهم تأخر: {{ students_with_lateness|length }}</div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>عدد مرات التأخر</th></tr></thead>
+                <tbody>
+                {% for student in students_with_lateness %}
+                    <tr><td>{{ forloop.counter }}</td><td>{{ student.full_name }}</td><td>{{ student.student_class.name|default:"-" }}</td><td>{{ student.student_id }}</td><td class="text-center fw-bold">{{ student.lateness_count }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">لا توجد حالات تأخر مسجلة في الفترة المحددة.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 <script>
 function printLatenessReport(kind) {
-    document.body.classList.remove('print-frequent', 'print-all-lateness');
-    document.body.classList.add(kind === 'frequent' ? 'print-frequent' : 'print-all-lateness');
-    window.print();
+    const sourceId = kind === 'frequent' ? 'frequent-lateness-report' : 'all-lateness-report';
+    const source = document.getElementById(sourceId);
+    if (!source) {
+        window.alert('تعذر العثور على التقرير المطلوب للطباعة.');
+        return;
+    }
+
+    // Print the chosen report in an isolated document so other sections and
+    // page-level styles cannot hide or clip the student names.
+    const printWindow = window.open('', '_blank', 'width=1000,height=750');
+    if (!printWindow) {
+        window.alert('يرجى السماح بالنوافذ المنبثقة لهذا الموقع ثم الضغط على زر الطباعة مرة أخرى.');
+        return;
+    }
+
+    const heading = kind === 'frequent'
+        ? 'تقرير الطلاب المتأخرين أكثر من ثلاث مرات'
+        : 'ملخص تأخيرات الطلاب';
+    const period = document.querySelector('select[name="month"]');
+    const periodText = period && period.selectedOptions.length
+        ? period.selectedOptions[0].textContent.trim()
+        : 'الفترة المحددة';
+
+    printWindow.document.open();
+    printWindow.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>' + heading + '</title>');
+    printWindow.document.write('<style>body{font-family:Arial,Tahoma,sans-serif;direction:rtl;padding:24px;color:#111}h2,h3,p{text-align:center;margin:8px 0}table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}th,td{border:1px solid #333;padding:8px;text-align:right}th{background:#eee!important;font-weight:bold} .card-header{font-size:16px;font-weight:bold;margin:12px 0} .report-kpi{margin:12px 0;font-weight:bold} .no-print,button{display:none!important}@page{size:auto;margin:12mm}</style>');
+    printWindow.document.write('</head><body><h2>مدرسة ذكور المنصور الأساسية</h2><h3>' + heading + '</h3><p>' + periodText + ' — ' + new Date().getFullYear() + '</p>');
+    printWindow.document.write(source.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = function () {
+        printWindow.print();
+        printWindow.onafterprint = function () { printWindow.close(); };
+    };
 }
-window.addEventListener('afterprint', function () {
-    document.body.classList.remove('print-frequent', 'print-all-lateness');
-});
 </script>
 {% endblock %}
