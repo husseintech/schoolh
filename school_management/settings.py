@@ -73,15 +73,20 @@ META_OAUTH_REDIRECT_URI = os.getenv(
 )
 META_GRAPH_API_VERSION = os.getenv('META_GRAPH_API_VERSION', 'v23.0')
 
-# Prefer the new Supabase database connection when provided.
-# Keep the existing DATABASE_URL as a safe fallback during migration/rollback.
-database_url = os.getenv('SUPABASE_DATABASE_URL') or os.getenv('DATABASE_URL')
+# Prefer the legacy DATABASEURL variable used in the existing Vercel project.
+# Then fall back to the explicit Supabase variable and Django's standard name.
+# Do not place credentials in source code.
+database_url = (
+    os.getenv('DATABASEURL')
+    or os.getenv('SUPABASE_DATABASE_URL')
+    or os.getenv('DATABASE_URL')
+)
 if database_url:
     DATABASES = {
         'default': dj_database_url.config(default=database_url, conn_max_age=600, ssl_require=True)
     }
 elif os.getenv('VERCEL'):
-    raise RuntimeError('DATABASE_URL is required when running on Vercel')
+    raise RuntimeError('DATABASEURL, SUPABASE_DATABASE_URL, or DATABASE_URL is required when running on Vercel')
 else:
     DATABASES = {
         'default': {
@@ -144,10 +149,4 @@ X_FRAME_OPTIONS = 'DENY'
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 
-WHATSAPP_PROVIDER = os.getenv('WHATSAPP_PROVIDER', 'log')
-ULTRAMSG_TOKEN = os.getenv('ULTRAMSG_TOKEN', '')
-ULTRAMSG_INSTANCE_ID = os.getenv('ULTRAMSG_INSTANCE_ID', '')
-
-VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
-VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
-VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', 'mailto:admin@school.local')
+WHATSAPP_PROVIDE
