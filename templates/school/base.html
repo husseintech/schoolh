@@ -929,7 +929,7 @@
             <i class="bi bi-clipboard2-data-fill"></i> دفتر المتابعة
         </a>
         {% endif %}
-        {% if 'exam_writer_view' in user_perms %}
+        {% if user.profile.role == 'teacher' or user.profile.role == 'admin' or 'exam_writer_view' in user_perms %}
         <a href="{% url 'exam_writer' %}" class="nav-link {% if 'exam_writer' in request.resolver_match.url_name or 'exam_paper_print' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-file-earmark-richtext"></i> كتابة الاختبارات
         </a>
@@ -954,7 +954,7 @@
             <i class="bi bi-person-check-fill"></i> مربو الصفوف
         </a>
         {% endif %}
-        {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms or 'social_committee_view' in user_perms or 'nominations_view' in user_perms or 'guardians_view' in user_perms or show_attendance_register or show_grade_register %}
+        {% if 'teachers_view' in user_perms or 'teachers_add' in user_perms or 'social_committee_view' in user_perms or 'nominations_view' in user_perms or 'guardians_view' in user_perms or show_attendance_register or show_grade_register or user.profile.role == 'teacher' or user.profile.role == 'admin' %}
         </div>
         {% endif %}
 
