@@ -1,0 +1,81 @@
+{% extends 'school/base.html' %}
+{% block title %}ملخص تأخيرات الطلاب{% endblock %}
+{% block page_heading %}ملخص تأخيرات الطلاب{% endblock %}
+{% block content %}
+<style>
+.lateness-report-card{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:22px;background:#fff}
+.lateness-report-card .card-header{font-weight:800;background:#f3f6fa;color:#26384b}
+.report-kpi{display:inline-block;padding:7px 12px;border-radius:9px;background:#eef3f8;font-weight:800;margin:4px 0 12px}
+@media print{.no-print{display:none!important}.lateness-report-card{break-inside:avoid;border:1px solid #999}.table{font-size:11px}h4{margin-top:12px}}
+</style>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 no-print">
+    <div class="text-muted">ملخص عدد مرات التأخر لكل طالب، مع قائمة مستقلة لمن تجاوزوا ثلاث مرات.</div>
+    <button onclick="window.print()" class="btn btn-success"><i class="bi bi-printer"></i> طباعة التقريرين</button>
+</div>
+<div class="card mb-3 no-print">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label">الفترة — {{ current_year }}</label>
+                <select name="month" class="form-select">
+                    <option value="" {% if not selected_month %}selected{% endif %}>كل شهور السنة</option>
+                    {% for m_id, m_name in months %}
+                    <option value="{{ m_id }}" {% if selected_month == m_id %}selected{% endif %}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4"><button type="submit" class="btn btn-primary w-100">عرض التقرير</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="text-center mb-3 d-none d-print-block">
+    <h3>مدرسة ذكور المنصور الأساسية</h3>
+    <h4>ملخص تأخيرات الطلاب — {{ current_year }}</h4>
+    <p>{% if selected_month %}{% for m_id, m_name in months %}{% if selected_month == m_id %}{{ m_name }}{% endif %}{% endfor %}{% else %}كامل السنة{% endif %}</p>
+</div>
+
+<section class="lateness-report-card">
+    <div class="card-header p-3 d-flex justify-content-between flex-wrap gap-2">
+        <span><i class="bi bi-clock-history"></i> التقرير الأول: ملخص الطلاب المتأخرين</span>
+        <span>عدد الطلاب: {{ students_with_lateness|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="report-kpi">إجمالي الطلاب الذين سُجّل عليهم تأخر: {{ students_with_lateness|length }}</div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>عدد مرات التأخر</th></tr></thead>
+                <tbody>
+                {% for student in students_with_lateness %}
+                    <tr><td>{{ forloop.counter }}</td><td>{{ student.full_name }}</td><td>{{ student.student_class.name|default:"-" }}</td><td>{{ student.student_id }}</td><td class="text-center fw-bold">{{ student.lateness_count }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">لا توجد حالات تأخر مسجلة في الفترة المحددة.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="lateness-report-card">
+    <div class="card-header p-3 d-flex justify-content-between flex-wrap gap-2">
+        <span><i class="bi bi-exclamation-triangle-fill"></i> التقرير الثاني: الطلاب المتأخرون أكثر من ثلاث مرات</span>
+        <span>عدد الطلاب: {{ frequent_students|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="report-kpi">يشمل الطلاب المسجل عليهم 4 حالات تأخر فأكثر</div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>رقم الهوية</th><th>عدد مرات التأخر</th></tr></thead>
+                <tbody>
+                {% for student in frequent_students %}
+                    <tr><td>{{ forloop.counter }}</td><td>{{ student.full_name }}</td><td>{{ student.student_class.name|default:"-" }}</td><td>{{ student.student_id }}</td><td class="text-center fw-bold">{{ student.lateness_count }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">لا يوجد طلاب تجاوزوا ثلاث مرات تأخر في الفترة المحددة.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
