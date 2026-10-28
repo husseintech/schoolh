@@ -3825,6 +3825,8 @@ def visit_program_list(request):
     if scoped_teacher:
         teachers = teachers.filter(id=scoped_teacher.id)
         entries = entries.filter(teacher=scoped_teacher)
+    for visit_entry in entries:
+        visit_entry.is_kindergarten_teacher = visit_entry.teacher.classes.filter(name__iexact='تمهيدي').exists()
 
     # Show each teacher's scheduled visit date(s) beside their name in the selector.
     visit_dates_by_teacher = defaultdict(list)
