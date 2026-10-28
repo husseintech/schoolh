@@ -1689,6 +1689,7 @@ class ExamFont(models.Model):
 class KindergartenVisitReport(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='kindergarten_visit_reports', verbose_name='المربية')
     visit_date = models.DateField('تاريخ الزيارة', default=timezone.localdate)
+    school_name = models.CharField('اسم المدرسة', max_length=200, blank=True)
     qualifications = models.TextField('المؤهلات العلمية والمسلكية', blank=True)
     experience_years = models.TextField('سنوات الخبرة', blank=True)
     daily_preparation = models.TextField('التحضير اليومي', blank=True)
