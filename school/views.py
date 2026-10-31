@@ -1857,8 +1857,13 @@ def teacher_list(request):
     if not has_perm(request.user, 'teachers', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    teacher_type = request.GET.get('type', 'all')
     teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
-    return render(request, 'school/teacher_list.html', {'teachers': teachers})
+    if teacher_type == 'original':
+        teachers = teachers.filter(user__profile__role='teacher')
+    elif teacher_type == 'support':
+        teachers = teachers.filter(user__profile__role='support_teacher')
+    return render(request, 'school/teacher_list.html', {'teachers': teachers, 'teacher_type': teacher_type})
 
 
 @login_required
@@ -2090,8 +2095,13 @@ def teachers_report(request):
     if not has_perm(request.user, 'teachers', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    teacher_type = request.GET.get('type', 'all')
     teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
-    return render(request, 'school/teachers_report.html', {'teachers': teachers})
+    if teacher_type == 'original':
+        teachers = teachers.filter(user__profile__role='teacher')
+    elif teacher_type == 'support':
+        teachers = teachers.filter(user__profile__role='support_teacher')
+    return render(request, 'school/teachers_report.html', {'teachers': teachers, 'teacher_type': teacher_type})
 
 
 @login_required
