@@ -1473,7 +1473,7 @@ def check_missing_student_ids(request):
                 if raw_id in (None, ''):
                     continue
                 student_id = _normalize_student_id(raw_id)
-                if not re.fullmatch(r'\\d{1,20}', student_id):
+                if not re.fullmatch(r'\d{1,20}', student_id):
                     invalid_rows.append({'row': row_number, 'value': student_id or str(raw_id or ''), 'reason': 'رقم الهوية فارغ أو غير رقمي'})
                     continue
                 if student_id in seen_ids:
