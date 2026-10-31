@@ -81,6 +81,8 @@ if database_url:
     DATABASES = {
         'default': dj_database_url.config(default=database_url, conn_max_age=600, ssl_require=True)
     }
+    # Supabase transaction-mode poolers do not support Django server-side cursors.
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 elif os.getenv('VERCEL'):
     raise RuntimeError('DATABASE_URL is required when running on Vercel')
 else:
