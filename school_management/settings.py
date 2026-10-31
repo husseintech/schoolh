@@ -73,9 +73,9 @@ META_OAUTH_REDIRECT_URI = os.getenv(
 )
 META_GRAPH_API_VERSION = os.getenv('META_GRAPH_API_VERSION', 'v23.0')
 
-# Prefer the new Supabase database connection when provided.
-# Keep the existing DATABASE_URL as a safe fallback during migration/rollback.
-database_url = os.getenv('SUPABASE_DATABASE_URL') or os.getenv('DATABASE_URL')
+# Prefer DATABASE_URL: production's verified Supabase pooler connection is shared with Preview.
+# SUPABASE_DATABASE_URL is retained only as a fallback for older environments.
+database_url = os.getenv('DATABASE_URL') or os.getenv('SUPABASE_DATABASE_URL')
 if database_url:
     DATABASES = {
         'default': dj_database_url.config(default=database_url, conn_max_age=600, ssl_require=True)
