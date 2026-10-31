@@ -1,4 +1,6 @@
 from datetime import date
+import logging
+from django.db import connection
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -6,6 +8,8 @@ from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.dateparse import parse_date
 from .models import Profile, Teacher, Class, UserPermission, SupportLessonAssignment, SupportLessonExecution, has_perm
+
+logger = logging.getLogger(__name__)
 
 def _role(user):
     return getattr(getattr(user, 'profile', None), 'role', '')
@@ -88,6 +92,24 @@ def support_reports(request):
     if _role(request.user) not in ('admin', 'vice_principal', 'secretary'):
         messages.error(request, 'ليس لديك صلاحية لعرض التقارير')
         return redirect('dashboard')
+    # Temporary safe diagnostics: identify the database selected by this Vercel deployment
+    # without logging credentials or connection strings.
+    try:
+        tables = set(connection.introspection.table_names())
+        logger.error(
+            "SUPPORT_EDU_DB_DIAGNOSTIC host=%s database=%s user=%s schema=%s "
+            "assignment_table=%s execution_table=%s supabase_url_set=%s database_url_set=%s",
+            connection.settings_dict.get('HOST'),
+            connection.settings_dict.get('NAME'),
+            connection.settings_dict.get('USER'),
+            connection.settings_dict.get('OPTIONS', {}).get('options', ''),
+            'school_supportlessonassignment' in tables,
+            'school_supportlessonexecution' in tables,
+            bool(__import__('os').environ.get('SUPABASE_DATABASE_URL')),
+            bool(__import__('os').environ.get('DATABASE_URL')),
+        )
+    except Exception:
+        logger.exception("SUPPORT_EDU_DB_DIAGNOSTIC_FAILED")
     qs = SupportLessonAssignment.objects.select_related('class_obj','original_teacher').prefetch_related('executions__support_teacher')
     class_id=request.GET.get('class_id',''); original_id=request.GET.get('original_teacher',''); support_id=request.GET.get('support_teacher','')
     start=parse_date(request.GET.get('from_date','')); end=parse_date(request.GET.get('to_date',''))
