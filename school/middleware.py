@@ -210,6 +210,7 @@ class RequestPerformanceMiddleware:
 
     def __call__(self, request):
         import logging
+        import re
         import time
         from django.db import connection
 
@@ -241,7 +242,7 @@ class RequestPerformanceMiddleware:
                 logger.info(
                     'REQUEST_PERFORMANCE method=%s path=%s status=%s total_ms=%.1f db_queries=%s db_ms=%.1f',
                     request.method,
-                    request.path[:180],
+                    re.sub(r'(?<=/)\\d+(?=/|$)', ':id', request.path[:180]),
                     status_code,
                     total_time * 1000,
                     query_count,
