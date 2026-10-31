@@ -666,6 +666,8 @@ def dashboard(request):
         except Warden.DoesNotExist:
             messages.error(request, 'لا يوجد ملف آذن مرتبط بهذا الحساب')
             return redirect('logout')
+    elif profile.role == 'support_teacher':
+        return redirect('support_dashboard')
     elif profile.role == 'teacher':
         try:
             teacher = request.user.teacher_profile
