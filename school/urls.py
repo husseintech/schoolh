@@ -9,12 +9,17 @@ from . import registers_views
 from . import exam_writer_views
 from . import lateness_reports
 from . import kindergarten_visit_views
+from . import support_education_views
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('support-education/', support_education_views.support_dashboard, name='support_dashboard'),
+    path('support-education/manage/', support_education_views.support_teacher_manage, name='support_teacher_manage'),
+    path('support-education/assignments/', support_education_views.support_assignment_list, name='support_assignment_list'),
+    path('support-education/reports/', support_education_views.support_reports, name='support_reports'),
     path('exams/write/', exam_writer_views.exam_writer, name='exam_writer'),
     path('exams/fonts/upload/', exam_writer_views.exam_font_upload, name='exam_font_upload'),
     path('exams/write/<int:paper_id>/edit/', exam_writer_views.exam_writer_edit, name='exam_writer_edit'),
