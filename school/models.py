@@ -37,6 +37,7 @@ class Profile(models.Model):
         ('vice_principal', 'نائب مدير'),
         ('secretary', 'سكرتير'),
         ('teacher', 'معلم'),
+        ('support_teacher', 'معلم مساند'),
         ('student', 'طالب'),
         ('warden', 'آذن'),
     ]
@@ -252,6 +253,7 @@ class Teacher(models.Model):
     qualification = models.CharField('المؤهل العلمي', max_length=200, blank=True, help_text='مثال: بكالوريوس، ماجستير، دكتوراه')
     specialization = models.CharField('التخصص', max_length=200, blank=True, help_text='مثال: رياضيات، فيزياء، لغة عربية')
     classes = models.ManyToManyField(Class, verbose_name='الصفوف', blank=True, related_name='teachers')
+    support_classes = models.ManyToManyField(Class, verbose_name='الصفوف المكلف بها كمساند', blank=True, related_name='support_teachers')
     subjects = models.ManyToManyField(Subject, verbose_name='المواد', blank=True, related_name='teachers')
     plain_password = models.CharField('كلمة المرور', max_length=100, blank=True, help_text='تظهر لمدير المدرسة فقط')
     created_at = models.DateTimeField('تاريخ الإضافة', auto_now_add=True)
@@ -1734,3 +1736,31 @@ class KindergartenVisitAttachment(models.Model):
     class Meta:
         verbose_name = 'مرفق تقرير زيارة تمهيدي'
         verbose_name_plural = 'مرفقات تقارير زيارات تمهيدي'
+
+
+class SupportLessonAssignment(models.Model):
+    class_obj = models.ForeignKey(Class, on_delete=models.PROTECT, related_name='support_assignments', verbose_name='الصف')
+    original_teacher = models.ForeignKey(Teacher, on_delete=models.PROTECT, related_name='support_assignments', verbose_name='المعلم الأصيل')
+    lesson_title = models.CharField('عنوان الدرس', max_length=250)
+    page_number = models.CharField('رقم الصفحة', max_length=40, blank=True)
+    required_work = models.TextField('المطلوب تنفيذه')
+    created_at = models.DateTimeField('تاريخ التكليف', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        verbose_name = 'تكليف تعليم مساند'
+        verbose_name_plural = 'تكليفات التعليم المساند'
+
+
+class SupportLessonExecution(models.Model):
+    assignment = models.ForeignKey(SupportLessonAssignment, on_delete=models.PROTECT, related_name='executions', verbose_name='التكليف')
+    support_teacher = models.ForeignKey(Teacher, on_delete=models.PROTECT, related_name='support_executions', verbose_name='المعلم المساند')
+    execution_date = models.DateField('تاريخ التنفيذ')
+    lesson_period = models.PositiveSmallIntegerField('رقم الحصة')
+    notes = models.TextField('متابعة التنفيذ')
+    created_at = models.DateTimeField('تاريخ التسجيل', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-execution_date', '-created_at']
+        verbose_name = 'متابعة تنفيذ التعليم المساند'
+        verbose_name_plural = 'متابعات تنفيذ التعليم المساند'

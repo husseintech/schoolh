@@ -666,6 +666,8 @@ def dashboard(request):
         except Warden.DoesNotExist:
             messages.error(request, 'لا يوجد ملف آذن مرتبط بهذا الحساب')
             return redirect('logout')
+    elif profile.role == 'support_teacher':
+        return redirect('support_dashboard')
     elif profile.role == 'teacher':
         try:
             teacher = request.user.teacher_profile
@@ -1443,6 +1445,8 @@ def check_missing_student_ids(request):
         max_scan_col = min(ws.max_column or 1, 40)
         header_row = None
         columns = {}
+        id_only_mode = False
+        id_only_header = None
         for rn in range(1, max_scan_row + 1):
             candidate = {}
             for cn in range(1, max_scan_col + 1):
@@ -1452,12 +1456,34 @@ def check_missing_student_ids(request):
             if {'student_id', 'full_name', 'class_name'}.issubset(candidate):
                 header_row, columns = rn, candidate
                 break
+            if 'student_id' in candidate and id_only_header is None:
+                id_only_header = (rn, candidate)
+        if header_row is None and id_only_header is not None:
+            header_row, columns = id_only_header
+            id_only_mode = True
+        if header_row is None and max_scan_col == 1:
+            # Accept a plain one-column list of IDs without a header. This is a
+            # read-only comparison mode; it must never create or update students.
+            header_row, columns, id_only_mode = 0, {'student_id': 1}, True
         if header_row is None:
-            raise ValueError('لم نعثر على عناوين الأعمدة الأساسية: الاسم الكامل، رقم الهوية، الصف/الشعبة. لا تستخدم ملف هويات فقط؛ نزّل نموذج الطلاب أو أضف هذه الأعمدة.')
+            raise ValueError('لم نعثر على عناوين الأعمدة الأساسية: الاسم الكامل، رقم الهوية، الصف/الشعبة. أو استخدم ملفًا بعمود واحد لفحص أرقام الهويات فقط.')
 
         seen_ids = set()
         for row_number in range(header_row + 1, (ws.max_row or 0) + 1):
             raw_id = ws.cell(row_number, columns['student_id']).value
+            if id_only_mode:
+                if raw_id in (None, ''):
+                    continue
+                student_id = _normalize_student_id(raw_id)
+                if not re.fullmatch(r'\d{1,20}', student_id):
+                    invalid_rows.append({'row': row_number, 'value': student_id or str(raw_id or ''), 'reason': 'رقم الهوية فارغ أو غير رقمي'})
+                    continue
+                if student_id in seen_ids:
+                    duplicate_count += 1
+                    continue
+                seen_ids.add(student_id)
+                parsed_rows.append({'row': row_number, 'student_id': student_id})
+                continue
             raw_name = ws.cell(row_number, columns['full_name']).value
             raw_class = ws.cell(row_number, columns['class_name']).value
             if all(v in (None, '') for v in (raw_id, raw_name, raw_class)):
@@ -1503,6 +1529,24 @@ def check_missing_student_ids(request):
     finally:
         if wb:
             wb.close()
+
+    if id_only_mode:
+        if invalid_rows:
+            validation_errors.extend([f"الصف {item['row']}: رقم الهوية غير صالح ({item['value']})." for item in invalid_rows[:20]])
+        existing_ids = set(Student.objects.filter(
+            student_id__in=[row['student_id'] for row in parsed_rows]
+        ).values_list('student_id', flat=True))
+        missing_ids = [row['student_id'] for row in parsed_rows if row['student_id'] not in existing_ids]
+        return render(request, 'school/student_id_check_result.html', {
+            'file_name': file_name, 'validation_failed': bool(validation_errors),
+            'validation_errors': validation_errors, 'invalid_rows': invalid_rows,
+            'invalid_count': len(invalid_rows), 'duplicate_count': duplicate_count,
+            'deletion_allowed': False, 'deletion_candidates': [], 'deletion_candidate_count': 0,
+            'added_students': [], 'changed_classes': [], 'added_count': 0, 'updated_class_count': 0,
+            'existing_count': len(existing_ids), 'skipped_existing': len(existing_ids),
+            'total_unique': len(parsed_rows), 'missing_ids': missing_ids,
+            'missing_count': len(missing_ids),
+        })
 
     if not parsed_rows:
         validation_errors.append('لم يتم العثور على أي سجل طالب صالح في الملف.')
@@ -1857,8 +1901,13 @@ def teacher_list(request):
     if not has_perm(request.user, 'teachers', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    teacher_type = request.GET.get('type', 'all')
     teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
-    return render(request, 'school/teacher_list.html', {'teachers': teachers})
+    if teacher_type == 'original':
+        teachers = teachers.filter(user__profile__role='teacher')
+    elif teacher_type == 'support':
+        teachers = teachers.filter(user__profile__role='support_teacher')
+    return render(request, 'school/teacher_list.html', {'teachers': teachers, 'teacher_type': teacher_type})
 
 
 @login_required
@@ -2090,8 +2139,13 @@ def teachers_report(request):
     if not has_perm(request.user, 'teachers', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
+    teacher_type = request.GET.get('type', 'all')
     teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
-    return render(request, 'school/teachers_report.html', {'teachers': teachers})
+    if teacher_type == 'original':
+        teachers = teachers.filter(user__profile__role='teacher')
+    elif teacher_type == 'support':
+        teachers = teachers.filter(user__profile__role='support_teacher')
+    return render(request, 'school/teachers_report.html', {'teachers': teachers, 'teacher_type': teacher_type})
 
 
 @login_required

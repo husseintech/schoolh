@@ -22,12 +22,13 @@
         </div>
     </div>
     <div class="card-body">
+<form method="get" class="row g-2 mb-3"><div class="col-md-4"><label class="form-label">عرض المعلمين</label><select name="type" class="form-select" onchange="this.form.submit()"><option value="all" {% if teacher_type == 'all' %}selected{% endif %}>الجميع</option><option value="original" {% if teacher_type == 'original' %}selected{% endif %}>الأصيلون فقط</option><option value="support" {% if teacher_type == 'support' %}selected{% endif %}>المساندون فقط</option></select></div><div class="col-md-3 align-self-end"><a class="btn btn-outline-success" href="{% url 'teachers_report' %}?type={{ teacher_type }}">طباعة القائمة المحددة</a></div></form>
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>الاسم الكامل</th>
+                        <th>الاسم الكامل</th><th>النوع</th>
                         <th>رقم الهوية</th>
                         <th>المؤهل العلمي</th>
                         <th>التخصص</th>
@@ -44,7 +45,7 @@
                     {% for teacher in teachers %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td><strong><a href="{% url 'teacher_detail' teacher.id %}">{{ teacher.full_name }}</a></strong></td>
+                        <td><strong><a href="{% url 'teacher_detail' teacher.id %}">{{ teacher.full_name }}</a></strong></td><td>{% if teacher.user.profile.role == 'support_teacher' %}مساند{% else %}أصيل{% endif %}</td>
                         <td>{{ teacher.id_number|default:"-" }}</td>
                         <td>{{ teacher.qualification|default:"-" }}</td>
                         <td>{{ teacher.specialization|default:"-" }}</td>
@@ -73,7 +74,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="12" class="text-center text-muted py-4">
+                        <td colspan="13" class="text-center text-muted py-4">
                             <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
                             <p class="mt-2">لا يوجد معلمون مسجلون</p>
                         </td>
