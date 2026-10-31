@@ -1166,6 +1166,16 @@
         </div>
         {% endif %}
 
+
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'support_teacher_manage' %}" class="nav-link {% if request.resolver_match.url_name == 'support_teacher_manage' %}active{% endif %}"><i class="bi bi-person-plus"></i> إدارة المعلمين المساندين</a>
+        <a href="{% url 'support_reports' %}" class="nav-link {% if request.resolver_match.url_name == 'support_reports' %}active{% endif %}"><i class="bi bi-clipboard-data"></i> تقارير التعليم المساند</a>
+        {% elif user.profile.role == 'teacher' %}
+        <a href="{% url 'support_assignment_list' %}" class="nav-link {% if request.resolver_match.url_name == 'support_assignment_list' %}active{% endif %}"><i class="bi bi-journal-plus"></i> تكليف التعليم المساند</a>
+        {% elif user.profile.role == 'support_teacher' %}
+        <a href="{% url 'support_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}"><i class="bi bi-journal-check"></i> لوحة التعليم المساند</a>
+        {% endif %}
+
         {% if 'open_learning_view' in user_perms %}
         <a href="{% url 'open_learning_list' %}" class="nav-link {% if 'open_learning' in request.resolver_match.url_name %}active{% endif %}">
             <i class="bi bi-mortarboard-fill"></i> التعلم المفتوح
