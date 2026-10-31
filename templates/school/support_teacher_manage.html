@@ -28,17 +28,3 @@
 </td></tr>{% empty %}<tr><td colspan="5" class="text-center">لا توجد حسابات للمعلمين المساندين</td></tr>{% endfor %}
 </tbody></table></div></div>
 {% endblock %}
-{% block page_heading %}إدارة حسابات المعلمين المساندين{% endblock %}
-{% block content %}
-<div class="card shadow-sm mb-4"><div class="card-header fw-bold">إضافة معلم مساند مستقل عن قائمة المعلمين الأصليين</div><div class="card-body">
-<form method="post" class="row g-3">{% csrf_token %}
- <div class="col-md-6"><label class="form-label">اسم المعلم المساند</label><input class="form-control" name="full_name" required></div>
- <div class="col-md-6"><label class="form-label">التخصص (اختياري)</label><input class="form-control" name="specialization"></div>
- <div class="col-md-6"><label class="form-label">اسم المستخدم</label><input class="form-control" name="username" required></div>
- <div class="col-md-6"><label class="form-label">كلمة المرور</label><input class="form-control" name="password" type="password" required></div>
- <div class="col-12"><button class="btn btn-primary">إنشاء حساب المعلم المساند</button></div>
-</form></div></div>
-<div class="card shadow-sm"><div class="card-header fw-bold">حسابات المعلمين المساندين</div><div class="card-body table-responsive"><table class="table table-bordered"><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>التخصص</th><th>الصلاحية</th></tr></thead><tbody>
-{% for t in support_teachers %}<tr><td>{{ t.full_name }}</td><td>{{ t.user.username }}</td><td>{{ t.specialization|default:"-" }}</td><td>معلم مساند — يستطيع اختيار جميع الصفوف والمواد</td></tr>{% empty %}<tr><td colspan="4" class="text-center">لا توجد حسابات للمعلمين المساندين</td></tr>{% endfor %}
-</tbody></table></div></div>
-{% endblock %}
