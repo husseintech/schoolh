@@ -22,6 +22,11 @@ def support_teacher_manage(request):
     if _role(request.user) != 'admin':
         messages.error(request, 'هذه الصفحة للإدارة فقط')
         return redirect('dashboard')
+    if request.method == 'POST' and request.POST.get('teacher_id'):
+        existing = get_object_or_404(Teacher, pk=request.POST.get('teacher_id'), user__profile__role='support_teacher')
+        existing.support_classes.set(Class.objects.filter(pk__in=request.POST.getlist('support_classes')))
+        messages.success(request, 'تم تحديث الصفوف المكلف بها المعلم المساند')
+        return redirect('support_teacher_manage')
     if request.method == 'POST':
         name = request.POST.get('full_name', '').strip()
         username = request.POST.get('username', '').strip()
