@@ -200,3 +200,50 @@ class WordExportMiddleware:
             except (UnicodeDecodeError, AttributeError):
                 pass
         return response
+
+
+class RequestPerformanceMiddleware:
+    """Log per-request duration and database query timing without exposing SQL or data."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        import logging
+        import time
+        from django.db import connection
+
+        logger = logging.getLogger('school.performance')
+        started = time.perf_counter()
+        query_count = 0
+        query_time = 0.0
+        status_code = 500
+
+        def record_query(execute, sql, params, many, context):
+            nonlocal query_count, query_time
+            query_count += 1
+            query_started = time.perf_counter()
+            try:
+                return execute(sql, params, many, context)
+            finally:
+                query_time += time.perf_counter() - query_started
+
+        try:
+            with connection.execute_wrapper(record_query):
+                response = self.get_response(request)
+            status_code = response.status_code
+            return response
+        finally:
+            total_time = time.perf_counter() - started
+            # Keep logs useful while avoiding SQL text, parameters, user identifiers,
+            # query strings, and other potentially sensitive request data.
+            if total_time >= 0.1 or query_count:
+                logger.info(
+                    'REQUEST_PERFORMANCE method=%s path=%s status=%s total_ms=%.1f db_queries=%s db_ms=%.1f',
+                    request.method,
+                    request.path[:180],
+                    status_code,
+                    total_time * 1000,
+                    query_count,
+                    query_time * 1000,
+                )
