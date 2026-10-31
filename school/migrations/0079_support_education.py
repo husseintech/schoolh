@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SupportLessonAssignment',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('lesson_title', models.CharField(max_length=250, verbose_name='عنوان الدرس')),
                 ('page_number', models.CharField(blank=True, max_length=40, verbose_name='رقم الصفحة')),
                 ('required_work', models.TextField(verbose_name='المطلوب تنفيذه')),
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SupportLessonExecution',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('execution_date', models.DateField(verbose_name='تاريخ التنفيذ')),
                 ('lesson_period', models.PositiveSmallIntegerField(verbose_name='رقم الحصة')),
                 ('notes', models.TextField(verbose_name='متابعة التنفيذ')),
