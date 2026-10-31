@@ -27,6 +27,7 @@ def support_teacher_manage(request):
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         specialization = request.POST.get('specialization', '').strip()
+        class_ids = request.POST.getlist('support_classes')
         if not all([name, username, password, specialization]):
             messages.error(request, 'يرجى إدخال الاسم والتخصص واسم المستخدم وكلمة المرور')
         elif User.objects.filter(username=username).exists():
@@ -35,11 +36,12 @@ def support_teacher_manage(request):
             user = User.objects.create_user(username=username, password=password, first_name=name)
             Profile.objects.create(user=user, role='support_teacher')
             UserPermission.objects.create(user=user, permissions={})
-            Teacher.objects.create(user=user, full_name=name, specialization=specialization)
-            messages.success(request, 'تم إنشاء حساب المعلم المساند دون ربطه بأي صف أو معلم')
+            support_profile = Teacher.objects.create(user=user, full_name=name, specialization=specialization)
+            support_profile.support_classes.set(Class.objects.filter(pk__in=class_ids))
+            messages.success(request, 'تم إنشاء حساب المعلم المساند وحفظ الصفوف المكلف بها')
             return redirect('support_teacher_manage')
     teachers = Teacher.objects.filter(user__profile__role='support_teacher').select_related('user').order_by('full_name')
-    return render(request, 'school/support_teacher_manage.html', {'support_teachers': teachers})
+    return render(request, 'school/support_teacher_manage.html', {'support_teachers': teachers, 'classes': Class.objects.all().order_by('name')})
 
 @login_required
 def support_assignment_list(request):
@@ -68,17 +70,25 @@ def support_dashboard(request):
     if _support_teacher(request.user):
         teacher = request.user.teacher_profile
         selected_id = request.GET.get('class_id', '')
-        classes = Class.objects.all().order_by('name')
-        selected = get_object_or_404(Class, pk=selected_id) if selected_id else None
+        classes = teacher.support_classes.all().order_by('name')
+        selected = get_object_or_404(classes, pk=selected_id) if selected_id else None
         assignment = SupportLessonAssignment.objects.filter(class_obj=selected).select_related('original_teacher').first() if selected else None
         executions = SupportLessonExecution.objects.filter(support_teacher=teacher).select_related('assignment__class_obj','assignment__original_teacher')
         if request.method == 'POST':
             assignment_id = request.POST.get('assignment_id')
-            target = get_object_or_404(SupportLessonAssignment, pk=assignment_id)
+            target = get_object_or_404(SupportLessonAssignment, pk=assignment_id, class_obj__in=classes)
             if not request.POST.get('execution_date') or not request.POST.get('lesson_period') or not request.POST.get('notes','').strip():
                 messages.error(request, 'يرجى إدخال تاريخ التنفيذ ورقم الحصة والمتابعة')
             else:
-                SupportLessonExecution.objects.create(assignment=target, support_teacher=teacher, execution_date=parse_date(request.POST['execution_date']), lesson_period=int(request.POST['lesson_period']), notes=request.POST['notes'].strip())
+                execution_date = parse_date(request.POST['execution_date'])
+                try:
+                    lesson_period = int(request.POST['lesson_period'])
+                except (TypeError, ValueError):
+                    lesson_period = 0
+                if not execution_date or not 1 <= lesson_period <= 12:
+                    messages.error(request, 'تاريخ التنفيذ أو رقم الحصة غير صحيح')
+                    return redirect('/support-education/?class_id=%s' % target.class_obj_id)
+                SupportLessonExecution.objects.create(assignment=target, support_teacher=teacher, execution_date=execution_date, lesson_period=lesson_period, notes=request.POST['notes'].strip())
                 messages.success(request, 'تم تسجيل متابعة التنفيذ دون تعديل تكليف المعلم الأصيل')
                 return redirect('/support-education/?class_id=%s' % target.class_obj_id)
         return render(request, 'school/support_teacher_dashboard.html', {'classes': classes, 'selected_class': selected, 'assignment': assignment, 'executions': executions})
