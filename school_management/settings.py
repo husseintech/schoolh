@@ -118,6 +118,8 @@ if os.getenv('VERCEL'):
     STORAGES['staticfiles'] = {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     }
+    # Cache source static assets briefly at the edge/browser; HTML remains no-cache.
+    WHITENOISE_MAX_AGE = 300
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
