@@ -2,6 +2,34 @@
 {% block title %}إدارة المعلمين المساندين{% endblock %}
 {% block page_heading %}إدارة حسابات المعلمين المساندين{% endblock %}
 {% block content %}
+{% if editing_teacher %}
+<div class="card shadow-sm mb-4"><div class="card-header fw-bold">تعديل بيانات المعلم المساند: {{ editing_teacher.full_name }}</div><div class="card-body">
+<form method="post" class="row g-3">{% csrf_token %}
+ <div class="col-md-6"><label class="form-label">اسم المعلم المساند</label><input class="form-control" name="full_name" value="{{ editing_teacher.full_name }}" required></div>
+ <div class="col-md-6"><label class="form-label">التخصص (اختياري)</label><input class="form-control" name="specialization" value="{{ editing_teacher.specialization }}"></div>
+ <div class="col-md-6"><label class="form-label">اسم المستخدم</label><input class="form-control" name="username" value="{{ editing_teacher.user.username }}" required></div>
+ <div class="col-md-6"><label class="form-label">كلمة مرور جديدة (اتركها فارغة دون تغيير)</label><input class="form-control" name="password" type="password"></div>
+ <div class="col-12"><button class="btn btn-primary">حفظ التعديلات</button> <a class="btn btn-secondary" href="{% url 'support_teacher_manage' %}">إلغاء</a></div>
+</form></div></div>
+{% else %}
+<div class="card shadow-sm mb-4"><div class="card-header fw-bold">إضافة معلم مساند مستقل عن قائمة المعلمين الأصليين</div><div class="card-body">
+<form method="post" class="row g-3">{% csrf_token %}
+ <div class="col-md-6"><label class="form-label">اسم المعلم المساند</label><input class="form-control" name="full_name" required></div>
+ <div class="col-md-6"><label class="form-label">التخصص (اختياري)</label><input class="form-control" name="specialization"></div>
+ <div class="col-md-6"><label class="form-label">اسم المستخدم</label><input class="form-control" name="username" required></div>
+ <div class="col-md-6"><label class="form-label">كلمة المرور</label><input class="form-control" name="password" type="password" required></div>
+ <div class="col-12"><button class="btn btn-primary">إنشاء حساب المعلم المساند</button></div>
+</form></div></div>
+{% endif %}
+<div class="card shadow-sm"><div class="card-header fw-bold">حسابات المعلمين المساندين</div><div class="card-body table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>التخصص</th><th>الصلاحية</th><th style="min-width:160px">الإجراءات</th></tr></thead><tbody>
+{% for t in support_teachers %}<tr><td>{{ t.full_name }}</td><td>{{ t.user.username }}</td><td>{{ t.specialization|default:"-" }}</td><td>معلم مساند — يستطيع اختيار جميع الصفوف والمواد</td><td class="text-nowrap">
+<a class="btn btn-sm btn-warning" href="{% url 'support_teacher_edit' t.id %}">تعديل</a>
+<form method="post" action="{% url 'support_teacher_delete' t.id %}" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف حساب المعلم المساند {{ t.full_name }}؟');">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">حذف</button></form>
+</td></tr>{% empty %}<tr><td colspan="5" class="text-center">لا توجد حسابات للمعلمين المساندين</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}
+{% block page_heading %}إدارة حسابات المعلمين المساندين{% endblock %}
+{% block content %}
 <div class="card shadow-sm mb-4"><div class="card-header fw-bold">إضافة معلم مساند مستقل عن قائمة المعلمين الأصليين</div><div class="card-body">
 <form method="post" class="row g-3">{% csrf_token %}
  <div class="col-md-6"><label class="form-label">اسم المعلم المساند</label><input class="form-control" name="full_name" required></div>
