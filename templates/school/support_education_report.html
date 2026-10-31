@@ -1,0 +1,19 @@
+{% extends 'school/base.html' %}
+{% block title %}تقارير التعليم المساند{% endblock %}
+{% block page_heading %}تقارير التعليم المساند{% endblock %}
+{% block content %}
+<div class="card shadow-sm mb-4"><div class="card-body"><form method="get" class="row g-3">
+ <div class="col-md-3"><label class="form-label">الصف</label><select name="class_id" class="form-select"><option value="">كل الصفوف</option>{% for c in classes %}<option value="{{ c.id }}" {% if filters.class_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+ <div class="col-md-3"><label class="form-label">المادة</label><select name="subject_id" class="form-select"><option value="">كل المواد</option>{% for s in subjects %}<option value="{{ s.id }}" {% if filters.subject_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></div>
+ <div class="col-md-3"><label class="form-label">المعلم الأصيل</label><select name="original_teacher" class="form-select"><option value="">الجميع</option>{% for t in original_teachers %}<option value="{{ t.id }}" {% if filters.original_teacher == t.id|stringformat:"s" %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}</select></div>
+ <div class="col-md-3"><label class="form-label">المعلم المساند</label><select name="support_teacher" class="form-select"><option value="">الجميع</option>{% for t in support_teachers %}<option value="{{ t.id }}" {% if filters.support_teacher == t.id|stringformat:"s" %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}</select></div>
+ <div class="col-md-3"><label class="form-label">من تاريخ</label><input type="date" name="from_date" value="{{ filters.from_date }}" class="form-control"></div>
+ <div class="col-md-3"><label class="form-label">إلى تاريخ</label><input type="date" name="to_date" value="{{ filters.to_date }}" class="form-control"></div>
+ <div class="col-12"><button class="btn btn-primary">تصفية التقرير</button> <a href="{% url 'support_reports' %}" class="btn btn-outline-secondary">إلغاء التصفية</a> <button type="button" onclick="window.print()" class="btn btn-outline-dark">طباعة التقرير</button></div>
+</form></div></div>
+<div class="card shadow-sm"><div class="card-body table-responsive"><table class="table table-bordered align-middle">
+<thead><tr><th>تاريخ متابعة الأصيل</th><th>الصف</th><th>المادة</th><th>المعلم الأصيل</th><th>الدرس</th><th>المطلوب من المساند</th><th>تاريخ متابعة المساند</th><th>المعلم المساند</th><th>ما تم تنفيذه</th></tr></thead>
+<tbody>{% for a in assignments %}{% for e in a.executions.all %}<tr><td>{{ a.assignment_date|date:"Y-m-d" }}</td><td>{{ a.class_obj.name }}</td><td>{{ a.subject.name|default:"-" }}</td><td>{{ a.original_teacher.full_name }}</td><td>{{ a.lesson_title }}</td><td>{{ a.required_work }}</td><td>{{ e.execution_date|date:"Y-m-d" }}</td><td>{{ e.support_teacher.full_name }}</td><td>{{ e.notes }}</td></tr>{% empty %}<tr><td>{{ a.assignment_date|date:"Y-m-d" }}</td><td>{{ a.class_obj.name }}</td><td>{{ a.subject.name|default:"-" }}</td><td>{{ a.original_teacher.full_name }}</td><td>{{ a.lesson_title }}</td><td>{{ a.required_work }}</td><td colspan="3" class="text-center text-muted">لم تسجل متابعة مساندة بعد</td></tr>{% endfor %}{% empty %}<tr><td colspan="9" class="text-center text-muted">لا توجد بيانات مطابقة للفلاتر</td></tr>{% endfor %}</tbody>
+</table></div></div>
+<style>@media print{.sidebar,.top-bar,form,button,.btn{display:none!important}.main-content{margin:0!important}.page-content{padding:0!important}.card{border:0!important;box-shadow:none!important}table{font-size:10px!important}}</style>
+{% endblock %}
