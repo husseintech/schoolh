@@ -7,8 +7,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'school_management.settings')
 
 application = get_wsgi_application()
 
-# Never run migrations during Vercel serverless cold starts. Verify and log
-# the selected database safely so production routing can be confirmed.
+# Never run migrations or database queries during Vercel serverless cold starts.
+# Log only the configured provider; the first real request will establish the
+# database connection when it actually needs data.
 if os.getenv('VERCEL'):
     from django.db import connection
 
@@ -20,18 +21,8 @@ if os.getenv('VERCEL'):
         or configured_host.endswith('.pooler.supabase.com')
         else 'non-supabase'
     )
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT current_database(), inet_server_addr()::text, inet_server_port()'
-            )
-            database_name, server_address, server_port = cursor.fetchone()
-        logger.warning(
-            'DATABASE_CONNECTION_CHECK provider=%s database=%s host=%s server=%s port=%s',
-            provider, database_name, configured_host, server_address, server_port,
-        )
-    except Exception:
-        logger.exception(
-            'DATABASE_CONNECTION_CHECK_FAILED provider=%s host=%s',
-            provider, configured_host,
-        )
+    logger.warning(
+        'DATABASE_CONFIGURATION provider=%s host=%s',
+        provider,
+        configured_host,
+    )
