@@ -79,8 +79,15 @@ META_GRAPH_API_VERSION = os.getenv('META_GRAPH_API_VERSION', 'v23.0')
 database_url = os.getenv('DATABASE_URL') or os.getenv('SUPABASE_DATABASE_URL')
 if database_url:
     DATABASES = {
-        'default': dj_database_url.config(default=database_url, conn_max_age=600, ssl_require=True)
+        'default': dj_database_url.config(
+            default=database_url,
+            conn_max_age=0 if os.getenv('VERCEL') else 600,
+            ssl_require=True,
+            conn_health_checks=True,
+        )
     }
+    # Supabase transaction-mode poolers do not support Django server-side cursors.
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 elif os.getenv('VERCEL'):
     raise RuntimeError('DATABASE_URL is required when running on Vercel')
 else:
