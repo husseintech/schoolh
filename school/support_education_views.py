@@ -46,6 +46,68 @@ def support_teacher_manage(request):
 
 
 @login_required
+def support_teacher_edit(request, teacher_id):
+    if _role(request.user) != 'admin':
+        messages.error(request, 'هذه الصفحة للإدارة فقط')
+        return redirect('dashboard')
+    teacher = get_object_or_404(
+        Teacher.objects.select_related('user'),
+        pk=teacher_id,
+        user__profile__role='support_teacher',
+    )
+    user = teacher.user
+    if request.method == 'POST':
+        name = request.POST.get('full_name', '').strip()
+        username = request.POST.get('username', '').strip()
+        specialization = request.POST.get('specialization', '').strip()
+        password = request.POST.get('password', '').strip()
+        if not name or not username:
+            messages.error(request, 'يرجى إدخال الاسم واسم المستخدم')
+        elif User.objects.filter(username=username).exclude(pk=user.pk).exists():
+            messages.error(request, 'اسم المستخدم مستخدم مسبقاً')
+        else:
+            teacher.full_name = name
+            teacher.specialization = specialization
+            teacher.save(update_fields=['full_name', 'specialization'])
+            user.username = username
+            user.first_name = name
+            if password:
+                user.set_password(password)
+            user.save()
+            messages.success(request, 'تم تحديث بيانات المعلم المساند بنجاح')
+            return redirect('support_teacher_manage')
+    return render(request, 'school/support_teacher_manage.html', {
+        'support_teachers': Teacher.objects.filter(
+            user__profile__role='support_teacher'
+        ).select_related('user').order_by('full_name'),
+        'editing_teacher': teacher,
+    })
+
+
+@login_required
+def support_teacher_delete(request, teacher_id):
+    if _role(request.user) != 'admin':
+        messages.error(request, 'هذه الصفحة للإدارة فقط')
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('support_teacher_manage')
+    teacher = get_object_or_404(
+        Teacher.objects.select_related('user'),
+        pk=teacher_id,
+        user__profile__role='support_teacher',
+    )
+    if SupportLessonExecution.objects.filter(support_teacher=teacher).exists():
+        messages.error(
+            request,
+            'لا يمكن حذف هذا المعلم لأنه يملك متابعات مسجلة. حفاظاً على سجلات التعليم المساند، يمكنك تعديل بيانات حسابه بدلاً من حذفه.'
+        )
+        return redirect('support_teacher_manage')
+    teacher.user.delete()
+    messages.success(request, 'تم حذف حساب المعلم المساند')
+    return redirect('support_teacher_manage')
+
+
+@login_required
 def support_assignment_list(request):
     if _role(request.user) != 'teacher':
         messages.error(request, 'تسجيل المتابعات متاح للمعلم الأصيل فقط')
