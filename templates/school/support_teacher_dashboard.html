@@ -1,0 +1,32 @@
+{% extends 'school/base.html' %}
+{% block title %}التعليم المساند{% endblock %}
+{% block page_heading %}متابعة التعليم المساند{% endblock %}
+{% block content %}
+<div class="card shadow-sm mb-4"><div class="card-header fw-bold">اختيار الصف والمادة</div><div class="card-body">
+<form method="get" class="row g-3">
+ <div class="col-md-5"><label class="form-label">الصف</label><select name="class_id" class="form-select" required><option value="">اختر الصف</option>{% for c in classes %}<option value="{{ c.id }}" {% if selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+ <div class="col-md-5"><label class="form-label">المادة</label><select name="subject_id" class="form-select" required><option value="">اختر المادة</option>{% for s in subjects %}<option value="{{ s.id }}" {% if selected_subject.id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></div>
+ <div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100">عرض المتابعة</button></div>
+</form></div></div>
+{% if selected_class and selected_subject %}
+ {% if assignment %}
+ <div class="card shadow-sm mb-4"><div class="card-header fw-bold">آخر متابعة للصف {{ assignment.class_obj.name }} — {{ assignment.subject.name }}</div><div class="card-body">
+  <div class="row g-3 mb-3">
+   <div class="col-md-4"><strong>المعلم الأصيل:</strong> {{ assignment.original_teacher.full_name }}</div>
+   <div class="col-md-4"><strong>تاريخ المتابعة:</strong> {{ assignment.assignment_date|date:"Y-m-d" }}</div>
+   <div class="col-md-4"><strong>الدرس:</strong> {{ assignment.lesson_title }}</div>
+  </div>
+  <div class="alert alert-info mb-4"><strong>المطلوب من المعلم المساند:</strong><br>{{ assignment.required_work|linebreaksbr }}</div>
+  <form method="post" class="row g-3">{% csrf_token %}<input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+   <div class="col-md-4"><label class="form-label">تاريخ المتابعة</label><input type="date" class="form-control" value="{{ today|date:'Y-m-d' }}" readonly></div>
+   <div class="col-12"><label class="form-label">ما تم تنفيذه / متابعة المعلم المساند</label><textarea name="notes" class="form-control" rows="4" required placeholder="اكتب ما تم العمل عليه مع الطلبة والنتائج والملاحظات"></textarea></div>
+   <div class="col-12"><button class="btn btn-success px-4">حفظ المتابعة</button></div>
+  </form>
+ </div></div>
+ {% else %}<div class="alert alert-warning">لا توجد متابعة مسجلة لهذا الصف وهذه المادة حتى الآن.</div>{% endif %}
+{% endif %}
+<div class="card shadow-sm"><div class="card-header fw-bold">سجل متابعاتي السابقة</div><div class="card-body table-responsive">
+<table class="table table-bordered align-middle"><thead><tr><th>تاريخ المتابعة</th><th>الصف</th><th>المادة</th><th>المعلم الأصيل</th><th>الدرس</th><th>ما تم تنفيذه</th></tr></thead><tbody>
+{% for e in executions %}<tr><td>{{ e.execution_date|date:"Y-m-d" }}</td><td>{{ e.assignment.class_obj.name }}</td><td>{{ e.assignment.subject.name|default:"-" }}</td><td>{{ e.assignment.original_teacher.full_name }}</td><td>{{ e.assignment.lesson_title }}</td><td>{{ e.notes }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted">لا توجد متابعات مسجلة</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}
