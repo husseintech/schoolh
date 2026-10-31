@@ -1,0 +1,8 @@
+{% extends 'school/base.html' %}{% block title %}تكليف التعليم المساند{% endblock %}{% block page_heading %}تكليف المعلم المساند{% endblock %}{% block content %}
+<div class="card"><div class="card-header">إضافة تكليف جديد</div><div class="card-body"><form method="post" class="row g-3">{% csrf_token %}
+<div class="col-md-4"><label class="form-label">الصف من صفوفك</label><select name="class_id" class="form-select" required><option value="">اختر الصف</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+<div class="col-md-4"><label class="form-label">عنوان الدرس</label><input name="lesson_title" class="form-control" required></div>
+<div class="col-md-4"><label class="form-label">رقم الصفحة</label><input name="page_number" class="form-control"></div>
+<div class="col-12"><label class="form-label">المطلوب من المعلم المساند</label><textarea name="required_work" class="form-control" rows="3" required></textarea></div>
+<div class="col-12"><button class="btn btn-primary">حفظ التكليف</button></div></form></div></div>
+<div class="card"><div class="card-header">سجل التكليفات السابقة</div><div class="card-body table-responsive"><table class="table table-striped"><thead><tr><th>التاريخ</th><th>الصف</th><th>الدرس</th><th>الصفحة</th><th>المطلوب</th></tr></thead><tbody>{% for a in assignments %}<tr><td>{{ a.created_at|date:"Y-m-d H:i" }}</td><td>{{ a.class_obj.name }}</td><td>{{ a.lesson_title }}</td><td>{{ a.page_number|default:"-" }}</td><td>{{ a.required_work }}</td></tr>{% empty %}<tr><td colspan="5">لا توجد تكليفات بعد</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}
