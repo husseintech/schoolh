@@ -5,7 +5,7 @@
 {% block content %}
 <style>
 .attendance-page{max-width:1100px;margin:0 auto;background:#fff;border:1px solid #d9e1ea;border-radius:18px;box-shadow:0 12px 35px rgba(20,45,75,.08);padding:24px;color:#172033}
-.attendance-head{display:grid;grid-template-columns:1fr 110px 1fr;align-items:center;gap:12px;border-bottom:3px double #1e3a5f;padding:0 0 18px}
+.attendance-head{display:grid;direction:ltr;grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr);align-items:center;gap:8px;border-bottom:3px double #1e3a5f;padding:0 0 18px}
 .attendance-head .ar{direction:rtl;text-align:right;font-weight:800;line-height:1.9}
 .attendance-head .en{direction:ltr;text-align:left;font-weight:800;line-height:1.9}
 .attendance-head img{width:92px;height:92px;object-fit:contain;justify-self:center}
@@ -15,14 +15,14 @@
 .attendance-actions{display:flex;gap:12px;align-items:end;justify-content:center;flex-wrap:wrap;background:#f4f7fb;border:1px solid #e0e8f1;border-radius:14px;padding:16px;margin-bottom:20px}
 .attendance-actions label{font-weight:700;display:block;margin-bottom:6px}
 .attendance-actions input{min-width:190px}
-.attendance-table{width:100%;border-collapse:collapse;text-align:center}
-.attendance-table th,.attendance-table td{border:1px solid #9aa9ba;padding:12px 7px}
+.attendance-table{width:100%;table-layout:fixed;border-collapse:collapse;text-align:center}
+.attendance-table th,.attendance-table td{border:1px solid #9aa9ba;padding:8px 3px;overflow-wrap:anywhere}
 .attendance-table th{background:#173b64;color:#fff;font-weight:800}
 .attendance-table td{height:48px}
 .attendance-table tbody tr:nth-child(even){background:#f5f8fc}
 .signature-cell{min-width:100px;height:52px}
 .attendance-note{text-align:center;color:#64748b;font-size:13px;margin-top:14px}
-@page{size:A4 landscape;margin:12mm}
+@page{size:A4 portrait;margin:9mm}
 @media(max-width:700px){.attendance-page{padding:12px}.attendance-head{grid-template-columns:1fr 70px 1fr;font-size:11px}.attendance-head img{width:65px;height:65px}.attendance-table th,.attendance-table td{padding:7px 3px;font-size:11px}.signature-cell{min-width:60px}}
 @media print{
  body *{visibility:hidden!important}
