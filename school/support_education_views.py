@@ -287,8 +287,8 @@ def admin_support_teacher_attendance(request):
     today = timezone.localdate()
     teacher_id = request.GET.get('teacher_id') or request.POST.get('teacher_id') or ''
     try:
-        year = int(request.GET.get('year', today.year))
-        month = int(request.GET.get('month', today.month))
+        year = int(request.GET.get('year') or request.POST.get('year') or today.year)
+        month = int(request.GET.get('month') or request.POST.get('month') or today.month)
         if month < 1 or month > 12 or year < 2000 or year > 2100:
             raise ValueError
     except (TypeError, ValueError):
