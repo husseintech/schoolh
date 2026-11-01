@@ -17,6 +17,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('support-education/', support_education_views.support_dashboard, name='support_dashboard'),
+    path('support-education/attendance/', support_education_views.support_teacher_attendance, name='support_teacher_attendance'),
     path('support-education/manage/', support_education_views.support_teacher_manage, name='support_teacher_manage'),
     path('support-education/manage/<int:teacher_id>/edit/', support_education_views.support_teacher_edit, name='support_teacher_edit'),
     path('support-education/manage/<int:teacher_id>/delete/', support_education_views.support_teacher_delete, name='support_teacher_delete'),

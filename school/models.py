@@ -583,6 +583,25 @@ class StudentLateness(models.Model):
         return f'{self.student.full_name} - {self.date}'
 
 
+class SupportTeacherAttendance(models.Model):
+    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, related_name='support_attendance', verbose_name='المعلم المساند')
+    attendance_date = models.DateField('التاريخ')
+    check_in_time = models.TimeField('بداية الدوام', default='07:30')
+    check_out_time = models.TimeField('نهاية الدوام', default='14:30')
+    created_at = models.DateTimeField('وقت التسجيل', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'بصمة دوام معلم مساند'
+        verbose_name_plural = 'بصمات دوام المعلمين المساندين'
+        ordering = ['-attendance_date']
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'attendance_date'], name='unique_support_attendance_day')
+        ]
+
+    def __str__(self):
+        return f'{self.teacher.full_name} - {self.attendance_date}'
+
+
 class SchoolInfo(models.Model):
     name_ar = models.CharField('اسم المدرسة (عربي)', max_length=200)
     name_en = models.CharField('اسم المدرسة (إنجليزي)', max_length=200)

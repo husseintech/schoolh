@@ -7,7 +7,7 @@ from django.db.models import Prefetch
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from .models import Profile, Teacher, Class, Subject, UserPermission, SupportLessonAssignment, SupportLessonExecution
+from .models import Profile, Teacher, Class, Subject, UserPermission, SupportLessonAssignment, SupportLessonExecution, SupportTeacherAttendance
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +143,47 @@ def support_assignment_list(request):
     return render(request, 'school/support_assignment_list.html', {
         'classes': classes, 'subjects': subjects, 'assignments': assignments,
         'today': timezone.localdate(),
+    })
+
+
+
+
+@login_required
+def support_teacher_attendance(request):
+    if not _support_teacher(request.user):
+        messages.error(request, 'هذه الصفحة مخصصة للمعلم المساند فقط')
+        return redirect('dashboard')
+    teacher = get_object_or_404(Teacher, user=request.user)
+    selected_date = timezone.localdate()
+    if request.method == 'POST':
+        parsed = parse_date(request.POST.get('attendance_date', ''))
+        if not parsed:
+            messages.error(request, 'يرجى اختيار تاريخ صحيح')
+            return redirect('support_teacher_attendance')
+        selected_date = parsed
+        record, created = SupportTeacherAttendance.objects.get_or_create(
+            teacher=teacher,
+            attendance_date=selected_date,
+            defaults={'check_in_time': '07:30', 'check_out_time': '14:30'},
+        )
+        if created:
+            messages.success(request, 'تم تسجيل بداية ونهاية الدوام بنجاح')
+        else:
+            messages.warning(request, 'تم تسجيل بصمة هذا اليوم مسبقاً ولا يمكن تكرارها')
+        return redirect('support_teacher_attendance')
+    records = list(SupportTeacherAttendance.objects.filter(
+        teacher=teacher
+    ).order_by('-attendance_date'))
+    arabic_days = {
+        0: 'الاثنين', 1: 'الثلاثاء', 2: 'الأربعاء',
+        3: 'الخميس', 4: 'الجمعة', 5: 'السبت', 6: 'الأحد',
+    }
+    for record in records:
+        record.day_name = arabic_days[record.attendance_date.weekday()]
+    return render(request, 'school/support_teacher_attendance.html', {
+        'teacher': teacher,
+        'records': records,
+        'selected_date': selected_date,
     })
 
 

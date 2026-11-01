@@ -1,0 +1,59 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}تسجيل دوام المعلم المساند{% endblock %}
+{% block page_heading %}تسجيل دوام المعلم المساند{% endblock %}
+{% block content %}
+<style>
+.attendance-page{max-width:1100px;margin:0 auto;background:#fff;border:1px solid #d9e1ea;border-radius:18px;box-shadow:0 12px 35px rgba(20,45,75,.08);padding:24px;color:#172033}
+.attendance-head{display:grid;direction:ltr;grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr);align-items:center;gap:8px;border-bottom:3px double #1e3a5f;padding:0 0 18px}
+.attendance-head .ar{direction:rtl;text-align:right;font-weight:800;line-height:1.9}
+.attendance-head .en{direction:ltr;text-align:left;font-weight:800;line-height:1.9}
+.attendance-head img{width:92px;height:92px;object-fit:contain;justify-self:center}
+.attendance-title{text-align:center;margin:24px 0 18px}
+.attendance-title h2{font-weight:900;color:#173b64;margin-bottom:8px}
+.attendance-title .teacher-name{font-size:19px;font-weight:800;color:#24364b}
+.attendance-actions{display:flex;gap:12px;align-items:end;justify-content:center;flex-wrap:wrap;background:#f4f7fb;border:1px solid #e0e8f1;border-radius:14px;padding:16px;margin-bottom:20px}
+.attendance-actions label{font-weight:700;display:block;margin-bottom:6px}
+.attendance-actions input{min-width:190px}
+.attendance-table{width:100%;table-layout:fixed;border-collapse:collapse;text-align:center}
+.attendance-table th,.attendance-table td{border:1px solid #9aa9ba;padding:8px 3px;overflow-wrap:anywhere}
+.attendance-table th{background:#173b64;color:#fff;font-weight:800}
+.attendance-table td{height:48px}
+.attendance-table tbody tr:nth-child(even){background:#f5f8fc}
+.signature-cell{min-width:100px;height:52px}
+.attendance-note{text-align:center;color:#64748b;font-size:13px;margin-top:14px}
+@page{size:A4 portrait;margin:9mm}
+@media(max-width:700px){.attendance-page{padding:12px}.attendance-head{grid-template-columns:1fr 70px 1fr;font-size:11px}.attendance-head img{width:65px;height:65px}.attendance-table th,.attendance-table td{padding:7px 3px;font-size:11px}.signature-cell{min-width:60px}}
+@media print{
+ body *{visibility:hidden!important}
+ #attendance-print,#attendance-print *{visibility:visible!important}
+ #attendance-print{position:absolute;left:0;top:0;width:100%;max-width:none;box-shadow:none;border:0;border-radius:0;padding:0}
+ .no-print{display:none!important}
+ .attendance-page{box-shadow:none;border:0;padding:0}
+ .attendance-table th{background:#173b64!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+<div class="attendance-page" id="attendance-print">
+ <header class="attendance-head">
+  <div class="en"><strong>State of Palestine</strong><br>Ministry of Education and Higher Education<br>Directorate of Education – Yatta<br>Al-Mansour Basic Boys School</div>
+  <img src="{% static 'images/palestine_logo.png' %}" alt="شعار وزارة التربية والتعليم">
+  <div class="ar">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>مدرسة ذكور المنصور الأساسية</div>
+ </header>
+ <section class="attendance-title">
+  <h2>تسجيل دوام المعلم</h2>
+  <div class="teacher-name">{{ teacher.full_name }}</div>
+ </section>
+ <div class="attendance-actions no-print">
+  <form method="post" class="d-flex gap-2 align-items-end flex-wrap">{% csrf_token %}
+   <div><label for="attendance-date">تاريخ الدوام</label><input id="attendance-date" class="form-control" type="date" name="attendance_date" value="{{ selected_date|date:'Y-m-d' }}" required></div>
+   <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-fingerprint"></i> تسجيل البصمة</button>
+  </form>
+  <button class="btn btn-outline-secondary btn-lg" type="button" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الكشف</button>
+ </div>
+ <table class="attendance-table" dir="rtl">
+  <thead><tr><th>الرقم</th><th>اليوم</th><th>التاريخ</th><th>بداية الدوام</th><th>التوقيع</th><th>نهاية الدوام</th><th>التوقيع</th></tr></thead>
+  <tbody>{% for item in records %}<tr><td>{{ forloop.counter }}</td><td>{{ item.day_name }}</td><td>{{ item.attendance_date|date:"d/m/Y" }}</td><td>{{ item.check_in_time|time:"h:i A" }}</td><td class="signature-cell"></td><td>{{ item.check_out_time|time:"h:i A" }}</td><td class="signature-cell"></td></tr>{% empty %}<tr><td colspan="7">لا توجد بصمات مسجلة بعد.</td></tr>{% endfor %}</tbody>
+ </table>
+ <p class="attendance-note">تم تحديد بداية الدوام الساعة 7:30 صباحاً ونهاية الدوام الساعة 2:30 ظهراً. التواقيع تترك للتوقيع اليدوي.</p>
+</div>
+{% endblock %}
