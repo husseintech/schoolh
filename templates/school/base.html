@@ -1157,6 +1157,7 @@
 
         {% if user.profile.role == 'admin' %}
         <a href="{% url 'support_teacher_manage' %}" class="nav-link {% if request.resolver_match.url_name == 'support_teacher_manage' %}active{% endif %}"><i class="bi bi-person-plus"></i> إدارة المعلمين المساندين</a>
+        <a href="{% url 'admin_support_teacher_attendance' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_support_teacher_attendance' %}active{% endif %}"><i class="bi bi-fingerprint"></i> دوام المعلمين المساندين</a>
         <a href="{% url 'support_reports' %}" class="nav-link {% if request.resolver_match.url_name == 'support_reports' %}active{% endif %}"><i class="bi bi-clipboard-data"></i> تقارير التعليم المساند</a>
         {% elif user.profile.role == 'teacher' %}
         <a href="{% url 'support_assignment_list' %}" class="nav-link {% if request.resolver_match.url_name == 'support_assignment_list' %}active{% endif %}"><i class="bi bi-journal-plus"></i> التعليم المساند</a>
