@@ -1766,3 +1766,24 @@ class SupportLessonExecution(models.Model):
         ordering = ['-execution_date', '-created_at']
         verbose_name = 'متابعة تنفيذ التعليم المساند'
         verbose_name_plural = 'متابعات تنفيذ التعليم المساند'
+
+
+class TeacherMonthlyAttendance(models.Model):
+    """Monthly attendance entries for original teachers only."""
+    teacher = models.ForeignKey('school.Teacher', on_delete=models.CASCADE, related_name='monthly_attendance_records', verbose_name='المعلم الأصيل')
+    attendance_date = models.DateField('تاريخ الدوام', db_index=True)
+    check_in_at = models.DateTimeField('وقت بداية الدوام', null=True, blank=True)
+    check_out_at = models.DateTimeField('وقت نهاية الدوام', null=True, blank=True)
+    notes = models.CharField('ملاحظات', max_length=500, blank=True)
+    created_at = models.DateTimeField('وقت الإدخال الفعلي', auto_now_add=True)
+    updated_at = models.DateTimeField('آخر تحديث', auto_now=True)
+    last_recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recorded_original_teacher_attendance', verbose_name='سجل بواسطة')
+
+    class Meta:
+        ordering = ['attendance_date', 'id']
+        constraints = [models.UniqueConstraint(fields=['teacher', 'attendance_date'], name='unique_original_teacher_attendance_day')]
+        verbose_name = 'بصمة دوام معلم أصيل'
+        verbose_name_plural = 'بصمة دوام المعلمين الأصيلين'
+
+    def __str__(self):
+        return f'{self.teacher.full_name} - {self.attendance_date}'
