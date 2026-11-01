@@ -4,7 +4,9 @@
 {% block content %}
 <style>
 .att-sheet{background:#fff;color:#111;padding:16px;border:1px solid #bbb;font-family:Tahoma,Arial,sans-serif}
-.att-head{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-weight:700;font-size:12px;border-bottom:2px solid #111;padding-bottom:8px}
+.att-head{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-weight:700;font-size:12px;border-bottom:2px solid #111;padding-bottom:8px;direction:ltr}
+.att-head .att-head-en{grid-column:1;text-align:center;direction:ltr}
+.att-head .att-head-ar{grid-column:2;text-align:center;direction:rtl;font-size:14px}
 .att-sheet h2{font-size:19px;text-align:center;text-decoration:underline;margin:14px 0;font-weight:800}
 .att-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;margin:10px 0;font-size:12px;font-weight:700}
 .att-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
@@ -12,7 +14,9 @@
 .att-table th{background:#ddd;font-weight:800}
 .att-table tr.weekend td{background:#d8d8d8}
 .att-total{background:#aaa;text-align:center;font-weight:800;padding:6px;border:1px solid #222}
-.att-footer{border-top:1px solid #111;border-bottom:2px solid #111;text-align:center;margin-top:17px;padding:4px;font-size:10px}
+.att-footer{display:grid;grid-template-columns:1fr 1fr;direction:ltr;border-top:1px solid #111;border-bottom:2px solid #111;margin-top:17px;padding:4px;font-size:9px;align-items:center}
+.att-footer-en{text-align:left;direction:ltr}
+.att-footer-ar{text-align:right;direction:rtl}
 .att-approval{break-before:page;page-break-before:always;min-height:250mm;padding-top:12px}
 .att-approval-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px;font-weight:700;margin-top:26px;font-size:13px}
 .att-approval-grid h3{text-align:center;font-size:17px;margin-top:0}
@@ -24,7 +28,7 @@
  #attendance-print{position:absolute;left:0;top:0;width:100%;padding:0!important;border:0!important}
  .no-print{display:none!important}
  .att-sheet{border:0;padding:0}
- .att-table th,.att-table tr.weekend td,.att-total{ -webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .att-table th,.att-table tr.weekend td,.att-total{-webkit-print-color-adjust:exact;print-color-adjust:exact}
  .att-table th{background:#ddd!important}
  .att-table tr.weekend td{background:#d8d8d8!important}
  .att-total{background:#aaa!important}
@@ -56,8 +60,8 @@
 </div>
 <div id="attendance-print" class="att-sheet" dir="rtl">
  <div class="att-head">
-  <div dir="ltr" style="text-align:center">State of Palestine<br>Ministry of Education &amp; Higher Education<br>D. G. of Administrative Affairs</div>
-  <div style="text-align:center;font-size:14px">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>الإدارة العامة للشؤون الإدارية</div>
+  <div class="att-head-en">State of Palestine<br>Ministry of Education &amp; Higher Education<br>D. G. of Administrative Affairs</div>
+  <div class="att-head-ar">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>الإدارة العامة للشؤون الإدارية</div>
  </div>
  <h2>تقرير الدوام لموظف مياومة خلال شهر ({{ month|stringformat:"02d" }} / {{ year }})</h2>
  <div class="att-meta">
@@ -76,14 +80,14 @@
   {% endfor %}</tbody>
  </table>
  <div class="att-total">مجموع أيام العمل (يشمل العطل الأسبوعية التي تتخلل فترة العمل): ({{ days|length }}) يوم / يوماً</div>
- <div class="att-footer" dir="ltr">Ramallah P.O.Box.(576) - Tel (+972-2-2983241) Fax (+972-2-2983292) هاتف فاكس رام الله ص.ب</div>
+ <div class="att-footer"><div class="att-footer-en">Ramallah P.O. Box (576) · Tel (+972-2-2983241) · Fax (+972-2-2983292)</div><div class="att-footer-ar">رام الله ص.ب (576) · هاتف · فاكس</div></div>
  <section class="att-approval">
-  <div class="att-head"><div dir="ltr" style="text-align:center">State of Palestine<br>Ministry of Education &amp; Higher Education<br>D. G. of Administrative Affairs</div><div style="text-align:center;font-size:14px">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>الإدارة العامة للشؤون الإدارية</div></div>
+  <div class="att-head"><div class="att-head-en">State of Palestine<br>Ministry of Education &amp; Higher Education<br>D. G. of Administrative Affairs</div><div class="att-head-ar">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>الإدارة العامة للشؤون الإدارية</div></div>
   <div class="att-approval-grid">
    <div><h3>مصادقة المدير</h3></div>
    <div class="lines">ملاحظات المسؤول المباشر / مدير المدرسة:<br>العام / مدير التربية والتعليم:<br>التوقيع: ........................................<br>التوقيع: ........................................<br>التاريخ: ........................................<br>التاريخ: ........................................</div>
   </div>
-  <div class="att-footer" dir="ltr">Ramallah P.O.Box.(576) - Tel (+972-2-2983241) Fax (+972-2-2983292) هاتف فاكس رام الله ص.ب</div>
+  <div class="att-footer"><div class="att-footer-en">Ramallah P.O. Box (576) · Tel (+972-2-2983241) · Fax (+972-2-2983292)</div><div class="att-footer-ar">رام الله ص.ب (576) · هاتف · فاكس</div></div>
  </section>
 </div>
 {% endblock %}
