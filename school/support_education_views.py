@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models import Prefetch
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from django.utils.dateparse import parse_date
+from django.utils.dateparse import parse_date, parse_time
 from .models import Profile, Teacher, Class, Subject, UserPermission, SupportLessonAssignment, SupportLessonExecution, SupportTeacherAttendance
 
 logger = logging.getLogger(__name__)
@@ -271,4 +271,107 @@ def support_reports(request):
         'original_teachers': Teacher.objects.filter(user__profile__role='teacher').order_by('full_name'),
         'support_teachers': Teacher.objects.filter(user__profile__role='support_teacher').order_by('full_name'),
         'filters': request.GET,
+    })
+
+@login_required
+def admin_support_teacher_attendance(request):
+    """Admin management, editing and printing of support-teacher attendance."""
+    if _role(request.user) != 'admin':
+        messages.error(request, 'هذه الصفحة للإدارة فقط')
+        return redirect('dashboard')
+
+    teachers = Teacher.objects.filter(
+        user__profile__role='support_teacher'
+    ).select_related('user').order_by('full_name')
+
+    today = timezone.localdate()
+    teacher_id = request.GET.get('teacher_id') or request.POST.get('teacher_id') or ''
+    try:
+        year = int(request.GET.get('year', today.year))
+        month = int(request.GET.get('month', today.month))
+        if month < 1 or month > 12 or year < 2000 or year > 2100:
+            raise ValueError
+    except (TypeError, ValueError):
+        year, month = today.year, today.month
+
+    selected_teacher = teachers.filter(pk=teacher_id).first() if teacher_id else None
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'add')
+        target_id = request.POST.get('record_id')
+        if action == 'delete':
+            record = get_object_or_404(
+                SupportTeacherAttendance,
+                pk=target_id,
+                teacher__user__profile__role='support_teacher',
+            )
+            record.delete()
+            messages.success(request, 'تم حذف سجل البصمة بنجاح')
+        else:
+            parsed_date = parse_date(request.POST.get('attendance_date', ''))
+            check_in = parse_time(request.POST.get('check_in_time', '07:30'))
+            check_out = parse_time(request.POST.get('check_out_time', '14:30'))
+            if not selected_teacher:
+                messages.error(request, 'يرجى اختيار المعلم المساند')
+            elif not parsed_date or not check_in or not check_out:
+                messages.error(request, 'يرجى إدخال تاريخ وأوقات صحيحة')
+            else:
+                if action == 'update':
+                    record = get_object_or_404(
+                        SupportTeacherAttendance,
+                        pk=target_id,
+                        teacher__user__profile__role='support_teacher',
+                    )
+                    duplicate = SupportTeacherAttendance.objects.filter(
+                        teacher=selected_teacher, attendance_date=parsed_date
+                    ).exclude(pk=record.pk).exists()
+                    if duplicate:
+                        messages.error(request, 'توجد بصمة مسجلة لهذا المعلم في التاريخ نفسه')
+                    else:
+                        record.teacher = selected_teacher
+                        record.attendance_date = parsed_date
+                        record.check_in_time = check_in
+                        record.check_out_time = check_out
+                        record.save()
+                        messages.success(request, 'تم تعديل سجل البصمة بنجاح')
+                else:
+                    record, created = SupportTeacherAttendance.objects.get_or_create(
+                        teacher=selected_teacher,
+                        attendance_date=parsed_date,
+                        defaults={'check_in_time': check_in, 'check_out_time': check_out},
+                    )
+                    if created:
+                        messages.success(request, 'تمت إضافة البصمة بنجاح')
+                    else:
+                        messages.warning(request, 'توجد بصمة مسجلة لهذا المعلم في التاريخ نفسه')
+        return redirect(
+            f"{request.path}?teacher_id={teacher_id}&year={year}&month={month}"
+        )
+
+    records = SupportTeacherAttendance.objects.none()
+    if selected_teacher:
+        records = SupportTeacherAttendance.objects.filter(
+            teacher=selected_teacher,
+            attendance_date__year=year,
+            attendance_date__month=month,
+        ).order_by('attendance_date', 'id')
+
+    arabic_days = {
+        0: 'الاثنين', 1: 'الثلاثاء', 2: 'الأربعاء',
+        3: 'الخميس', 4: 'الجمعة', 5: 'السبت', 6: 'الأحد',
+    }
+    for record in records:
+        record.day_name = arabic_days[record.attendance_date.weekday()]
+
+    return render(request, 'school/admin_support_teacher_attendance.html', {
+        'support_teachers': teachers,
+        'selected_teacher': selected_teacher,
+        'records': records,
+        'year': year,
+        'month': month,
+        'month_name': [
+            '', 'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
+            'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
+        ][month],
+        'today': today,
     })
