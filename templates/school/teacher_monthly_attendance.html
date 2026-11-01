@@ -17,7 +17,7 @@
 .att-footer{display:grid;grid-template-columns:1fr 1fr;direction:ltr;border-top:1px solid #111;border-bottom:2px solid #111;margin-top:17px;padding:4px;font-size:9px;align-items:center}
 .att-footer-en{text-align:left;direction:ltr}
 .att-footer-ar{text-align:right;direction:rtl}
-.att-approval{break-before:page;page-break-before:always;min-height:250mm;padding-top:12px}
+.att-approval{break-before:auto;page-break-before:auto;min-height:0;padding-top:10px}
 .att-approval-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px;font-weight:700;margin-top:26px;font-size:13px}
 .att-approval-grid h3{text-align:center;font-size:17px;margin-top:0}
 .att-approval .lines{line-height:3}
@@ -32,7 +32,7 @@
  .att-table th{background:#ddd!important}
  .att-table tr.weekend td{background:#d8d8d8!important}
  .att-total{background:#aaa!important}
- .att-approval{break-before:page;page-break-before:always;min-height:260mm}
+ .att-approval{break-before:auto;page-break-before:auto;min-height:0;break-inside:avoid;page-break-inside:avoid}
 }
 </style>
 <div class="no-print card mb-3">
@@ -82,7 +82,6 @@
  <div class="att-total">مجموع أيام العمل (يشمل العطل الأسبوعية التي تتخلل فترة العمل): ({{ days|length }}) يوم / يوماً</div>
  <div class="att-footer"><div class="att-footer-en">Ramallah P.O. Box (576) · Tel (+972-2-2983241) · Fax (+972-2-2983292)</div><div class="att-footer-ar">رام الله ص.ب (576) · هاتف · فاكس</div></div>
  <section class="att-approval">
-  <div class="att-head"><div class="att-head-en">State of Palestine<br>Ministry of Education &amp; Higher Education<br>D. G. of Administrative Affairs</div><div class="att-head-ar">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>الإدارة العامة للشؤون الإدارية</div></div>
   <div class="att-approval-grid">
    <div><h3>مصادقة المدير</h3></div>
    <div class="lines">ملاحظات المسؤول المباشر / مدير المدرسة:<br>العام / مدير التربية والتعليم:<br>التوقيع: ........................................<br>التوقيع: ........................................<br>التاريخ: ........................................<br>التاريخ: ........................................</div>
