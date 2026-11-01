@@ -1,0 +1,103 @@
+{% extends 'school/base.html' %}
+{% load static %}
+{% block title %}دوام المعلمين المساندين{% endblock %}
+{% block page_heading %}دوام المعلمين المساندين{% endblock %}
+{% block content %}
+<style>
+.admin-att-page{max-width:1250px;margin:auto;color:#172033}
+.admin-att-card{background:#fff;border:1px solid #dce4ee;border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 8px 24px rgba(20,45,75,.06)}
+.admin-att-toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+.admin-att-toolbar label,.admin-att-form label{display:block;font-weight:700;margin-bottom:6px}
+.admin-att-table{width:100%;border-collapse:collapse;text-align:center}
+.admin-att-table th,.admin-att-table td{border:1px solid #d6deea;padding:8px 6px;vertical-align:middle}
+.admin-att-table th{background:#173b64;color:#fff;white-space:nowrap}
+.admin-att-table input,.admin-att-table select{min-width:105px}
+.admin-att-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.admin-att-form button{height:40px}
+.admin-att-print-head{display:none}
+@page{size:A4 portrait;margin:9mm}
+@media print{
+ body *{visibility:hidden!important}
+ #admin-att-print,#admin-att-print *{visibility:visible!important}
+ #admin-att-print{position:absolute;left:0;top:0;width:100%;max-width:none}
+ .no-print{display:none!important}
+ .admin-att-card{box-shadow:none;border:0;padding:0;margin:0}
+ .admin-att-print-head{display:grid;direction:ltr;grid-template-columns:1fr 75px 1fr;align-items:center;gap:8px;border-bottom:3px double #1e3a5f;padding-bottom:12px;margin-bottom:18px;font-size:10px;font-weight:700;line-height:1.8}
+ .admin-att-print-head .ar{direction:rtl;text-align:right}
+ .admin-att-print-head .en{direction:ltr;text-align:left}
+ .admin-att-print-head img{width:72px;height:72px;object-fit:contain}
+ .admin-att-table th{background:#173b64!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .admin-att-table input{border:0;background:transparent;text-align:center;width:100%}
+}
+</style>
+<div class="admin-att-page">
+ <div class="admin-att-card no-print">
+  <h4 class="mb-3"><i class="bi bi-fingerprint"></i> إدارة بصمات المعلمين المساندين</h4>
+  <form method="get" class="admin-att-toolbar">
+   <div style="min-width:240px;flex:1"><label>المعلم المساند</label>
+    <select class="form-select" name="teacher_id" required>
+     <option value="">اختر المعلم</option>
+     {% for t in support_teachers %}<option value="{{ t.id }}" {% if selected_teacher and selected_teacher.id == t.id %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+    </select>
+   </div>
+   <div><label>الشهر</label><select class="form-select" name="month">{% for m in "123456789101112"|make_list %}{% endfor %}
+    <option value="1" {% if month == 1 %}selected{% endif %}>كانون الثاني</option><option value="2" {% if month == 2 %}selected{% endif %}>شباط</option><option value="3" {% if month == 3 %}selected{% endif %}>آذار</option><option value="4" {% if month == 4 %}selected{% endif %}>نيسان</option><option value="5" {% if month == 5 %}selected{% endif %}>أيار</option><option value="6" {% if month == 6 %}selected{% endif %}>حزيران</option><option value="7" {% if month == 7 %}selected{% endif %}>تموز</option><option value="8" {% if month == 8 %}selected{% endif %}>آب</option><option value="9" {% if month == 9 %}selected{% endif %}>أيلول</option><option value="10" {% if month == 10 %}selected{% endif %}>تشرين الأول</option><option value="11" {% if month == 11 %}selected{% endif %}>تشرين الثاني</option><option value="12" {% if month == 12 %}selected{% endif %}>كانون الأول</option>
+   </select></div>
+   <div><label>السنة</label><input class="form-control" type="number" name="year" value="{{ year }}" min="2000" max="2100" style="width:115px"></div>
+   <button class="btn btn-primary"><i class="bi bi-search"></i> عرض الكشف</button>
+   {% if selected_teacher %}<button class="btn btn-outline-dark" type="button" onclick="window.print()"><i class="bi bi-printer"></i> طباعة الكشف</button>{% endif %}
+  </form>
+ </div>
+
+ {% if selected_teacher %}
+ <div class="admin-att-card no-print">
+  <h5 class="mb-3">إضافة بصمة للمعلم: {{ selected_teacher.full_name }}</h5>
+  <form method="post" class="admin-att-form">{% csrf_token %}
+   <input type="hidden" name="action" value="add"><input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">
+   <input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">
+   <div><label>التاريخ</label><input class="form-control" type="date" name="attendance_date" value="{{ today|date:'Y-m-d' }}" required></div>
+   <div><label>بداية الدوام</label><input class="form-control" type="time" name="check_in_time" value="07:30" required></div>
+   <div><label>نهاية الدوام</label><input class="form-control" type="time" name="check_out_time" value="14:30" required></div>
+   <button class="btn btn-success"><i class="bi bi-plus-circle"></i> إضافة البصمة</button>
+  </form>
+ </div>
+ <div class="admin-att-card" id="admin-att-print">
+  <header class="admin-att-print-head">
+   <div class="en">State of Palestine<br>Ministry of Education and Higher Education<br>Directorate of Education – Yatta<br>Al-Mansour Basic Boys School</div>
+   <img src="{% static 'images/palestine_logo.png' %}" alt="شعار الوزارة">
+   <div class="ar">دولة فلسطين<br>وزارة التربية والتعليم العالي<br>مديرية التربية والتعليم / يطا<br>مدرسة ذكور المنصور الأساسية</div>
+  </header>
+  <div class="text-center mb-3"><h3 class="fw-bold">كشف دوام المعلم المساند</h3><h5>{{ selected_teacher.full_name }}</h5><div>{{ month_name }} {{ year }}</div></div>
+  <div class="table-responsive">
+   <table class="admin-att-table" dir="rtl">
+    <thead><tr><th>الرقم</th><th>اليوم</th><th>التاريخ</th><th>بداية الدوام</th><th>التوقيع</th><th>نهاية الدوام</th><th>التوقيع</th><th class="no-print">إجراءات</th></tr></thead>
+    <tbody>
+     {% for item in records %}
+     <tr>
+      <td>{{ forloop.counter }}</td><td>{{ item.day_name }}</td><td>{{ item.attendance_date|date:"d/m/Y" }}</td>
+      <td>{{ item.check_in_time|time:"H:i" }}</td><td style="height:42px"></td><td>{{ item.check_out_time|time:"H:i" }}</td><td></td>
+      <td class="no-print" style="min-width:300px">
+       <form method="post" class="d-flex gap-1 align-items-center flex-wrap">{% csrf_token %}
+        <input type="hidden" name="action" value="update"><input type="hidden" name="record_id" value="{{ item.id }}"><input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}"><input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">
+        <input class="form-control form-control-sm" type="date" name="attendance_date" value="{{ item.attendance_date|date:'Y-m-d' }}" required>
+        <input class="form-control form-control-sm" style="width:105px" type="time" name="check_in_time" value="{{ item.check_in_time|time:'H:i' }}" required>
+        <input class="form-control form-control-sm" style="width:105px" type="time" name="check_out_time" value="{{ item.check_out_time|time:'H:i' }}" required>
+        <button class="btn btn-sm btn-primary">حفظ</button>
+       </form>
+       <form method="post" class="mt-1" onsubmit="return confirm('هل أنت متأكد من حذف هذه البصمة؟')">{% csrf_token %}
+        <input type="hidden" name="action" value="delete"><input type="hidden" name="record_id" value="{{ item.id }}"><input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}"><input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">
+        <button class="btn btn-sm btn-outline-danger">حذف</button>
+       </form>
+      </td>
+     </tr>
+     {% empty %}<tr><td colspan="8">لا توجد بصمات مسجلة لهذا المعلم خلال الشهر المحدد.</td></tr>{% endfor %}
+    </tbody>
+   </table>
+  </div>
+  <p class="text-center mt-3 small text-muted">التوقيعات تترك للتوقيع اليدوي.</p>
+ </div>
+ {% else %}
+ <div class="alert alert-info">اختر معلماً مسانداً لعرض كشف دوامه وإدارة بصماته.</div>
+ {% endif %}
+</div>
+{% endblock %}
