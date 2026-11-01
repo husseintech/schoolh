@@ -3,29 +3,29 @@
 {% block page_heading %}بصمة المعلم الأصيل{% endblock %}
 {% block content %}
 <style>
-.att-sheet{background:#fff;color:#111;padding:16px;border:1px solid #bbb;font-family:Tahoma,Arial,sans-serif}
+.att-sheet{background:#fff;color:#111;padding:10px;border:1px solid #bbb;font-family:Tahoma,Arial,sans-serif}
 .att-head{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-weight:700;font-size:12px;border-bottom:2px solid #111;padding-bottom:8px;direction:ltr}
 .att-head .att-head-en{grid-column:1;text-align:center;direction:ltr}
 .att-head .att-head-ar{grid-column:2;text-align:center;direction:rtl;font-size:14px}
-.att-sheet h2{font-size:19px;text-align:center;text-decoration:underline;margin:14px 0;font-weight:800}
-.att-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;margin:10px 0;font-size:12px;font-weight:700}
-.att-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
-.att-table th,.att-table td{border:1px solid #222;text-align:center;padding:3px 2px;height:22px}
+.att-sheet h2{font-size:16px;text-align:center;text-decoration:underline;margin:7px 0;font-weight:800}
+.att-meta{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin:6px 0;font-size:10px;font-weight:700}
+.att-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}
+.att-table th,.att-table td{border:1px solid #222;text-align:center;padding:1px;height:16px;line-height:1.1}
 .att-table th{background:#ddd;font-weight:800}
 .att-table tr.weekend td{background:#d8d8d8}
-.att-total{background:#aaa;text-align:center;font-weight:800;padding:6px;border:1px solid #222}
-.att-footer{display:grid;grid-template-columns:1fr 1fr;direction:ltr;border-top:1px solid #111;border-bottom:2px solid #111;margin-top:17px;padding:4px;font-size:9px;align-items:center}
+.att-total{background:#aaa;text-align:center;font-weight:800;padding:3px;border:1px solid #222;font-size:9px}
+.att-footer{display:grid;grid-template-columns:1fr 1fr;direction:ltr;border-top:1px solid #111;border-bottom:2px solid #111;margin-top:6px;padding:2px;font-size:8px;align-items:center}
 .att-footer-en{text-align:left;direction:ltr}
 .att-footer-ar{text-align:right;direction:rtl}
 .att-approval{break-before:auto;page-break-before:auto;min-height:0;padding-top:10px}
-.att-approval-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px;font-weight:700;margin-top:26px;font-size:13px}
-.att-approval-grid h3{text-align:center;font-size:17px;margin-top:0}
-.att-approval .lines{line-height:3}
-@page{size:A4 portrait;margin:8mm}
+.att-approval-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;font-weight:700;margin-top:8px;font-size:10px}
+.att-approval-grid h3{text-align:center;font-size:13px;margin-top:0;margin-bottom:3px}
+.att-approval .lines{line-height:1.5}
+@page{size:A4 portrait;margin:5mm}
 @media print{
  body *{visibility:hidden!important}
  #attendance-print,#attendance-print *{visibility:visible!important}
- #attendance-print{position:absolute;left:0;top:0;width:100%;padding:0!important;border:0!important}
+ #attendance-print{position:absolute;left:0;top:0;width:100%;padding:0!important;border:0!important;zoom:.82}
  .no-print{display:none!important}
  .att-sheet{border:0;padding:0}
  .att-table th,.att-table tr.weekend td,.att-total{-webkit-print-color-adjust:exact;print-color-adjust:exact}
