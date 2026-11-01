@@ -47,7 +47,7 @@
   <h5>تسجيل البصمة - {{ month_name }} {{ year }}</h5>
   <form method="post" class="row g-2 align-items-end">{% csrf_token %}
    <input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}">
-   <div class="col-md-4"><label class="form-label">تاريخ البصمة</label><input class="form-control" type="date" name="attendance_date" min="{{ year }}-{% if month < 10 %}0{% endif %}{{ month }}-01" max="{{ year }}-{% if month < 10 %}0{% endif %}{{ month }}-{{ days|length }}" value="{{ today|date:'Y-m-d' }}" required></div>
+   <div class="col-md-4"><label class="form-label">تاريخ البصمة</label><input class="form-control" type="date" name="attendance_date" min="{{ year }}-{% if month < 10 %}0{% endif %}{{ month }}-01" max="{{ year }}-{% if month < 10 %}0{% endif %}{{ month }}-{% if days|length < 10 %}0{% endif %}{{ days|length }}" value="{% if today.year == year and today.month == month %}{{ today|date:'Y-m-d' }}{% else %}{{ year }}-{% if month < 10 %}0{% endif %}{{ month }}-01{% endif %}" required></div>
    <div class="col-md-4"><label class="form-label">نوع البصمة</label><select class="form-select" name="action"><option value="check_in">بداية الدوام</option><option value="check_out">نهاية الدوام</option></select></div>
    <div class="col-md-4"><button class="btn btn-success w-100" type="submit"><i class="bi bi-fingerprint"></i> تسجيل البصمة</button></div>
   </form>
