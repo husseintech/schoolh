@@ -6669,17 +6669,20 @@ def teacher_monthly_attendance(request):
             messages.error(request, 'نوع البصمة غير صحيح')
             return redirect(f'{reverse("teacher_monthly_attendance")}?year={year}&month={month}')
         with transaction.atomic():
-            record, _ = TeacherMonthlyAttendance.objects.get_or_create(teacher=teacher, attendance_date=selected_date, defaults={'last_recorded_by': request.user})
-            field = 'check_in_at' if action == 'check_in' else 'check_out_at'
-            if getattr(record, field):
-                messages.error(request, 'تم تسجيل هذه البصمة مسبقاً لهذا التاريخ')
-            elif action == 'check_out' and not record.check_in_at:
+            record = TeacherMonthlyAttendance.objects.filter(teacher=teacher, attendance_date=selected_date).first()
+            if action == 'check_out' and (not record or not record.check_in_at):
                 messages.error(request, 'يجب تسجيل بداية الدوام أولاً')
             else:
-                setattr(record, field, timezone.now())
-                record.last_recorded_by = request.user
-                record.save(update_fields=[field, 'last_recorded_by', 'updated_at'])
-                messages.success(request, 'تم تسجيل البصمة بنجاح')
+                if record is None:
+                    record = TeacherMonthlyAttendance(teacher=teacher, attendance_date=selected_date)
+                field = 'check_in_at' if action == 'check_in' else 'check_out_at'
+                if getattr(record, field):
+                    messages.error(request, 'تم تسجيل هذه البصمة مسبقاً لهذا التاريخ')
+                else:
+                    setattr(record, field, timezone.now())
+                    record.last_recorded_by = request.user
+                    record.save()
+                    messages.success(request, 'تم تسجيل البصمة بنجاح')
         return redirect(f'{reverse("teacher_monthly_attendance")}?year={year}&month={month}')
 
     arabic_days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
@@ -6690,3 +6693,8 @@ def teacher_monthly_attendance(request):
     arabic_months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
     month_choices = [(i, name) for i, name in enumerate(arabic_months, 1)]
     return render(request, 'school/teacher_monthly_attendance.html', {'teacher': teacher, 'days': days, 'month': month, 'year': year, 'month_name': arabic_months[month-1], 'month_choices': month_choices, 'info': SchoolInfo.objects.first(), 'today': today})
+
+
+@login_required
+def teacher_monthly_attendance_print(request):
+    return teacher_monthly_attendance(request)
