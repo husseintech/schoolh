@@ -6693,8 +6693,3 @@ def teacher_monthly_attendance(request):
     arabic_months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
     month_choices = [(i, name) for i, name in enumerate(arabic_months, 1)]
     return render(request, 'school/teacher_monthly_attendance.html', {'teacher': teacher, 'days': days, 'month': month, 'year': year, 'month_name': arabic_months[month-1], 'month_choices': month_choices, 'info': SchoolInfo.objects.first(), 'today': today})
-
-
-@login_required
-def teacher_monthly_attendance_print(request):
-    return teacher_monthly_attendance(request)
