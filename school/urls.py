@@ -16,6 +16,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('teacher/monthly-attendance/', views.teacher_monthly_attendance, name='teacher_monthly_attendance'),
     path('support-education/', support_education_views.support_dashboard, name='support_dashboard'),
     path('support-education/manage/', support_education_views.support_teacher_manage, name='support_teacher_manage'),
     path('support-education/manage/<int:teacher_id>/edit/', support_education_views.support_teacher_edit, name='support_teacher_edit'),
