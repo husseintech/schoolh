@@ -1185,8 +1185,8 @@ def _load_excel_worksheet(excel_file):
 
 @login_required
 def download_student_template(request):
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'teachers', 'import'):
+        messages.error(request, 'ليس لديك صلاحية لاستيراد المعلمين')
         return redirect('dashboard')
 
     import openpyxl
@@ -1860,7 +1860,10 @@ def teacher_list(request):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
     teachers = Teacher.objects.all().prefetch_related('classes', 'subjects').order_by('full_name')
-    return render(request, 'school/teacher_list.html', {'teachers': teachers})
+    return render(request, 'school/teacher_list.html', {
+        'teachers': teachers,
+        'can_import_teachers': has_perm(request.user, 'teachers', 'import'),
+    })
 
 
 @login_required
@@ -1899,8 +1902,8 @@ def download_teacher_template(request):
 @login_required
 def import_teachers(request):
     """Import/update teachers from Excel, matching existing records by national ID."""
-    if request.user.profile.role != 'admin':
-        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+    if not has_perm(request.user, 'teachers', 'import'):
+        messages.error(request, 'ليس لديك صلاحية لاستيراد المعلمين')
         return redirect('teacher_list')
     if request.method != 'POST' or not request.FILES.get('excel_file'):
         return redirect('teacher_list')
