@@ -1898,104 +1898,132 @@ def download_teacher_template(request):
 
 @login_required
 def import_teachers(request):
+    """Import/update teachers from Excel, matching existing records by national ID."""
     if request.user.profile.role != 'admin':
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('teacher_list')
-
-    if request.method == 'POST' and request.FILES.get('excel_file'):
-        excel_file = request.FILES['excel_file']
-        if not excel_file.name.endswith(('.xlsx', '.xls')):
-            messages.error(request, 'الرجاء رفع ملف Excel صالح (xlsx أو xls)')
-            return redirect('teacher_list')
-
-        import openpyxl
-        try:
-            wb = openpyxl.load_workbook(excel_file)
-            ws = wb.active
-        except Exception:
-            messages.error(request, 'فشل في قراءة الملف. تأكد من أنه ملف Excel صالح.')
-            return redirect('teacher_list')
-
-        rows = list(ws.iter_rows(min_row=2, values_only=True))
-        if not rows:
-            messages.warning(request, 'الملف فارغ، لا توجد بيانات للاستيراد')
-            return redirect('teacher_list')
-
-        imported = 0
-        errors = []
-        for i, row in enumerate(rows, start=2):
-            try:
-                full_name = str(row[0]).strip() if row[0] else ''
-                id_number = str(row[1]).strip() if len(row) > 1 and row[1] else ''
-                email = str(row[2]).strip() if len(row) > 2 and row[2] else ''
-                phone = str(row[3]).strip() if len(row) > 3 and row[3] else ''
-                qualification = str(row[4]).strip() if len(row) > 4 and row[4] else ''
-                specialization = str(row[5]).strip() if len(row) > 5 and row[5] else ''
-                birth_date = row[6] if len(row) > 6 else None
-                hire_date = row[7] if len(row) > 7 else None
-                password = str(row[8]).strip() if len(row) > 8 and row[8] else ''
-                username = str(row[9]).strip() if len(row) > 9 and row[9] else ''
-
-                if not full_name or not id_number:
-                    errors.append(f'الصف {i}: الاسم ورقم الهوية مطلوبان')
-                    continue
-
-                if Teacher.objects.filter(id_number=id_number).exists():
-                    errors.append(f'الصف {i}: رقم الهوية {id_number} موجود مسبقاً')
-                    continue
-
-                if not username:
-                    username = id_number
-                if User.objects.filter(username=username).exists():
-                    errors.append(f'الصف {i}: اسم المستخدم {username} مستخدم مسبقاً')
-                    continue
-                if not password:
-                    password = id_number[-6:] if len(id_number) >= 6 else id_number
-
-                if isinstance(birth_date, datetime):
-                    bd = birth_date.date()
-                elif isinstance(birth_date, date):
-                    bd = birth_date
-                else:
-                    bd = None
-
-                if isinstance(hire_date, datetime):
-                    hd = hire_date.date()
-                elif isinstance(hire_date, date):
-                    hd = hire_date
-                else:
-                    hd = None
-
-                user = User.objects.create_user(username=username, password=password)
-                Profile.objects.create(user=user, role='teacher')
-                Teacher.objects.create(
-                    user=user,
-                    full_name=full_name,
-                    id_number=id_number,
-                    email=email,
-                    phone=phone,
-                    qualification=qualification,
-                    specialization=specialization,
-                    birth_date=bd,
-                    hire_date=hd,
-                    plain_password=password,
-                )
-                imported += 1
-            except Exception as e:
-                errors.append(f'الصف {i}: خطأ - {str(e)}')
-
-        if imported:
-            log_action(request.user, 'استيراد معلمين من Excel', f'تم استيراد {imported} معلم')
-            messages.success(request, f'تم استيراد {imported} معلم بنجاح\nاسم المستخدم: رقم الهوية (أو ما أُدرج في عمود اسم المستخدم)\nكلمة المرور: آخر 6 أرقام من رقم الهوية (أو ما أُدرج في عمود كلمة المرور)')
-        if errors:
-            for err in errors[:10]:
-                messages.warning(request, err)
-            if len(errors) > 10:
-                messages.warning(request, f'و {len(errors) - 10} خطأ آخر...')
+    if request.method != 'POST' or not request.FILES.get('excel_file'):
         return redirect('teacher_list')
 
-    return redirect('teacher_list')
+    excel_file = request.FILES['excel_file']
+    if not excel_file.name.lower().endswith(('.xlsx', '.xlsm')):
+        messages.error(request, 'الرجاء رفع ملف Excel صالح (xlsx أو xlsm)')
+        return redirect('teacher_list')
 
+    import openpyxl
+    try:
+        wb = openpyxl.load_workbook(excel_file, data_only=True)
+        ws = wb.active
+    except Exception:
+        messages.error(request, 'فشل في قراءة الملف. تأكد من أنه ملف Excel صالح.')
+        return redirect('teacher_list')
+
+    rows = list(ws.iter_rows(min_row=2, values_only=True))
+    if not rows:
+        messages.warning(request, 'الملف فارغ، لا توجد بيانات للتحديث أو الإضافة')
+        return redirect('teacher_list')
+
+    updated = added = unchanged = 0
+    errors = []
+    seen_ids = set()
+
+    def cell_text(row, index):
+        value = row[index] if len(row) > index else None
+        return str(value).strip() if value is not None else ''
+
+    def excel_date(value):
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str) and value.strip():
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y'):
+                try:
+                    return datetime.strptime(value.strip(), fmt).date()
+                except ValueError:
+                    continue
+            raise ValueError('صيغة التاريخ غير صحيحة؛ استخدم YYYY-MM-DD')
+        return None
+
+    for row_number, row in enumerate(rows, start=2):
+        try:
+            full_name = cell_text(row, 0)
+            id_number = cell_text(row, 1)
+            email = cell_text(row, 2)
+            phone = cell_text(row, 3)
+            qualification = cell_text(row, 4)
+            specialization = cell_text(row, 5)
+            birth_date = excel_date(row[6] if len(row) > 6 else None)
+            hire_date = excel_date(row[7] if len(row) > 7 else None)
+            password = cell_text(row, 8)
+            username = cell_text(row, 9)
+
+            if not id_number or not id_number.isdigit():
+                errors.append(f'الصف {row_number}: رقم الهوية مفقود أو غير صالح')
+                continue
+            if not full_name:
+                errors.append(f'الصف {row_number}: الاسم الكامل مطلوب')
+                continue
+            if id_number in seen_ids:
+                errors.append(f'الصف {row_number}: رقم الهوية {id_number} مكرر داخل الملف')
+                continue
+            seen_ids.add(id_number)
+
+            with transaction.atomic():
+                teacher = Teacher.objects.select_for_update().filter(id_number=id_number).select_related('user').first()
+                if teacher:
+                    changes = {
+                        'full_name': full_name,
+                        'email': email,
+                        'phone': phone,
+                        'qualification': qualification,
+                        'specialization': specialization,
+                        'birth_date': birth_date,
+                        'hire_date': hire_date,
+                    }
+                    changed_fields = []
+                    for field, value in changes.items():
+                        if getattr(teacher, field) != value:
+                            setattr(teacher, field, value)
+                            changed_fields.append(field)
+                    if changed_fields:
+                        teacher.save(update_fields=changed_fields)
+                        updated += 1
+                    else:
+                        unchanged += 1
+                else:
+                    chosen_username = username or id_number
+                    if User.objects.filter(username=chosen_username).exists():
+                        errors.append(f'الصف {row_number}: اسم المستخدم {chosen_username} مستخدم مسبقاً ولا يمكن إنشاء الحساب')
+                        continue
+                    chosen_password = password or (id_number[-6:] if len(id_number) >= 6 else id_number)
+                    user = User.objects.create_user(username=chosen_username, password=chosen_password)
+                    Profile.objects.create(user=user, role='teacher')
+                    Teacher.objects.create(
+                        user=user,
+                        full_name=full_name,
+                        id_number=id_number,
+                        email=email,
+                        phone=phone,
+                        qualification=qualification,
+                        specialization=specialization,
+                        birth_date=birth_date,
+                        hire_date=hire_date,
+                        plain_password=chosen_password,
+                    )
+                    added += 1
+        except Exception as exc:
+            errors.append(f'الصف {row_number}: تعذر معالجة السجل ({str(exc)})')
+
+    summary = f'اكتملت العملية: تحديث {updated}، إضافة {added}، دون تغيير {unchanged}، وملاحظات {len(errors)}.'
+    log_action(request.user, 'تحديث وإضافة المعلمين من Excel', summary)
+    if updated or added or unchanged:
+        messages.success(request, summary)
+    for error in errors[:10]:
+        messages.warning(request, error)
+    if len(errors) > 10:
+        messages.warning(request, f'يوجد {len(errors) - 10} ملاحظة أخرى. راجع الصفوف المشار إليها.')
+    return redirect('teacher_list')
 
 @login_required
 def edit_teacher(request, teacher_id):
