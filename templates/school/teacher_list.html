@@ -8,7 +8,7 @@
         <div>
             <a href="{% url 'teacher_cards_report' %}" class="btn btn-info btn-sm"><i class="bi bi-card-checklist"></i> بطاقات المعلمين</a>
             <a href="{% url 'teachers_report' %}" class="btn btn-success btn-sm"><i class="bi bi-printer"></i> طباعة التقرير</a>
-            {% if user.profile.role == 'admin' %}
+            {% if can_import_teachers %}
             <div class="btn-group btn-group-sm">
                 <a href="{% url 'download_teacher_template' %}" class="btn btn-outline-secondary"><i class="bi bi-download"></i> تحميل نموذج</a>
                 <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('importTeachersInput').click()"><i class="bi bi-upload"></i> تحديث وإضافة المعلمين</button>
