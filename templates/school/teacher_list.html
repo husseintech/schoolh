@@ -11,7 +11,7 @@
             {% if user.profile.role == 'admin' %}
             <div class="btn-group btn-group-sm">
                 <a href="{% url 'download_teacher_template' %}" class="btn btn-outline-secondary"><i class="bi bi-download"></i> تحميل نموذج</a>
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('importTeachersInput').click()"><i class="bi bi-upload"></i> استيراد</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('importTeachersInput').click()"><i class="bi bi-upload"></i> تحديث وإضافة المعلمين</button>
             </div>
             <form method="post" action="{% url 'import_teachers' %}" enctype="multipart/form-data" style="display:none" id="importTeachersForm">
                 {% csrf_token %}
