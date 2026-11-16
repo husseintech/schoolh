@@ -761,6 +761,7 @@ class ReciprocalVisit(models.Model):
     visit_date = models.DateField('تاريخ الزيارة', default=date.today)
     student_class = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='الصف', related_name='reciprocal_visits')
     period = models.PositiveIntegerField('رقم الحصة', default=1)
+    subject_topic = models.CharField('المادة أو موضوع الحصة', max_length=200, blank=True)
 
     positive_points = models.TextField('أبرز النقاط الإيجابية', blank=True)
     development_points = models.TextField('أبرز النقاط التي تحتاج إلى تطوير', blank=True)
