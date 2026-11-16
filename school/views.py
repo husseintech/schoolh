@@ -6074,6 +6074,8 @@ def reciprocal_visits_room_report(request):
 
 @login_required
 def reciprocal_visit_feedback(request, visit_id):
+    from django.utils.dateparse import parse_date
+
     if not has_perm(request.user, 'reciprocal_visits', 'view'):
         messages.error(request, 'ليس لديك صلاحية')
         return redirect('dashboard')
@@ -6083,25 +6085,50 @@ def reciprocal_visit_feedback(request, visit_id):
     if teacher and teacher != visit.visitor:
         messages.error(request, 'هذه الزيارة ليست من زياراتك')
         return redirect('teacher_visits')
+
+    classes = Class.objects.order_by('name')
     if request.method == 'POST' and (teacher == visit.visitor or is_manager):
-        positive = request.POST.get('positive_points', '').strip()
-        development = request.POST.get('development_points', '').strip()
-        agreement = request.POST.get('agreement', '').strip()
-        visit.positive_points = positive
-        visit.development_points = development
-        visit.agreement = agreement
-        visit.completed = bool(positive or development or agreement)
-        visit.filled_by = teacher or visit.filled_by
-        visit.save()
-        messages.success(request, 'تم حفظ ملاحظات الزيارة التبادلية')
-        if teacher:
-            return redirect('teacher_visits')
-        return redirect('reciprocal_visit_list')
+        visit_date = parse_date(request.POST.get('visit_date', '').strip())
+        class_id = request.POST.get('student_class', '').strip()
+        subject_topic = request.POST.get('subject_topic', '').strip()
+        period_value = request.POST.get('period', '').strip()
+        try:
+            period = int(period_value)
+        except (TypeError, ValueError):
+            period = 0
+
+        selected_class = Class.objects.filter(pk=class_id).first() if class_id.isdigit() else None
+        if not visit_date:
+            messages.error(request, 'يرجى إدخال تاريخ حضور صحيح.')
+        elif not selected_class:
+            messages.error(request, 'يرجى اختيار الصف من القائمة.')
+        elif not subject_topic:
+            messages.error(request, 'يرجى إدخال المادة أو موضوع الحصة.')
+        elif period < 1:
+            messages.error(request, 'رقم الحصة يجب أن يكون 1 أو أكثر.')
+        else:
+            visit.visit_date = visit_date
+            visit.student_class = selected_class
+            visit.subject_topic = subject_topic
+            visit.period = period
+            positive = request.POST.get('positive_points', '').strip()
+            development = request.POST.get('development_points', '').strip()
+            agreement = request.POST.get('agreement', '').strip()
+            visit.positive_points = positive
+            visit.development_points = development
+            visit.agreement = agreement
+            visit.completed = bool(positive or development or agreement)
+            visit.filled_by = teacher or visit.filled_by
+            visit.save()
+            messages.success(request, 'تم حفظ بيانات الحصة وملاحظات الزيارة التبادلية.')
+            if teacher:
+                return redirect('teacher_visits')
+            return redirect('reciprocal_visit_list')
     return render(request, 'school/reciprocal_visit_feedback.html', {
         'visit': visit,
+        'classes': classes,
         'is_manager': is_manager,
     })
-
 
 @login_required
 def reciprocal_visit_delete(request, visit_id):
