@@ -6162,8 +6162,9 @@ def teacher_visits(request):
         {'entry': entry, 'report': inspection_by_date.get(entry.visit_date)}
         for entry in visit_entries
     ]
+    # Keep every assigned visit visible until the visitor completes its feedback,
+    # including overdue visits that are still pending.
     assigned = ReciprocalVisit.objects.filter(visitor=teacher).select_related('host', 'student_class').order_by('-visit_date', '-created_at')
-    assigned = [v for v in assigned if v.completed or v.visit_date >= today]
     guest = ReciprocalVisit.objects.filter(host=teacher).select_related('visitor', 'student_class').order_by('-visit_date', '-created_at')
     from .models import VisitProgramDriveFile
     assigned_files = VisitProgramDriveFile.objects.filter(teacher=teacher).order_by('-created_at')
