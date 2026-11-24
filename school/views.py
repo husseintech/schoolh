@@ -2936,6 +2936,7 @@ def exam_analysis_list(request):
     )
     selected_class_id = request.GET.get('student_class', '').strip()
     selected_subject_id = request.GET.get('subject', '').strip()
+    selected_teacher_id = request.GET.get('teacher', '').strip()
     analyses = base_analyses
 
     if selected_class_id:
@@ -2948,6 +2949,12 @@ def exam_analysis_list(request):
             analyses = analyses.filter(subject_id=int(selected_subject_id))
         except (TypeError, ValueError):
             selected_subject_id = ''
+
+    if selected_teacher_id:
+        try:
+            analyses = analyses.filter(created_by_id=int(selected_teacher_id))
+        except (TypeError, ValueError):
+            selected_teacher_id = ''
 
     analyses = analyses.order_by('-created_at')
     totals = analyses.aggregate(
@@ -3022,6 +3029,10 @@ def exam_analysis_list(request):
         'analyses': analyses,
         'classes': Class.objects.all().order_by('name'),
         'subjects': Subject.objects.all().order_by('name'),
+        'analysis_teachers': User.objects.filter(
+            id__in=base_analyses.exclude(created_by__isnull=True).values_list('created_by_id', flat=True).distinct()
+        ).order_by('first_name', 'last_name', 'username'),
+        'selected_teacher_id': int(selected_teacher_id) if selected_teacher_id else None,
         'selected_class_id': int(selected_class_id) if selected_class_id else None,
         'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
         'dashboard': {
