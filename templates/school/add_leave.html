@@ -23,6 +23,17 @@
     }
     .leave-hero h2 { font-size: 1.35rem; font-weight: 800; margin: 0 0 7px; }
     .leave-hero p { margin: 0; color: rgba(255,255,255,.82); font-size: .94rem; }
+    .leave-overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 20px; }
+    .leave-stat { background: #fff; border: 1px solid #e7edf4; border-radius: 14px; padding: 16px 17px; box-shadow: 0 5px 16px rgba(15,40,70,.035); }
+    .leave-stat-top { display:flex; justify-content:space-between; align-items:center; gap:8px; color:#68798a; font-size:.83rem; font-weight:700; }
+    .leave-stat-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; background:#edf4fa; color:#1c628f; font-size:16px; }
+    .leave-stat strong { display:block; color:#183752; font-size:1.65rem; line-height:1.2; margin-top:10px; font-weight:800; }
+    .leave-shortcuts { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    .leave-shortcut { display:flex; align-items:center; gap:9px; padding:11px 14px; border:1px solid #e2eaf1; border-radius:11px; color:#25445e; text-decoration:none; background:#fff; font-weight:700; font-size:.87rem; transition:.18s ease; }
+    .leave-shortcut:hover { color:#14527d; border-color:#a9c8df; background:#f7fbfe; transform:translateY(-1px); }
+    .leave-shortcut i { color:#2876a8; font-size:16px; }
+    @media (max-width: 767px) { .leave-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap:9px; } .leave-stat { padding:13px; } .leave-shortcuts { display:grid; grid-template-columns:1fr 1fr; } .leave-shortcut { padding:10px; font-size:.8rem; } }
+    @media (max-width: 380px) { .leave-shortcuts { grid-template-columns:1fr; } }
     .leave-card {
         background: #fff; border: 1px solid #e7edf4; border-radius: 18px;
         overflow: hidden; box-shadow: 0 8px 24px rgba(15, 40, 70, .055);
@@ -76,6 +87,31 @@
 </style>
 
 <div class="leave-page">
+    <section class="leave-overview" aria-label="إحصائيات أذونات المغادرة">
+        <div class="leave-stat">
+            <div class="leave-stat-top"><span>أذونات اليوم</span><span class="leave-stat-icon"><i class="bi bi-calendar-day"></i></span></div>
+            <strong>{{ leave_stats.today|default:0 }}</strong>
+        </div>
+        <div class="leave-stat">
+            <div class="leave-stat-top"><span>أذونات هذا الشهر</span><span class="leave-stat-icon"><i class="bi bi-calendar3"></i></span></div>
+            <strong>{{ leave_stats.month|default:0 }}</strong>
+        </div>
+        <div class="leave-stat">
+            <div class="leave-stat-top"><span>قيد الانتظار</span><span class="leave-stat-icon"><i class="bi bi-hourglass-split"></i></span></div>
+            <strong>{{ leave_stats.pending|default:0 }}</strong>
+        </div>
+        <div class="leave-stat">
+            <div class="leave-stat-top"><span>إجمالي الأذونات</span><span class="leave-stat-icon"><i class="bi bi-clipboard2-data"></i></span></div>
+            <strong>{{ leave_stats.total|default:0 }}</strong>
+        </div>
+    </section>
+
+    <nav class="leave-shortcuts" aria-label="تقارير وإدارة أذونات المغادرة">
+        <a class="leave-shortcut" href="{% url 'leave_list' %}"><i class="bi bi-list-ul"></i> سجل جميع الأذونات</a>
+        <a class="leave-shortcut" href="{% url 'leave_list' %}?period=today"><i class="bi bi-calendar-check"></i> تقرير أذونات اليوم</a>
+        <a class="leave-shortcut" href="{% url 'leave_list' %}?period=month"><i class="bi bi-calendar-month"></i> تقرير الشهر الحالي</a>
+        <a class="leave-shortcut" href="{% url 'leave_list' %}?period=pending"><i class="bi bi-hourglass"></i> الأذونات قيد الانتظار</a>
+    </nav>
     <section class="leave-hero">
         <div class="leave-hero-content">
             <div class="leave-hero-icon"><i class="bi bi-door-open"></i></div>
