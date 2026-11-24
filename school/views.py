@@ -2917,20 +2917,48 @@ def add_exam_analysis(request):
 
 @login_required
 def exam_analysis_list(request):
+    # Administrators can review analyses submitted by every teacher.
+    # Teachers remain restricted to their own submitted analyses.
     if request.user.profile.role == 'admin':
-        analyses = ExamAnalysis.objects.all().select_related('subject', 'student_class', 'created_by').order_by('-created_at')
+        analyses = ExamAnalysis.objects.all().select_related(
+            'subject', 'student_class', 'created_by'
+        )
     elif request.user.profile.role == 'teacher':
         try:
-            teacher = request.user.teacher_profile
+            request.user.teacher_profile
             analyses = ExamAnalysis.objects.filter(
                 created_by=request.user
-            ).select_related('subject', 'student_class').order_by('-created_at')
+            ).select_related('subject', 'student_class', 'created_by')
         except Teacher.DoesNotExist:
             analyses = ExamAnalysis.objects.none()
     else:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
-    return render(request, 'school/exam_analysis_list.html', {'analyses': analyses})
+
+    # Optional GET filters: class, subject, or both together.
+    selected_class_id = request.GET.get('student_class', '').strip()
+    selected_subject_id = request.GET.get('subject', '').strip()
+
+    if selected_class_id:
+        try:
+            analyses = analyses.filter(student_class_id=int(selected_class_id))
+        except (TypeError, ValueError):
+            selected_class_id = ''
+
+    if selected_subject_id:
+        try:
+            analyses = analyses.filter(subject_id=int(selected_subject_id))
+        except (TypeError, ValueError):
+            selected_subject_id = ''
+
+    analyses = analyses.order_by('-created_at')
+    return render(request, 'school/exam_analysis_list.html', {
+        'analyses': analyses,
+        'classes': Class.objects.all().order_by('name'),
+        'subjects': Subject.objects.all().order_by('name'),
+        'selected_class_id': int(selected_class_id) if selected_class_id else None,
+        'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
+    })
 
 
 @login_required
