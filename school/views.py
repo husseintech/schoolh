@@ -3052,6 +3052,40 @@ def exam_analysis_list(request):
 
 
 @login_required
+def exam_analysis_teacher_batch_report(request):
+    if request.user.profile.role not in ['admin', 'teacher']:
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
+        return redirect('dashboard')
+
+    teacher_id = request.GET.get('teacher', '').strip()
+    if request.user.profile.role == 'teacher':
+        teacher_id = str(request.user.id)
+    if not teacher_id.isdigit():
+        messages.error(request, 'يرجى اختيار معلم لطباعة تقاريره')
+        return redirect('exam_analysis_list')
+
+    teacher = get_object_or_404(Teacher.objects.select_related('user'), user_id=int(teacher_id))
+    if request.user.profile.role == 'teacher' and teacher.user_id != request.user.id:
+        messages.error(request, 'ليس لديك صلاحية لطباعة تقارير معلم آخر')
+        return redirect('exam_analysis_list')
+
+    analyses = ExamAnalysis.objects.filter(created_by_id=teacher.user_id).select_related(
+        'subject', 'student_class', 'created_by'
+    ).order_by('student_class__name', 'subject__name', '-created_at')
+    if not analyses.exists():
+        messages.warning(request, 'لا توجد تقارير مسجلة لهذا المعلم')
+        return redirect('exam_analysis_list')
+
+    return render(request, 'school/exam_analysis_teacher_batch_report.html', {
+        'analyses': analyses,
+        'teacher': teacher,
+        'info': SchoolInfo.objects.first(),
+        'today': date.today(),
+        'report_count': analyses.count(),
+    })
+
+
+@login_required
 def exam_analysis_report(request, analysis_id):
     if request.user.profile.role not in ['admin', 'teacher']:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
