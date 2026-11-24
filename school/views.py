@@ -2504,16 +2504,25 @@ def leave_list(request):
     leaves = StudentLeave.objects.all().select_related('student__student_class').order_by('-created_at')
     student_id = request.GET.get('student_id', '')
     search_query = request.GET.get('q', '')
+    period = request.GET.get('period', '')
+    today = timezone.localdate()
     if student_id:
         leaves = leaves.filter(student_id=student_id)
     elif search_query:
         leaves = leaves.filter(student__full_name__icontains=search_query)
+    if period == 'today':
+        leaves = leaves.filter(leave_date=today)
+    elif period == 'month':
+        leaves = leaves.filter(leave_date__year=today.year, leave_date__month=today.month)
+    elif period == 'pending':
+        leaves = leaves.filter(status='pending')
     students = sort_students(Student.objects.all())
     return render(request, 'school/leave_list.html', {
         'leaves': leaves,
         'students': students,
         'selected_student': student_id,
         'search_query': search_query,
+        'period': period,
     })
 
 
@@ -2562,7 +2571,18 @@ def add_leave(request, student_id=None):
     else:
         form = StudentLeaveForm(initial=initial)
         form.fields['student'].queryset = allowed_students
-    return render(request, 'school/add_leave.html', {'form': form})
+    today = timezone.localdate()
+    all_leaves = StudentLeave.objects.all()
+    leave_stats = {
+        'today': all_leaves.filter(leave_date=today).count(),
+        'month': all_leaves.filter(leave_date__year=today.year, leave_date__month=today.month).count(),
+        'pending': all_leaves.filter(status='pending').count(),
+        'total': all_leaves.count(),
+    }
+    return render(request, 'school/add_leave.html', {
+        'form': form,
+        'leave_stats': leave_stats,
+    })
 
 
 @login_required
