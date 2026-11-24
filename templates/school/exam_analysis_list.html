@@ -3,95 +3,125 @@
 {% block title %}تحليل الامتحانات{% endblock %}
 {% block page_heading %}تحليل الامتحانات{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-clipboard-data-fill"></i> التحليلات ({{ analyses.count }})</span>
-        <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة تحليل</a>
+<style>
+.exam-dashboard .metric-card{border:1px solid #e6eaf0;border-radius:14px;background:#fff;padding:18px;height:100%;box-shadow:0 3px 12px rgba(20,40,70,.04)}
+.exam-dashboard .metric-label{color:#64748b;font-size:.88rem}
+.exam-dashboard .metric-value{font-size:1.7rem;font-weight:800;color:#172554;line-height:1.4}
+.exam-dashboard .section-card{border:1px solid #e6eaf0;border-radius:14px;background:#fff;padding:18px;height:100%}
+.exam-dashboard .bar-track{height:9px;background:#eef2f7;border-radius:20px;overflow:hidden;min-width:90px}
+.exam-dashboard .bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#0d9488);border-radius:20px}
+.exam-dashboard .table th{white-space:nowrap;color:#475569;font-size:.88rem}
+@media print{.no-print{display:none!important}.exam-dashboard .metric-card,.exam-dashboard .section-card{box-shadow:none;break-inside:avoid}.exam-dashboard{color:#111}}
+</style>
+<div class="exam-dashboard">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 no-print">
+        <div>
+            <h4 class="mb-1 fw-bold">لوحة المؤشرات التحليلية</h4>
+            <div class="text-muted small">ملخص تراكمي للتحليلات المعروضة وفق الصف والمادة المحددين</div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> طباعة اللوحة</button>
+            <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة تحليل</a>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end mb-4 p-3 rounded border bg-light">
-            <div class="col-md-5">
-                <label for="analysis-class-filter" class="form-label fw-semibold">تصفية حسب الصف</label>
-                <select name="student_class" id="analysis-class-filter" class="form-select">
-                    <option value="">جميع الصفوف</option>
-                    {% for item in classes %}
-                    <option value="{{ item.id }}" {% if selected_class_id == item.id %}selected{% endif %}>{{ item.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-5">
-                <label for="analysis-subject-filter" class="form-label fw-semibold">تصفية حسب المادة</label>
-                <select name="subject" id="analysis-subject-filter" class="form-select">
-                    <option value="">جميع المواد</option>
-                    {% for item in subjects %}
-                    <option value="{{ item.id }}" {% if selected_subject_id == item.id %}selected{% endif %}>{{ item.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> فرز</button>
-                <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary" title="إلغاء التصفية"><i class="bi bi-arrow-counterclockwise"></i></a>
-            </div>
-            {% if selected_class_id or selected_subject_id %}
-            <div class="col-12 small text-muted">
-                يتم عرض التحليلات المطابقة للاختيارات أعلاه، مع الاحتفاظ باسم المعلم الذي أضاف كل تحليل.
-            </div>
-            {% endif %}
-        </form>
-        {% if analyses %}
-        <div class="row g-4">
-            {% for a in analyses %}
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ a.exam_name }}</h5>
-                        <div class="row g-2 mb-3">
-                            <div class="col-6"><small class="text-muted">المادة:</small> <strong>{{ a.subject.name|default:"-" }}</strong></div>
-                            <div class="col-6"><small class="text-muted">الصف:</small> <strong>{{ a.student_class.name|default:"-" }}</strong></div>
-                        </div>
-                        <div class="row g-2 text-center">
-                            <div class="col-4">
-                                <div class="border rounded p-2">
-                                    <div class="fw-bold text-primary">{{ a.total_students }}</div>
-                                    <small class="text-muted">العدد</small>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="border rounded p-2">
-                                    <div class="fw-bold text-success">{{ a.pass_percentage }}%</div>
-                                    <small class="text-muted">نسبة النجاح</small>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="border rounded p-2">
-                                    <div class="fw-bold text-danger">{{ a.fail_percentage }}%</div>
-                                    <small class="text-muted">نسبة الرسوب</small>
-                                </div>
-                            </div>
-                        </div>
-                        {% if a.success_reasons or a.fail_reasons %}
-                        <hr>
-                        {% if a.success_reasons %}<p class="mb-1"><strong>أسباب النجاح:</strong> {{ a.success_reasons }}</p>{% endif %}
-                        {% if a.fail_reasons %}<p class="mb-0"><strong>أسباب الرسوب:</strong> {{ a.fail_reasons }}</p>{% endif %}
-                        {% endif %}
-                        <small class="text-muted d-block mt-2">بواسطة: {{ a.created_by|by_name }} | {{ a.created_at|date:"Y-m-d" }}</small>
-                        <div class="mt-2 no-print">
-                            <a href="{% url 'exam_analysis_report' a.id %}" class="btn btn-sm btn-outline-success" target="_blank"><i class="bi bi-printer"></i> تقرير الطباعة والرسم البياني</a>
-                        </div>
-                    </div>
+
+    <form method="get" class="row g-3 align-items-end mb-4 p-3 rounded border bg-light no-print">
+        <div class="col-md-5">
+            <label for="analysis-class-filter" class="form-label fw-semibold">تصفية حسب الصف</label>
+            <select name="student_class" id="analysis-class-filter" class="form-select">
+                <option value="">جميع الصفوف</option>
+                {% for item in classes %}
+                <option value="{{ item.id }}" {% if selected_class_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label for="analysis-subject-filter" class="form-label fw-semibold">تصفية حسب المادة</label>
+            <select name="subject" id="analysis-subject-filter" class="form-select">
+                <option value="">جميع المواد</option>
+                {% for item in subjects %}
+                <option value="{{ item.id }}" {% if selected_subject_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> تطبيق</button>
+            <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary" title="إلغاء التصفية"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-2"><div class="metric-card"><div class="metric-label">عدد التحليلات</div><div class="metric-value">{{ dashboard.records }}</div><i class="bi bi-clipboard-data text-primary"></i></div></div>
+        <div class="col-6 col-lg-2"><div class="metric-card"><div class="metric-label">إجمالي المشاركات الطلابية</div><div class="metric-value">{{ dashboard.students }}</div><i class="bi bi-people text-primary"></i></div></div>
+        <div class="col-6 col-lg-2"><div class="metric-card"><div class="metric-label">إجمالي الناجحين</div><div class="metric-value text-success">{{ dashboard.passed }}</div><i class="bi bi-check-circle text-success"></i></div></div>
+        <div class="col-6 col-lg-2"><div class="metric-card"><div class="metric-label">إجمالي غير الناجحين</div><div class="metric-value text-danger">{{ dashboard.failed }}</div><i class="bi bi-exclamation-circle text-danger"></i></div></div>
+        <div class="col-6 col-lg-2"><div class="metric-card"><div class="metric-label">نسبة النجاح المجمعة</div><div class="metric-value text-success">{{ dashboard.pass_rate }}%</div><div class="bar-track mt-2"><div class="bar-fill" style="width:{{ dashboard.pass_rate }}%"></div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="metric-card"><div class="metric-label">المعلمون المشاركون</div><div class="metric-value">{{ dashboard.teachers }}</div><i class="bi bi-person-workspace text-primary"></i></div></div>
+    </div>
+    <div class="alert alert-info py-2 small">تنبيه: إجمالي المشاركات هو مجموع أعداد الطلاب في سجلات التحليل، وقد يتكرر الطالب في أكثر من اختبار؛ لذلك لا يمثل بالضرورة عدد الطلاب الفريدين.</div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="section-card">
+                <h5 class="fw-bold mb-3"><i class="bi bi-people text-primary"></i> مقارنة الصفوف</h5>
+                {% if class_summary %}
+                {% for row in class_summary %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between gap-2 mb-1"><strong>{{ row.name }}</strong><span class="small">{{ row.pass_rate }}% نجاح · {{ row.records }} تحليل</span></div>
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ row.pass_rate }}%"></div></div>
                 </div>
+                {% endfor %}
+                {% else %}<p class="text-muted mb-0">لا تتوفر بيانات للمقارنة.</p>{% endif %}
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <div class="empty-state">
-            <i class="bi bi-clipboard-data"></i>
-            <h5>لا توجد تحليلات مطابقة</h5>
-            <p class="text-muted">جرّب تغيير الصف أو المادة أو إلغاء التصفية لعرض جميع التحليلات.</p>
-            <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary mt-2">عرض جميع التحليلات</a>
-            <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary mt-2">إضافة تحليل</a>
+        <div class="col-lg-6">
+            <div class="section-card">
+                <h5 class="fw-bold mb-3"><i class="bi bi-book text-primary"></i> مقارنة المواد</h5>
+                {% if subject_summary %}
+                {% for row in subject_summary %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between gap-2 mb-1"><strong>{{ row.name }}</strong><span class="small">{{ row.pass_rate }}% نجاح · {{ row.records }} تحليل</span></div>
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ row.pass_rate }}%"></div></div>
+                </div>
+                {% endfor %}
+                {% else %}<p class="text-muted mb-0">لا تتوفر بيانات للمقارنة.</p>{% endif %}
+            </div>
         </div>
-        {% endif %}
+    </div>
+
+    <div class="section-card mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-person-lines-fill text-primary"></i> ملخص تحليلات المعلمين</h5>
+        {% if teacher_summary %}
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>المعلم</th><th>عدد التحليلات</th><th>مجموع المشاركات</th><th>نسبة النجاح المجمعة</th></tr></thead>
+            <tbody>{% for row in teacher_summary %}<tr><td class="fw-semibold">{{ row.name }}</td><td>{{ row.records }}</td><td>{{ row.students }}</td><td><span class="fw-bold">{{ row.pass_rate }}%</span><div class="bar-track mt-1"><div class="bar-fill" style="width:{{ row.pass_rate }}%"></div></div></td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="text-muted mb-0">لا تتوفر تحليلات مسجلة.</p>{% endif %}
+    </div>
+
+    <div class="section-card mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-calendar3 text-primary"></i> تطور نسبة النجاح حسب شهر تسجيل التحليل</h5>
+        {% if monthly_summary %}
+        <div class="row g-3">{% for row in monthly_summary %}<div class="col-6 col-md-3"><div class="border rounded p-3 h-100"><div class="small text-muted">{{ row.label }}</div><div class="h4 fw-bold mb-1">{{ row.pass_rate }}%</div><div class="small text-muted">{{ row.records }} تحليل</div><div class="bar-track mt-2"><div class="bar-fill" style="width:{{ row.pass_rate }}%"></div></div></div></div>{% endfor %}</div>
+        {% else %}<p class="text-muted mb-0">لا تتوفر بيانات زمنية.</p>{% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center"><span class="fw-bold"><i class="bi bi-journals"></i> سجلات التحليل ({{ analyses.count }})</span></div>
+        <div class="card-body">
+            {% if analyses %}
+            <div class="row g-4">{% for a in analyses %}
+                <div class="col-md-6"><div class="card h-100"><div class="card-body">
+                    <h5 class="card-title">{{ a.exam_name }}</h5>
+                    <div class="row g-2 mb-3"><div class="col-6"><small class="text-muted">المادة:</small> <strong>{{ a.subject.name|default:"-" }}</strong></div><div class="col-6"><small class="text-muted">الصف:</small> <strong>{{ a.student_class.name|default:"-" }}</strong></div></div>
+                    <div class="row g-2 text-center"><div class="col-4"><div class="border rounded p-2"><div class="fw-bold text-primary">{{ a.total_students }}</div><small class="text-muted">العدد</small></div></div><div class="col-4"><div class="border rounded p-2"><div class="fw-bold text-success">{{ a.pass_percentage }}%</div><small class="text-muted">نسبة النجاح</small></div></div><div class="col-4"><div class="border rounded p-2"><div class="fw-bold text-danger">{{ a.fail_percentage }}%</div><small class="text-muted">نسبة الرسوب</small></div></div></div>
+                    {% if a.success_reasons or a.fail_reasons %}<hr>{% if a.success_reasons %}<p class="mb-1"><strong>أسباب النجاح:</strong> {{ a.success_reasons }}</p>{% endif %}{% if a.fail_reasons %}<p class="mb-0"><strong>أسباب الرسوب:</strong> {{ a.fail_reasons }}</p>{% endif %}{% endif %}
+                    <small class="text-muted d-block mt-2">بواسطة: {{ a.created_by|by_name }} | {{ a.created_at|date:"Y-m-d" }}</small>
+                    <div class="mt-2 no-print"><a href="{% url 'exam_analysis_report' a.id %}" class="btn btn-sm btn-outline-success" target="_blank"><i class="bi bi-printer"></i> تقرير التحليل</a></div>
+                </div></div></div>
+            {% endfor %}</div>
+            {% else %}<div class="text-center py-4"><h5>لا توجد تحليلات مطابقة</h5><p class="text-muted">جرّب تغيير خيارات التصفية أو إلغاءها.</p><a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary">عرض الجميع</a></div>{% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
