@@ -11,7 +11,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import connection, transaction
 from django.db.models import F
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, Q, Sum
+from django.db.models.functions import TruncMonth
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.conf import settings
@@ -2917,34 +2918,31 @@ def add_exam_analysis(request):
 
 @login_required
 def exam_analysis_list(request):
-    # Administrators can review analyses submitted by every teacher.
-    # Teachers remain restricted to their own submitted analyses.
+    # Admins see all teachers' analyses; teachers see only their own records.
     if request.user.profile.role == 'admin':
-        analyses = ExamAnalysis.objects.all().select_related(
-            'subject', 'student_class', 'created_by'
-        )
+        base_analyses = ExamAnalysis.objects.all()
     elif request.user.profile.role == 'teacher':
         try:
             request.user.teacher_profile
-            analyses = ExamAnalysis.objects.filter(
-                created_by=request.user
-            ).select_related('subject', 'student_class', 'created_by')
+            base_analyses = ExamAnalysis.objects.filter(created_by=request.user)
         except Teacher.DoesNotExist:
-            analyses = ExamAnalysis.objects.none()
+            base_analyses = ExamAnalysis.objects.none()
     else:
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
 
-    # Optional GET filters: class, subject, or both together.
+    base_analyses = base_analyses.select_related(
+        'subject', 'student_class', 'created_by'
+    )
     selected_class_id = request.GET.get('student_class', '').strip()
     selected_subject_id = request.GET.get('subject', '').strip()
+    analyses = base_analyses
 
     if selected_class_id:
         try:
             analyses = analyses.filter(student_class_id=int(selected_class_id))
         except (TypeError, ValueError):
             selected_class_id = ''
-
     if selected_subject_id:
         try:
             analyses = analyses.filter(subject_id=int(selected_subject_id))
@@ -2952,12 +2950,93 @@ def exam_analysis_list(request):
             selected_subject_id = ''
 
     analyses = analyses.order_by('-created_at')
+    totals = analyses.aggregate(
+        records=Count('id'),
+        students=Sum('total_students'),
+        passed=Sum('passed_count'),
+        failed=Sum('failed_count'),
+        teachers=Count('created_by', distinct=True),
+    )
+    students_count = totals['students'] or 0
+    passed_count = totals['passed'] or 0
+    failed_count = totals['failed'] or 0
+    pass_rate = round((passed_count / students_count) * 100, 1) if students_count else 0
+    fail_rate = round((failed_count / students_count) * 100, 1) if students_count else 0
+
+    def grouped_summary(field, name_field):
+        rows = analyses.values(field, name_field).annotate(
+            records=Count('id'),
+            students=Sum('total_students'),
+            passed=Sum('passed_count'),
+            failed=Sum('failed_count'),
+        ).order_by(name_field)
+        result = []
+        for row in rows:
+            count = row['students'] or 0
+            result.append({
+                'name': row[name_field] or 'غير محدد',
+                'records': row['records'],
+                'students': count,
+                'passed': row['passed'] or 0,
+                'failed': row['failed'] or 0,
+                'pass_rate': round(((row['passed'] or 0) / count) * 100, 1) if count else 0,
+            })
+        return result
+
+    teacher_rows = analyses.values(
+        'created_by_id', 'created_by__first_name',
+        'created_by__last_name', 'created_by__username'
+    ).annotate(
+        records=Count('id'),
+        students=Sum('total_students'),
+        passed=Sum('passed_count'),
+    ).order_by('-records')
+    teacher_summary = []
+    for row in teacher_rows:
+        teacher_name = ' '.join(filter(None, [
+            row['created_by__first_name'], row['created_by__last_name']
+        ])) or row['created_by__username'] or 'مستخدم غير محدد'
+        count = row['students'] or 0
+        teacher_summary.append({
+            'name': teacher_name,
+            'records': row['records'],
+            'students': count,
+            'pass_rate': round(((row['passed'] or 0) / count) * 100, 1) if count else 0,
+        })
+
+    monthly_rows = analyses.annotate(month=TruncMonth('created_at')).values('month').annotate(
+        records=Count('id'),
+        students=Sum('total_students'),
+        passed=Sum('passed_count'),
+    ).order_by('month')
+    monthly_summary = []
+    for row in monthly_rows:
+        count = row['students'] or 0
+        monthly_summary.append({
+            'label': row['month'].strftime('%Y-%m') if row['month'] else '',
+            'records': row['records'],
+            'pass_rate': round(((row['passed'] or 0) / count) * 100, 1) if count else 0,
+        })
+
     return render(request, 'school/exam_analysis_list.html', {
         'analyses': analyses,
         'classes': Class.objects.all().order_by('name'),
         'subjects': Subject.objects.all().order_by('name'),
         'selected_class_id': int(selected_class_id) if selected_class_id else None,
         'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
+        'dashboard': {
+            'records': totals['records'] or 0,
+            'students': students_count,
+            'passed': passed_count,
+            'failed': failed_count,
+            'teachers': totals['teachers'] or 0,
+            'pass_rate': pass_rate,
+            'fail_rate': fail_rate,
+        },
+        'class_summary': grouped_summary('student_class_id', 'student_class__name'),
+        'subject_summary': grouped_summary('subject_id', 'subject__name'),
+        'teacher_summary': teacher_summary,
+        'monthly_summary': monthly_summary,
     })
 
 
