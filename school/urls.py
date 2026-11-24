@@ -162,6 +162,7 @@ urlpatterns = [
     path('exam-analysis/', views.exam_analysis_list, name='exam_analysis_list'),
     path('exam-analysis/add/', views.add_exam_analysis, name='add_exam_analysis'),
     path('exam-analysis/<int:analysis_id>/report/', views.exam_analysis_report, name='exam_analysis_report'),
+    path('exam-analysis/teacher-batch-report/', views.exam_analysis_teacher_batch_report, name='exam_analysis_teacher_batch_report'),
 
     # Wardens / Janitors
     path('wardens/', views.warden_list, name='warden_list'),
