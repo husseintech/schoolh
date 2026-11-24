@@ -9,6 +9,35 @@
         <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة تحليل</a>
     </div>
     <div class="card-body">
+        <form method="get" class="row g-3 align-items-end mb-4 p-3 rounded border bg-light">
+            <div class="col-md-5">
+                <label for="analysis-class-filter" class="form-label fw-semibold">تصفية حسب الصف</label>
+                <select name="student_class" id="analysis-class-filter" class="form-select">
+                    <option value="">جميع الصفوف</option>
+                    {% for item in classes %}
+                    <option value="{{ item.id }}" {% if selected_class_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label for="analysis-subject-filter" class="form-label fw-semibold">تصفية حسب المادة</label>
+                <select name="subject" id="analysis-subject-filter" class="form-select">
+                    <option value="">جميع المواد</option>
+                    {% for item in subjects %}
+                    <option value="{{ item.id }}" {% if selected_subject_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> فرز</button>
+                <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary" title="إلغاء التصفية"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+            {% if selected_class_id or selected_subject_id %}
+            <div class="col-12 small text-muted">
+                يتم عرض التحليلات المطابقة للاختيارات أعلاه، مع الاحتفاظ باسم المعلم الذي أضاف كل تحليل.
+            </div>
+            {% endif %}
+        </form>
         {% if analyses %}
         <div class="row g-4">
             {% for a in analyses %}
@@ -57,8 +86,10 @@
         {% else %}
         <div class="empty-state">
             <i class="bi bi-clipboard-data"></i>
-            <h5>لا توجد تحليلات</h5>
-            <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary mt-2">إضافة أول تحليل</a>
+            <h5>لا توجد تحليلات مطابقة</h5>
+            <p class="text-muted">جرّب تغيير الصف أو المادة أو إلغاء التصفية لعرض جميع التحليلات.</p>
+            <a href="{% url 'exam_analysis_list' %}" class="btn btn-outline-secondary mt-2">عرض جميع التحليلات</a>
+            <a href="{% url 'add_exam_analysis' %}" class="btn btn-primary mt-2">إضافة تحليل</a>
         </div>
         {% endif %}
     </div>
