@@ -2572,7 +2572,7 @@ def add_leave(request, student_id=None):
         form = StudentLeaveForm(initial=initial)
         form.fields['student'].queryset = allowed_students
     today = timezone.localdate()
-    all_leaves = StudentLeave.objects.all()
+    all_leaves = StudentLeave.objects.filter(student__in=allowed_students)
     leave_stats = {
         'today': all_leaves.filter(leave_date=today).count(),
         'month': all_leaves.filter(leave_date__year=today.year, leave_date__month=today.month).count(),
