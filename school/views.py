@@ -2990,22 +2990,22 @@ def exam_analysis_list(request):
             })
         return result
 
-    teacher_rows = analyses.values(
-        'created_by_id', 'created_by__first_name',
-        'created_by__last_name', 'created_by__username'
-    ).annotate(
+    teacher_rows = analyses.values('created_by_id').annotate(
         records=Count('id'),
         students=Sum('total_students'),
         passed=Sum('passed_count'),
     ).order_by('-records')
+    teacher_names = {
+        teacher.user_id: teacher.full_name
+        for teacher in Teacher.objects.filter(
+            user_id__in=[row['created_by_id'] for row in teacher_rows if row['created_by_id']]
+        ).only('user_id', 'full_name')
+    }
     teacher_summary = []
     for row in teacher_rows:
-        teacher_name = ' '.join(filter(None, [
-            row['created_by__first_name'], row['created_by__last_name']
-        ])) or row['created_by__username'] or 'مستخدم غير محدد'
         count = row['students'] or 0
         teacher_summary.append({
-            'name': teacher_name,
+            'name': teacher_names.get(row['created_by_id'], 'اسم المعلم غير مسجل في ملف المعلمين'),
             'records': row['records'],
             'students': count,
             'pass_rate': round(((row['passed'] or 0) / count) * 100, 1) if count else 0,
@@ -3029,9 +3029,9 @@ def exam_analysis_list(request):
         'analyses': analyses,
         'classes': Class.objects.all().order_by('name'),
         'subjects': Subject.objects.all().order_by('name'),
-        'analysis_teachers': User.objects.filter(
-            id__in=base_analyses.exclude(created_by__isnull=True).values_list('created_by_id', flat=True).distinct()
-        ).order_by('first_name', 'last_name', 'username'),
+        'analysis_teachers': Teacher.objects.select_related('user').filter(
+            user_id__in=base_analyses.exclude(created_by__isnull=True).values_list('created_by_id', flat=True).distinct()
+        ).order_by('full_name'),
         'selected_teacher_id': int(selected_teacher_id) if selected_teacher_id else None,
         'selected_class_id': int(selected_class_id) if selected_class_id else None,
         'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
