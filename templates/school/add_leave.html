@@ -2,29 +2,128 @@
 {% block title %}تسجيل إذن مغادرة{% endblock %}
 {% block page_heading %}تسجيل إذن مغادرة{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-box-arrow-right"></i> تسجيل إذن مغادرة</div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="row g-3">
-                        {% for field in form %}
-                        <div class="col-md-6">
-                            <label class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
-                        <a href="{% url 'leave_list' %}" class="btn btn-outline-secondary">إلغاء</a>
-                    </div>
-                </form>
+<style>
+    .leave-page { direction: rtl; max-width: 980px; margin: 0 auto; padding-bottom: 28px; }
+    .leave-hero {
+        position: relative; overflow: hidden; border-radius: 18px;
+        padding: 26px 30px; margin-bottom: 22px; color: #fff;
+        background: linear-gradient(120deg, #102b50 0%, #174b78 62%, #1976a5 100%);
+        box-shadow: 0 12px 28px rgba(16, 43, 80, .16);
+    }
+    .leave-hero:after {
+        content: ""; position: absolute; width: 230px; height: 230px;
+        border: 1px solid rgba(255,255,255,.12); border-radius: 50%;
+        left: -55px; top: -125px; box-shadow: 0 0 0 25px rgba(255,255,255,.035), 0 0 0 52px rgba(255,255,255,.025);
+    }
+    .leave-hero-content { position: relative; z-index: 1; display: flex; align-items: center; gap: 18px; }
+    .leave-hero-icon {
+        flex: 0 0 62px; width: 62px; height: 62px; display: grid; place-items: center;
+        border-radius: 17px; background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.2); font-size: 27px;
+    }
+    .leave-hero h2 { font-size: 1.35rem; font-weight: 800; margin: 0 0 7px; }
+    .leave-hero p { margin: 0; color: rgba(255,255,255,.82); font-size: .94rem; }
+    .leave-card {
+        background: #fff; border: 1px solid #e7edf4; border-radius: 18px;
+        overflow: hidden; box-shadow: 0 8px 24px rgba(15, 40, 70, .055);
+    }
+    .leave-card-head {
+        padding: 19px 25px; display: flex; align-items: center; gap: 12px;
+        border-bottom: 1px solid #edf1f5; background: #fbfcfe;
+    }
+    .leave-card-head .head-icon {
+        width: 39px; height: 39px; border-radius: 12px; display: grid; place-items: center;
+        background: #eaf3fb; color: #17527d; font-size: 18px;
+    }
+    .leave-card-head h3 { margin: 0; font-size: 1.05rem; font-weight: 800; color: #17324d; }
+    .leave-card-head small { display: block; margin-top: 4px; color: #7b8795; }
+    .leave-card-body { padding: 26px; }
+    .leave-fields .leave-field { margin-bottom: 20px; }
+    .leave-fields label.form-label { display: block; color: #34465a; font-weight: 700; font-size: .91rem; margin-bottom: 8px; }
+    .leave-fields input:not([type=checkbox]), .leave-fields select, .leave-fields textarea {
+        display: block; width: 100%; min-height: 45px; border: 1px solid #dce4ed;
+        border-radius: 10px; padding: 10px 13px; color: #24384d; background-color: #fff;
+        font: inherit; transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    .leave-fields textarea { min-height: 96px; resize: vertical; }
+    .leave-fields input:focus, .leave-fields select:focus, .leave-fields textarea:focus {
+        border-color: #4389bd; outline: 0; box-shadow: 0 0 0 3px rgba(42, 123, 180, .12);
+    }
+    .leave-fields .field-help { display: block; color: #8995a3; font-size: .8rem; margin-top: 6px; }
+    .leave-fields .field-errors { color: #bd3434; font-size: .82rem; margin-top: 6px; }
+    .leave-note {
+        display: flex; align-items: flex-start; gap: 10px; padding: 13px 15px;
+        border-radius: 11px; background: #f2f7fb; color: #52677b;
+        font-size: .86rem; line-height: 1.7; margin-top: 2px;
+    }
+    .leave-note i { color: #2876a8; margin-top: 3px; }
+    .leave-actions {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        padding-top: 22px; margin-top: 22px; border-top: 1px solid #edf1f5;
+    }
+    .leave-actions .btn { min-height: 44px; border-radius: 10px; padding: 9px 23px; font-weight: 700; }
+    .leave-actions .btn-primary { background: #174f7b; border-color: #174f7b; box-shadow: 0 5px 12px rgba(23,79,123,.16); }
+    .leave-actions .btn-primary:hover { background: #103d62; border-color: #103d62; }
+    @media (max-width: 576px) {
+        .leave-hero { padding: 21px 18px; }
+        .leave-hero-icon { flex-basis: 52px; width: 52px; height: 52px; }
+        .leave-hero h2 { font-size: 1.12rem; }
+        .leave-card-body { padding: 19px 16px; }
+        .leave-card-head { padding: 16px; }
+        .leave-fields .leave-field { margin-bottom: 16px; }
+        .leave-actions .btn { flex: 1; }
+    }
+</style>
+
+<div class="leave-page">
+    <section class="leave-hero">
+        <div class="leave-hero-content">
+            <div class="leave-hero-icon"><i class="bi bi-door-open"></i></div>
+            <div>
+                <h2>إذن مغادرة الطالب</h2>
+                <p>تسجيل بيانات مغادرة الطالب بطريقة واضحة ومنظمة لضمان المتابعة الإدارية.</p>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section class="leave-card">
+        <div class="leave-card-head">
+            <div class="head-icon"><i class="bi bi-clipboard2-check"></i></div>
+            <div>
+                <h3>بيانات إذن المغادرة</h3>
+                <small>يرجى التأكد من صحة المعلومات قبل حفظ الإذن.</small>
+            </div>
+        </div>
+
+        <div class="leave-card-body">
+            <form method="post" class="leave-fields">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="row g-3">
+                    {% for field in form %}
+                    <div class="col-md-6 leave-field">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+                        {% if field.errors %}<div class="field-errors">{{ field.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="leave-note">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>تأكد من تحديد الطالب ووقت المغادرة والعودة وكتابة سبب الإذن بوضوح قبل اعتماد التسجيل.</span>
+                </div>
+
+                <div class="leave-actions">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle ms-1"></i> حفظ إذن المغادرة</button>
+                    <a href="{% url 'leave_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-return-right ms-1"></i> إلغاء والعودة</a>
+                </div>
+            </form>
+        </div>
+    </section>
 </div>
 {% endblock %}
