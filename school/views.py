@@ -2436,6 +2436,7 @@ def agenda_list(request):
         'pending_items': pending_items,
         'completed_items': completed_items,
         'today': today,
+        'overdue_count': pending_items.filter(due_date__lt=today).count(),
     })
 
 
