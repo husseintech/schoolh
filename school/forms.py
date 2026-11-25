@@ -217,16 +217,18 @@ class AnnouncementForm(forms.ModelForm):
 class AgendaForm(forms.ModelForm):
     class Meta:
         model = Agenda
-        fields = ['title', 'description', 'followup_actions', 'due_date']
+        fields = ['title', 'description', 'followup_actions', 'completion_note', 'due_date']
         labels = {
             'title': 'العنوان',
             'description': 'الوصف',
             'followup_actions': 'آلية المتابعة والإجراءات المتبعة',
+            'completion_note': 'كيف تم الإنجاز؟',
             'due_date': 'تاريخ التنفيذ',
         }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
-            'followup_actions': forms.Textarea(attrs={'rows': 4, 'placeholder': 'سجّل خطوات المتابعة والإجراءات التي تم اتخاذها والنتائج...'}),
+            'followup_actions': forms.Textarea(attrs={'rows': 3, 'placeholder': 'سجّل خطوات المتابعة والإجراءات التي تم اتخاذها...'}),
+            'completion_note': forms.Textarea(attrs={'rows': 3, 'placeholder': 'وثّق ما تم تنفيذه فعلياً وكيف أُنجزت المهمة...'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
