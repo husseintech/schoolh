@@ -142,6 +142,7 @@ urlpatterns = [
     # Agenda
     path('agenda/', views.agenda_list, name='agenda_list'),
     path('agenda/add/', views.add_agenda, name='add_agenda'),
+    path('agenda/<int:agenda_id>/edit/', views.edit_agenda, name='edit_agenda'),
     path('agenda/<int:agenda_id>/complete/', views.complete_agenda, name='complete_agenda'),
     path('agenda/<int:agenda_id>/uncomplete/', views.uncomplete_agenda, name='uncomplete_agenda'),
     path('agenda/<int:agenda_id>/delete/', views.delete_agenda, name='delete_agenda'),
