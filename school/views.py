@@ -2436,6 +2436,7 @@ def agenda_list(request):
         'pending_items': pending_items,
         'completed_items': completed_items,
         'today': today,
+        'overdue_count': pending_items.filter(due_date__lt=today).count(),
     })
 
 
@@ -2455,6 +2456,23 @@ def add_agenda(request):
     else:
         form = AgendaForm()
     return render(request, 'school/add_agenda.html', {'form': form})
+
+
+@login_required
+def edit_agenda(request, agenda_id):
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'ليس لديك صلاحية لتعديل المهمة')
+        return redirect('dashboard')
+    agenda = get_object_or_404(Agenda, id=agenda_id)
+    if request.method == 'POST':
+        form = AgendaForm(request.POST, instance=agenda)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث المهمة وآلية المتابعة بنجاح')
+            return redirect('agenda_list')
+    else:
+        form = AgendaForm(instance=agenda)
+    return render(request, 'school/add_agenda.html', {'form': form, 'agenda': agenda})
 
 
 @login_required
