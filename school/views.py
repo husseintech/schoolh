@@ -2431,8 +2431,12 @@ def agenda_list(request):
         return redirect('dashboard')
     today = date.today()
     pending_items = Agenda.objects.filter(is_completed=False).order_by('due_date')
-    completed_items = Agenda.objects.filter(is_completed=True).order_by('-due_date')[:20]
+    completed_items = Agenda.objects.filter(is_completed=True).order_by('-due_date')
+    report_type = request.GET.get('print', '')
+    if report_type not in ('pending', 'completed', 'all'):
+        report_type = ''
     return render(request, 'school/agenda_list.html', {
+        'report_type': report_type,
         'pending_items': pending_items,
         'completed_items': completed_items,
         'today': today,
@@ -2481,8 +2485,10 @@ def complete_agenda(request, agenda_id):
         messages.error(request, 'ليس لديك صلاحية للوصول إلى هذه الصفحة')
         return redirect('dashboard')
     agenda = get_object_or_404(Agenda, id=agenda_id)
-    agenda.is_completed = True
-    agenda.save()
+    if request.method == 'POST':
+        agenda.completion_note = request.POST.get('completion_note', '').strip()
+        agenda.is_completed = True
+        agenda.save(update_fields=['completion_note', 'is_completed'])
     messages.success(request, f'تم إكمال المهمة: {agenda.title}')
     return redirect('agenda_list')
 
