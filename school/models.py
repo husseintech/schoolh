@@ -426,6 +426,7 @@ class Agenda(models.Model):
     title = models.CharField('العنوان', max_length=200)
     description = models.TextField('الوصف', blank=True)
     followup_actions = models.TextField('آلية المتابعة والإجراءات المتبعة', blank=True)
+    completion_note = models.TextField('كيف تم الإنجاز؟', blank=True)
     due_date = models.DateField('تاريخ التنفيذ')
     is_completed = models.BooleanField('تم التنفيذ', default=False)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='المنشئ')

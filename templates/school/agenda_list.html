@@ -3,94 +3,108 @@
 {% block page_heading %}الأجندة الإدارية{% endblock %}
 {% block content %}
 <style>
-    .agenda-toolbar { display:flex; flex-wrap:wrap; gap:.55rem; align-items:center; margin-bottom:1.2rem; }
-    .agenda-stat { border:1px solid var(--bs-border-color); border-radius:14px; padding:1rem; background:var(--bs-body-bg); height:100%; }
-    .agenda-stat .number { font-size:1.65rem; font-weight:800; line-height:1.2; }
-    .agenda-card { border:1px solid var(--bs-border-color); border-radius:14px; padding:1rem; background:var(--bs-body-bg); margin-bottom:.8rem; }
-    .agenda-card.overdue { border-right:4px solid #dc3545; }
-    .agenda-card.due-soon { border-right:4px solid #f0ad4e; }
-    .agenda-card.completed { opacity:.86; }
-    .agenda-description,.agenda-followup { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.85; margin:.45rem 0; }
-    .agenda-followup-box { background:var(--bs-tertiary-bg); border-radius:10px; padding:.75rem .9rem; margin-top:.7rem; }
-    .agenda-meta { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; color:var(--bs-secondary-color); font-size:.86rem; }
-    .agenda-actions { display:flex; gap:.4rem; flex-wrap:wrap; }
-    .agenda-section-title { display:flex; justify-content:space-between; align-items:center; gap:.6rem; margin-bottom:1rem; }
-    @media(max-width:576px){ .agenda-card-head{display:block!important}.agenda-actions{margin-top:.8rem}.agenda-toolbar .btn{flex:1 1 auto} }
+.agenda-wrap{max-width:1180px;margin:0 auto}
+.agenda-toolbar{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;margin-bottom:1rem}
+.agenda-toolbar .btn{font-size:.88rem}
+.agenda-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin-bottom:1rem}
+.agenda-stat{border:1px solid var(--bs-border-color);border-radius:12px;padding:.75rem .9rem;background:var(--bs-body-bg)}
+.agenda-stat .number{font-size:1.45rem;font-weight:800;line-height:1.25}
+.agenda-section{border:1px solid var(--bs-border-color);border-radius:13px;overflow:hidden;margin-bottom:1rem;background:var(--bs-body-bg)}
+.agenda-section-head{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1rem;gap:.5rem}
+.agenda-list{padding:.75rem}
+.agenda-card{border:1px solid var(--bs-border-color);border-radius:11px;padding:.85rem 1rem;margin-bottom:.65rem;background:var(--bs-body-bg)}
+.agenda-card:last-child{margin-bottom:0}
+.agenda-card.overdue{border-right:4px solid #dc3545}
+.agenda-card.due-soon{border-right:4px solid #e0a800}
+.agenda-card.completed{border-right:4px solid #198754}
+.agenda-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem}
+.agenda-card h6{font-weight:750;margin:0 0 .3rem}
+.agenda-meta{display:flex;flex-wrap:wrap;gap:.55rem;color:var(--bs-secondary-color);font-size:.82rem}
+.agenda-actions{display:flex;flex-wrap:wrap;gap:.35rem}
+.agenda-copy{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;margin:.35rem 0 0}
+.agenda-detail{padding:.65rem .8rem;border-radius:9px;background:var(--bs-tertiary-bg);margin-top:.6rem}
+.agenda-detail .small{font-weight:700}
+.complete-note-form{margin-top:.7rem;padding:.7rem;background:var(--bs-tertiary-bg);border-radius:9px}
+.complete-note-form textarea{font-size:.9rem}
+.report-heading{display:none}
+@media(max-width:700px){.agenda-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.agenda-stats .agenda-stat:last-child{grid-column:1/-1}.agenda-card-head{display:block}.agenda-actions{margin-top:.65rem}.agenda-toolbar .btn{flex:1 1 auto}}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff!important;color:#000!important;font-size:10.5pt}
+  .agenda-toolbar,.agenda-stats,.no-print,.btn,form{display:none!important}
+  .agenda-wrap{max-width:none!important}
+  .agenda-section{border:0!important;overflow:visible!important;margin:0!important}
+  .agenda-section-head{background:#eee!important;color:#000!important;border:1px solid #bbb;padding:8px 10px}
+  .agenda-list{padding:8px 0}
+  .agenda-card{break-inside:avoid;border:1px solid #bbb!important;margin-bottom:8px;padding:9px 11px}
+  .agenda-detail{background:#f6f6f6!important;border:1px solid #ddd}
+  .report-heading{display:block;text-align:center;margin:0 0 14px;padding-bottom:10px;border-bottom:2px solid #333}
+  .report-heading h2{font-size:17pt;margin:0 0 5px}
+  .report-heading p{margin:2px 0}
+  .agenda-meta{color:#333!important}
+  a{color:#000!important;text-decoration:none!important}
+}
 </style>
-
-<div class="agenda-toolbar">
-    <a href="{% url 'add_agenda' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة مهمة جديدة</a>
-    <a href="#pending" class="btn btn-outline-warning"><i class="bi bi-clock-history"></i> المهام المعلقة ({{ pending_items.count }})</a>
-    <a href="#completed" class="btn btn-outline-success"><i class="bi bi-check2-circle"></i> المهام المكتملة ({{ completed_items.count }})</a>
+<div class="agenda-wrap">
+  {% if report_type %}
+  <div class="report-heading">
+    <h2>مدرسة ذكور المنصور الأساسية</h2>
+    <p>الأجندة الإدارية – {% if report_type == 'pending' %}تقرير المهام المعلقة{% elif report_type == 'completed' %}تقرير المهام المنجزة{% else %}التقرير الشامل{% endif %}</p>
+    <p>تاريخ الطباعة: {% now "Y-m-d" %} | عدد المهام: {% if report_type == 'pending' %}{{ pending_items.count }}{% elif report_type == 'completed' %}{{ completed_items.count }}{% else %}{{ pending_items.count|add:completed_items.count }}{% endif %}</p>
+  </div>
+  {% endif %}
+  <div class="agenda-toolbar no-print">
+    <a href="{% url 'add_agenda' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة مهمة</a>
+    <a href="#pending" class="btn btn-outline-warning">المعلقة ({{ pending_items.count }})</a>
+    <a href="#completed" class="btn btn-outline-success">المنجزة ({{ completed_items.count }})</a>
+    <span class="vr mx-1"></span>
+    <a href="?print=pending" target="_blank" class="btn btn-sm btn-warning"><i class="bi bi-printer"></i> تقرير المعلقة</a>
+    <a href="?print=completed" target="_blank" class="btn btn-sm btn-success"><i class="bi bi-printer"></i> تقرير المنجزة</a>
+    <a href="?print=all" target="_blank" class="btn btn-sm btn-dark"><i class="bi bi-printer"></i> التقرير الشامل</a>
+  </div>
+  <div class="agenda-stats no-print">
+    <div class="agenda-stat"><div class="small text-muted">المهام المعلقة</div><div class="number text-warning">{{ pending_items.count }}</div></div>
+    <div class="agenda-stat"><div class="small text-muted">المهام المنجزة</div><div class="number text-success">{{ completed_items.count }}</div></div>
+    <div class="agenda-stat"><div class="small text-muted">المهام المتأخرة</div><div class="number text-danger">{{ overdue_count }}</div></div>
+  </div>
+  {% if not report_type or report_type == 'pending' or report_type == 'all' %}
+  <section id="pending" class="agenda-section">
+    <div class="agenda-section-head bg-warning-subtle"><strong><i class="bi bi-hourglass-split"></i> المهام المعلقة</strong><span class="badge bg-warning text-dark">{{ pending_items.count }} مهمة</span></div>
+    <div class="agenda-list">
+      {% for item in pending_items %}
+      <article class="agenda-card {% if item.due_date < today %}overdue{% elif item.due_date == today %}due-soon{% endif %}">
+        <div class="agenda-card-head">
+          <div><h6>{{ item.title }}</h6><div class="agenda-meta"><span>موعد التنفيذ: {{ item.due_date|date:"Y-m-d" }}</span>{% if item.due_date < today %}<span class="badge bg-danger">متأخرة</span>{% elif item.due_date == today %}<span class="badge bg-warning text-dark">موعدها اليوم</span>{% endif %}</div></div>
+          <div class="agenda-actions no-print">
+            <a href="{% url 'edit_agenda' item.id %}" class="btn btn-sm btn-outline-primary">تعديل</a>
+            <form method="post" action="{% url 'complete_agenda' item.id %}">{% csrf_token %}<textarea class="form-control form-control-sm mb-2" name="completion_note" rows="2" placeholder="كيف تم الإنجاز؟ (اختياري عند الإكمال)"></textarea><button class="btn btn-sm btn-success" type="submit"><i class="bi bi-check-lg"></i> اعتماد الإنجاز</button></form>
+            <form method="post" action="{% url 'delete_agenda' item.id %}" onsubmit="return confirm('هل تريد حذف المهمة؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">حذف</button></form>
+          </div>
+        </div>
+        <div class="agenda-detail"><div class="small">تفاصيل المهمة والملاحظة</div><p class="agenda-copy">{{ item.description|default:"لا توجد تفاصيل إضافية." }}</p></div>
+        <div class="agenda-detail"><div class="small">آلية المتابعة والإجراءات المتبعة</div><p class="agenda-copy">{{ item.followup_actions|default:"لم تسجل إجراءات متابعة بعد." }}</p></div>
+      </article>
+      {% empty %}<p class="text-center text-muted py-4 mb-0">لا توجد مهام معلقة.</p>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% if not report_type or report_type == 'completed' or report_type == 'all' %}
+  <section id="completed" class="agenda-section">
+    <div class="agenda-section-head bg-success-subtle"><strong><i class="bi bi-check-circle-fill"></i> المهام المنجزة</strong><span class="badge bg-success">{{ completed_items.count }} مهمة</span></div>
+    <div class="agenda-list">
+      {% for item in completed_items %}
+      <article class="agenda-card completed">
+        <div class="agenda-card-head"><div><h6>{{ item.title }}</h6><div class="agenda-meta"><span>تاريخ المهمة: {{ item.due_date|date:"Y-m-d" }}</span><span class="badge bg-success">منجزة</span></div></div>
+          <div class="agenda-actions no-print"><a href="{% url 'edit_agenda' item.id %}" class="btn btn-sm btn-outline-primary">تعديل</a><form method="post" action="{% url 'uncomplete_agenda' item.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-warning" type="submit">إعادة فتح</button></form></div>
+        </div>
+        <div class="agenda-detail"><div class="small">تفاصيل المهمة</div><p class="agenda-copy">{{ item.description|default:"لا توجد تفاصيل إضافية." }}</p></div>
+        <div class="agenda-detail"><div class="small">آلية المتابعة والإجراءات المتبعة</div><p class="agenda-copy">{{ item.followup_actions|default:"لم تسجل إجراءات متابعة." }}</p></div>
+        <div class="agenda-detail"><div class="small">كيف تم الإنجاز؟</div><p class="agenda-copy">{{ item.completion_note|default:"لم تسجل ملاحظة إنجاز." }}</p></div>
+      </article>
+      {% empty %}<p class="text-center text-muted py-4 mb-0">لا توجد مهام منجزة.</p>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </div>
-
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-4"><div class="agenda-stat"><div class="text-muted small mb-1">المهام المعلقة</div><div class="number text-warning">{{ pending_items.count }}</div></div></div>
-    <div class="col-6 col-lg-4"><div class="agenda-stat"><div class="text-muted small mb-1">المهام المكتملة المعروضة</div><div class="number text-success">{{ completed_items.count }}</div></div></div>
-    <div class="col-12 col-lg-4"><div class="agenda-stat"><div class="text-muted small mb-1">المهام المتأخرة</div><div class="number text-danger">{{ overdue_count|default:"—" }}</div></div></div>
-</div>
-
-<section id="pending" class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-warning-subtle text-dark py-3 agenda-section-title mb-0">
-        <strong><i class="bi bi-hourglass-split"></i> المهام المعلقة</strong>
-        <span class="badge bg-warning text-dark">{{ pending_items.count }} مهمة</span>
-    </div>
-    <div class="card-body">
-        {% for item in pending_items %}
-        <article class="agenda-card {% if item.due_date < today %}overdue{% elif item.due_date == today %}due-soon{% endif %}">
-            <div class="agenda-card-head d-flex justify-content-between align-items-start gap-3">
-                <div class="flex-grow-1 min-w-0">
-                    <h6 class="fw-bold mb-1">{{ item.title }}</h6>
-                    <div class="agenda-meta">
-                        <span><i class="bi bi-calendar3"></i> موعد المتابعة: {{ item.due_date|date:"Y-m-d" }}</span>
-                        {% if item.due_date < today %}<span class="badge bg-danger">متأخرة</span>{% elif item.due_date == today %}<span class="badge bg-warning text-dark">موعدها اليوم</span>{% endif %}
-                    </div>
-                </div>
-                <div class="agenda-actions">
-                    <a href="{% url 'edit_agenda' item.id %}" class="btn btn-sm btn-outline-primary" title="تعديل المهمة"><i class="bi bi-pencil-square"></i> تعديل</a>
-                    <form method="post" action="{% url 'complete_agenda' item.id %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success" title="إكمال المهمة"><i class="bi bi-check-lg"></i> إنجاز</button></form>
-                    <form method="post" action="{% url 'delete_agenda' item.id %}" onsubmit="return confirm('هل أنت متأكد من حذف هذه المهمة؟')">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" title="حذف المهمة"><i class="bi bi-trash"></i></button></form>
-                </div>
-            </div>
-            <div class="mt-3">
-                <div class="small fw-semibold text-muted">تفاصيل المهمة والملاحظة</div>
-                {% if item.description %}<p class="agenda-description mb-0">{{ item.description }}</p>{% else %}<p class="text-muted small mb-0">لا توجد تفاصيل إضافية.</p>{% endif %}
-            </div>
-            <div class="agenda-followup-box">
-                <div class="small fw-semibold"><i class="bi bi-clipboard2-check"></i> آلية المتابعة والإجراءات المتبعة</div>
-                {% if item.followup_actions %}<p class="agenda-followup mb-0">{{ item.followup_actions }}</p>{% else %}<p class="text-muted small mb-0">لم تُسجّل إجراءات متابعة بعد. استخدم زر «تعديل» لإضافة ما تم اتخاذه من إجراءات ونتائج.</p>{% endif %}
-            </div>
-        </article>
-        {% empty %}
-        <div class="text-center text-muted py-5"><i class="bi bi-check-circle display-6"></i><p class="mt-2 mb-0">لا توجد مهام معلقة حالياً.</p></div>
-        {% endfor %}
-    </div>
-</section>
-
-<section id="completed" class="card border-0 shadow-sm">
-    <div class="card-header bg-success-subtle text-success py-3 agenda-section-title mb-0">
-        <strong><i class="bi bi-check-circle-fill"></i> المهام المكتملة</strong>
-        <span class="badge bg-success">{{ completed_items.count }} مهمة</span>
-    </div>
-    <div class="card-body">
-        {% for item in completed_items %}
-        <article class="agenda-card completed">
-            <div class="agenda-card-head d-flex justify-content-between align-items-start gap-3">
-                <div class="flex-grow-1">
-                    <h6 class="fw-bold text-muted mb-1"><del>{{ item.title }}</del></h6>
-                    <div class="agenda-meta"><span><i class="bi bi-calendar3"></i> تاريخ المهمة: {{ item.due_date|date:"Y-m-d" }}</span><span class="badge bg-success">مكتملة</span></div>
-                </div>
-                <div class="agenda-actions">
-                    <a href="{% url 'edit_agenda' item.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> تعديل</a>
-                    <form method="post" action="{% url 'uncomplete_agenda' item.id %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-counterclockwise"></i> إعادة فتح</button></form>
-                </div>
-            </div>
-            {% if item.description %}<div class="mt-3"><div class="small fw-semibold text-muted">تفاصيل المهمة</div><p class="agenda-description">{{ item.description }}</p></div>{% endif %}
-            {% if item.followup_actions %}<div class="agenda-followup-box"><div class="small fw-semibold"><i class="bi bi-clipboard2-check"></i> آلية المتابعة والإجراءات المتبعة</div><p class="agenda-followup mb-0">{{ item.followup_actions }}</p></div>{% endif %}
-        </article>
-        {% empty %}
-        <p class="text-muted text-center py-4 mb-0">لا توجد مهام مكتملة بعد.</p>
-        {% endfor %}
-    </div>
-</section>
+{% if report_type %}<script>window.addEventListener('load',function(){window.print();});</script>{% endif %}
 {% endblock %}
