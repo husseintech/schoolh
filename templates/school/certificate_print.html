@@ -66,6 +66,11 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 .certificate[data-frame="thin"]::before { content: ""; position: absolute; inset: 6mm; border: .6mm solid var(--gold); pointer-events: none; }
 .certificate[data-frame="none"] .frame-bg { display: none; }
 
+/* شارة تميز اختيارية — تُضاف فوق أي إطار */
+.badge-overlay { position: absolute; z-index: 2; top: 10mm; left: 14mm; width: 20mm; height: auto;
+  display: none; pointer-events: none; }
+.certificate[data-badge="on"] .badge-overlay { display: block; }
+
 /* رأس الشهادة: شعار المدرسة واسمها. الموضع الافتراضي يمين الصفحة، وقابل للتحكم (يمين/وسط/يسار + إزاحة دقيقة) */
 .header-row { position: relative; z-index: 1; display: flex; justify-content: flex-start; height: 28mm; flex: none; }
 .header-row[data-logo-pos="center"] { justify-content: center; }
@@ -122,10 +127,18 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
     <label>إطار الشهادة
       <select id="frameSelect">
         <option value="heritage">أخضر وذهبي تراثي (موصى به)</option>
-        <option value="navy">كحلي وذهبي ملكي</option>
+        <option value="navy">كحلي وذهبي ملكي (نجمات)</option>
+        <option value="navy_triangular">كحلي وذهبي هندسي (زوايا مثلثة)</option>
         <option value="maroon">عنابي وذهبي دافئ</option>
+        <option value="rose">وردي وأخضر زهري</option>
         <option value="thin">إطار رفيع فقط</option>
         <option value="none">بدون إطار</option>
+      </select>
+    </label>
+    <label>شارة تميز
+      <select id="badgeToggle">
+        <option value="off">بدون شارة</option>
+        <option value="on">إظهار شارة تميز</option>
       </select>
     </label>
     <label>موضع الشعار
@@ -200,6 +213,7 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 <section class="sheet">
   <article class="certificate" data-frame="heritage">
     <img class="frame-bg" src="/static/school/img/certificate-frames/frame_heritage_green_gold.svg" alt="" aria-hidden="true">
+    <img class="badge-overlay" src="/static/school/img/certificate-frames/badge_distinction.svg" alt="" aria-hidden="true">
     <header class="header-row" data-logo-pos="right">
       <div class="school-mark" data-school-name="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية' }}{% else %}مدرسة المنصور الأساسية{% endif %}">
         <img src="/static/school/img/certificate-frames/school_logo_transparent.webp" alt="شعار المدرسة">
@@ -228,9 +242,11 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
   const FRAME_IMAGES = {
     heritage: '/static/school/img/certificate-frames/frame_heritage_green_gold.svg',
     navy: '/static/school/img/certificate-frames/frame_royal_navy_gold.svg',
+    navy_triangular: '/static/school/img/certificate-frames/frame_navy_triangular.svg',
     maroon: '/static/school/img/certificate-frames/frame_maroon_gold.svg',
+    rose: '/static/school/img/certificate-frames/frame_rose_floral.svg',
   };
-  const controls = ['frameSelect','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize',
+  const controls = ['frameSelect','badgeToggle','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize',
     'logoPosition','logoOffsetX','logoOffsetY','titleOffset',
     'schoolNameInput','introInput','reasonInput','titleInput','yearInput','principalInput','principalRoleInput','guardianRoleInput'];
   const defaults = {};
@@ -252,6 +268,7 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 
     const frameImg = sheet.querySelector('.frame-bg');
     if (frameImg && FRAME_IMAGES[frame]) frameImg.src = FRAME_IMAGES[frame];
+    sheet.dataset.badge = $('badgeToggle').value;
     const headerRow = sheet.querySelector('.header-row');
     if (headerRow) headerRow.dataset.logoPos = $('logoPosition').value;
 
