@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 990" preserveAspectRatio="none">
+  <rect width="1400" height="990" fill="#fff"/>
+
+  <!-- Outer and inner border lines -->
+  <rect x="24" y="24" width="1352" height="942" fill="none" stroke="#b8872e" stroke-width="5"/>
+  <rect x="40" y="40" width="1320" height="910" fill="none" stroke="#dec488" stroke-width="2"/>
+
+  <!-- Quarter-circle corner flourishes connecting the border to each rosette -->
+  <g fill="none" stroke="#2f5443" stroke-width="2" opacity=".55">
+    <path d="M40 210 Q40 40 210 40"/>
+    <path d="M1360 210 Q1360 40 1190 40"/>
+    <path d="M40 780 Q40 950 210 950"/>
+    <path d="M1360 780 Q1360 950 1190 950"/>
+  </g>
+
+  <!-- Four 8-point star rosettes, one per corner -->
+  <g>
+    <path d="M 118.0 60.0 L 127.6 94.9 L 159.0 77.0 L 141.1 108.4 L 176.0 118.0 L 141.1 127.6 L 159.0 159.0 L 127.6 141.1 L 118.0 176.0 L 108.4 141.1 L 77.0 159.0 L 94.9 127.6 L 60.0 118.0 L 94.9 108.4 L 77.0 77.0 L 108.4 94.9 Z" fill="#eef3ee" stroke="#b8872e" stroke-width="3"/>
+    <circle cx="118" cy="118" r="13" fill="#b8872e"/>
+    <circle cx="118" cy="118" r="6" fill="#123524"/>
+  </g>
+  <g>
+    <path d="M 1282.0 60.0 L 1291.6 94.9 L 1323.0 77.0 L 1305.1 108.4 L 1340.0 118.0 L 1305.1 127.6 L 1323.0 159.0 L 1291.6 141.1 L 1282.0 176.0 L 1272.4 141.1 L 1241.0 159.0 L 1258.9 127.6 L 1224.0 118.0 L 1258.9 108.4 L 1241.0 77.0 L 1272.4 94.9 Z" fill="#eef3ee" stroke="#b8872e" stroke-width="3"/>
+    <circle cx="1282" cy="118" r="13" fill="#b8872e"/>
+    <circle cx="1282" cy="118" r="6" fill="#123524"/>
+  </g>
+  <g>
+    <path d="M 118.0 814.0 L 127.6 848.9 L 159.0 831.0 L 141.1 862.4 L 176.0 872.0 L 141.1 881.6 L 159.0 913.0 L 127.6 895.1 L 118.0 930.0 L 108.4 895.1 L 77.0 913.0 L 94.9 881.6 L 60.0 872.0 L 94.9 862.4 L 77.0 831.0 L 108.4 848.9 Z" fill="#eef3ee" stroke="#b8872e" stroke-width="3"/>
+    <circle cx="118" cy="872" r="13" fill="#b8872e"/>
+    <circle cx="118" cy="872" r="6" fill="#123524"/>
+  </g>
+  <g>
+    <path d="M 1282.0 814.0 L 1291.6 848.9 L 1323.0 831.0 L 1305.1 862.4 L 1340.0 872.0 L 1305.1 881.6 L 1323.0 913.0 L 1291.6 895.1 L 1282.0 930.0 L 1272.4 895.1 L 1241.0 913.0 L 1258.9 881.6 L 1224.0 872.0 L 1258.9 862.4 L 1241.0 831.0 L 1272.4 848.9 Z" fill="#eef3ee" stroke="#b8872e" stroke-width="3"/>
+    <circle cx="1282" cy="872" r="13" fill="#b8872e"/>
+    <circle cx="1282" cy="872" r="6" fill="#123524"/>
+  </g>
+</svg>
