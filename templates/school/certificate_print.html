@@ -32,6 +32,9 @@ html, body { margin: 0; padding: 0; background: #eef1f4; }
   --title-gap: 6mm;
   --intro-gap: 3mm;
   --name-gap: 4mm;
+  --title-offset: -6mm;
+  --logo-offset-x: 0mm;
+  --logo-offset-y: 0mm;
 }
 body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 
@@ -63,16 +66,22 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 .certificate[data-frame="thin"]::before { content: ""; position: absolute; inset: 6mm; border: .6mm solid var(--gold); pointer-events: none; }
 .certificate[data-frame="none"] .frame-bg { display: none; }
 
-/* رأس الشهادة: شعار المدرسة واسمها، أعلى الجهة المقابلة لبداية القراءة */
+/* رأس الشهادة: شعار المدرسة واسمها. الموضع الافتراضي يمين الصفحة، وقابل للتحكم (يمين/وسط/يسار + إزاحة دقيقة) */
 .header-row { position: relative; z-index: 1; display: flex; justify-content: flex-start; height: 28mm; flex: none; }
-.school-mark { display: flex; flex-direction: column; align-items: center; gap: 1mm; width: 34mm; }
+.header-row[data-logo-pos="center"] { justify-content: center; }
+.header-row[data-logo-pos="left"] { justify-content: flex-end; }
+.school-mark { display: flex; flex-direction: column; align-items: center; gap: 1mm; width: 34mm;
+  transform: translate(var(--logo-offset-x), var(--logo-offset-y)); }
 .school-mark img { width: var(--logo-size); height: var(--logo-size); object-fit: contain; }
 .school-mark span { font-family: Arial, sans-serif; font-size: 8pt; font-weight: 700; color: var(--ink); line-height: 1.2; }
 
-/* جسم الشهادة: يتمدد ليشغل المساحة المتبقية ويتمركز رأسياً تلقائياً */
+/* جسم الشهادة: العنوان يبقى قريبًا من الأعلى (قابل للرفع أكثر)، وبقية المحتوى يتمركز رأسياً في المساحة المتبقية */
 .body { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column;
-  justify-content: center; align-items: center; min-height: 0; padding: 0 10mm; }
-.title-row { display: flex; align-items: center; justify-content: center; gap: 6mm; margin: 0 0 var(--title-gap); }
+  align-items: center; min-height: 0; padding: 2mm 10mm 0; }
+.title-row { flex: none; display: flex; align-items: center; justify-content: center; gap: 6mm;
+  margin: 0 0 var(--title-gap); transform: translateY(var(--title-offset)); }
+.content-center { flex: 1; display: flex; flex-direction: column; justify-content: center;
+  align-items: center; width: 100%; min-height: 0; }
 .title-row .rule { width: 26mm; height: .4mm; background: linear-gradient(90deg, transparent, var(--gold)); }
 .title-row .rule.after { transform: scaleX(-1); }
 .title-row .gem { color: var(--gold); font-size: 14pt; }
@@ -112,10 +121,28 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
   <div class="editor-grid">
     <label>إطار الشهادة
       <select id="frameSelect">
-        <option value="ornamental">إطار زخرفي (موصى به)</option>
+        <option value="heritage">أخضر وذهبي تراثي (موصى به)</option>
+        <option value="navy">كحلي وذهبي ملكي</option>
+        <option value="maroon">عنابي وذهبي دافئ</option>
         <option value="thin">إطار رفيع فقط</option>
         <option value="none">بدون إطار</option>
       </select>
+    </label>
+    <label>موضع الشعار
+      <select id="logoPosition">
+        <option value="right">يمين الصفحة (افتراضي)</option>
+        <option value="center">وسط الصفحة</option>
+        <option value="left">يسار الصفحة</option>
+      </select>
+    </label>
+    <label>إزاحة الشعار أفقيًا <output id="logoOffsetXOut">0</output> mm
+      <input id="logoOffsetX" type="range" min="-20" max="20" value="0">
+    </label>
+    <label>إزاحة الشعار رأسيًا <output id="logoOffsetYOut">0</output> mm
+      <input id="logoOffsetY" type="range" min="-10" max="15" value="0">
+    </label>
+    <label>ارتفاع عنوان الشهادة <output id="titleOffsetOut">-6</output> mm
+      <input id="titleOffset" type="range" min="-15" max="10" value="-6">
     </label>
     <label>خط اسم الطالب
       <select id="fontSelect">
@@ -171,9 +198,9 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 </div>
 
 <section class="sheet">
-  <article class="certificate" data-frame="ornamental">
+  <article class="certificate" data-frame="heritage">
     <img class="frame-bg" src="/static/school/img/certificate-frames/frame_heritage_green_gold.svg" alt="" aria-hidden="true">
-    <header class="header-row">
+    <header class="header-row" data-logo-pos="right">
       <div class="school-mark" data-school-name="{% if info %}{{ info.name_ar|default:'مدرسة المنصور الأساسية' }}{% else %}مدرسة المنصور الأساسية{% endif %}">
         <img src="/static/school/img/certificate-frames/school_logo_transparent.webp" alt="شعار المدرسة">
         <span></span>
@@ -181,9 +208,11 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
     </header>
     <div class="body">
       <div class="title-row"><span class="rule"></span><span class="gem">✦</span><h1 class="title">شهادة تقدير</h1><span class="gem">✦</span><span class="rule after"></span></div>
-      <p class="intro"><span class="intro-copy">تتقدم إدارة {% if info %}{{ info.name_ar|default:"مدرسة المنصور الأساسية" }}{% else %}مدرسة المنصور الأساسية{% endif %} بخالص الشكر والتقدير إلى الطالب/ة</span></p>
-      <h2 class="student-name">{{ cert.student_name }}</h2>
-      <p class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></p>
+      <div class="content-center">
+        <p class="intro"><span class="intro-copy">تتقدم إدارة {% if info %}{{ info.name_ar|default:"مدرسة المنصور الأساسية" }}{% else %}مدرسة المنصور الأساسية{% endif %} بخالص الشكر والتقدير إلى الطالب/ة</span></p>
+        <h2 class="student-name">{{ cert.student_name }}</h2>
+        <p class="reason">من الصف <strong class="student-class">{{ cert.class_name }}</strong>، <span class="reason-copy">تقديرًا لجهوده المتميزة وعطائه المثمر، متمنين له دوام التوفيق والنجاح ومزيدًا من التفوق والإبداع.</span></p>
+      </div>
     </div>
     <div class="year-line"><span class="year-label">العام الدراسي:</span> <span class="year-value">{{ cert.cert_year }}</span></div>
     <footer class="footer-row">
@@ -196,22 +225,37 @@ body { font-family: "Amiri", "Times New Roman", serif; color: var(--ink); }
 <script>
 (function(){
   const $ = id => document.getElementById(id);
+  const FRAME_IMAGES = {
+    heritage: '/static/school/img/certificate-frames/frame_heritage_green_gold.svg',
+    navy: '/static/school/img/certificate-frames/frame_royal_navy_gold.svg',
+    maroon: '/static/school/img/certificate-frames/frame_maroon_gold.svg',
+  };
   const controls = ['frameSelect','fontSelect','titleSize','nameSize','bodySize','signSize','logoSize',
+    'logoPosition','logoOffsetX','logoOffsetY','titleOffset',
     'schoolNameInput','introInput','reasonInput','titleInput','yearInput','principalInput','principalRoleInput','guardianRoleInput'];
   const defaults = {};
   controls.forEach(id => { if ($(id)) defaults[id] = $(id).value; });
 
   function apply(){
     const sheet = document.querySelector('.certificate');
-    sheet.dataset.frame = $('frameSelect').value;
+    const frame = $('frameSelect').value;
+    sheet.dataset.frame = frame;
     sheet.style.setProperty('--title-size', $('titleSize').value + 'pt');
     sheet.style.setProperty('--name-size', $('nameSize').value + 'pt');
     sheet.style.setProperty('--body-size', $('bodySize').value + 'pt');
     sheet.style.setProperty('--sign-size', $('signSize').value + 'pt');
     sheet.style.setProperty('--logo-size', $('logoSize').value + 'mm');
+    sheet.style.setProperty('--logo-offset-x', $('logoOffsetX').value + 'mm');
+    sheet.style.setProperty('--logo-offset-y', $('logoOffsetY').value + 'mm');
+    sheet.style.setProperty('--title-offset', $('titleOffset').value + 'mm');
     sheet.style.setProperty('--name-font', $('fontSelect').value === 'ruqaa' ? '"Aref Ruqaa", serif' : '"Amiri", serif');
 
-    ['titleSize','nameSize','bodySize','signSize','logoSize'].forEach(id => { if ($(id+'Out')) $(id+'Out').textContent = $(id).value; });
+    const frameImg = sheet.querySelector('.frame-bg');
+    if (frameImg && FRAME_IMAGES[frame]) frameImg.src = FRAME_IMAGES[frame];
+    const headerRow = sheet.querySelector('.header-row');
+    if (headerRow) headerRow.dataset.logoPos = $('logoPosition').value;
+
+    ['titleSize','nameSize','bodySize','signSize','logoSize','logoOffsetX','logoOffsetY','titleOffset'].forEach(id => { if ($(id+'Out')) $(id+'Out').textContent = $(id).value; });
 
     document.querySelectorAll('.intro-copy').forEach(el => { el.textContent = 'تتقدم إدارة ' + $('schoolNameInput').value + ' ' + $('introInput').value; });
     document.querySelectorAll('.school-mark').forEach(el => {
