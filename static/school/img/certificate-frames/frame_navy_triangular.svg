@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 990" preserveAspectRatio="none">
+  <rect width="1400" height="990" fill="#fff"/>
+  <rect x="18" y="18" width="1364" height="954" fill="none" stroke="#c9a227" stroke-width="1.5" opacity=".7"/>
+  <g>
+    <path d="M 0.0 0.0 L 235.0 0.0 L 0.0 98.7 Z" fill="#122a52"/>
+    <path d="M 0.0 0.0 L 98.7 0.0 L 0.0 235.0 Z" fill="#122a52"/>
+    <path d="M 26.0 26.0 L 209.3 26.0 L 26.0 101.2 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+    <path d="M 26.0 26.0 L 101.2 26.0 L 26.0 209.3 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+  </g>
+  <g>
+    <path d="M 1400.0 0.0 L 1165.0 0.0 L 1400.0 98.7 Z" fill="#122a52"/>
+    <path d="M 1400.0 0.0 L 1301.3 0.0 L 1400.0 235.0 Z" fill="#122a52"/>
+    <path d="M 1374.0 26.0 L 1190.7 26.0 L 1374.0 101.2 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+    <path d="M 1374.0 26.0 L 1298.8 26.0 L 1374.0 209.3 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+  </g>
+  <g>
+    <path d="M 0.0 990.0 L 235.0 990.0 L 0.0 891.3 Z" fill="#122a52"/>
+    <path d="M 0.0 990.0 L 98.7 990.0 L 0.0 755.0 Z" fill="#122a52"/>
+    <path d="M 26.0 964.0 L 209.3 964.0 L 26.0 888.8 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+    <path d="M 26.0 964.0 L 101.2 964.0 L 26.0 780.7 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+  </g>
+  <g>
+    <path d="M 1400.0 990.0 L 1165.0 990.0 L 1400.0 891.3 Z" fill="#122a52"/>
+    <path d="M 1400.0 990.0 L 1301.3 990.0 L 1400.0 755.0 Z" fill="#122a52"/>
+    <path d="M 1374.0 964.0 L 1190.7 964.0 L 1374.0 888.8 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+    <path d="M 1374.0 964.0 L 1298.8 964.0 L 1374.0 780.7 Z" fill="none" stroke="#c9a227" stroke-width="3"/>
+  </g>
+</svg>

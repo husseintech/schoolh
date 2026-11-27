@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 990" preserveAspectRatio="none">
+  <rect width="1400" height="990" fill="#fff"/>
+
+  <!-- Double border lines -->
+  <rect x="24" y="24" width="1352" height="942" fill="none" stroke="#5c1a1b" stroke-width="5"/>
+  <rect x="40" y="40" width="1320" height="910" fill="none" stroke="#caa65b" stroke-width="2.5"/>
+
+  <!-- Scalloped (dotted arc) corner flourishes -->
+  <g fill="none" stroke="#caa65b" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round" opacity=".8">
+    <path d="M40 230 Q40 40 230 40"/>
+    <path d="M1360 230 Q1360 40 1170 40"/>
+    <path d="M40 760 Q40 950 230 950"/>
+    <path d="M1360 760 Q1360 950 1170 950"/>
+  </g>
+
+  <g>
+    <path d="M 118.0 84.0 L 123.7 104.1 L 142.0 94.0 L 131.9 112.3 L 152.0 118.0 L 131.9 123.7 L 142.0 142.0 L 123.7 131.9 L 118.0 152.0 L 112.3 131.9 L 94.0 142.0 L 104.1 123.7 L 84.0 118.0 L 104.1 112.3 L 94.0 94.0 L 112.3 104.1 Z" fill="#fbf6ee" stroke="#caa65b" stroke-width="3"/>
+    <circle cx="118" cy="118" r="12" fill="#caa65b"/>
+    <circle cx="118" cy="118" r="5" fill="#5c1a1b"/>
+  </g>
+  <g>
+    <path d="M 1282.0 84.0 L 1287.7 104.1 L 1306.0 94.0 L 1295.9 112.3 L 1316.0 118.0 L 1295.9 123.7 L 1306.0 142.0 L 1287.7 131.9 L 1282.0 152.0 L 1276.3 131.9 L 1258.0 142.0 L 1268.1 123.7 L 1248.0 118.0 L 1268.1 112.3 L 1258.0 94.0 L 1276.3 104.1 Z" fill="#fbf6ee" stroke="#caa65b" stroke-width="3"/>
+    <circle cx="1282" cy="118" r="12" fill="#caa65b"/>
+    <circle cx="1282" cy="118" r="5" fill="#5c1a1b"/>
+  </g>
+  <g>
+    <path d="M 118.0 838.0 L 123.7 858.1 L 142.0 848.0 L 131.9 866.3 L 152.0 872.0 L 131.9 877.7 L 142.0 896.0 L 123.7 885.9 L 118.0 906.0 L 112.3 885.9 L 94.0 896.0 L 104.1 877.7 L 84.0 872.0 L 104.1 866.3 L 94.0 848.0 L 112.3 858.1 Z" fill="#fbf6ee" stroke="#caa65b" stroke-width="3"/>
+    <circle cx="118" cy="872" r="12" fill="#caa65b"/>
+    <circle cx="118" cy="872" r="5" fill="#5c1a1b"/>
+  </g>
+  <g>
+    <path d="M 1282.0 838.0 L 1287.7 858.1 L 1306.0 848.0 L 1295.9 866.3 L 1316.0 872.0 L 1295.9 877.7 L 1306.0 896.0 L 1287.7 885.9 L 1282.0 906.0 L 1276.3 885.9 L 1258.0 896.0 L 1268.1 877.7 L 1248.0 872.0 L 1268.1 866.3 L 1258.0 848.0 L 1276.3 858.1 Z" fill="#fbf6ee" stroke="#caa65b" stroke-width="3"/>
+    <circle cx="1282" cy="872" r="12" fill="#caa65b"/>
+    <circle cx="1282" cy="872" r="5" fill="#5c1a1b"/>
+  </g>
+</svg>

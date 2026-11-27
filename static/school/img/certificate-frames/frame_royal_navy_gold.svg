@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 990" preserveAspectRatio="none">
+  <rect width="1400" height="990" fill="#fff"/>
+
+  <!-- Triple border lines -->
+  <rect x="22" y="22" width="1356" height="946" fill="none" stroke="#c9a227" stroke-width="6"/>
+  <rect x="36" y="36" width="1328" height="918" fill="none" stroke="#13294b" stroke-width="1.5"/>
+  <rect x="44" y="44" width="1312" height="902" fill="none" stroke="#e6cf8a" stroke-width="1.5"/>
+
+  <!-- Straight corner flourish lines connecting border to each rosette -->
+  <g fill="none" stroke="#13294b" stroke-width="2" opacity=".5">
+    <path d="M44 210 L44 44 L210 44"/>
+    <path d="M1356 210 L1356 44 L1190 44"/>
+    <path d="M44 780 L44 946 L210 946"/>
+    <path d="M1356 780 L1356 946 L1190 946"/>
+  </g>
+
+  <g>
+    <path d="M 118.0 82.0 L 124.1 103.2 L 143.5 92.5 L 132.8 111.9 L 154.0 118.0 L 132.8 124.1 L 143.5 143.5 L 124.1 132.8 L 118.0 154.0 L 111.9 132.8 L 92.5 143.5 L 103.2 124.1 L 82.0 118.0 L 103.2 111.9 L 92.5 92.5 L 111.9 103.2 Z" fill="#eef1f6" stroke="#c9a227" stroke-width="3"/>
+    <circle cx="118" cy="118" r="13" fill="#c9a227"/>
+    <circle cx="118" cy="118" r="6" fill="#13294b"/>
+  </g>
+  <g>
+    <path d="M 1282.0 82.0 L 1288.1 103.2 L 1307.5 92.5 L 1296.8 111.9 L 1318.0 118.0 L 1296.8 124.1 L 1307.5 143.5 L 1288.1 132.8 L 1282.0 154.0 L 1275.9 132.8 L 1256.5 143.5 L 1267.2 124.1 L 1246.0 118.0 L 1267.2 111.9 L 1256.5 92.5 L 1275.9 103.2 Z" fill="#eef1f6" stroke="#c9a227" stroke-width="3"/>
+    <circle cx="1282" cy="118" r="13" fill="#c9a227"/>
+    <circle cx="1282" cy="118" r="6" fill="#13294b"/>
+  </g>
+  <g>
+    <path d="M 118.0 836.0 L 124.1 857.2 L 143.5 846.5 L 132.8 865.9 L 154.0 872.0 L 132.8 878.1 L 143.5 897.5 L 124.1 886.8 L 118.0 908.0 L 111.9 886.8 L 92.5 897.5 L 103.2 878.1 L 82.0 872.0 L 103.2 865.9 L 92.5 846.5 L 111.9 857.2 Z" fill="#eef1f6" stroke="#c9a227" stroke-width="3"/>
+    <circle cx="118" cy="872" r="13" fill="#c9a227"/>
+    <circle cx="118" cy="872" r="6" fill="#13294b"/>
+  </g>
+  <g>
+    <path d="M 1282.0 836.0 L 1288.1 857.2 L 1307.5 846.5 L 1296.8 865.9 L 1318.0 872.0 L 1296.8 878.1 L 1307.5 897.5 L 1288.1 886.8 L 1282.0 908.0 L 1275.9 886.8 L 1256.5 897.5 L 1267.2 878.1 L 1246.0 872.0 L 1267.2 865.9 L 1256.5 846.5 L 1275.9 857.2 Z" fill="#eef1f6" stroke="#c9a227" stroke-width="3"/>
+    <circle cx="1282" cy="872" r="13" fill="#c9a227"/>
+    <circle cx="1282" cy="872" r="6" fill="#13294b"/>
+  </g>
+</svg>
